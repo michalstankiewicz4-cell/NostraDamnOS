@@ -1,0 +1,35 @@
+// Normalizer: wypowiedzi
+
+export function normalizeWypowiedzi(raw) {
+    return raw.map(w => ({
+        id_wypowiedzi: w.id || w.id_wypowiedzi,
+        id_posiedzenia: w.id_posiedzenia || w.posiedzenie,
+        id_osoby: w.id_osoby || w.posel,
+        data: w.data,
+        tekst: w.tekst || w.tresc || '',
+        typ: w.typ || 'wystąpienie'
+    }));
+}
+
+export function saveWypowiedzi(db, records) {
+    const stmt = db.database.prepare(`
+        INSERT INTO wypowiedzi (id_wypowiedzi, id_posiedzenia, id_osoby, data, tekst, typ)
+        VALUES (?, ?, ?, ?, ?, ?)
+        ON CONFLICT(id_wypowiedzi) DO UPDATE SET
+            id_posiedzenia = excluded.id_posiedzenia,
+            id_osoby = excluded.id_osoby,
+            data = excluded.data,
+            tekst = excluded.tekst,
+            typ = excluded.typ
+    `);
+
+    for (const r of records) {
+        stmt.run([
+            r.id_wypowiedzi, r.id_posiedzenia, r.id_osoby,
+            r.data, r.tekst, r.typ
+        ]);
+    }
+    
+    stmt.free();
+    console.log(`[Normalizer] Saved ${records.length} wypowiedzi`);
+}
