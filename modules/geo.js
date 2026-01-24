@@ -14,7 +14,7 @@ function blockAccess(reason) {
         <div style="padding:40px; font-family:Arial; text-align:center;">
             <h1>🌍 Dostęp ograniczony</h1>
             <p>Ta strona jest dostępna wyłącznie dla użytkowników z Europy.</p>
-            <p>Poproś o dostęp tel.: 797 486 355</p>
+            <p>Poproś o dostęp (SMS) tel.: +48 797 486 355</p>
             <p><strong>Powód:</strong> ${reason}</p>
         </div>
     `;
