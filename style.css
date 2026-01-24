@@ -296,3 +296,210 @@ footer a:hover {
 .data-loaded li:last-child {
     border-bottom: none;
 }
+/* ETL PANEL STYLES */
+.etl-panel {
+    display: flex;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    margin-bottom: 2rem;
+    overflow: hidden;
+}
+
+.etl-sidebar {
+    width: 340px;
+    background: #f8f9fa;
+    border-right: 2px solid #e2e8f0;
+    padding: 25px;
+    overflow-y: auto;
+    max-height: 80vh;
+}
+
+.etl-sidebar h3 {
+    font-size: 18px;
+    margin-bottom: 20px;
+    color: #2d3748;
+}
+
+.etl-main {
+    flex: 1;
+    padding: 30px;
+    overflow-y: auto;
+    max-height: 80vh;
+}
+
+/* Mode Selector */
+.mode-selector {
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.mode-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s;
+    font-size: 14px;
+}
+
+.mode-option:hover {
+    background: #f7fafc;
+}
+
+/* Summary Items */
+.summary-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px;
+    background: white;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    font-size: 14px;
+    border-left: 4px solid var(--primary-color);
+}
+
+.summary-item strong {
+    color: #4a5568;
+}
+
+.summary-item span {
+    color: #2d3748;
+    font-weight: 600;
+}
+
+.summary-data-list {
+    margin-top: 5px;
+    font-size: 13px;
+    color: #718096;
+    line-height: 1.6;
+}
+
+/* Estimate Box */
+.estimate-box {
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.1) 0%, rgba(37, 99, 235, 0.05) 100%);
+    border: 2px solid var(--primary-color);
+    border-radius: 10px;
+    padding: 15px;
+    margin: 20px 0;
+}
+
+.estimate-title {
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: #2d3748;
+    font-size: 15px;
+}
+
+.estimate-grid {
+    display: grid;
+    gap: 8px;
+}
+
+.estimate-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.estimate-label {
+    font-size: 13px;
+    color: #4a5568;
+}
+
+.estimate-value {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+/* Fieldset */
+.etl-fieldset {
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.etl-fieldset legend {
+    font-weight: 600;
+    font-size: 16px;
+    color: #2d3748;
+    padding: 0 10px;
+}
+
+/* Checkbox Items */
+.checkbox-item {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    background: #f7fafc;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    cursor: pointer;
+}
+
+.checkbox-item:hover {
+    background: #edf2f7;
+}
+
+.checkbox-item input {
+    margin-right: 10px;
+}
+
+.checkbox-item label {
+    flex: 1;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+/* Badges */
+.badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-left: 8px;
+}
+
+.badge-size {
+    background: #bee3f8;
+    color: #2c5282;
+}
+
+/* Buttons ETL */
+.etl-btn {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-bottom: 10px;
+}
+
+.etl-btn-primary {
+    background: var(--primary-color);
+    color: white;
+}
+
+.etl-btn-secondary {
+    background: white;
+    color: var(--primary-color);
+    border: 2px solid var(--primary-color);
+}
+
+.etl-btn-danger {
+    background: white;
+    color: var(--danger-color);
+    border: 2px solid var(--danger-color);
+}

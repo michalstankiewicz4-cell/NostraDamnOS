@@ -20,7 +20,73 @@
         </header>
 
         <main>
-            <!-- NOWA SEKCJA: Pobierz z API -->
+            <!-- ETL PANEL -->
+            <div class="etl-panel">
+                <div class="etl-sidebar">
+                    <h3>📊 Konfiguracja</h3>
+                    
+                    <div class="summary-item">
+                        <strong>Zakres:</strong>
+                        <span id="etlRange">2 posiedzenia</span>
+                    </div>
+                    
+                    <div class="summary-item" style="flex-direction: column; align-items: flex-start;">
+                        <strong>Dane:</strong>
+                        <div class="summary-data-list" id="etlData">wypowiedzi</div>
+                    </div>
+                    
+                    <div class="estimate-box">
+                        <div class="estimate-title">💡 Estymacja</div>
+                        <div class="estimate-grid">
+                            <div class="estimate-row">
+                                <span class="estimate-label">Rozmiar:</span>
+                                <span class="estimate-value" id="etlSize">~600 KB</span>
+                            </div>
+                            <div class="estimate-row" style="border:none">
+                                <span class="estimate-label">Czas:</span>
+                                <span class="estimate-value" id="etlTime">~8-12s</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button class="etl-btn etl-btn-primary" id="etlFetchBtn">
+                        📥 Pobierz dane z API
+                    </button>
+                    <button class="etl-btn etl-btn-danger" id="etlClearBtn">
+                        🗑️ Wyczyść cache
+                    </button>
+                </div>
+                
+                <div class="etl-main">
+                    <fieldset class="etl-fieldset">
+                        <legend>🎯 Zakres posiedzeń</legend>
+                        <select id="etlRangeSelect" class="form-control">
+                            <option value="1">1 posiedzenie</option>
+                            <option value="2" selected>2 posiedzenia</option>
+                            <option value="5">5 posiedzeń</option>
+                            <option value="10">10 posiedzeń</option>
+                        </select>
+                    </fieldset>
+                    
+                    <fieldset class="etl-fieldset">
+                        <legend>📝 Rodzaje danych</legend>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="etlTranscripts" checked>
+                            <label for="etlTranscripts">Wypowiedzi</label>
+                            <span class="badge badge-size">300 KB/posiedz.</span>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="etlVotings">
+                            <label for="etlVotings">Głosowania</label>
+                            <span class="badge badge-size">80 KB/posiedz.</span>
+                        </div>
+                    </fieldset>
+                </div>
+            </div>
+
+            <div class="divider" style="margin: 2rem 0; text-align: center; color: #999;">⚙️ Zaawansowane (stary interfejs)</div>
+
+            <!-- STARA SEKCJA: Pobierz z API -->
 <section class="api-fetch-section" style="margin-bottom: 2rem;">
     <h2>📥 Pobierz dane z API Sejmu</h2>
     
@@ -157,5 +223,6 @@
     <script type="module" src="app.js?v=2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.js"></script>
     <script type="module" src="api-handler.js"></script>
+    <script src="etl-bridge.js"></script>
 </body>
 </html>
