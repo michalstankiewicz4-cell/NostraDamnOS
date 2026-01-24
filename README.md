@@ -6,6 +6,11 @@ System do analizy wypowiedzi parlamentarnych z API Sejmu RP.
 > System automatycznie parsuje wypowiedzi z API Sejmu. Dopasowanie mówców do posłów: 97.6%.  
 > Wszystkie informacje należy weryfikować w oficjalnych źródłach.
 
+> 🔒 **Prywatność i RODO**  
+> Baza danych jest pusta przy pierwszym uruchomieniu. System pobiera tylko dane publiczne z API Sejmu.  
+> **Brak danych osobowych:** bez adresów email, numerów telefonów, PESEL czy innych danych wrażliwych.  
+> Wszystkie dane zgodne z zasadami ochrony danych osobowych.
+
 ---
 
 ## 🎯 Funkcje
