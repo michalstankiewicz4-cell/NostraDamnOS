@@ -82,6 +82,8 @@ Database v2.0 (12 tables + indexes)
 
 ## 📁 Struktura Projektu v2.0
 
+**Pełna dokumentacja:** [docs/FILE-STRUCTURE.md](docs/FILE-STRUCTURE.md) - szczegółowy opis każdego pliku
+
 ```
 /
 ├── index.html              ← UI z ETL Panel
