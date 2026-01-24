@@ -23,7 +23,7 @@
             <!-- ETL PANEL -->
             <div class="etl-panel">
                 <div class="etl-sidebar">
-                    <h3>📊 Konfiguracja</h3>
+                    <h3>📊 Konfiguracja ETL</h3>
                     
                     <!-- Mode selector -->
                     <fieldset style="border: 2px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-bottom: 15px;">
@@ -215,70 +215,72 @@
                 </div>
             </div>
 
-            <div class="divider" style="margin: 2rem 0; text-align: center; color: #999;">⚙️ Zaawansowane (stary interfejs)</div>
-
-            <!-- STARA SEKCJA: Pobierz z API -->
-<section class="api-fetch-section" style="margin-bottom: 2rem;">
-    <h2>📥 Pobierz dane z API Sejmu</h2>
-    
-    <div style="display: grid; gap: 1.5rem;">
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-            <div>
-                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Zakres posiedzeń:</label>
-                <select id="apiRange" class="form-control" style="width: 100%; padding: 0.5rem; border-radius: 5px; border: 1px solid #ddd;">
-                    <option value="1">Ostatnie 1 posiedzenie</option>
-                    <option value="2">Ostatnie 2 posiedzenia</option>
-                    <option value="5">Ostatnie 5 posiedzeń</option>
-                    <option value="10">Ostatnie 10 posiedzeń</option>
-                </select>
+            <!-- Progress Bar & Logs -->
+            <div id="apiProgress" style="display: none; margin: 2rem 0;">
+                <div style="background: #e2e8f0; border-radius: 10px; height: 25px; overflow: hidden; margin-bottom: 0.5rem;">
+                    <div id="apiProgressBar" style="background: linear-gradient(90deg, #667eea, #764ba2); height: 100%; width: 0%; transition: width 0.3s;"></div>
+                </div>
+                <div id="apiProgressText" style="text-align: center; font-size: 0.9rem; color: #666; margin-bottom: 1rem;">Postęp: 0%</div>
+                <div id="apiLogs" style="max-height: 300px; overflow-y: auto; background: #f7fafc; padding: 0.75rem; border-radius: 5px; font-family: monospace; font-size: 0.85rem; line-height: 1.6;"></div>
             </div>
             
-            <div>
-                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Rodzaje danych:</label>
-                <div style="display: grid; gap: 0.25rem;">
-                    <label style="display: flex; align-items: center; gap: 0.5rem;">
-                        <input type="checkbox" id="apiTranscripts" checked> Wypowiedzi
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 0.5rem;">
-                        <input type="checkbox" id="apiVotings"> Głosowania
-                    </label>
-                </div>
+            <!-- Status -->
+            <div id="apiStatus" style="padding: 1rem; background: #f7fafc; border-radius: 5px; border-left: 4px solid #667eea; display: none; margin: 2rem 0;">
+                <div style="font-weight: 500; margin-bottom: 0.25rem;">✅ Pobrano dane:</div>
+                <div id="apiStatusDetails" style="font-size: 0.9rem; color: #666;"></div>
             </div>
-        </div>
-        
-        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1rem;">
-            <button id="apiFetchBtn" class="btn btn-primary btn-large">📥 Pobierz dane z API</button>
-            <button id="clearCacheBtn" class="btn" style="background: #e53e3e;">🗑️ Wyczyść cache</button>
-        </div>
-        
-        <div id="apiProgress" style="display: none;">
-            <div style="background: #e2e8f0; border-radius: 10px; height: 25px; overflow: hidden; margin-bottom: 0.5rem;">
-                <div id="apiProgressBar" style="background: linear-gradient(90deg, #667eea, #764ba2); height: 100%; width: 0%; transition: width 0.3s;"></div>
-            </div>
-            <div id="apiProgressText" style="text-align: center; font-size: 0.9rem; color: #666;">Postęp: 0%</div>
-            <div id="apiLogs" style="max-height: 200px; overflow-y: auto; background: #f7fafc; padding: 0.75rem; border-radius: 5px; margin-top: 0.5rem; font-family: monospace; font-size: 0.85rem;"></div>
-        </div>
-        
-        <div id="apiStatus" style="padding: 1rem; background: #f7fafc; border-radius: 5px; border-left: 4px solid #667eea; display: none;">
-            <div style="font-weight: 500; margin-bottom: 0.25rem;">✅ Pobrano dane:</div>
-            <div id="apiStatusDetails" style="font-size: 0.9rem; color: #666;"></div>
-        </div>
-    </div>
-</section>
 
+            <!-- Sekcja statusu modeli AI -->
+            <section class="models-section" style="margin-top: 3rem;">
+                <h2>🤖 Status modeli AI</h2>
+                <div class="model-status">
+                    <div class="model-item">
+                        <span class="model-name">WebLLM (4B)</span>
+                        <span id="webllmStatus" class="status">⏳ Nieaktywny</span>
+                    </div>
+                    <div class="model-item">
+                        <span class="model-name">Transformers.js</span>
+                        <span id="transformersStatus" class="status">⏳ Nieaktywny</span>
+                    </div>
+                </div>
+                <button id="loadModels" class="btn btn-primary">Załaduj modele</button>
+            </section>
+
+            <!-- Sekcja analiz -->
+            <section class="analysis-section">
+                <h2>📊 Analizy</h2>
+                <div class="analysis-buttons">
+                    <button id="analyzeSentiment" class="btn" disabled>Analiza nastrojów</button>
+                    <button id="analyzeTopics" class="btn" disabled>Wykryj tematy</button>
+                    <button id="generateSummary" class="btn" disabled>Generuj streszczenia</button>
+                    <button id="compareSpeeches" class="btn" disabled>Porównaj wypowiedzi</button>
+                </div>
+            </section>
+
+            <!-- Sekcja wyników -->
+            <section class="results-section">
+                <h2>📈 Wyniki</h2>
+                <div id="results" class="results-container">
+                    <p class="placeholder">Pobierz dane i uruchom analizę, aby zobaczyć wyniki</p>
+                </div>
+            </section>
         </main>
 
         <footer>
-            <p>🚀 Projekt open-source | <a href="https://github.com/michalstankiewicz4-cell/NostraDamnOS" target="_blank">GitHub</a></p>
+            <p>
+                🚀 Projekt open-source | 
+                <a href="https://github.com/michalstankiewicz4-cell/NostraDamnOS" target="_blank">GitHub</a>
+            </p>
         </footer>
     </div>
 
+    <!-- Moduły -->
     <script type="module" src="modules/utils.js?v=2"></script>
     <script type="module" src="modules/nlp.js?v=2"></script>
     <script type="module" src="modules/webllm.js?v=2"></script>
     <script type="module" src="app.js?v=2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.js"></script>
-    <script type="module" src="api-handler.js"></script>
+    <script type="module" src="api-handler-v2.js"></script>
     <script src="etl-bridge.js"></script>
 </body>
 </html>
