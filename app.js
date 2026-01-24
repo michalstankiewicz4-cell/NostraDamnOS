@@ -27,23 +27,29 @@ function initUI() {
 }
 
 function setupEventListeners() {
-    // Automatyczne ładowanie danych
+    // Legacy buttons - zakomentowane (nie istnieją w nowym UI)
+    /*
     const loadDataBtn = document.getElementById('loadDataBtn');
-    loadDataBtn.addEventListener('click', handleAutoLoadData);
+    if (loadDataBtn) loadDataBtn.addEventListener('click', handleAutoLoadData);
     
-    // Ręczne wczytywanie plików
     const fileInput = document.getElementById('fileInput');
-    fileInput.addEventListener('change', handleFileUpload);
+    if (fileInput) fileInput.addEventListener('change', handleFileUpload);
+    */
     
     // Ładowanie modeli
     const loadModelsBtn = document.getElementById('loadModels');
-    loadModelsBtn.addEventListener('click', handleLoadModels);
+    if (loadModelsBtn) loadModelsBtn.addEventListener('click', handleLoadModels);
     
     // Przyciski analiz
-    document.getElementById('analyzeSentiment').addEventListener('click', () => runAnalysis('sentiment'));
-    document.getElementById('analyzeTopics').addEventListener('click', () => runAnalysis('topics'));
-    document.getElementById('generateSummary').addEventListener('click', () => runAnalysis('summary'));
-    document.getElementById('compareSpeeches').addEventListener('click', () => runAnalysis('compare'));
+    const analyzeSentimentBtn = document.getElementById('analyzeSentiment');
+    const analyzeTopicsBtn = document.getElementById('analyzeTopics');
+    const generateSummaryBtn = document.getElementById('generateSummary');
+    const compareSpeechesBtn = document.getElementById('compareSpeeches');
+    
+    if (analyzeSentimentBtn) analyzeSentimentBtn.addEventListener('click', () => runAnalysis('sentiment'));
+    if (analyzeTopicsBtn) analyzeTopicsBtn.addEventListener('click', () => runAnalysis('topics'));
+    if (generateSummaryBtn) generateSummaryBtn.addEventListener('click', () => runAnalysis('summary'));
+    if (compareSpeechesBtn) compareSpeechesBtn.addEventListener('click', () => runAnalysis('compare'));
 }
 
 // Automatyczne ładowanie danych z serwera
