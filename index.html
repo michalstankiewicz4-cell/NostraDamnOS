@@ -25,6 +25,30 @@
                 <div class="etl-sidebar">
                     <h3>📊 Konfiguracja</h3>
                     
+                    <!-- Mode selector -->
+                    <fieldset style="border: 2px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-bottom: 15px;">
+                        <legend style="font-size: 13px; font-weight: 600;">Tryb</legend>
+                        <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; margin-bottom: 5px;">
+                            <input type="radio" name="etlMode" value="meta" checked> Metadane
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; margin-bottom: 5px;">
+                            <input type="radio" name="etlMode" value="full"> Pełne dane
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; font-size: 13px;">
+                            <input type="radio" name="etlMode" value="incremental"> Incremental
+                        </label>
+                    </fieldset>
+                    
+                    <div class="summary-item">
+                        <strong>Instytucja:</strong>
+                        <span id="etlInstitution">Sejm</span>
+                    </div>
+                    
+                    <div class="summary-item">
+                        <strong>Kadencja:</strong>
+                        <span id="etlTerm">10</span>
+                    </div>
+                    
                     <div class="summary-item">
                         <strong>Zakres:</strong>
                         <span id="etlRange">2 posiedzenia</span>
@@ -40,11 +64,15 @@
                         <div class="estimate-grid">
                             <div class="estimate-row">
                                 <span class="estimate-label">Rozmiar:</span>
-                                <span class="estimate-value" id="etlSize">~600 KB</span>
+                                <span class="estimate-value" id="etlSize">~700 KB</span>
+                            </div>
+                            <div class="estimate-row">
+                                <span class="estimate-label">Czas:</span>
+                                <span class="estimate-value" id="etlTime">~10-15s</span>
                             </div>
                             <div class="estimate-row" style="border:none">
-                                <span class="estimate-label">Czas:</span>
-                                <span class="estimate-value" id="etlTime">~8-12s</span>
+                                <span class="estimate-label">Requesty:</span>
+                                <span class="estimate-value" id="etlRequests">~25</span>
                             </div>
                         </div>
                     </div>
@@ -58,27 +86,130 @@
                 </div>
                 
                 <div class="etl-main">
+                    <!-- Instytucja -->
+                    <fieldset class="etl-fieldset">
+                        <legend>🏛️ Instytucja</legend>
+                        <div style="display: flex; gap: 15px;">
+                            <label style="display: flex; align-items: center; gap: 8px;">
+                                <input type="radio" name="etlInst" value="sejm" checked> Sejm
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px;">
+                                <input type="radio" name="etlInst" value="senat"> Senat
+                            </label>
+                        </div>
+                    </fieldset>
+                    
+                    <!-- Kadencja -->
+                    <fieldset class="etl-fieldset">
+                        <legend>📅 Kadencja</legend>
+                        <select id="etlTermSelect" class="form-control">
+                            <option value="10">10. kadencja (2023-obecnie)</option>
+                            <option value="9">9. kadencja (2019-2023)</option>
+                            <option value="8">8. kadencja (2015-2019)</option>
+                            <option value="7">7. kadencja (2011-2015)</option>
+                        </select>
+                    </fieldset>
+                    
+                    <!-- Zakres posiedzeń -->
                     <fieldset class="etl-fieldset">
                         <legend>🎯 Zakres posiedzeń</legend>
+                        <label style="display: block; margin-bottom: 10px; font-size: 14px;">
+                            Ostatnie X posiedzeń:
+                        </label>
                         <select id="etlRangeSelect" class="form-control">
                             <option value="1">1 posiedzenie</option>
                             <option value="2" selected>2 posiedzenia</option>
                             <option value="5">5 posiedzeń</option>
                             <option value="10">10 posiedzeń</option>
+                            <option value="20">20 posiedzeń</option>
                         </select>
                     </fieldset>
                     
+                    <!-- Dane podstawowe -->
                     <fieldset class="etl-fieldset">
-                        <legend>📝 Rodzaje danych</legend>
+                        <legend>📋 Dane podstawowe</legend>
+                        <div style="font-size: 12px; color: #718096; margin-bottom: 8px;">Zawsze pobierane</div>
                         <div class="checkbox-item">
-                            <input type="checkbox" id="etlTranscripts" checked>
-                            <label for="etlTranscripts">Wypowiedzi</label>
-                            <span class="badge badge-size">300 KB/posiedz.</span>
+                            <input type="checkbox" id="etlDeputies" checked disabled>
+                            <label for="etlDeputies">Posłowie/Senatorowie</label>
+                            <span class="badge badge-size">50 KB</span>
                         </div>
                         <div class="checkbox-item">
-                            <input type="checkbox" id="etlVotings">
+                            <input type="checkbox" id="etlSittings" checked disabled>
+                            <label for="etlSittings">Posiedzenia (lista)</label>
+                            <span class="badge badge-size">20 KB</span>
+                        </div>
+                    </fieldset>
+                    
+                    <!-- Dane per posiedzenie -->
+                    <fieldset class="etl-fieldset">
+                        <legend>📝 Dane per posiedzenie</legend>
+                        <div style="font-size: 12px; color: #718096; margin-bottom: 8px;">Incremental (per posiedzenie)</div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="etlTranscripts" data-size="300" checked>
+                            <label for="etlTranscripts">Wypowiedzi</label>
+                            <span class="badge badge-size">300 KB</span>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="etlVotings" data-size="80">
                             <label for="etlVotings">Głosowania</label>
-                            <span class="badge badge-size">80 KB/posiedz.</span>
+                            <span class="badge badge-size">80 KB</span>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="etlVotes" data-size="400">
+                            <label for="etlVotes">Głosy indywidualne</label>
+                            <span class="badge badge-size">400 KB</span>
+                        </div>
+                    </fieldset>
+                    
+                    <!-- Dane per kadencja -->
+                    <fieldset class="etl-fieldset">
+                        <legend>🗂️ Dane per kadencja</legend>
+                        <div style="font-size: 12px; color: #718096; margin-bottom: 8px;">Cała kadencja (duże!)</div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="etlInterpellations" data-size="200">
+                            <label for="etlInterpellations">Interpelacje</label>
+                            <span class="badge badge-size">200 KB</span>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="etlBills" data-size="250">
+                            <label for="etlBills">Projekty ustaw</label>
+                            <span class="badge badge-size">250 KB</span>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="etlDisclosures" data-size="500">
+                            <label for="etlDisclosures">Oświadczenia majątkowe</label>
+                            <span class="badge badge-size">500 KB</span>
+                        </div>
+                    </fieldset>
+                    
+                    <!-- Komisje -->
+                    <fieldset class="etl-fieldset">
+                        <legend>🏢 Komisje</legend>
+                        <div style="font-size: 12px; color: #718096; margin-bottom: 8px;">Wybierz dane komisji</div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="etlCommitteeSittings" data-size="80">
+                            <label for="etlCommitteeSittings">Posiedzenia komisji</label>
+                            <span class="badge badge-size">80 KB</span>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="etlCommitteeStatements" data-size="200">
+                            <label for="etlCommitteeStatements">Wypowiedzi komisji</label>
+                            <span class="badge badge-size">200 KB</span>
+                        </div>
+                        
+                        <div style="margin-top: 12px;">
+                            <label style="display: block; margin-bottom: 8px; font-weight: 500; font-size: 14px;">
+                                📋 Wybierz komisje:
+                            </label>
+                            <select id="etlCommitteeSelect" class="form-control" multiple size="6" style="font-size: 13px;">
+                                <option value="all" selected>✓ Wszystkie komisje (~30)</option>
+                                <option value="FIN">Komisja Finansów Publicznych</option>
+                                <option value="EDU">Komisja Edukacji, Nauki i Młodzieży</option>
+                                <option value="OBR">Komisja Obrony Narodowej</option>
+                                <option value="ZAG">Komisja Spraw Zagranicznych</option>
+                                <option value="INF">Komisja Infrastruktury</option>
+                            </select>
                         </div>
                     </fieldset>
                 </div>
@@ -91,7 +222,6 @@
     <h2>📥 Pobierz dane z API Sejmu</h2>
     
     <div style="display: grid; gap: 1.5rem;">
-        <!-- Konfiguracja -->
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
             <div>
                 <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Zakres posiedzeń:</label>
@@ -116,17 +246,11 @@
             </div>
         </div>
         
-        <!-- Przycisk pobierania -->
         <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1rem;">
-            <button id="apiFetchBtn" class="btn btn-primary btn-large">
-                📥 Pobierz dane z API
-            </button>
-            <button id="clearCacheBtn" class="btn" style="background: #e53e3e;">
-                🗑️ Wyczyść cache
-            </button>
+            <button id="apiFetchBtn" class="btn btn-primary btn-large">📥 Pobierz dane z API</button>
+            <button id="clearCacheBtn" class="btn" style="background: #e53e3e;">🗑️ Wyczyść cache</button>
         </div>
         
-        <!-- Progress bar -->
         <div id="apiProgress" style="display: none;">
             <div style="background: #e2e8f0; border-radius: 10px; height: 25px; overflow: hidden; margin-bottom: 0.5rem;">
                 <div id="apiProgressBar" style="background: linear-gradient(90deg, #667eea, #764ba2); height: 100%; width: 0%; transition: width 0.3s;"></div>
@@ -135,7 +259,6 @@
             <div id="apiLogs" style="max-height: 200px; overflow-y: auto; background: #f7fafc; padding: 0.75rem; border-radius: 5px; margin-top: 0.5rem; font-family: monospace; font-size: 0.85rem;"></div>
         </div>
         
-        <!-- Status -->
         <div id="apiStatus" style="padding: 1rem; background: #f7fafc; border-radius: 5px; border-left: 4px solid #667eea; display: none;">
             <div style="font-weight: 500; margin-bottom: 0.25rem;">✅ Pobrano dane:</div>
             <div id="apiStatusDetails" style="font-size: 0.9rem; color: #666;"></div>
@@ -143,80 +266,13 @@
     </div>
 </section>
 
-<div class="divider" style="margin: 2rem 0; text-align: center; color: #999;">lub</div>
-
-            <!-- Sekcja wczytywania danych -->
-            <section class="upload-section">
-                <h2>📁 Wczytaj dane</h2>
-                
-                <!-- Automatyczne ładowanie z folderu data -->
-                <div class="auto-load">
-                    <button id="loadDataBtn" class="btn btn-primary btn-large">
-                        🚀 Wczytaj dane z serwera
-                    </button>
-                    <p class="hint">Automatycznie wczyta wszystkie pliki JSONL z folderu /data/</p>
-                </div>
-
-                <div class="divider">lub</div>
-
-                <!-- Ręczne wczytywanie pliku -->
-                <div class="upload-area">
-                    <input type="file" id="fileInput" accept=".jsonl" />
-                    <label for="fileInput" class="upload-label">
-                        Wybierz plik JSONL lub przeciągnij tutaj
-                    </label>
-                </div>
-                
-                <!-- Informacje o załadowanych danych -->
-                <div id="dataStatus" class="data-status"></div>
-                <div id="fileInfo" class="file-info"></div>
-            </section>
-
-            <!-- Sekcja statusu modeli AI -->
-            <section class="models-section">
-                <h2>🤖 Status modeli AI</h2>
-                <div class="model-status">
-                    <div class="model-item">
-                        <span class="model-name">WebLLM (4B)</span>
-                        <span id="webllmStatus" class="status">⏳ Nieaktywny</span>
-                    </div>
-                    <div class="model-item">
-                        <span class="model-name">Transformers.js</span>
-                        <span id="transformersStatus" class="status">⏳ Nieaktywny</span>
-                    </div>
-                </div>
-                <button id="loadModels" class="btn btn-primary">Załaduj modele</button>
-            </section>
-
-            <!-- Sekcja analiz -->
-            <section class="analysis-section">
-                <h2>📊 Analizy</h2>
-                <div class="analysis-buttons">
-                    <button id="analyzeSentiment" class="btn" disabled>Analiza nastrojów</button>
-                    <button id="analyzeTopics" class="btn" disabled>Wykryj tematy</button>
-                    <button id="generateSummary" class="btn" disabled>Generuj streszczenia</button>
-                    <button id="compareSpeeches" class="btn" disabled>Porównaj wypowiedzi</button>
-                </div>
-            </section>
-
-            <!-- Sekcja wyników -->
-            <section class="results-section">
-                <h2>📈 Wyniki</h2>
-                <div id="results" class="results-container">
-                    <p class="placeholder">Wczytaj dane i uruchom analizę, aby zobaczyć wyniki</p>
-                </div>
-            </section>
         </main>
 
         <footer>
-            <p>
-                🚀 Projekt open-source | 
-                <a href="https://github.com/michalstankiewicz4-cell/NostraDamnOS" target="_blank">GitHub</a>
-            </p>
+            <p>🚀 Projekt open-source | <a href="https://github.com/michalstankiewicz4-cell/NostraDamnOS" target="_blank">GitHub</a></p>
         </footer>
     </div>
 
-    <!-- Moduły -->
     <script type="module" src="modules/utils.js?v=2"></script>
     <script type="module" src="modules/nlp.js?v=2"></script>
     <script type="module" src="modules/webllm.js?v=2"></script>
