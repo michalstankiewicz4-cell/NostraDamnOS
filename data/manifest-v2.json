@@ -1,0 +1,101 @@
+{
+  "version": "0.4.0",
+  "updated": "2025-01-23",
+  "description": "Kompletne dane z API Sejmu i Senatu RP - 11 typów danych",
+  "source": "final",
+  "structure": {
+    "poslowie.jsonl": {
+      "scope": "global",
+      "description": "Posłowie + senatorowie + kluby + okręgi + biura",
+      "sources": [
+        "sejm/term10/MP",
+        "senat/term11/senators"
+      ]
+    },
+    "posiedzenia.jsonl": {
+      "scope": "kadencja → posiedzenie",
+      "description": "Posiedzenia Sejmu i Senatu",
+      "sources": [
+        "sejm/term10/proceedings",
+        "senat/term11/proceedings"
+      ]
+    },
+    "wypowiedzi.jsonl": {
+      "scope": "kadencja → posiedzenie → transcript",
+      "description": "Stenogramy Sejmu + Senatu + komisji",
+      "sources": [
+        "sejm/term10/proceedings/{sitting}/{date}/transcripts/{num}",
+        "senat/term11/proceedings/{sitting}/{date}/transcripts/{num}"
+      ]
+    },
+    "glosowania.jsonl": {
+      "scope": "kadencja → posiedzenie",
+      "description": "Wyniki głosowań (Sejm + Senat)",
+      "sources": [
+        "sejm/term10/votings/{sitting}",
+        "senat/term11/votings/{sitting}"
+      ]
+    },
+    "glosy.jsonl": {
+      "scope": "kadencja → posiedzenie → głosowanie",
+      "description": "Głosy indywidualne posłów i senatorów",
+      "sources": [
+        "sejm/term10/votings/{sitting}/{votingNumber}/votes",
+        "senat/term11/votings/{sitting}/{votingNumber}/votes"
+      ]
+    },
+    "interpelacje.jsonl": {
+      "scope": "global",
+      "description": "Interpelacje + zapytania + odpowiedzi",
+      "sources": [
+        "sejm/term10/interpellations",
+        "sejm/term10/questions"
+      ]
+    },
+    "projekty_ustaw.jsonl": {
+      "scope": "global",
+      "description": "Druki sejmowe + senackie (projekty ustaw)",
+      "sources": [
+        "sejm/term10/prints",
+        "sejm/term10/processes"
+      ]
+    },
+    "komisje.jsonl": {
+      "scope": "global",
+      "description": "Lista komisji + składy (Sejm + Senat)",
+      "sources": [
+        "sejm/term10/committees",
+        "senat/term11/committees"
+      ]
+    },
+    "komisje_posiedzenia.jsonl": {
+      "scope": "komisja → posiedzenie",
+      "description": "Posiedzenia komisji",
+      "sources": [
+        "sejm/term10/committees/{code}/sittings",
+        "senat/term11/committees/{code}/sittings"
+      ]
+    },
+    "komisje_wypowiedzi.jsonl": {
+      "scope": "komisja → posiedzenie → transcript",
+      "description": "Stenogramy posiedzeń komisji",
+      "sources": [
+        "committees/{code}/sittings/{sittingId}/transcripts"
+      ]
+    },
+    "oswiadczenia_majatkowe.jsonl": {
+      "scope": "global",
+      "description": "Oświadczenia majątkowe (metadata + PDF)",
+      "sources": [
+        "sejm/term10/MP/{id}/statements"
+      ]
+    }
+  },
+  "files": [],
+  "notes": {
+    "design": "Każdy typ danych w osobnym pliku - 11 kategorii",
+    "hierarchy": "Global → Kadencja → Posiedzenie → Szczegóły",
+    "normalization": "Wszystkie dane znormalizowane z memberID + role",
+    "updateFrequency": "Dane aktualizowane przez użytkownika przez fetch.html"
+  }
+}

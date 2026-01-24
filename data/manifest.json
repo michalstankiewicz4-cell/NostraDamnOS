@@ -1,0 +1,36 @@
+{
+  "version": "1.0.0",
+  "lastUpdate": "2026-01-24T13:00:00Z",
+  "dataDirectory": "/data/final/",
+  "files": {
+    "poslowie": {
+      "path": "poslowie.jsonl",
+      "type": "deputies",
+      "count": 0,
+      "description": "Lista posłów - PUSTA (pobierz dane z API)"
+    },
+    "wypowiedzi": {
+      "path": "wypowiedzi.jsonl",
+      "type": "statements",
+      "count": 0,
+      "description": "Wypowiedzi parlamentarne - PUSTE (pobierz dane z API)"
+    },
+    "glosowania": {
+      "path": "glosowania.jsonl",
+      "type": "votings",
+      "count": 0,
+      "description": "Głosowania - PUSTE (pobierz dane z API)"
+    },
+    "glosy": {
+      "path": "glosy.jsonl",
+      "type": "votes",
+      "count": 0,
+      "description": "Głosy indywidualne - PUSTE (pobierz dane z API)"
+    }
+  },
+  "note": "Dane zostały wyczyszczone. Użyj przycisku 'Pobierz dane z API' w aplikacji aby pobrać aktualne dane z API Sejmu.",
+  "instructions": {
+    "pl": "Kliknij przycisk '📥 Pobierz dane z API' w aplikacji, aby pobrać dane.",
+    "en": "Click '📥 Fetch data from API' button in the app to download data."
+  }
+}

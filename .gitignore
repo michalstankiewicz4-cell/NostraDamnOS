@@ -1,0 +1,44 @@
+# Logs
+*.log
+fetch-progress.log
+
+# Backups
+*.backup
+*.OLD.js
+*.bak
+
+# Debug files
+debug-*.html
+debug-*.json
+
+# Temp files
+*.tmp
+*.temp
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Node
+node_modules/
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Data duplicates (keep only /final/ and /sejm/)
+/data/*.jsonl
+/data/sample.*
+
+# Local data (ignoruj wypełnione pliki - każdy pobiera sam)
+# GitHub będzie miał puste pliki jako template
+/data/final/*.jsonl.local
+/data/sejm/*.jsonl.local
