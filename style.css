@@ -312,7 +312,7 @@ footer a:hover {
     border-right: 2px solid #e2e8f0;
     padding: 25px;
     overflow-y: auto;
-    max-height: 80vh;
+    max-height: 50vh;
 }
 
 .etl-sidebar h3 {
@@ -325,7 +325,7 @@ footer a:hover {
     flex: 1;
     padding: 30px;
     overflow-y: auto;
-    max-height: 80vh;
+    max-height: 50vh;
 }
 
 /* Mode Selector */
