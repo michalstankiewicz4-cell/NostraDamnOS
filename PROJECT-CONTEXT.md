@@ -10,7 +10,7 @@
 
 ### Lokalne Repozytorium
 ```
-C:\Users\micha\source\repos\analiza-parlamentarna-BACKUP
+C:\Users\micha\source\repos\NostraDamnOS
 ```
 
 ### GitHub Repository
@@ -29,7 +29,7 @@ http://localhost:8766
 ```
 **Uruchomienie:**
 ```bash
-cd C:\Users\micha\source\repos\analiza-parlamentarna-BACKUP
+cd C:\Users\micha\source\repos\NostraDamnOS
 npx http-server -p 8766
 ```
 
