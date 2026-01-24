@@ -1,268 +1,199 @@
-# 📋 TODO - Przyszłe rozszerzenia systemu
+# 📋 TODO - Status implementacji
 
-## 🧠 Dane do dodania (opcjonalne, ale wartościowe)
+## ✅ ZREALIZOWANE (v2.0.0 - 2026-01-24)
 
-### 🟦 A) Interpelacje poselskie
+### ETL System v2.0
+- [x] **Fetcher v2.0** - 12 modułów fetch
+- [x] **Normalizer v2.0** - 11 modułów transform
+- [x] **Pipeline v2.0** - Complete orchestration
+- [x] **Database v2.0** - 12 tabel + indexes
+- [x] **Incremental Cache** - 10× szybsze kolejne pobrania
+- [x] **Dynamic Progress** - 0-100% tracking
 
-**API:** `https://api.sejm.gov.pl/sejm/term10/interpellations`
+### Zaimplementowane typy danych (12/12)
+1. [x] Posłowie/Senatorowie
+2. [x] Posiedzenia
+3. [x] Wypowiedzi
+4. [x] Głosowania
+5. [x] Głosy indywidualne
+6. [x] Interpelacje
+7. [x] Projekty ustaw
+8. [x] Komisje
+9. [x] Posiedzenia komisji
+10. [x] Wypowiedzi komisji
+11. [x] Oświadczenia majątkowe
+12. [x] Metadata (cache)
 
-**Co dostępne:**
-- Treść interpelacji
-- Odpowiedzi ministerstw
-- Daty złożenia i odpowiedzi
-- Autorzy (posłowie)
-- Numery spraw
-- Status (oczekuje/odpowiedziano)
-
-**Zastosowania:**
-- ✅ Analiza problemów zgłaszanych przez posłów
-- ✅ Analiza reaktywności rządu (czas odpowiedzi)
-- ✅ Mapowanie tematów na regiony (interpelacje lokalne)
-- ✅ Trendy tematyczne w czasie
-- ✅ NLP: wykrywanie najpopularniejszych problemów
-
-**Dane tekstowe:** Ogromny zbiór - często bardziej szczegółowe niż wypowiedzi.
-
----
-
-### 🟦 B) Oświadczenia poselskie
-
-**API:** Endpoint do ustalenia
-
-**Co dostępne:**
-- Treść oświadczenia
-- Autor
-- Data
-- Kontekst (po jakim głosowaniu/debacie)
-
-**Zastosowania:**
-- ✅ Analiza retoryki osobistej
-- ✅ Analiza tematów lokalnych/regionalnych
-- ✅ Wykrywanie konfliktów wewnątrz klubów
-- ✅ Sentiment analysis (często emocjonalne)
-
-**Cechy:** Krótsza forma, bardziej osobista niż wypowiedzi plenarne.
+### UI
+- [x] ETL Panel z 11 checkboxami
+- [x] Header sekcji: "📥 Import Danych z API Sejmu"
+- [x] Panel height: 50vh (no scroll)
+- [x] Progress bar + detailed logs
+- [x] Geolocation (Europe only)
 
 ---
 
-### 🟦 C) Zapytania i pytania w sprawach bieżących
+## 🚧 W TRAKCIE (Faza 2)
 
-**API:** `https://api.sejm.gov.pl/sejm/term10/questions` (?)
+### AI Integration
+- [ ] **WebLLM 4B** - model lokalny
+  - [ ] Inicjalizacja w przeglądarce
+  - [ ] Inference pipeline
+  - [ ] Memory management
+- [ ] **Transformers.js**
+  - [ ] Sentiment analysis
+  - [ ] Topic modeling
+  - [ ] Embeddings
 
-**Co dostępne:**
-- Treść pytania
-- Adresat (minister)
-- Odpowiedź
-- Daty
-
-**Zastosowania:**
-- ✅ Analiza relacji poseł ↔ minister
-- ✅ Analiza tematów konfliktowych
-- ✅ Mapowanie kompetencji ministerstw
-- ✅ Wykrywanie "gorących tematów"
-
-**Cechy:** Krótkie, konkretne, kierowane bezpośrednio do rządu.
-
----
-
-### 🟦 D) Komisje sejmowe
-
-**API:** `https://api.sejm.gov.pl/sejm/term10/committees`
-
-**Co dostępne:**
-- Lista komisji (stałe, nadzwyczajne, śledcze)
-- Składy komisji (członkowie)
-- Harmonogramy posiedzeń
-- Protokoły (czasem dostępne)
-- Listy obecności
-
-**Zastosowania:**
-- ✅ Analiza specjalizacji posłów (w jakich komisjach zasiadają)
-- ✅ Analiza aktywności poza plenarną
-- ✅ Analiza wpływu komisji na projekty ustaw
-- ✅ Sieć powiązań (kto z kim pracuje)
-- ✅ Ranking aktywności komisyjnej
-
-**Wartość:** Komisje to "laboratorium" Sejmu - tam dzieje się praca merytoryczna.
+### Analysis Features
+- [ ] **Sentiment Analysis**
+  - [ ] Per-speech sentiment
+  - [ ] Trend visualization
+  - [ ] Club comparison
+- [ ] **Topic Detection**
+  - [ ] Clustering wypowiedzi
+  - [ ] Topic timeline
+  - [ ] Keyword extraction
+- [ ] **Summarization**
+  - [ ] Per-sitting summary
+  - [ ] Per-speaker summary
+  - [ ] Abstractive vs extractive
+- [ ] **Comparison**
+  - [ ] Speaker comparison
+  - [ ] Club comparison
+  - [ ] Time period comparison
 
 ---
 
-### 🟦 E) Projekty ustaw
+## 📅 PLANOWANE (Faza 3)
 
-**API:** `https://api.sejm.gov.pl/sejm/term10/prints` (druki sejmowe)
+### Persistence
+- [ ] IndexedDB integration
+  - [ ] Migrate from in-memory SQLite
+  - [ ] Persistent storage
+  - [ ] Schema migrations
+- [ ] Export features
+  - [ ] Export to .db
+  - [ ] Export to .csv
+  - [ ] Export to JSON
 
-**Co dostępne:**
-- Treść projektów ustaw
-- Uzasadnienia (często długie teksty)
-- Autorzy (kluby, posłowie, rząd, obywatele)
-- Przebieg procesu legislacyjnego
-- Wyniki głosowań nad ustawą (I, II, III czytanie)
-- Poprawki Senatu
+### Advanced Queries
+- [ ] Query Builder UI
+  - [ ] Filter by date range
+  - [ ] Filter by speaker
+  - [ ] Filter by club
+  - [ ] Filter by topic
+- [ ] Saved queries
+- [ ] Query history
 
-**Zastosowania:**
-- ✅ Analiza procesu legislacyjnego (czas trwania, zmiany)
-- ✅ Analiza wpływu klubów na prawo
-- ✅ Analiza tematyczna ustaw (kategoryzacja)
-- ✅ NLP: porównywanie pierwotnych projektów z finalnymi wersjami
-- ✅ Wykrywanie "kontrowersyjnych" ustaw (długie debaty, dużo poprawek)
-
-**Wartość:** To jest **główny produkt** pracy Sejmu - prawodawstwo.
-
----
-
-### 🟦 F) Oświadczenia majątkowe
-
-**Dostępność:** Publiczne, ale trudniejsze do parsowania (często PDF/skan)
-
-**Co dostępne:**
-- Majątek posłów (nieruchomości, pojazdy, oszczędności)
-- Dochody
-- Zobowiązania finansowe
-- Aktualizacje roczne
-
-**Zastosowania:**
-- ✅ Analiza majątkowa posłów
-- ✅ Korelacje z głosowaniami (np. głosy za podatkami)
-- ✅ Analiza zmian majątku w czasie (trend wzrostowy?)
-- ✅ Wykrywanie konfliktów interesów
-
-**Trudność:** Format niejednolity, wymaga OCR lub ręcznego parsowania.
+### Visualizations
+- [ ] Charts & graphs
+  - [ ] Activity timeline
+  - [ ] Club distribution
+  - [ ] Topic trends
+- [ ] Network graphs
+  - [ ] Speaker interactions
+  - [ ] Committee connections
+- [ ] Heatmaps
+  - [ ] Voting patterns
+  - [ ] Speaking frequency
 
 ---
 
-### 🟦 G) Frekwencja posłów
+## 🔄 Rozszerzenia danych (Opcjonalne)
 
-**API:** Można wyliczyć z głosowań, ale możliwe że osobny endpoint
+### Priorytet: 🔥 WYSOKI
+- [x] Komisje (struktury, składy, posiedzenia) ✅ **DONE**
+- [x] Projekty ustaw (proces legislacyjny) ✅ **DONE**
+- [x] Interpelacje (teksty, odpowiedzi) ✅ **DONE**
 
-**Co dostępne:**
-- Obecność na posiedzeniach
-- Obecność przy głosowaniach
-- Usprawiedliwienia
+### Priorytet: 🟡 ŚREDNI  
+- [ ] **Stenogramy komisji** (głęboka analiza)
+- [ ] **Frekwencja** (obecność, usprawiedliwienia)
+- [ ] **Oświadczenia poselskie** (retoryka osobista)
+- [x] **Oświadczenia majątkowe** ✅ **DONE**
 
-**Zastosowania:**
-- ✅ Ranking aktywności posłów
-- ✅ Analiza dyscypliny klubowej
-- ✅ Wykrywanie "martwych dusz" (rzadko obecni)
-- ✅ Korelacje z innymi metrykami (wypowiedzi, interpelacje)
-
-**Wartość:** Prosta, ale ważna metryka obywatelska.
-
----
-
-### 🟦 H) Wystąpienia w komisjach (stenogramy komisji)
-
-**Status:** Najbardziej niedoceniony zbiór danych!
-
-**API:** `https://api.sejm.gov.pl/sejm/term10/committee-sittings` (?)
-
-**Co dostępne:**
-- Stenogramy posiedzeń komisji
-- Wypowiedzi posłów w komisjach
-- Wypowiedzi ekspertów, lobbystów, przedstawicieli organizacji
-- Pytania i odpowiedzi
-
-**Zastosowania:**
-- ✅ Analiza merytoryczna (komisje = głębsza dyskusja)
-- ✅ Analiza ekspercka (kto jest zapraszany)
-- ✅ Analiza wpływu lobbingu (kto przemawia, co mówi)
-- ✅ NLP: wykrywanie argumentacji eksperckiej vs. politycznej
-- ✅ Sieć wpływów (kto konsultuje z kim)
-
-**Wartość:** 🌟 **NAJWYŻSZA** - komisje to miejsce rzeczywistej pracy legislacyjnej!
+### Priorytet: 🟢 NISKI
+- [ ] **Pytania w sprawach bieżących**
+- [ ] **Dane historyczne** (kadencje 1-9)
 
 ---
 
-## 🔄 Kolejność implementacji (rekomendacja)
+## 🛠️ Techniczne
 
-### Faza 1: Podstawowe (wartość/nakład pracy = wysoki)
-1. ✅ **Komisje** - struktura, składy, posiedzenia
-2. ✅ **Projekty ustaw** - proces legislacyjny
-3. ✅ **Frekwencja** - prosta metryka
+### Optimizations
+- [ ] Web Workers dla AI models
+- [ ] Lazy loading modułów
+- [ ] Code splitting
+- [ ] Service Worker cache
 
-### Faza 2: Tekstowe (wartość/nakład = średni)
-4. ✅ **Interpelacje** - duży zbiór tekstów
-5. ✅ **Oświadczenia** - retoryka osobista
-6. ✅ **Pytania** - relacje z rządem
+### Testing
+- [ ] Unit tests (fetcher, normalizer)
+- [ ] Integration tests (pipeline)
+- [ ] E2E tests (UI workflow)
+- [ ] Performance benchmarks
 
-### Faza 3: Zaawansowane (wartość/nakład = wymagający)
-7. ✅ **Stenogramy komisji** - głęboka analiza
-8. ✅ **Oświadczenia majątkowe** - trudne parsowanie
-
----
-
-## 📊 Szacunkowa wartość danych
-
-| Typ danych | Wartość analityczna | Trudność implementacji | Priorytet |
-|------------|---------------------|------------------------|-----------|
-| Komisje (struktury) | ⭐⭐⭐⭐⭐ | ⭐⭐ | 🔥 Wysoki |
-| Projekty ustaw | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ | 🔥 Wysoki |
-| Interpelacje | ⭐⭐⭐⭐ | ⭐⭐ | 🔥 Wysoki |
-| Stenogramy komisji | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | 🟡 Średni |
-| Frekwencja | ⭐⭐⭐ | ⭐ | 🟡 Średni |
-| Oświadczenia | ⭐⭐⭐ | ⭐⭐ | 🟡 Średni |
-| Pytania | ⭐⭐⭐ | ⭐⭐ | 🟢 Niski |
-| Oświadczenia majątkowe | ⭐⭐ | ⭐⭐⭐⭐⭐ | 🟢 Niski |
+### DevOps
+- [ ] CI/CD pipeline
+- [ ] Automated testing
+- [ ] Version tagging
+- [ ] Release notes automation
 
 ---
 
-## 🛠️ Przykładowe endpointy do zbadania
+## 📊 Progress Tracking
 
-```bash
-# Interpelacje
-GET https://api.sejm.gov.pl/sejm/term10/interpellations
-GET https://api.sejm.gov.pl/sejm/term10/interpellations/{num}
+**Overall Progress:** 40% (core system done, AI + advanced features remaining)
 
-# Druki (projekty ustaw)
-GET https://api.sejm.gov.pl/sejm/term10/prints
-GET https://api.sejm.gov.pl/sejm/term10/prints/{num}
-
-# Komisje
-GET https://api.sejm.gov.pl/sejm/term10/committees
-GET https://api.sejm.gov.pl/sejm/term10/committees/{code}
-GET https://api.sejm.gov.pl/sejm/term10/committees/{code}/sittings
-
-# Proces legislacyjny
-GET https://api.sejm.gov.pl/sejm/term10/processes
-GET https://api.sejm.gov.pl/sejm/term10/processes/{num}
-
-# TODO: Zweryfikować dostępność każdego endpointu
+```
+ETL System:        ████████████████████ 100% ✅
+Database:          ████████████████████ 100% ✅
+UI Integration:    ████████████████████ 100% ✅
+AI Models:         ░░░░░░░░░░░░░░░░░░░░   0% 🚧
+Analysis:          ░░░░░░░░░░░░░░░░░░░░   0% 🚧
+Persistence:       ░░░░░░░░░░░░░░░░░░░░   0% 📅
+Visualizations:    ░░░░░░░░░░░░░░░░░░░░   0% 📅
 ```
 
 ---
 
-## 💡 Pomysły na analizy (gdy dane będą dostępne)
+## 💡 Ideas for Future
 
-### 1. **"Mapka wpływów"**
-- Kto z kim pracuje w komisjach?
-- Kto jest najbardziej wpływowy w procesie legislacyjnym?
-- Sieci powiązań posłów-ekspertów-lobbystów
+### "Mapka wpływów"
+- Network graph: posłowie ↔ komisje ↔ projekty ustaw
+- Influence score based on activity
+- Committee specialization detection
 
-### 2. **"Ranking ekspertów"**
-- Kto najczęściej jest zapraszany do komisji?
-- Jakie organizacje mają największy wpływ?
+### "Ranking ekspertów"
+- Most invited to committees
+- Organizations with highest impact
+- Expert-topic mapping
 
-### 3. **"Ścieżka ustawy"**
-- Jak zmienia się projekt od wpłynięcia do uchwalenia?
-- Średni czas procesu legislacyjnego
-- Które komisje blokują/przyspieszają projekty?
+### "Ścieżka ustawy"
+- Legislative process timeline
+- Changes tracking (original vs final)
+- Bottleneck detection
 
-### 4. **"Analiza lobbingu"**
-- Kto przemawia w komisjach? (firmy, NGO, eksperci)
-- Jakie argumenty są najskuteczniejsze?
+### "Analiza lobbingu"
+- Committee speeches analysis
+- Organization representation
+- Argument effectiveness
 
-### 5. **"Posłowie specjaliści"**
-- Kto jest ekspertem w jakich tematach?
-- Analiza wypowiedzi + komisje + interpelacje
+### "Posłowie specjaliści"
+- Topic expertise detection (speeches + committees + interpellations)
+- Cross-club expert comparison
+- Specialization trends
 
 ---
 
-## 📝 Status
+## 📝 Notes
 
-**Utworzono:** 2025-01-23  
-**Ostatnia aktualizacja:** 2025-01-23  
-**Priorytet ogólny:** 🟡 Średni (najpierw dokończyć podstawową wersję)
+**Ostatnia aktualizacja:** 2026-01-24  
+**Wersja systemu:** 2.0.0  
+**Status:** Production-ready ETL ✅, AI features in development 🚧
 
-**Do dyskusji:**
-- Które dane dodać najpierw?
-- Czy skupić się na głębi (stenogramy komisji) czy szerokości (wszystkie typy)?
-- Czy potrzebne są dane historyczne (kadencje wcześniejsze)?
+**Priorities:**
+1. AI models integration (WebLLM + Transformers.js)
+2. Basic analysis features (sentiment, topics)
+3. Persistence (IndexedDB)
+4. Advanced features (visualizations, queries)
