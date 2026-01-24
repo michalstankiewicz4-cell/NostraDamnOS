@@ -298,7 +298,9 @@ footer a:hover {
 }
 /* ETL PANEL STYLES */
 .etl-panel {
-    display: flex;
+    display: grid;
+    grid-template-columns: 400px 1fr;
+    gap: 0;
     background: white;
     border-radius: 15px;
     box-shadow: 0 4px 20px rgba(0,0,0,0.1);
@@ -307,12 +309,9 @@ footer a:hover {
 }
 
 .etl-sidebar {
-    width: 340px;
     background: #f8f9fa;
     border-right: 2px solid #e2e8f0;
     padding: 25px;
-    overflow-y: auto;
-    max-height: 50vh;
 }
 
 .etl-sidebar h3 {
@@ -322,10 +321,7 @@ footer a:hover {
 }
 
 .etl-main {
-    flex: 1;
     padding: 30px;
-    overflow-y: auto;
-    max-height: 50vh;
 }
 
 /* Mode Selector */

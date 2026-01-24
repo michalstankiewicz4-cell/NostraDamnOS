@@ -117,16 +117,27 @@
                     <!-- Zakres posiedzeń -->
                     <fieldset class="etl-fieldset">
                         <legend>🎯 Zakres posiedzeń</legend>
+                        
                         <label style="display: block; margin-bottom: 10px; font-size: 14px;">
                             Ostatnie X posiedzeń:
                         </label>
-                        <select id="etlRangeSelect" class="form-control">
+                        <select id="etlRangeSelect" class="form-control" style="margin-bottom: 15px;">
                             <option value="1">1 posiedzenie</option>
                             <option value="2" selected>2 posiedzenia</option>
                             <option value="5">5 posiedzeń</option>
                             <option value="10">10 posiedzeń</option>
                             <option value="20">20 posiedzeń</option>
                         </select>
+                        
+                        <label style="display: block; margin-bottom: 10px; font-size: 14px;">
+                            Zakres:
+                        </label>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <span style="font-size: 14px;">od</span>
+                            <input type="number" id="etlRangeFrom" value="1" min="1" style="width: 65px; padding: 6px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px;">
+                            <span style="font-size: 14px;">do:</span>
+                            <input type="number" id="etlRangeTo" value="3" min="1" style="width: 65px; padding: 6px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px;">
+                        </div>
                     </fieldset>
                     
                     <!-- Dane podstawowe -->
