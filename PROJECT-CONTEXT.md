@@ -6,6 +6,24 @@
 
 ---
 
+## 🚨 Zasady Pracy (KRYTYCZNE)
+
+### Workflow
+- ❌ **Nigdy nie wprowadzaj własnych pomysłów bez pytania**
+- ✅ **Zawsze pytaj przed zmianami**
+- 🖥️ **Pracujemy na lokalnym modelu**
+- 💾 **Na lokalnym trzymamy też bazę**
+- 🧪 **Na GH wysyłamy TYLKO działający projekt po testach i za zgodą**
+- 🚫 **NIE wysyłamy cache, danych na GH**
+
+### Pliki do pominięcia (ETL/DB)
+Tych formatów **NIE** używamy przy ściąganiu, formatowaniu i bazie danych:
+- PDF, DOC/DOCX, XLS/XLSX, PPT/PPTX
+- RTF, ODT/ODS/ODP
+- ZIP/RAR/7z, ISO, BIN
+
+---
+
 ## 📍 Lokalizacje
 
 ### Lokalne Repozytorium
