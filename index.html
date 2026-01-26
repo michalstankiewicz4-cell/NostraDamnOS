@@ -14,6 +14,88 @@
     </script>
 </head>
 <body>
+    <!-- Console Log Interceptor - catches ALL logs and redirects to UI -->
+    <script>
+        // Buffer for early logs (before UI console exists)
+        window.logBuffer = [];
+        window.originalConsoleLog = console.log;
+        
+        // Override console.log globally
+        console.log = function(...args) {
+            // Still log to browser console
+            window.originalConsoleLog.apply(console, args);
+            
+            // Format message
+            const message = args.map(arg => {
+                if (typeof arg === 'object') {
+                    try {
+                        return JSON.stringify(arg, null, 2);
+                    } catch {
+                        return String(arg);
+                    }
+                }
+                return String(arg);
+            }).join(' ');
+            
+            const timestamp = new Date().toLocaleTimeString();
+            const formattedLog = `[${timestamp}] ${message}`;
+            
+            // Try to add to UI consoles
+            const apiLogs = document.getElementById('apiLogs');
+            const floatingLogs = document.getElementById('floatingConsoleLogs');
+            
+            if (apiLogs || floatingLogs) {
+                const line = document.createElement('div');
+                line.textContent = formattedLog;
+                line.style.fontSize = '0.85rem';
+                line.style.fontFamily = 'monospace';
+                line.style.lineHeight = '1.6';
+                
+                if (apiLogs) {
+                    apiLogs.appendChild(line.cloneNode(true));
+                    apiLogs.scrollTop = apiLogs.scrollHeight;
+                }
+                if (floatingLogs) {
+                    floatingLogs.appendChild(line.cloneNode(true));
+                    floatingLogs.scrollTop = floatingLogs.scrollHeight;
+                }
+            } else {
+                // Buffer for later (console doesn't exist yet)
+                window.logBuffer.push(formattedLog);
+            }
+        };
+        
+        // Flush buffer when DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            const apiLogs = document.getElementById('apiLogs');
+            const floatingLogs = document.getElementById('floatingConsoleLogs');
+            
+            if (window.logBuffer.length > 0 && (apiLogs || floatingLogs)) {
+                // Clear placeholder text
+                if (apiLogs) apiLogs.innerHTML = '';
+                if (floatingLogs) floatingLogs.innerHTML = '';
+                
+                // Add buffered logs
+                window.logBuffer.forEach(formattedLog => {
+                    const line = document.createElement('div');
+                    line.textContent = formattedLog;
+                    line.style.fontSize = '0.85rem';
+                    line.style.fontFamily = 'monospace';
+                    line.style.lineHeight = '1.6';
+                    
+                    if (apiLogs) apiLogs.appendChild(line.cloneNode(true));
+                    if (floatingLogs) floatingLogs.appendChild(line.cloneNode(true));
+                });
+                
+                // Clear buffer
+                window.logBuffer = [];
+                
+                if (apiLogs) apiLogs.scrollTop = apiLogs.scrollHeight;
+                if (floatingLogs) floatingLogs.scrollTop = floatingLogs.scrollHeight;
+            }
+        });
+    </script>
+    
     <div class="container">
         <header>
             <h1>🏛️ Analiza Parlamentarna</h1>
@@ -79,6 +161,16 @@
                                 <span class="estimate-label">Requesty:</span>
                                 <span class="estimate-value" id="etlRequests">~25</span>
                             </div>
+                        </div>
+                    </div>
+                    
+                    <div style="background: #f8f9fa; border: 2px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-bottom: 15px;">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px;">
+                            <input type="checkbox" id="etlRodoFilter" checked style="cursor: pointer;">
+                            <span style="font-weight: 600;">🔒 Filtr RODO</span>
+                        </label>
+                        <div style="font-size: 12px; color: #718096; margin-top: 6px; line-height: 1.4;">
+                            Usuwa dane wrażliwe: email, telefon, PESEL
                         </div>
                     </div>
                     
@@ -239,7 +331,7 @@
                     <div id="apiProgressBar" style="background: linear-gradient(90deg, #667eea, #764ba2); height: 100%; width: 0%; transition: width 0.3s;"></div>
                 </div>
                 <div id="apiProgressText" style="text-align: center; font-size: 0.9rem; color: #666; margin-bottom: 1rem;">Postęp: 0%</div>
-                <div id="apiLogs" style="max-height: 300px; overflow-y: auto; background: #f7fafc; padding: 0.75rem; border-radius: 5px; font-family: monospace; font-size: 0.85rem; line-height: 1.6;">🔧 Console gotowa do logowania...</div>
+                <div id="apiLogs" style="max-height: 300px; overflow-y: auto; background: #f7fafc; padding: 0.75rem; border-radius: 5px; font-family: monospace; font-size: 0.85rem; line-height: 1.6;"></div>
             </div>
             
             <!-- Status -->
@@ -304,7 +396,6 @@
             <button id="closeFloatingConsole" style="background: transparent; border: none; color: white; font-size: 20px; cursor: pointer; padding: 0; width: 24px; height: 24px;">×</button>
         </div>
         <div id="floatingConsoleLogs" style="padding: 12px; max-height: 440px; overflow-y: auto; background: #f7fafc; font-family: monospace; font-size: 0.85rem; line-height: 1.6;">
-            🔧 Floating console ready...
         </div>
     </div>
 

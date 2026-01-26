@@ -4,6 +4,7 @@
 import { runFetcher, safeFetch } from './fetcher/fetcher.js';
 import { runNormalizer } from './normalizer/normalizer.js';
 import { db2 } from './modules/database-v2.js';
+import { applyRodo } from './modules/rodo.js';
 
 export async function runPipeline(config, callbacks = {}) {
     console.log('🚀 Pipeline v2.0 - Starting ETL');
@@ -24,6 +25,13 @@ export async function runPipeline(config, callbacks = {}) {
         
         if (!db2.database) {
             await db2.init();
+        }
+        
+        // Log RODO filter status
+        if (config.rodoFilter) {
+            onLog('🔒 RODO Filter: ACTIVE (removing sensitive data)');
+        } else {
+            onLog('⚠️ RODO Filter: DISABLED (all data included)');
         }
         
         // Step 2: Check cache and determine what to fetch (5-10%)
@@ -68,8 +76,18 @@ export async function runPipeline(config, callbacks = {}) {
         // Call real fetcher - returns all raw data
         const raw = await runFetcher(fetchConfig);
         
+        // Apply RODO filter if enabled
+        let processedRaw = raw;
+        
+        if (config.rodoFilter) {
+            onLog('🛡️ RODO: removing sensitive fields...');
+            processedRaw = applyRodo(raw);
+        } else {
+            onLog('⚠️ RODO disabled — sensitive fields included');
+        }
+        
         // Count fetched records
-        totalRecords = Object.values(raw).reduce((sum, arr) => 
+        totalRecords = Object.values(processedRaw).reduce((sum, arr) => 
             sum + (Array.isArray(arr) ? arr.length : 0), 0
         );
         
@@ -80,7 +98,7 @@ export async function runPipeline(config, callbacks = {}) {
         onLog('🧹 Normalizing and saving to database...');
         onProgress(75, 'Normalizing data');
         
-        const stats = await runNormalizer(db2, raw);
+        const stats = await runNormalizer(db2, processedRaw);
         
         onLog(`💾 Saved ${Object.values(stats).reduce((a, b) => a + b, 0)} records to database`);
         onProgress(90, 'Normalization complete');
@@ -90,8 +108,8 @@ export async function runPipeline(config, callbacks = {}) {
         onProgress(95, 'Updating metadata');
         
         // Update last_posiedzenie based on actual data
-        if (raw.posiedzenia && raw.posiedzenia.length > 0) {
-            const maxSitting = Math.max(...raw.posiedzenia.map(p => 
+        if (processedRaw.posiedzenia && processedRaw.posiedzenia.length > 0) {
+            const maxSitting = Math.max(...processedRaw.posiedzenia.map(p => 
                 p.num ?? p.id ?? p.posiedzenie ?? p.number ?? 0
             ));
             if (maxSitting > 0) {
@@ -202,6 +220,7 @@ export function buildConfigFromUI() {
         typ: document.querySelector('input[name="etlInst"]:checked')?.value || 'sejm',
         kadencja: parseInt(document.getElementById('etlTermSelect')?.value) || 10,
         mode: document.querySelector('input[name="etlMode"]:checked')?.value || 'full',
+        rodoFilter: document.getElementById('etlRodoFilter')?.checked ?? true,
         rangeMode: rangeMode,
         rangeCount: parseInt(document.getElementById('etlRangeSelect')?.value) || 2,
         rangeFrom: parseInt(document.getElementById('etlRangeFrom')?.value) || 1,
