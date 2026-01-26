@@ -2,6 +2,58 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.0] - 2026-01-26
+
+### Added - RODO Compliance & Console Improvements
+
+**RODO Filter:**
+- ✅ Checkbox "🔒 Filtr RODO" in ETL Panel sidebar
+- ✅ `modules/rodo.js` - centralized filtering rules
+- ✅ Removes sensitive data: email, phone, PESEL, addresses
+- ✅ Works between Fetcher and Normalizer (clean architecture)
+- ✅ Logged in console: "🛡️ RODO: removing sensitive fields..."
+- ✅ Default: ENABLED (checkbox checked)
+
+**Console Log Interceptor:**
+- ✅ Global `console.log()` override - captures ALL logs
+- ✅ Early logs buffered (before UI console exists)
+- ✅ All logs visible in UI: geo.js, api-handler-v2.js, pipeline, etc.
+- ✅ Format: `[HH:MM:SS] message`
+- ✅ Auto-sync to both consoles (main + floating)
+
+**Pipeline Fixes:**
+- ✅ Removed stubs: `fetchPerSittingData()`, `fetchPerTermData()`
+- ✅ Connected real `runFetcher()` - pipeline now fetches actual data
+- ✅ Improved cache: reads `num ?? id ?? posiedzenie ?? number`
+- ✅ Added `sittingsToFetch` support in fetcher
+
+**UI Improvements:**
+- ✅ Radio buttons for range mode: "Ostatnie X" vs "Zakres od-do"
+- ✅ Floating console button (📋) - always accessible
+- ✅ Empty favicon (no more 404 errors)
+- ✅ Unified margins: all 12px (vertical spacing)
+- ✅ Uniform form controls styling
+
+### Changed
+
+- ETL Panel now uses real fetcher (not stubs)
+- RODO filter enabled by default
+- Console captures all logs (not just pipeline)
+
+### Fixed
+
+- database-v2.js syntax error (missing object closure)
+- Pipeline now actually fetches data from API
+- Radio buttons `rangeMode` properly connected
+
+### Security
+
+- ⚠️ **Data Disclaimer:** System parses data automatically. 97.6% accuracy. Verify in official sources.
+- 🔒 **RODO Compliant:** No sensitive data stored (email, phone, PESEL filtered by default)
+- 🔒 **Empty Database:** Clean start, only public API data
+
+---
+
 ## [2.0.0] - 2026-01-24
 
 ### Added - Complete ETL v2.0 System

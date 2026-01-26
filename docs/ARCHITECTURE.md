@@ -9,42 +9,52 @@ System pobiera dane z API Sejmu bezpośrednio w przeglądarce, wykorzystując:
 
 ---
 
-## Diagram przepływu danych
+## Diagram przepływu danych (v2.1)
 
 ```
 ┌─────────────────────┐
-│   UI (index.html)   │
+│   UI (ETL Panel)    │
 │  • Wybierz zakres   │
+│  • Checkbox RODO ✅ │
 │  • Kliknij przycisk │
 └──────────┬──────────┘
            │
            ▼
 ┌───────────────────────────────────┐
-│      api-handler.js               │
-│  1. Sprawdź cache (co mamy?)      │
-│  2. Oblicz (co pobrać z API?)     │
-│  3. Pobierz brakujące             │
-│  4. Normalizuj (dopasuj speakerID)│
-│  5. Zapisz SQLite + cache         │
+│      Pipeline v2.0                │
+│  1. Sprawdź cache (incremental)   │
+│  2. Wywołaj Fetcher               │
+│  3. 🛡️ RODO Filter (opcjonalnie)  │
+│  4. Wywołaj Normalizer            │
+│  5. Zapisz do SQLite              │
 └─────┬─────────────────────────┬───┘
       │                         │
       ▼                         ▼
 ┌──────────────┐      ┌──────────────────┐
-│    Cache     │      │   API Fetcher    │
-│ (localStorage)│      │  • Parallel (5x) │
-│              │      │  • UTF-8 decode  │
-│ • deputies   │      │  • Retry 3x      │
-│ • proceedings│      │  • Timeout 30s   │
-│ • fetchedSit │      │                  │
-│ • flags      │      │ api.sejm.gov.pl  │
-│   ~50KB      │      └────────┬─────────┘
-└──────┬───────┘               │
+│  Metadata    │      │   Fetcher v2.0   │
+│  (SQLite)    │      │  • 12 modułów    │
+│              │      │  • safeFetch()   │
+│ • last_pos   │      │  • Retry 3x      │
+│ • last_update│      │  • Timeout 30s   │
+│ • config     │      │                  │
+│   ~1KB       │      │ api.sejm.gov.pl  │
+└──────┬───────┘      └────────┬─────────┘
+       │                       │
        │                       ▼
        │              ┌─────────────────┐
-       │              │   Normalizer    │
-       │              │  • Match speaker│
-       │              │  • Detect role  │
-       │              │  • 97.6% success│
+       │              │  🛡️ RODO Filter │
+       │              │  • Usuwa email  │
+       │              │  • Usuwa telefon│
+       │              │  • Usuwa PESEL  │
+       │              │  • Usuwa adresy │
+       │              └────────┬────────┘
+       │                       │
+       │                       ▼
+       │              ┌─────────────────┐
+       │              │  Normalizer v2.0│
+       │              │  • 11 modułów   │
+       │              │  • UPSERT       │
+       │              │  • Clean data   │
        │              └────────┬────────┘
        │                       │
        └───────┬───────────────┘
@@ -53,8 +63,9 @@ System pobiera dane z API Sejmu bezpośrednio w przeglądarce, wykorzystując:
       │   SQLite DB    │
       │   (sql.js)     │
       │                │
-      │ • deputies     │
-      │ • statements   │
+      │ • 12 tabel     │
+      │ • Foreign keys │
+      │ • Indexes      │
       │                │
       │ RAM 5-50MB     │
       │ ⚠️ Non-persist │

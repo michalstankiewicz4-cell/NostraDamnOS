@@ -121,11 +121,12 @@ export function saveModuleName(db, records) {
 
 ## 📂 /modules
 
-**Przeznaczenie:** Moduły wspomagające, database, AI, utilities
+**Przeznaczenie:** Moduły wspomagające, database, AI, utilities, RODO
 
 | Plik | Opis | Eksportuje |
 |------|------|-----------|
 | **database-v2.js** | SQLite wrapper, 12 tabel + indexes | `db2` object |
+| **rodo.js** | 🛡️ Filtr danych wrażliwych (email, telefon, PESEL) | `applyRodo(raw)`, `RODO_RULES` |
 | **geo.js** | Geolokalizacja (tylko Europa), timezone check | `enforceEuropeOnly()` |
 | **nlp.js** | Transformers.js integration (plan) | `initNLP()`, `analyzeSentiment()` |
 | **webllm.js** | WebLLM 4B integration (plan) | `initWebLLM()`, `generateSummary()` |
@@ -133,6 +134,32 @@ export function saveModuleName(db, records) {
 | **api-fetcher.js** | Legacy fetcher v1 (opcjonalny) | `fetchData()` |
 | **cache.js** | Legacy localStorage cache (opcjonalny) | Cache helpers |
 | **data-loader.js** | Legacy JSONL loader (opcjonalny) | `loadAll()` |
+
+### rodo.js szczegóły 🔒
+
+**Przeznaczenie:** Usuwa dane wrażliwe z raw data przed zapisem do bazy
+
+**Struktura:**
+```javascript
+export const RODO_RULES = {
+    poslowie: ['telefon', 'adres', 'pesel', 'email_domowy'],
+    interpelacje: ['adres'],
+    oswiadczenia: ['adres_zamieszkania']
+};
+
+export function applyRodo(raw, rules = RODO_RULES) {
+    // Iteruje po modułach i usuwa pola z RODO_RULES
+    return cleaned;
+}
+```
+
+**Użycie w Pipeline:**
+```javascript
+if (config.rodoFilter) {
+    processedRaw = applyRodo(raw);
+}
+const stats = await runNormalizer(db2, processedRaw);
+```
 
 ### database-v2.js szczegóły
 

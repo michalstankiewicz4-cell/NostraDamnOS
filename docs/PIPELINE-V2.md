@@ -104,8 +104,59 @@ const result = await runPipeline(config, {
     // Optional
     rangeFrom: 50,            // for 'custom' mode
     rangeTo: 52,              // for 'custom' mode
-    selectedCommittees: [...] // for committee data
+    selectedCommittees: [...], // for committee data
+    rodoFilter: true          // default: true (removes sensitive data)
 }
+```
+
+---
+
+## RODO Filter 🔒
+
+**Purpose:** Remove sensitive personal data (email, phone, PESEL, addresses)
+
+**Location in Pipeline:**
+```
+Fetcher → raw data → 🛡️ RODO Filter → processedRaw → Normalizer → Database
+```
+
+**Config:**
+```javascript
+config.rodoFilter = true; // default: enabled
+```
+
+**Checkbox in UI:**
+```html
+<input type="checkbox" id="etlRodoFilter" checked>
+🔒 Filtr RODO
+```
+
+**What gets removed:**
+- `poslowie`: telefon, adres, pesel, email_domowy
+- `interpelacje`: adres
+- `oswiadczenia`: adres_zamieszkania
+
+**Implementation:**
+```javascript
+import { applyRodo } from './modules/rodo.js';
+
+let processedRaw = raw;
+if (config.rodoFilter) {
+    onLog('🛡️ RODO: removing sensitive fields...');
+    processedRaw = applyRodo(raw);
+}
+
+const stats = await runNormalizer(db2, processedRaw);
+```
+
+**Extending RODO rules:**
+Edit `modules/rodo.js`:
+```javascript
+export const RODO_RULES = {
+    poslowie: ['telefon', 'adres', 'pesel', 'email_domowy'],
+    interpelacje: ['adres'],
+    // Add more modules/fields here
+};
 ```
 
 ---

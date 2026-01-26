@@ -16,12 +16,49 @@ System do analizy wypowiedzi parlamentarnych z API Sejmu RP.
 ## 🎯 Funkcje
 
 * **ETL v2.0 Pipeline** - kompletny system Extract-Transform-Load
+* **🛡️ RODO Filter** - automatyczne usuwanie danych wrażliwych (domyślnie aktywny)
 * **Incremental Cache** - pobiera tylko nowe dane (10× szybciej)
 * **SQLite w przeglądarce** - pełna baza danych lokalnie (sql.js)
 * **12 typów danych** - wypowiedzi, głosowania, interpelacje, komisje...
 * **Dynamic Progress** - dokładny tracking 0-100%
+* **📋 Console Interceptor** - wszystkie logi widoczne w UI
 * **100% lokalne** - wszystko w przeglądarce, zero backend
 * **AI lokalne** (plan) - WebLLM 4B, Transformers.js
+
+---
+
+## 🔒 RODO i Bezpieczeństwo
+
+### Filtr RODO (domyślnie AKTYWNY ✅)
+
+System automatycznie usuwa dane wrażliwe przed zapisem do bazy:
+
+**Usuwane pola:**
+- `poslowie`: telefon, adres, PESEL, email_domowy
+- `interpelacje`: adres
+- `oswiadczenia`: adres_zamieszkania
+
+**Kontrola:**
+- Checkbox "🔒 Filtr RODO" w ETL Panel
+- Domyślnie: WŁĄCZONY
+- Możliwość wyłączenia dla celów badawczych
+
+**Implementacja:**
+```javascript
+// modules/rodo.js
+export const RODO_RULES = {
+    poslowie: ['telefon', 'adres', 'pesel', 'email_domowy'],
+    // ...
+};
+
+// Pipeline automatycznie aplikuje filtr
+if (config.rodoFilter) {
+    processedRaw = applyRodo(raw);
+}
+```
+
+**Rozszerzanie:**
+Edytuj `modules/rodo.js` aby dodać kolejne moduły/pola do filtrowania.
 
 ---
 
@@ -29,11 +66,13 @@ System do analizy wypowiedzi parlamentarnych z API Sejmu RP.
 
 ### Przepływ danych
 ```
-UI (ETL Panel)
+UI (ETL Panel) + Checkbox RODO
     ↓
 Pipeline v2.0
     ↓
 Fetcher v2.0 (12 modules) → Raw JSON
+    ↓
+🛡️ RODO Filter (optional) → Filtered JSON
     ↓
 Normalizer v2.0 (11 modules) → SQL Records
     ↓
@@ -192,6 +231,13 @@ python -m http.server 8766
 - [x] Incremental Cache
 - [x] Dynamic Progress
 - [x] UI Integration
+
+### ✅ Faza 2.1 (DONE - 2026-01-26)
+- [x] 🛡️ RODO Filter (modules/rodo.js)
+- [x] 📋 Console Log Interceptor
+- [x] Pipeline Fixes (real fetcher integration)
+- [x] UI Improvements (radio buttons, floating console)
+- [x] Documentation Updates
 
 ### 🚧 Faza 2 (IN PROGRESS)
 - [ ] AI Models Integration

@@ -1,5 +1,27 @@
 # 🗄️ Database v2.0 - Complete Schema
 
+## 🔒 RODO i Prywatność
+
+**Filtr RODO (domyślnie AKTYWNY):**
+Przed zapisem do bazy, Pipeline automatycznie usuwa dane wrażliwe:
+- `poslowie`: telefon, adres, PESEL, email_domowy
+- `interpelacje`: adres
+- `oswiadczenia`: adres_zamieszkania
+
+**Implementacja:**
+```javascript
+// Pipeline v2.0
+if (config.rodoFilter) {
+    processedRaw = applyRodo(raw); // modules/rodo.js
+}
+const stats = await runNormalizer(db2, processedRaw);
+```
+
+**Rozszerzanie:**
+Edytuj `modules/rodo.js` → `RODO_RULES` aby dodać kolejne pola.
+
+---
+
 ## Architektura
 
 **12 tabel relacyjnych** + metadata dla pełnego ETL pipeline:

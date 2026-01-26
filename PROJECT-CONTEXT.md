@@ -1,8 +1,24 @@
 # 🏛️ Analiza Parlamentarna - Kontekst Projektu
 
 **Data utworzenia:** 2026-01-24  
-**Wersja:** 2.0.0  
+**Wersja:** 2.1.0  
 **Status:** Production-ready ✅
+
+---
+
+## ⚠️ WAŻNE DISCLAIMERY
+
+### 📊 Dane Orientacyjne
+System automatycznie parsuje wypowiedzi z API Sejmu.  
+**Dopasowanie mówców do posłów: 97.6%**  
+Wszystkie informacje należy weryfikować w oficjalnych źródłach.
+
+### 🔒 RODO i Prywatność
+- **Baza jest pusta** przy pierwszym uruchomieniu
+- System pobiera **tylko dane publiczne** z API Sejmu
+- **Brak danych osobowych:** bez adresów email, numerów telefonów, PESEL
+- **Filtr RODO domyślnie AKTYWNY** - usuwa dane wrażliwe
+- Wszystkie dane zgodne z zasadami ochrony danych osobowych
 
 ---
 
@@ -55,7 +71,7 @@ npx http-server -p 8766
 
 ## 🎯 Stan Projektu
 
-### ✅ Zaimplementowane (v2.0.0)
+### ✅ Zaimplementowane (v2.1.0)
 
 **ETL Pipeline v2.0:**
 - Complete orchestration (UI → Fetcher → Normalizer → Database)
@@ -63,6 +79,7 @@ npx http-server -p 8766
 - 11 modułów transform (normalizacja + UPSERT)
 - Incremental cache (10× szybciej przy kolejnych pobraniach)
 - Dynamic progress (0-100%)
+- **RODO Filter** - usuwa dane wrażliwe (email, telefon, PESEL, adresy)
 
 **Database v2.0:**
 - 12 tabel SQLite (in-memory)
@@ -74,6 +91,10 @@ npx http-server -p 8766
 - Header: "📥 Import Danych z API Sejmu"
 - Panel height: 50vh (no scroll)
 - Progress bar + detailed logs
+- **Floating console** (📋) - dostępna zawsze
+- **Console log interceptor** - przechwytuje WSZYSTKIE logi
+- **Checkbox "🔒 Filtr RODO"** - domyślnie aktywny
+- Radio buttons: "Ostatnie X" vs "Zakres od-do"
 - Geolocation: tylko Europa (timezone check)
 
 ### 🚧 W trakcie (Faza 2)
