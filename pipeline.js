@@ -55,87 +55,52 @@ export async function runPipeline(config, callbacks = {}) {
         onLog(`📌 Found ${sittingsToFetch.length} new sittings to fetch`);
         onLog(`📌 Range: ${Math.min(...sittingsToFetch)} - ${Math.max(...sittingsToFetch)}`);
         
-        // Step 4: Fetch data per sitting (15-70%)
+        // Step 4: Fetch all data using runFetcher (15-70%)
         onLog('⬇️ Fetching data from API...');
+        onProgress(20, 'Fetching data from API');
         
-        const allRawData = {
-            poslowie: [],
-            posiedzenia: [],
-            wypowiedzi: [],
-            glosowania: [],
-            glosy: [],
-            interpelacje: [],
-            projekty_ustaw: [],
-            komisje: [],
-            komisje_posiedzenia: [],
-            komisje_wypowiedzi: [],
-            oswiadczenia: []
+        // Pass sittings range to config
+        const fetchConfig = {
+            ...config,
+            sittingsToFetch: sittingsToFetch
         };
         
-        let currentSitting = 0;
-        const totalSittings = sittingsToFetch.length;
+        // Call real fetcher - returns all raw data
+        const raw = await runFetcher(fetchConfig);
         
-        for (const sittingNum of sittingsToFetch) {
-            currentSitting++;
-            const percentStart = 15;
-            const percentRange = 55; // 15-70%
-            const percent = percentStart + (currentSitting / totalSittings) * percentRange;
-            
-            onProgress(percent, `Fetching sitting ${sittingNum} (${currentSitting}/${totalSittings})`);
-            onLog(`⬇️ Sitting ${sittingNum} (${currentSitting}/${totalSittings})...`);
-            
-            try {
-                // Fetch per-sitting data
-                const sittingData = await fetchPerSittingData(sittingNum, config);
-                
-                // Merge into allRawData
-                Object.keys(sittingData).forEach(key => {
-                    if (Array.isArray(sittingData[key]) && Array.isArray(allRawData[key])) {
-                        allRawData[key].push(...sittingData[key]);
-                    }
-                });
-                
-                const recordCount = Object.values(sittingData).reduce((sum, arr) => 
-                    sum + (Array.isArray(arr) ? arr.length : 0), 0
-                );
-                
-                totalRecords += recordCount;
-                onLog(`📥 Fetched ${recordCount} records from sitting ${sittingNum}`);
-                
-            } catch (error) {
-                onLog(`⚠️ Error fetching sitting ${sittingNum}: ${error.message}`);
-                console.error(`[Pipeline] Sitting ${sittingNum} error:`, error);
-            }
-        }
+        // Count fetched records
+        totalRecords = Object.values(raw).reduce((sum, arr) => 
+            sum + (Array.isArray(arr) ? arr.length : 0), 0
+        );
         
-        // Step 5: Fetch per-term data (70-75%)
-        onLog('⬇️ Fetching per-term data...');
-        onProgress(72, 'Fetching per-term data');
+        onLog(`📥 Fetched ${totalRecords} raw records from API`);
+        onProgress(70, 'Fetching complete');
         
-        const termData = await fetchPerTermData(config);
-        Object.keys(termData).forEach(key => {
-            if (Array.isArray(termData[key]) && Array.isArray(allRawData[key])) {
-                allRawData[key].push(...termData[key]);
-            }
-        });
-        
-        // Step 6: Normalize and save (75-95%)
+        // Step 5: Normalize and save (70-90%)
         onLog('🧹 Normalizing and saving to database...');
-        onProgress(80, 'Normalizing data');
+        onProgress(75, 'Normalizing data');
         
-        const stats = await runNormalizer(db2, allRawData);
+        const stats = await runNormalizer(db2, raw);
         
         onLog(`💾 Saved ${Object.values(stats).reduce((a, b) => a + b, 0)} records to database`);
+        onProgress(90, 'Normalization complete');
         
-        // Step 7: Update cache metadata (95-98%)
+        // Step 6: Update cache metadata (90-98%)
         onLog('📝 Updating cache metadata...');
-        onProgress(96, 'Updating metadata');
+        onProgress(95, 'Updating metadata');
         
-        if (sittingsToFetch.length > 0) {
-            const maxSitting = Math.max(...sittingsToFetch);
-            setLastPosiedzenie(db2, maxSitting);
-            setLastUpdate(db2, new Date().toISOString());
+        // Update last_posiedzenie based on actual data
+        if (raw.posiedzenia && raw.posiedzenia.length > 0) {
+            const maxSitting = Math.max(...raw.posiedzenia.map(p => 
+                p.num ?? p.id ?? p.posiedzenie ?? p.number ?? 0
+            ));
+            if (maxSitting > 0) {
+                setLastPosiedzenie(db2, maxSitting);
+                onLog(`📌 Updated cache: last_posiedzenie = ${maxSitting}`);
+            }
         }
+        
+        setLastUpdate(db2, new Date().toISOString());
         
         db2.upsertMetadata('last_fetch_config', JSON.stringify(config));
         db2.upsertMetadata('last_fetch_stats', JSON.stringify(stats));
@@ -227,52 +192,45 @@ function filterNewSittings(allSittings, lastFetched, config) {
     return filtered.sort((a, b) => a - b);
 }
 
-async function fetchPerSittingData(sittingNum, config) {
-    // Simplified - fetch only requested modules per sitting
-    const data = {};
-    
-    if (config.modules.includes('wypowiedzi')) {
-        // data.wypowiedzi = await fetch...
-        data.wypowiedzi = []; // TODO: implement
-    }
-    
-    if (config.modules.includes('glosowania')) {
-        // data.glosowania = await fetch...
-        data.glosowania = []; // TODO: implement
-    }
-    
-    return data;
-}
-
-async function fetchPerTermData(config) {
-    // Fetch per-term data (poslowie, interpelacje, etc.)
-    const data = {};
-    
-    if (config.modules.includes('poslowie')) {
-        // data.poslowie = await fetch...
-        data.poslowie = []; // TODO: implement
-    }
-    
-    return data;
-}
-
 // ===== CONFIG BUILDER =====
 
 export function buildConfigFromUI() {
-    // ... (keep existing implementation)
+    // Get range mode
+    const rangeMode = document.querySelector('input[name="rangeMode"]:checked')?.value || 'last';
+    
     const config = {
         typ: document.querySelector('input[name="etlInst"]:checked')?.value || 'sejm',
         kadencja: parseInt(document.getElementById('etlTermSelect')?.value) || 10,
         mode: document.querySelector('input[name="etlMode"]:checked')?.value || 'full',
-        rangeMode: 'last',
+        rangeMode: rangeMode,
         rangeCount: parseInt(document.getElementById('etlRangeSelect')?.value) || 2,
-        modules: ['poslowie', 'posiedzenia']
+        rangeFrom: parseInt(document.getElementById('etlRangeFrom')?.value) || 1,
+        rangeTo: parseInt(document.getElementById('etlRangeTo')?.value) || 3,
+        modules: ['poslowie', 'posiedzenia'] // Always include base modules
     };
     
-    // Add selected modules...
+    // Collect selected data modules
     if (document.getElementById('etlTranscripts')?.checked) config.modules.push('wypowiedzi');
     if (document.getElementById('etlVotings')?.checked) config.modules.push('glosowania');
-    // ... etc
+    if (document.getElementById('etlVotes')?.checked) config.modules.push('glosy');
+    if (document.getElementById('etlInterpellations')?.checked) config.modules.push('interpelacje');
+    if (document.getElementById('etlBills')?.checked) config.modules.push('projekty_ustaw');
+    if (document.getElementById('etlDisclosures')?.checked) config.modules.push('oswiadczenia');
+    
+    // Committee modules
+    if (document.getElementById('etlCommitteeSittings')?.checked) {
+        config.modules.push('komisje');
+        config.modules.push('komisje_posiedzenia');
+    }
+    if (document.getElementById('etlCommitteeStatements')?.checked) {
+        config.modules.push('komisje');
+        config.modules.push('komisje_wypowiedzi');
+    }
+    
+    // Get selected committees
+    const committeeSelect = document.getElementById('etlCommitteeSelect');
+    const selectedCommittees = Array.from(committeeSelect?.selectedOptions || []).map(opt => opt.value);
+    config.committees = selectedCommittees.includes('all') ? ['all'] : selectedCommittees;
     
     return config;
 }

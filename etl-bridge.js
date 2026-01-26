@@ -17,7 +17,6 @@ function initETLPanel() {
     // Zakres
     document.getElementById('etlRangeSelect')?.addEventListener('change', (e) => {
         const range = e.target.value;
-        document.getElementById('apiRange').value = range;
         document.getElementById('etlRange').textContent = `${range} ${range == 1 ? 'posiedzenie' : range < 5 ? 'posiedzenia' : 'posiedzeń'}`;
         updateETLEstimate();
     });

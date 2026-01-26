@@ -113,6 +113,12 @@ export async function runFetcher(config) {
 
 // Helper: Get sitting numbers from config
 export function getSittingNumbers(posiedzenia, config) {
+    // If pipeline already provided filtered sitting numbers (incremental cache)
+    if (config.sittingsToFetch && Array.isArray(config.sittingsToFetch)) {
+        return config.sittingsToFetch;
+    }
+    
+    // Otherwise filter from posiedzenia list
     if (config.rangeMode === 'last') {
         return posiedzenia.slice(-config.rangeCount).map(p => p.num);
     } else if (config.rangeMode === 'custom') {
