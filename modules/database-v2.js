@@ -387,8 +387,7 @@ export const db2 = {
     import(data) {
         this.database = new this.sql.Database(data);
         console.log('[DB v2] Database imported');
-    }
-};
+    },
     
     upsertGlosowania(data) {
         const stmt = this.database.prepare(`
@@ -544,4 +543,5 @@ export const db2 = {
         });
         
         stmt.free();
-    },
+    }
+};

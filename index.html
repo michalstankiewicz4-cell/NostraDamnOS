@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Analiza Parlamentarna</title>
+    <link rel="icon" href="data:,">
     <link rel="stylesheet" href="style.css">
     
     <!-- ✅ GEOLOKALIZACJA - AKTYWNA -->
@@ -231,12 +232,12 @@
             </div>
 
             <!-- Progress Bar & Logs -->
-            <div id="apiProgress" style="display: none; margin: 2rem 0;">
+            <div id="apiProgress" style="margin: 2rem 0;">
                 <div style="background: #e2e8f0; border-radius: 10px; height: 25px; overflow: hidden; margin-bottom: 0.5rem;">
                     <div id="apiProgressBar" style="background: linear-gradient(90deg, #667eea, #764ba2); height: 100%; width: 0%; transition: width 0.3s;"></div>
                 </div>
                 <div id="apiProgressText" style="text-align: center; font-size: 0.9rem; color: #666; margin-bottom: 1rem;">Postęp: 0%</div>
-                <div id="apiLogs" style="max-height: 300px; overflow-y: auto; background: #f7fafc; padding: 0.75rem; border-radius: 5px; font-family: monospace; font-size: 0.85rem; line-height: 1.6;"></div>
+                <div id="apiLogs" style="max-height: 300px; overflow-y: auto; background: #f7fafc; padding: 0.75rem; border-radius: 5px; font-family: monospace; font-size: 0.85rem; line-height: 1.6;">🔧 Console gotowa do logowania...</div>
             </div>
             
             <!-- Status -->
@@ -289,6 +290,22 @@
         </footer>
     </div>
 
+    <!-- Floating Console Button -->
+    <button id="floatingConsoleBtn" style="position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; font-size: 24px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 1000; transition: transform 0.2s;">
+        📋
+    </button>
+
+    <!-- Floating Console Panel -->
+    <div id="floatingConsolePanel" style="position: fixed; bottom: 90px; right: 20px; width: 400px; max-height: 500px; background: white; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); display: none; z-index: 999; overflow: hidden;">
+        <div style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 12px; display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-weight: 600;">📋 Console</span>
+            <button id="closeFloatingConsole" style="background: transparent; border: none; color: white; font-size: 20px; cursor: pointer; padding: 0; width: 24px; height: 24px;">×</button>
+        </div>
+        <div id="floatingConsoleLogs" style="padding: 12px; max-height: 440px; overflow-y: auto; background: #f7fafc; font-family: monospace; font-size: 0.85rem; line-height: 1.6;">
+            🔧 Floating console ready...
+        </div>
+    </div>
+
     <!-- Moduły -->
     <script type="module" src="modules/utils.js?v=2"></script>
     <script type="module" src="modules/nlp.js?v=2"></script>
@@ -297,5 +314,35 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.js"></script>
     <script type="module" src="api-handler-v2.js"></script>
     <script src="etl-bridge.js"></script>
+    
+    <!-- Floating Console Logic -->
+    <script>
+        const floatingBtn = document.getElementById('floatingConsoleBtn');
+        const floatingPanel = document.getElementById('floatingConsolePanel');
+        const closeBtn = document.getElementById('closeFloatingConsole');
+        
+        floatingBtn.addEventListener('click', () => {
+            floatingPanel.style.display = floatingPanel.style.display === 'none' ? 'block' : 'none';
+            floatingBtn.style.transform = floatingPanel.style.display === 'none' ? 'scale(1)' : 'scale(0.9)';
+        });
+        
+        closeBtn.addEventListener('click', () => {
+            floatingPanel.style.display = 'none';
+            floatingBtn.style.transform = 'scale(1)';
+        });
+        
+        // Sync logs from main console to floating console
+        const mainLogs = document.getElementById('apiLogs');
+        const floatingLogs = document.getElementById('floatingConsoleLogs');
+        
+        const observer = new MutationObserver(() => {
+            floatingLogs.innerHTML = mainLogs.innerHTML;
+            floatingLogs.scrollTop = floatingLogs.scrollHeight;
+        });
+        
+        if (mainLogs) {
+            observer.observe(mainLogs, { childList: true, subtree: true, characterData: true });
+        }
+    </script>
 </body>
 </html>
