@@ -10,6 +10,40 @@
 - ❌ NIE formatuje danych
 - ❌ NIE robi UPSERT
 - ❌ NIE łączy tabel
+- ❌ NIE zajmuje się RODO - to robi Pipeline
+
+---
+
+## 🔒 RODO Filter
+
+**Ważne:** Fetcher **NIE** filtruje danych wrażliwych.
+
+**Dlaczego?**
+- Fetcher jest czystą rurą - pobiera RAW data z API
+- Filtrowanie RODO = odpowiedzialność Pipeline
+- Separation of concerns - każdy moduł ma swoją rolę
+
+**Przepływ danych z RODO:**
+```
+Fetcher → raw data (z email, telefon, PESEL) →
+Pipeline → 🛡️ RODO Filter (usuwa wrażliwe) →
+Normalizer → filtered data →
+Database (bez danych wrażliwych)
+```
+
+**Implementacja:**
+```javascript
+// Pipeline v2.0
+const raw = await runFetcher(config);  // Fetcher: RAW data
+
+if (config.rodoFilter) {
+    processedRaw = applyRodo(raw);  // Pipeline: RODO filter
+}
+
+const stats = await runNormalizer(db2, processedRaw);  // Normalizer: czyste dane
+```
+
+Zobacz: `modules/rodo.js`, `pipeline.js`
 
 ---
 

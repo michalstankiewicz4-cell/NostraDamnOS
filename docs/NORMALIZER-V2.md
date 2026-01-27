@@ -7,8 +7,54 @@
 - ✅ Receives raw JSON from Fetcher
 - ✅ Maps to SQL schema v2.0
 - ✅ Executes UPSERT (no duplicates)
+- ✅ Works with RODO-filtered data
 - ❌ Does NOT fetch data
 - ❌ Does NOT know UI
+- ❌ Does NOT filter RODO - receives already clean data
+
+---
+
+## 🔒 RODO & Data Privacy
+
+**Ważne:** Normalizer dostaje już **przefiltrowane** dane z Pipeline.
+
+**Przepływ:**
+```
+Pipeline:
+  1. raw = await runFetcher(config)
+  2. if (config.rodoFilter) {
+       processedRaw = applyRodo(raw)  ← RODO filtering
+     }
+  3. stats = await runNormalizer(db2, processedRaw)  ← Normalizer
+
+Normalizer:
+  - Otrzymuje: processedRaw (bez email, telefon, PESEL)
+  - Transformuje: raw → SQL records
+  - Zapisuje: UPSERT do bazy (bez danych wrażliwych)
+```
+
+**Co to oznacza:**
+- ✅ Normalizer **nie musi** się martwić o RODO
+- ✅ Dane wrażliwe już usunięte przez Pipeline
+- ✅ Baza zawiera tylko bezpieczne dane
+- ✅ Separation of concerns - każdy moduł ma swoją rolę
+
+**Przykład:**
+```javascript
+// Pipeline (pipeline.js)
+const raw = await runFetcher(config);
+// raw.poslowie[0] = { id: 1, imie: "Jan", telefon: "123456789", ... }
+
+if (config.rodoFilter) {
+    processedRaw = applyRodo(raw);  // modules/rodo.js
+    // processedRaw.poslowie[0] = { id: 1, imie: "Jan" }  ← telefon usunięty!
+}
+
+const stats = await runNormalizer(db2, processedRaw);
+// Normalizer zapisuje do bazy BEZ telefonu
+```
+
+Zobacz: `modules/rodo.js`, `pipeline.js`
 
 ---
 
