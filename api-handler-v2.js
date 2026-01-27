@@ -14,7 +14,6 @@ async function startPipelineETL() {
     isFetching = true;
     
     const btn = document.getElementById('etlFetchBtn');
-    const oldBtn = document.getElementById('apiFetchBtn');
     const progress = document.getElementById('apiProgress');
     const progressBar = document.getElementById('apiProgressBar');
     const progressText = document.getElementById('apiProgressText');
@@ -23,12 +22,14 @@ async function startPipelineETL() {
     const statusDetails = document.getElementById('apiStatusDetails');
     
     // UI setup
-    btn.disabled = true;
-    oldBtn.disabled = true;
-    btn.textContent = '⏳ Pobieranie...';
-    progress.style.display = 'block';
-    status.style.display = 'none';
-    logs.innerHTML = '';
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = '⏳ Pobieranie...';
+    }
+    
+    if (progress) progress.style.display = 'block';
+    if (status) status.style.display = 'none';
+    if (logs) logs.innerHTML = '';
     
     try {
         // Build config from ETL Panel UI
@@ -39,11 +40,12 @@ async function startPipelineETL() {
         // Run pipeline with callbacks
         const result = await runPipeline(config, {
             onProgress: (percent, text) => {
-                progressBar.style.width = `${percent}%`;
-                progressText.textContent = `${text} (${percent}%)`;
+                if (progressBar) progressBar.style.width = `${percent}%`;
+                if (progressText) progressText.textContent = `${text} (${percent}%)`;
             },
             
             onLog: (message) => {
+                if (!logs) return;
                 const line = document.createElement('div');
                 line.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
                 logs.appendChild(line);
@@ -59,7 +61,7 @@ async function startPipelineETL() {
                 console.log('[Pipeline] Complete:', result);
                 
                 // Show success status
-                if (result.success) {
+                if (result.success && status && statusDetails) {
                     status.style.display = 'block';
                     
                     const stats = result.stats || {};
@@ -81,13 +83,16 @@ async function startPipelineETL() {
         
     } finally {
         isFetching = false;
-        btn.disabled = false;
-        oldBtn.disabled = false;
-        btn.textContent = '📥 Pobierz dane z API';
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = '📥 Pobierz dane z API';
+        }
         
-        setTimeout(() => {
-            progress.style.display = 'none';
-        }, 3000);
+        if (progress) {
+            setTimeout(() => {
+                progress.style.display = 'none';
+            }, 3000);
+        }
     }
 }
 
@@ -101,22 +106,6 @@ document.getElementById('etlClearBtn')?.addEventListener('click', async () => {
         } catch (error) {
             alert(`Błąd: ${error.message}`);
         }
-    }
-});
-
-// Stats button (optional - show current DB stats)
-document.getElementById('etlStatsBtn')?.addEventListener('click', async () => {
-    try {
-        await db2.init();
-        const stats = db2.getStats();
-        
-        const text = Object.entries(stats)
-            .map(([table, count]) => `${table}: ${count}`)
-            .join('\n');
-        
-        alert(`📊 Statystyki bazy:\n\n${text}`);
-    } catch (error) {
-        alert(`Błąd: ${error.message}`);
     }
 });
 
