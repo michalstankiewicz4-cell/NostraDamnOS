@@ -1,8 +1,6 @@
-// ETL Panel Bridge - pełna synchronizacja wszystkich pól
+// ETL Panel Bridge - obsługa nowego panelu ETL
 
 function initETLPanel() {
-    // ===== SYNC ETL → Old UI =====
-    
     // Instytucja
     document.querySelectorAll('input[name="etlInst"]').forEach(radio => {
         radio.addEventListener('change', updateETLEstimate);
@@ -21,31 +19,9 @@ function initETLPanel() {
         updateETLEstimate();
     });
     
-    // Wypowiedzi
-    document.getElementById('etlTranscripts')?.addEventListener('change', (e) => {
-        document.getElementById('apiTranscripts').checked = e.target.checked;
-        updateETLEstimate();
-    });
-    
-    // Głosowania
-    document.getElementById('etlVotings')?.addEventListener('change', (e) => {
-        document.getElementById('apiVotings').checked = e.target.checked;
-        updateETLEstimate();
-    });
-    
-    // Wszystkie checkboxy z data-size
-    document.querySelectorAll('#etlVotes, #etlInterpellations, #etlBills, #etlDisclosures, #etlCommitteeSittings, #etlCommitteeStatements').forEach(cb => {
-        cb.addEventListener('change', updateETLEstimate);
-    });
-    
-    // ETL Fetch btn → trigger old btn
-    document.getElementById('etlFetchBtn')?.addEventListener('click', () => {
-        document.getElementById('apiFetchBtn').click();
-    });
-    
-    // ETL Clear btn → trigger old clear
-    document.getElementById('etlClearBtn')?.addEventListener('click', () => {
-        document.getElementById('clearCacheBtn').click();
+    // Checkboxy - wywołaj updateETLEstimate przy zmianie
+    document.querySelectorAll('#etlTranscripts, #etlVotings, #etlVotes, #etlInterpellations, #etlBills, #etlDisclosures, #etlCommitteeSittings, #etlCommitteeStatements').forEach(cb => {
+        cb?.addEventListener('change', updateETLEstimate);
     });
     
     // ===== UPDATE ESTIMATE =====
