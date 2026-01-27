@@ -131,9 +131,23 @@ npx http-server -p 8766
 - [ ] Confirmation dialog: "Wyczyścić bazę I cache?"
 - [ ] Logi: "Usunięto X rekordów, wyczyszczono cache"
 
-**Dokumentacja (pominiętа):**
-- [ ] Zaktualizować `docs/FETCHER-V2.md` (dodać info o RODO)
-- [ ] Zaktualizować `docs/NORMALIZER-V2.md` (dodać info o RODO)
+**E) Przycisk "🇵🇱 Język" (TODO placeholder):**
+- [x] Przycisk w prawym górnym rogu (obok przycisku pomocy)
+- [ ] Wybór języka: Polski / English
+- [ ] Tłumaczenie UI (etykiety, przyciski, komunikaty)
+- [ ] Zapisywanie preferencji w localStorage
+- [ ] Status: Przycisk dodany, funkcjonalność TODO
+
+**F) Przycisk "❓ Podpowiedzi" (TODO placeholder):**
+- [x] Przycisk w prawym górnym rogu (obok przycisku języka)
+- [ ] System tooltips dla elementów UI
+- [ ] Interaktywny tutorial dla nowych użytkowników
+- [ ] Kontekstowa pomoc (np. "Co to jest RODO?")
+- [ ] Status: Przycisk dodany, funkcjonalność TODO
+
+**Dokumentacja (pominięta):**
+- [x] Zaktualizować `docs/FETCHER-V2.md` (dodać info o RODO) ✅
+- [x] Zaktualizować `docs/NORMALIZER-V2.md` (dodać info o RODO) ✅
 
 ### 📅 Planowane (Faza 3)
 
