@@ -104,6 +104,37 @@ npx http-server -p 8766
 - Transformers.js - sentiment, topics, embeddings
 - Analysis features: sentiment, topics, summarization, comparison
 
+### ⚡ Do zrobienia (Natychmiastowe - v2.2)
+
+**A) Rozszerzony filtr RODO:**
+- [ ] Dodać regex scanning dla email/telefon/PESEL w treściach wypowiedzi
+- [ ] Skanować pola: `wypowiedzi.tresc`, `interpelacje.tresc`, `oswiadczenia.tresc`
+- [ ] Anonimizacja: zastąpienie `[EMAIL]`, `[TELEFON]`, `[PESEL]`
+- [ ] Konfiguracja: włącz/wyłącz deep scan
+- [ ] Logi: ile danych wrażliwych znaleziono i usunięto
+
+**B) Sprawdzanie zmian w bazie:**
+- [ ] Funkcja `detectChanges()` - porównuje API vs lokalna baza
+- [ ] Raport: nowe posiedzenia, nowe głosowania, zaktualizowane dane
+- [ ] UI: pokazać raport w ETL Panel (przed pobieraniem)
+- [ ] Format: `"🔔 3 nowe posiedzenia, 15 nowych głosowań"`
+
+**C) Przycisk "🔄 Aktualizuj bazę":**
+- [ ] UI: przycisk obok "📥 Pobierz dane z API"
+- [ ] Funkcja: sprawdź zmiany + pobierz tylko delty
+- [ ] Inteligentny: pobiera TYLKO to co się zmieniło
+- [ ] Feedback: "Zaktualizowano 3 posiedzenia, dodano 125 wypowiedzi"
+
+**D) Przycisk "🗑️ Wyczyść bazę" - rozszerzony:**
+- [ ] Obecnie: `clearAll()` - usuwa tylko dane z tabel
+- [ ] Do dodania: wyczyść też metadata (cache)
+- [ ] Confirmation dialog: "Wyczyścić bazę I cache?"
+- [ ] Logi: "Usunięto X rekordów, wyczyszczono cache"
+
+**Dokumentacja (pominiętа):**
+- [ ] Zaktualizować `docs/FETCHER-V2.md` (dodać info o RODO)
+- [ ] Zaktualizować `docs/NORMALIZER-V2.md` (dodać info o RODO)
+
 ### 📅 Planowane (Faza 3)
 
 - IndexedDB persistence (zamiast in-memory SQLite)

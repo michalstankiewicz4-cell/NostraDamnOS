@@ -249,6 +249,13 @@ python -m http.server 8766
   - [ ] Summarization
   - [ ] Comparison
 
+### ⚡ Faza 2.2 (TODO - Database & RODO Improvements)
+- [ ] **A) Rozszerzony filtr RODO** - regex scanning email/telefon/PESEL w treściach
+- [ ] **B) Sprawdzanie zmian w bazie** - detect changes API vs lokalna baza
+- [ ] **C) Przycisk "🔄 Aktualizuj bazę"** - pobierz tylko delty
+- [ ] **D) Przycisk "🗑️ Wyczyść bazę"** - usuń dane + cache
+- [ ] Dokumentacja: zaktualizować FETCHER-V2.md i NORMALIZER-V2.md
+
 ### 📅 Faza 3 (PLANNED)
 - [ ] IndexedDB persistence
 - [ ] Advanced queries UI
