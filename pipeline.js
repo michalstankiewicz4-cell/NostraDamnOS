@@ -186,12 +186,21 @@ function setLastUpdate(db, timestamp) {
 async function fetchSittingsList(config) {
     const { typ = 'sejm', kadencja } = config;
     const base = typ === 'sejm' ? 'sejm' : 'senat';
-    const url = `https://api.sejm.gov.pl/${base}/term${kadencja}/sittings`;
+    
+    // API endpoint BEZ kadencji
+    const url = `https://api.sejm.gov.pl/${base}/posiedzenia`;
     
     try {
-        const data = await safeFetch(url);
-        return Array.isArray(data) ? data.map(s => s.num || s.id) : [];
-    } catch {
+        const allData = await safeFetch(url);
+        
+        // Filtruj po kadencji LOKALNIE
+        const filtered = Array.isArray(allData) 
+            ? allData.filter(s => s.kadencja === kadencja || s.term === kadencja)
+            : [];
+        
+        return filtered.map(s => s.num || s.id || s.number).filter(Boolean);
+    } catch (error) {
+        console.warn('[Pipeline] Failed to fetch sittings list:', error.message);
         // Fallback - generate range
         return Array.from({length: config.rangeCount || 2}, (_, i) => 52 - i).reverse();
     }

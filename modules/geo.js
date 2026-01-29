@@ -5,7 +5,7 @@
 // Lista krajów europejskich wg ISO 3166-1 alpha-2
 const EUROPE = [
     "PL","DE","FR","ES","IT","PT","NL","BE","LU","AT","CZ","SK","HU","SI","HR",
-    "RO","BG","GR","DK","SE","FI","NO","EE","LV","LT","IE","CY","MT","IS","LI","CH"
+    "RO","BG","GR","DK","SE","FI","NO","EE","LV","LT","IE","CY","MT","IS","LI","CH","UK","GB"
 ];
 
 // Blokada strony
@@ -37,7 +37,7 @@ function checkTimezone() {
 function checkLanguage() {
     const europeanLangs = [
         "pl","de","fr","es","it","pt","nl","sv","no","fi","da","cs","sk","hu",
-        "ro","bg","el","lt","lv","et","sl","hr","ga"
+        "ro","bg","el","lt","lv","et","sl","hr","ga","uk","en"
     ];
 
     const lang = navigator.language.toLowerCase();

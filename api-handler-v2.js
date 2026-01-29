@@ -14,84 +14,60 @@ async function startPipelineETL() {
     isFetching = true;
     
     const btn = document.getElementById('etlFetchBtn');
-    const progress = document.getElementById('apiProgress');
-    const progressBar = document.getElementById('apiProgressBar');
-    const progressText = document.getElementById('apiProgressText');
-    const logs = document.getElementById('apiLogs');
-    const status = document.getElementById('apiStatus');
-    const statusDetails = document.getElementById('apiStatusDetails');
     
-    // UI setup
+    // UI setup - tylko przycisk
     if (btn) {
         btn.disabled = true;
         btn.textContent = '⏳ Pobieranie...';
     }
     
-    if (progress) progress.style.display = 'block';
-    if (status) status.style.display = 'none';
-    if (logs) logs.innerHTML = '';
-    
     try {
         // Build config from ETL Panel UI
         const config = buildConfigFromUI();
         
-        console.log('[API Handler] Config:', config);
+        console.log('[API Handler] Starting pipeline with config:', config);
         
         // Run pipeline with callbacks
         const result = await runPipeline(config, {
             onProgress: (percent, text) => {
-                if (progressBar) progressBar.style.width = `${percent}%`;
-                if (progressText) progressText.textContent = `${text} (${percent}%)`;
+                console.log(`[Progress] ${percent}%: ${text}`);
             },
             
             onLog: (message) => {
-                if (!logs) return;
-                const line = document.createElement('div');
-                line.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
-                logs.appendChild(line);
-                logs.scrollTop = logs.scrollHeight;
+                console.log(`[Pipeline] ${message}`);
             },
             
             onError: (error) => {
                 console.error('[Pipeline Error]', error);
-                alert(`Błąd: ${error.message}`);
             },
             
             onComplete: (result) => {
                 console.log('[Pipeline] Complete:', result);
-                
-                // Show success status
-                if (result.success && status && statusDetails) {
-                    status.style.display = 'block';
-                    
-                    const stats = result.stats || {};
-                    const details = Object.entries(stats)
-                        .filter(([_, count]) => count > 0)
-                        .map(([name, count]) => `${name}: ${count}`)
-                        .join(', ');
-                    
-                    statusDetails.textContent = details || 'Brak danych do pobrania';
-                }
             }
         });
         
         console.log('[API Handler] Pipeline result:', result);
         
+        // Show success or stats
+        if (result.success) {
+            const stats = result.stats || {};
+            const details = Object.entries(stats)
+                .filter(([_, count]) => count > 0)
+                .map(([name, count]) => `${name}: ${count}`)
+                .join(', ');
+            
+            alert(`✅ Pobrano dane:\n\n${details || 'Brak nowych danych'}`);
+        }
+        
     } catch (error) {
         console.error('[API Handler] Error:', error);
-        alert(`Błąd ETL: ${error.message}`);
+        alert(`❌ Błąd ETL: ${error.message}`);
         
     } finally {
         isFetching = false;
         if (btn) {
             btn.disabled = false;
             btn.textContent = '📥 Pobierz dane z API';
-        }
-        
-        if (progress) {
-            setTimeout(() => {
-                progress.style.display = 'none';
-            }, 3000);
         }
     }
 }
@@ -102,9 +78,11 @@ document.getElementById('etlClearBtn')?.addEventListener('click', async () => {
         try {
             await db2.init();
             db2.clearAll();
+            console.log('[API Handler] Database cleared');
             alert('✅ Baza wyczyszczona');
         } catch (error) {
-            alert(`Błąd: ${error.message}`);
+            console.error('[API Handler] Clear error:', error);
+            alert(`❌ Błąd: ${error.message}`);
         }
     }
 });

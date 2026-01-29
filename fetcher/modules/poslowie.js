@@ -1,10 +1,15 @@
 // Module: poslowie.js
-// Fetches deputies/senators list
+// Fetches deputies list (Sejm)
 
 import { safeFetch } from '../fetcher.js';
 
-export async function fetchPoslowie({ kadencja, typ = 'sejm' }) {
-    const base = typ === 'sejm' ? 'sejm' : 'senat';
-    const url = `https://api.sejm.gov.pl/${base}/poslowie/${kadencja}`;
+export async function fetchPoslowie({ kadencja = 10, typ = 'sejm' }) {
+    if (typ !== 'sejm') {
+        console.warn('[poslowie] Senators list not implemented yet');
+        return [];
+    }
+
+    const url = `https://api.sejm.gov.pl/sejm/term${kadencja}/poslowie`;
+
     return await safeFetch(url);
 }
