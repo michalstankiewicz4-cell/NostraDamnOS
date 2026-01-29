@@ -13,27 +13,27 @@ System do analizy wypowiedzi parlamentarnych z API Sejmu RP.
 
 ---
 
-Amatorski darmowy projekt - Parlament "watchdog"
+Amatorski darmowy projekt - Parlament "puppy"
 
-Parlament Watchdog to zaawansowany, w pełni zautomatyzowany system monitorowania pracy parlamentu, który działa w czasie rzeczywistym i opiera się wyłącznie na danych udostępnianych przez oficjalne API Sejmu. System śledzi każde głosowanie, analizuje frekwencję posłów, wykrywa nieobecności oraz monitoruje dyscyplinę klubową. Dzięki temu potrafi wskazać zarówno posłów głosujących zgodnie z linią ugrupowania, jak i tych, którzy się wyłamują. Obserwuje również zmiany w zachowaniach parlamentarzystów, tworząc dynamiczny obraz pracy izby — dokładnie tak, jak robią to profesjonalne narzędzia typu „parliament watchdog”.
+Parlament puppy to zaawansowany, w pełni zautomatyzowany system monitorowania pracy parlamentu, który działa w czasie rzeczywistym i opiera się wyłącznie na danych udostępnianych przez oficjalne API Sejmu. System śledzi każde głosowanie, analizuje frekwencję posłów, wykrywa nieobecności oraz monitoruje dyscyplinę klubową. Dzięki temu potrafi wskazać zarówno posłów głosujących zgodnie z linią ugrupowania, jak i tych, którzy się wyłamują. Obserwuje również zmiany w zachowaniach parlamentarzystów, tworząc dynamiczny obraz pracy izby — dokładnie tak, jak robią to profesjonalne narzędzia typu „parliament watchdog”.
 
 Dzięki pełnemu dostępowi do danych o głosowaniach system potrafi analizować relacje między klubami i wykrywać nieformalne koalicje. Pokazuje, które ugrupowania głosują razem, gdzie pojawiają się rozłamy oraz jakie są faktyczne linie podziału politycznego. To poziom analizy, który zwykle wymaga pracy politologów i analityków legislacyjnych, a tutaj jest generowany automatycznie.
 
-Parlament Watchdog tworzy również szczegółowe profile posłów. Na podstawie danych z API system analizuje aktywność parlamentarzystów, ich udział w głosowaniach, zgodność z linią klubu, zaangażowanie w proces legislacyjny, liczbę interpelacji oraz pracę w komisjach. Dzięki temu każdy poseł otrzymuje przejrzysty zestaw statystyk, przypominający sportowe profile zawodników — z jasnym obrazem mocnych i słabych stron.
+Parlament puppy tworzy również szczegółowe profile posłów. Na podstawie danych z API system analizuje aktywność parlamentarzystów, ich udział w głosowaniach, zgodność z linią klubu, zaangażowanie w proces legislacyjny, liczbę interpelacji oraz pracę w komisjach. Dzięki temu każdy poseł otrzymuje przejrzysty zestaw statystyk, przypominający sportowe profile zawodników — z jasnym obrazem mocnych i słabych stron.
 
 System obejmuje także pełną analizę ustaw i procesów legislacyjnych. Korzystając z danych o drukach, procesach i interpelacjach, śledzi drogę każdej ustawy, analizuje tempo prac, wykrywa opóźnienia i bada aktywność komisji. Pozwala również określić, kto jest autorem projektu, kto go popiera i jak przebiegała cała ścieżka legislacyjna. To fundament profesjonalnego monitoringu legislacyjnego.
 
 Wszystkie dane mogą być prezentowane w formie przejrzystych wizualizacji i dashboardów. System generuje wykresy głosowań, mapy klubów, heatmapy zgodności, osie czasu prac legislacyjnych oraz zestawienia aktywności posłów. Tak przygotowane materiały nadają się do raportów, prezentacji oraz integracji z narzędziami analitycznymi, takimi jak Power BI, Grafana czy Tableau — i nie wymagają żadnych plików multimedialnych.
 
-Parlament Watchdog może również działać jako system alertów. Użytkownik może otrzymywać powiadomienia o nowych głosowaniach, drukach, interpelacjach czy zmianach w klubach. Dzięki temu system pełni funkcję monitoringu parlamentu w czasie rzeczywistym, pozwalając reagować na bieżące wydarzenia bez konieczności ręcznego śledzenia stron sejmowych.
+Parlament puppy może również działać jako system alertów. Użytkownik może otrzymywać powiadomienia o nowych głosowaniach, drukach, interpelacjach czy zmianach w klubach. Dzięki temu system pełni funkcję monitoringu parlamentu w czasie rzeczywistym, pozwalając reagować na bieżące wydarzenia bez konieczności ręcznego śledzenia stron sejmowych.
 
-Ponieważ system obsługuje wiele kadencji, możliwa jest analiza historyczna. Parlament Watchdog porównuje kadencje, bada trendy, analizuje zmiany w zachowaniach klubów i posłów oraz śledzi ewolucję procesu legislacyjnego. To narzędzie, które umożliwia prowadzenie badań na poziomie naukowym, z pełnym kontekstem historycznym.
+Ponieważ system obsługuje wiele kadencji, możliwa jest analiza historyczna. Parlament puppy porównuje kadencje, bada trendy, analizuje zmiany w zachowaniach klubów i posłów oraz śledzi ewolucję procesu legislacyjnego. To narzędzie, które umożliwia prowadzenie badań na poziomie naukowym, z pełnym kontekstem historycznym.
 
 Projekt jest również niezwykle wartościowy dla dziennikarzy i organizacji watchdogowych. Może służyć jako źródło danych, narzędzie do fact‑checkingu oraz wsparcie w analizie decyzji politycznych. Ułatwia szybkie sprawdzanie faktów i przygotowywanie materiałów analitycznych.
 
 Dla obywateli system oferuje prosty dostęp do informacji o pracy parlamentu. Umożliwia wyszukiwanie głosowań, przeglądanie profili posłów, analizę zgodności z obietnicami wyborczymi oraz sprawdzanie, jak głosował konkretny przedstawiciel danego okręgu. To narzędzie wzmacniające obywatelską kontrolę nad władzą.
 
-Najbardziej zaawansowanym elementem Parlament Watchdog jest silnik AI‑asystenta parlamentarnego. Dzięki danym z API potrafi odpowiadać na pytania o głosowania, analizować trendy, tłumaczyć proces legislacyjny, generować raporty i udzielać odpowiedzi na pytania typu „kto głosował przeciw?”, „kto najczęściej opuszcza głosowania?” czy „jak zmieniała się frekwencja klubu X?”. To pełnoprawny asystent analityczny, który udostępnia wiedzę o parlamencie w sposób szybki, intuicyjny i dostępny dla każdego.
+Najbardziej zaawansowanym elementem Parlament puppy jest silnik AI‑asystenta parlamentarnego. Dzięki danym z API potrafi odpowiadać na pytania o głosowania, analizować trendy, tłumaczyć proces legislacyjny, generować raporty i udzielać odpowiedzi na pytania typu „kto głosował przeciw?”, „kto najczęściej opuszcza głosowania?” czy „jak zmieniała się frekwencja klubu X?”. To pełnoprawny asystent analityczny, który udostępnia wiedzę o parlamencie w sposób szybki, intuicyjny i dostępny dla każdego.
 
 ## 🎯 Funkcje
 
