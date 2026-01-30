@@ -1,7 +1,7 @@
 // Module: komisje_posiedzenia.js
 import { safeFetch } from '../fetcher.js';
 
-export async function fetchKomisjePosiedzenia({ komisje, selectedCommittees, typ = 'sejm' }) {
+export async function fetchKomisjePosiedzenia({ komisje, selectedCommittees, kadencja = 10, typ = 'sejm' }) {
     const results = [];
     const base = typ === 'sejm' ? 'sejm' : 'senat';
     
@@ -11,7 +11,7 @@ export async function fetchKomisjePosiedzenia({ komisje, selectedCommittees, typ
         : komisje.filter(k => selectedCommittees?.includes(k.code));
     
     for (const kom of toFetch) {
-        const url = `https://api.sejm.gov.pl/${base}/komisje/${kom.code}/posiedzenia`;
+        const url = `https://api.sejm.gov.pl/${base}/term${kadencja}/committees/${kom.code}/sittings`;
         try {
             const data = await safeFetch(url);
             results.push(...(Array.isArray(data) ? data : []));

@@ -6,13 +6,11 @@ import { safeFetch } from '../fetcher.js';
 export async function fetchPosiedzenia({ kadencja, typ = 'sejm' }) {
     const base = typ === 'sejm' ? 'sejm' : 'senat';
     
-    // API endpoint BEZ kadencji
-    const url = `https://api.sejm.gov.pl/${base}/posiedzenia`;
+    // API endpoint z term
+    const url = `https://api.sejm.gov.pl/${base}/term${kadencja}/proceedings`;
     
     const allData = await safeFetch(url);
     
-    // Filtruj po kadencji LOKALNIE
-    if (!Array.isArray(allData)) return [];
-    
-    return allData.filter(pos => pos.kadencja === kadencja || pos.term === kadencja);
+    // Endpoint zwraca dane już przefiltrowane dla kadencji
+    return Array.isArray(allData) ? allData : [];
 }

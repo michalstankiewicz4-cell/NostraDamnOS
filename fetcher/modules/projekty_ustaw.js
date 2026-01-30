@@ -6,13 +6,11 @@ import { safeFetch } from '../fetcher.js';
 export async function fetchProjektyUstaw({ kadencja, typ = 'sejm' }) {
     const base = typ === 'sejm' ? 'sejm' : 'senat';
     
-    // API endpoint BEZ kadencji
-    const url = `https://api.sejm.gov.pl/${base}/druki`;
+    // API endpoint z term
+    const url = `https://api.sejm.gov.pl/${base}/term${kadencja}/prints`;
     
     const allData = await safeFetch(url);
     
-    // Filtruj po kadencji LOKALNIE
-    if (!Array.isArray(allData)) return [];
-    
-    return allData.filter(druk => druk.kadencja === kadencja || druk.term === kadencja);
+    // Endpoint zwraca dane już przefiltrowane dla kadencji
+    return Array.isArray(allData) ? allData : [];
 }

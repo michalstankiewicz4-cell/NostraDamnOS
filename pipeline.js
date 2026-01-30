@@ -187,18 +187,16 @@ async function fetchSittingsList(config) {
     const { typ = 'sejm', kadencja } = config;
     const base = typ === 'sejm' ? 'sejm' : 'senat';
     
-    // API endpoint BEZ kadencji
-    const url = `https://api.sejm.gov.pl/${base}/posiedzenia`;
+    // API endpoint z term
+    const url = `https://api.sejm.gov.pl/${base}/term${kadencja}/proceedings`;
     
     try {
         const allData = await safeFetch(url);
         
-        // Filtruj po kadencji LOKALNIE
-        const filtered = Array.isArray(allData) 
-            ? allData.filter(s => s.kadencja === kadencja || s.term === kadencja)
-            : [];
+        // Endpoint zwraca dane już przefiltrowane dla kadencji
+        const sittings = Array.isArray(allData) ? allData : [];
         
-        return filtered.map(s => s.num || s.id || s.number).filter(Boolean);
+        return sittings.map(s => s.num || s.id || s.number).filter(Boolean);
     } catch (error) {
         console.warn('[Pipeline] Failed to fetch sittings list:', error.message);
         // Fallback - generate range

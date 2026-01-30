@@ -9,7 +9,7 @@ export async function fetchPoslowie({ kadencja = 10, typ = 'sejm' }) {
         return [];
     }
 
-    const url = `https://api.sejm.gov.pl/sejm/term${kadencja}/poslowie`;
+    const url = `https://api.sejm.gov.pl/sejm/term${kadencja}/MP`;
 
     return await safeFetch(url);
 }
