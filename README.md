@@ -1,5 +1,7 @@
 # 🏛️ Analiza Parlamentarna
 
+<sub>Created by Michał Stankiewicz, Claude Sonnet 4.5 & Copilot</sub>
+
 System do analizy wypowiedzi parlamentarnych z API Sejmu RP.
 
 > ⚠️ **Dane orientacyjne**  
