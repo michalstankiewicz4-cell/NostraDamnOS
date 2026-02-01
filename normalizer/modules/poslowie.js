@@ -4,14 +4,14 @@
 export function normalizePoslowie(raw) {
     return raw.map(p => ({
         id_osoby: p.id || p.id_osoby,
-        imie: p.imie,
-        nazwisko: p.nazwisko,
-        klub: p.klub,
-        okreg: p.okreg || null,
+        imie: p.firstName || p.imie,
+        nazwisko: p.lastName || p.nazwisko,
+        klub: p.club || p.klub,
+        okreg: p.districtNum || p.okreg || null,
         rola: p.rola || 'poseł',
-        kadencja: p.kadencja,
+        kadencja: 10, // API term10 zawsze zwraca kadencję 10
         email: p.email || null,
-        aktywny: p.aktywny !== undefined ? p.aktywny : 1
+        aktywny: p.active !== undefined ? (p.active ? 1 : 0) : (p.aktywny !== undefined ? p.aktywny : 1)
     }));
 }
 
