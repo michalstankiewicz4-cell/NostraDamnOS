@@ -1,6 +1,7 @@
 # 🏛️ Analiza Parlamentarna
 
-<sub>Created by Michał Stankiewicz, Claude Sonnet 4.5 & Copilot</sub>
+<sub>Created by Michał Stankiewicz, Claude Sonnet 4.5 & Copilot</sub>  
+![Last Commit](https://img.shields.io/github/last-commit/michalstankiewicz4-cell/NostraDamnOS?label=Ostatnia%20aktualizacja&color=blue) | [📋 Commits](https://github.com/michalstankiewicz4-cell/NostraDamnOS/commits/main)
 
 System do analizy wypowiedzi parlamentarnych z API Sejmu RP.
 
