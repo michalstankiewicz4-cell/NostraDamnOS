@@ -11,7 +11,7 @@ System do analizy wypowiedzi parlamentarnych z API Sejmu RP.
 > 🔒 **Prywatność i RODO**  
 > Baza danych jest pusta przy pierwszym uruchomieniu. System pobiera tylko dane publiczne z API Sejmu.  
 > **Brak danych osobowych:** bez adresów email, numerów telefonów, PESEL czy innych danych wrażliwych.  
-> Wszystkie dane zgodne z zasadami ochrony danych osobowych.
+> Wszystkie dane zgodne z zasadami ochrony danych osobowych. Projekt nie przetwarza danych osobowych w rozumieniu RODO. Dane pochodzą z oficjalnych źródeł publicznych. Dane są przetwarzane wyłącznie lokalnie.
 
 ---
 

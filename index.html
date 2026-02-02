@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
@@ -7,7 +7,7 @@
     <link rel="icon" href="data:,">
     <link rel="stylesheet" href="style.css">
     
-    <!-- ? GEOLOKALIZACJA - AKTYWNA -->
+    <!-- ✅ GEOLOKALIZACJA - AKTYWNA -->
     <script type="module">
         import { enforceEuropeOnly } from "./modules/geo.js";
         enforceEuropeOnly();
@@ -98,19 +98,19 @@
     
     <div class="container">
         <header>
-            <h1>??? Analiza Parlamentarna</h1>
+            <h1>🏛️ Analiza Parlamentarna</h1>
             <p>System lokalnej analizy wypowiedzi parlamentarnych</p>
         </header>
 
         <main>
             <!-- ETL PANEL -->
             <h2 style="margin-bottom: 1.5rem; color: #2d3748; font-size: 1.8rem;">
-                ?? Import Danych z API Sejmu
+                📥 Import Danych z API Sejmu
             </h2>
             
             <div class="etl-panel">
                 <div class="etl-sidebar">
-                    <h3>?? Konfiguracja ETL</h3>
+                    <h3>📊 Konfiguracja ETL</h3>
                     
                     <!-- Mode selector -->
                     <fieldset style="border: 2px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-bottom: 15px;">
@@ -119,7 +119,7 @@
                             <input type="radio" name="etlMode" value="meta" checked> Metadane
                         </label>
                         <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; margin-bottom: 5px;">
-                            <input type="radio" name="etlMode" value="full"> Pe�ne dane
+                            <input type="radio" name="etlMode" value="full"> Pełne dane
                         </label>
                         <label style="display: flex; align-items: center; gap: 8px; font-size: 13px;">
                             <input type="radio" name="etlMode" value="incremental"> Incremental
@@ -147,7 +147,7 @@
                     </div>
                     
                     <div class="estimate-box">
-                        <div class="estimate-title">?? Estymacja</div>
+                        <div class="estimate-title">💡 Estymacja</div>
                         <div class="estimate-grid">
                             <div class="estimate-row">
                                 <span class="estimate-label">Rozmiar:</span>
@@ -167,25 +167,25 @@
                     <div style="background: #f8f9fa; border: 2px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-bottom: 15px;">
                         <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px;">
                             <input type="checkbox" id="etlRodoFilter" checked style="cursor: pointer;">
-                            <span style="font-weight: 600;">?? Filtr RODO</span>
+                            <span style="font-weight: 600;">🔒 Filtr RODO</span>
                         </label>
                         <div style="font-size: 12px; color: #718096; margin-top: 6px; line-height: 1.4;">
-                            Usuwa dane wra�liwe: email, telefon, PESEL
+                            Usuwa dane wrażliwe: email, telefon, PESEL
                         </div>
                     </div>
                     
                     <button class="etl-btn etl-btn-primary" id="etlFetchBtn">
-                        ?? Pobierz dane z API
+                        📥 Pobierz dane z API
                     </button>
                     <button class="etl-btn etl-btn-danger" id="etlClearBtn">
-                        ??? Wyczy�� cache
+                        🗑️ Wyczyść cache
                     </button>
                 </div>
                 
                 <div class="etl-main">
                     <!-- Instytucja -->
                     <fieldset class="etl-fieldset">
-                        <legend>??? Instytucja</legend>
+                        <legend>🏛️ Instytucja</legend>
                         <div style="display: flex; gap: 15px;">
                             <label style="display: flex; align-items: center; gap: 8px;">
                                 <input type="radio" name="etlInst" value="sejm" checked> Sejm
@@ -198,7 +198,7 @@
                     
                     <!-- Kadencja -->
                     <fieldset class="etl-fieldset">
-                        <legend>?? Kadencja</legend>
+                        <legend>📅 Kadencja</legend>
                         <select id="etlTermSelect" class="form-control">
                             <option value="10">10. kadencja (2023-obecnie)</option>
                             <option value="9">9. kadencja (2019-2023)</option>
@@ -207,20 +207,20 @@
                         </select>
                     </fieldset>
                     
-                    <!-- Zakres posiedze� -->
+                    <!-- Zakres posiedzeń -->
                     <fieldset class="etl-fieldset">
-                        <legend>?? Zakres posiedze�</legend>
+                        <legend>🎯 Zakres posiedzeń</legend>
                         
                         <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 14px;">
                             <input type="radio" name="rangeMode" value="last" checked>
-                            Ostatnie X posiedze�:
+                            Ostatnie X posiedzeń:
                         </label>
                         <select id="etlRangeSelect" class="form-control" style="margin-bottom: 15px;">
                             <option value="1">1 posiedzenie</option>
                             <option value="2" selected>2 posiedzenia</option>
-                            <option value="5">5 posiedze�</option>
-                            <option value="10">10 posiedze�</option>
-                            <option value="20">20 posiedze�</option>
+                            <option value="5">5 posiedzeń</option>
+                            <option value="10">10 posiedzeń</option>
+                            <option value="20">20 posiedzeń</option>
                         </select>
                         
                         <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 14px;">
@@ -237,11 +237,11 @@
                     
                     <!-- Dane podstawowe -->
                     <fieldset class="etl-fieldset">
-                        <legend>?? Dane podstawowe</legend>
+                        <legend>📋 Dane podstawowe</legend>
                         <div style="font-size: 12px; color: #718096; margin-bottom: 8px;">Zawsze pobierane</div>
                         <div class="checkbox-item">
                             <input type="checkbox" id="etlDeputies" checked disabled>
-                            <label for="etlDeputies">Pos�owie/Senatorowie</label>
+                            <label for="etlDeputies">Posłowie/Senatorowie</label>
                             <span class="badge badge-size">50 KB</span>
                         </div>
                         <div class="checkbox-item">
@@ -253,7 +253,7 @@
                     
                     <!-- Dane per posiedzenie -->
                     <fieldset class="etl-fieldset">
-                        <legend>?? Dane per posiedzenie</legend>
+                        <legend>📝 Dane per posiedzenie</legend>
                         <div style="font-size: 12px; color: #718096; margin-bottom: 8px;">Incremental (per posiedzenie)</div>
                         <div class="checkbox-item">
                             <input type="checkbox" id="etlTranscripts" data-size="300" checked>
@@ -262,20 +262,20 @@
                         </div>
                         <div class="checkbox-item">
                             <input type="checkbox" id="etlVotings" data-size="80">
-                            <label for="etlVotings">G�osowania</label>
+                            <label for="etlVotings">Głosowania</label>
                             <span class="badge badge-size">80 KB</span>
                         </div>
                         <div class="checkbox-item">
                             <input type="checkbox" id="etlVotes" data-size="400">
-                            <label for="etlVotes">G�osy indywidualne</label>
+                            <label for="etlVotes">Głosy indywidualne</label>
                             <span class="badge badge-size">400 KB</span>
                         </div>
                     </fieldset>
                     
                     <!-- Dane per kadencja -->
                     <fieldset class="etl-fieldset">
-                        <legend>??? Dane per kadencja</legend>
-                        <div style="font-size: 12px; color: #718096; margin-bottom: 8px;">Ca�a kadencja (du�e!)</div>
+                        <legend>🗂️ Dane per kadencja</legend>
+                        <div style="font-size: 12px; color: #718096; margin-bottom: 8px;">Cała kadencja (duże!)</div>
                         <div class="checkbox-item">
                             <input type="checkbox" id="etlInterpellations" data-size="200">
                             <label for="etlInterpellations">Interpelacje</label>
@@ -288,14 +288,14 @@
                         </div>
                         <div class="checkbox-item">
                             <input type="checkbox" id="etlDisclosures" data-size="500">
-                            <label for="etlDisclosures">O�wiadczenia maj�tkowe</label>
+                            <label for="etlDisclosures">Oświadczenia majątkowe</label>
                             <span class="badge badge-size">500 KB</span>
                         </div>
                     </fieldset>
                     
                     <!-- Komisje -->
                     <fieldset class="etl-fieldset">
-                        <legend>?? Komisje</legend>
+                        <legend>🏢 Komisje</legend>
                         <div style="font-size: 12px; color: #718096; margin-bottom: 8px;">Wybierz dane komisji</div>
                         <div class="checkbox-item">
                             <input type="checkbox" id="etlCommitteeSittings" data-size="80">
@@ -310,12 +310,12 @@
                         
                         <div style="margin-top: 12px;">
                             <label style="display: block; margin-bottom: 8px; font-weight: 500; font-size: 14px;">
-                                ?? Wybierz komisje:
+                                📋 Wybierz komisje:
                             </label>
                             <select id="etlCommitteeSelect" class="form-control" multiple size="6" style="font-size: 13px; line-height: 4;">
-                                <option value="all" selected>? Wszystkie komisje (~30)</option>
-                                <option value="FIN">Komisja Finans�w Publicznych</option>
-                                <option value="EDU">Komisja Edukacji, Nauki i M�odzie�y</option>
+                                <option value="all" selected>✓ Wszystkie komisje (~30)</option>
+                                <option value="FIN">Komisja Finansów Publicznych</option>
+                                <option value="EDU">Komisja Edukacji, Nauki i Młodzieży</option>
                                 <option value="OBR">Komisja Obrony Narodowej</option>
                                 <option value="ZAG">Komisja Spraw Zagranicznych</option>
                                 <option value="INF">Komisja Infrastruktury</option>
@@ -330,85 +330,94 @@
                 <div style="background: #e2e8f0; border-radius: 10px; height: 25px; overflow: hidden; margin-bottom: 0.5rem;">
                     <div id="apiProgressBar" style="background: linear-gradient(90deg, #667eea, #764ba2); height: 100%; width: 0%; transition: width 0.3s;"></div>
                 </div>
-                <div id="apiProgressText" style="text-align: center; font-size: 0.9rem; color: #666; margin-bottom: 1rem;">Post�p: 0%</div>
+                <div id="apiProgressText" style="text-align: center; font-size: 0.9rem; color: #666; margin-bottom: 1rem;">Postęp: 0%</div>
                 <div id="apiLogs" style="max-height: 300px; overflow-y: auto; background: #f7fafc; padding: 0.75rem; border-radius: 5px; font-family: monospace; font-size: 0.85rem; line-height: 1.6;"></div>
             </div>
             
             <!-- Status -->
             <div id="apiStatus" style="padding: 1rem; background: #f7fafc; border-radius: 5px; border-left: 4px solid #667eea; display: none; margin: 2rem 0;">
-                <div style="font-weight: 500; margin-bottom: 0.25rem;">? Pobrano dane:</div>
+                <div style="font-weight: 500; margin-bottom: 0.25rem;">✅ Pobrano dane:</div>
                 <div id="apiStatusDetails" style="font-size: 0.9rem; color: #666;"></div>
             </div>
 
             <!-- Sekcja statusu modeli AI -->
             <section class="models-section" style="margin-top: 3rem;">
-                <h2>?? Status modeli AI</h2>
+                <h2>🤖 Status modeli AI</h2>
                 <div class="model-status">
                     <div class="model-item">
                         <span class="model-name">WebLLM (4B)</span>
-                        <span id="webllmStatus" class="status">? Nieaktywny</span>
+                        <span id="webllmStatus" class="status">⏳ Nieaktywny</span>
                     </div>
                     <div class="model-item">
                         <span class="model-name">Transformers.js</span>
-                        <span id="transformersStatus" class="status">? Nieaktywny</span>
+                        <span id="transformersStatus" class="status">⏳ Nieaktywny</span>
                     </div>
                 </div>
-                <button id="loadModels" class="btn btn-primary">Za�aduj modele</button>
+                <button id="loadModels" class="btn btn-primary">Załaduj modele</button>
             </section>
 
             <!-- Sekcja analiz -->
             <section class="analysis-section">
-                <h2>?? Analizy</h2>
+                <h2>📊 Analizy</h2>
                 <div class="analysis-buttons">
-                    <button id="analyzeSentiment" class="btn" disabled>Analiza nastroj�w</button>
+                    <button id="analyzeSentiment" class="btn" disabled>Analiza nastrojów</button>
                     <button id="analyzeTopics" class="btn" disabled>Wykryj tematy</button>
                     <button id="generateSummary" class="btn" disabled>Generuj streszczenia</button>
-                    <button id="compareSpeeches" class="btn" disabled>Por�wnaj wypowiedzi</button>
+                    <button id="compareSpeeches" class="btn" disabled>Porównaj wypowiedzi</button>
                 </div>
             </section>
 
-            <!-- Sekcja wynik�w -->
+            <!-- Sekcja wyników -->
             <section class="results-section">
-                <h2>?? Wyniki</h2>
+                <h2>📈 Wyniki</h2>
                 <div id="results" class="results-container">
-                    <p class="placeholder">Pobierz dane i uruchom analiz�, aby zobaczy� wyniki</p>
+                    <p class="placeholder">Pobierz dane i uruchom analizę, aby zobaczyć wyniki</p>
                 </div>
             </section>
         </main>
 
         <footer>
             <p>
-                ?? Projekt open-source | 
+                🚀 Projekt open-source | 
                 <a href="https://github.com/michalstankiewicz4-cell/NostraDamnOS" target="_blank">GitHub</a>
             </p>
         </footer>
     </div>
 
     <!-- Top Right Buttons (TODO) -->
-    <button id="languageBtn" style="position: fixed; top: 20px; right: 90px; width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; font-size: 28px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 1000; transition: transform 0.2s;" title="Zmie� j�zyk (TODO)">
-        ????
+    <button id="languageBtn" style="position: fixed; top: 20px; right: 90px; width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; font-size: 28px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 1000; transition: transform 0.2s;" title="Zmień język (TODO)">
+        🇵🇱
     </button>
 
     <button id="helpBtn" style="position: fixed; top: 20px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; font-size: 28px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 1000; transition: transform 0.2s;" title="Podpowiedzi (TODO)">
-        ?
+        ❓
+    </button>
+
+    <!-- Database Import/Export Buttons -->
+    <button id="importDbBtn" style="position: fixed; bottom: 160px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; font-size: 24px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 1000; transition: all 0.2s;" title="Import bazy danych">
+        📥
+    </button>
+
+    <button id="exportDbBtn" style="position: fixed; bottom: 90px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; border: none; font-size: 24px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 1000; transition: all 0.2s;" title="Export bazy danych">
+        📤
     </button>
 
     <!-- Floating Console Button -->
     <button id="floatingConsoleBtn" style="position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; font-size: 24px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 1000; transition: transform 0.2s;">
-        ??
+        📋
     </button>
 
     <!-- Floating Console Panel -->
     <div id="floatingConsolePanel" style="position: fixed; bottom: 90px; right: 20px; width: 400px; max-height: 500px; background: white; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); display: none; z-index: 999; overflow: hidden;">
         <div style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 12px; display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-weight: 600;">?? Console</span>
-            <button id="closeFloatingConsole" style="background: transparent; border: none; color: white; font-size: 20px; cursor: pointer; padding: 0; width: 24px; height: 24px;">�</button>
+            <span style="font-weight: 600;">📋 Console</span>
+            <button id="closeFloatingConsole" style="background: transparent; border: none; color: white; font-size: 20px; cursor: pointer; padding: 0; width: 24px; height: 24px;">×</button>
         </div>
         <div id="floatingConsoleLogs" style="padding: 12px; max-height: 440px; overflow-y: auto; background: #f7fafc; font-family: monospace; font-size: 0.85rem; line-height: 1.6;">
         </div>
     </div>
 
-    <!-- Modu�y -->
+    <!-- Moduły -->
     <script type="module" src="modules/utils.js?v=2"></script>
     <script type="module" src="modules/nlp.js?v=2"></script>
     <script type="module" src="modules/webllm.js?v=2"></script>
@@ -417,7 +426,7 @@
     <script type="module" src="api-handler-v2.js"></script>
     <script src="etl-bridge.js"></script>
     
-    <!-- Floating Console Logic -->`n    `n    <!-- Database Import/Export Buttons -->`n    <script type="module">`n        import { initDbButtons } from './modules/db-buttons.js';`n        initDbButtons();`n    </script>`n    `n
+    <!-- Floating Console Logic -->
     <script>
         const floatingBtn = document.getElementById('floatingConsoleBtn');
         const floatingPanel = document.getElementById('floatingConsolePanel');
@@ -450,19 +459,47 @@
         const languageBtn = document.getElementById('languageBtn');
         const helpBtn = document.getElementById('helpBtn');
         
+        // Database buttons hover effects
+        const importDbBtn = document.getElementById('importDbBtn');
+        const exportDbBtn = document.getElementById('exportDbBtn');
+        
+        if (importDbBtn) {
+            importDbBtn.addEventListener('mouseenter', () => {
+                importDbBtn.style.transform = 'scale(1.1)';
+            });
+            importDbBtn.addEventListener('mouseleave', () => {
+                importDbBtn.style.transform = 'scale(1)';
+            });
+        }
+        
+        if (exportDbBtn) {
+            exportDbBtn.addEventListener('mouseenter', () => {
+                exportDbBtn.style.transform = 'scale(1.1)';
+            });
+            exportDbBtn.addEventListener('mouseleave', () => {
+                exportDbBtn.style.transform = 'scale(1)';
+            });
+        }
+        
         languageBtn.addEventListener('click', () => {
             languageBtn.style.transform = 'scale(0.9)';
             setTimeout(() => languageBtn.style.transform = 'scale(1)', 200);
-            console.log('???? TODO: Zmiana j�zyka - Language selector not implemented yet');
-            alert('???? Zmiana j�zyka\n\nFunkcja w przygotowaniu (TODO v2.2)');
+            console.log('🇵🇱 TODO: Zmiana języka - Language selector not implemented yet');
+            alert('🇵🇱 Zmiana języka\n\nFunkcja w przygotowaniu (TODO v2.2)');
         });
         
         helpBtn.addEventListener('click', () => {
             helpBtn.style.transform = 'scale(0.9)';
             setTimeout(() => helpBtn.style.transform = 'scale(1)', 200);
-            console.log('? TODO: Podpowiedzi - Help tooltips not implemented yet');
-            alert('? Podpowiedzi\n\nSystem podpowiedzi w przygotowaniu (TODO v2.2)');
+            console.log('❓ TODO: Podpowiedzi - Help tooltips not implemented yet');
+            alert('❓ Podpowiedzi\n\nSystem podpowiedzi w przygotowaniu (TODO v2.2)');
         });
+    </script>
+
+    <!-- Database Import/Export Logic -->
+    <script type="module">
+        import { initDbButtons } from './modules/db-buttons.js';
+        initDbButtons();
     </script>
 </body>
 </html>
