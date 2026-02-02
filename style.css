@@ -524,3 +524,42 @@ input[type="number"]:focus {
     border-color: var(--primary-color);
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
+
+/* Database Import/Export Floating Buttons */
+#db-export-btn,
+#db-import-btn {
+    position: fixed;
+    bottom: 20px;
+    z-index: 9998;
+    padding: 12px 20px;
+    background: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    transition: all 0.3s ease;
+}
+
+#db-export-btn {
+    left: 20px;
+}
+
+#db-import-btn {
+    left: 140px;
+    background: #2196F3;
+}
+
+#db-export-btn:hover {
+    background: #45a049;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+}
+
+#db-import-btn:hover {
+    background: #1976D2;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+}
