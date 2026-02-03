@@ -398,11 +398,11 @@
     </button>
 
     <-- Database Import/Export Buttons -->
-    <button id="importDbBtn" style="position: fixed; bottom: 160px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; font-size: 24px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 1000; transition: all 0.2s;" title="Import bazy danych">
+    <button id="importDbBtn" style="display: none; position: fixed; bottom: 160px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; font-size: 24px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 1000; transition: all 0.2s;" title="Import bazy danych">
         📥
     </button>
 
-    <button id="exportDbBtn" style="position: fixed; bottom: 90px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; border: none; font-size: 24px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 1000; transition: all 0.2s;" title="Export bazy danych">
+    <button id="exportDbBtn" style="display: none; position: fixed; bottom: 90px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; border: none; font-size: 24px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 1000; transition: all 0.2s;" title="Export bazy danych">
         📤
     </button>
 
@@ -436,11 +436,15 @@
         floatingBtn.addEventListener('click', () => {
             floatingPanel.style.display = floatingPanel.style.display === 'none' ? 'block' : 'none';
             floatingBtn.style.transform = floatingPanel.style.display === 'none' ? 'scale(1)' : 'scale(0.9)';
+            if (floatingPanel.style.display === 'none') {
+                setDbButtonsVisible(false);
+            }
         });
         
         closeBtn.addEventListener('click', () => {
             floatingPanel.style.display = 'none';
             floatingBtn.style.transform = 'scale(1)';
+            setDbButtonsVisible(false);
         });
         
         // Sync logs from main console to floating console
@@ -463,6 +467,33 @@
         // Database buttons hover effects
         const importDbBtn = document.getElementById('importDbBtn');
         const exportDbBtn = document.getElementById('exportDbBtn');
+        const dbButtonsState = { visible: false };
+        
+        const setDbButtonsVisible = (visible) => {
+            if (!importDbBtn || !exportDbBtn) return;
+            [importDbBtn, exportDbBtn].forEach(btn => {
+                if (!btn.dataset.defaultDisplay) {
+                    btn.dataset.defaultDisplay = btn.style.display || '';
+                }
+                const showDisplay = btn.dataset.defaultDisplay && btn.dataset.defaultDisplay !== 'none'
+                    ? btn.dataset.defaultDisplay
+                    : 'block';
+                btn.style.display = visible ? showDisplay : 'none';
+            });
+            dbButtonsState.visible = visible;
+        };
+        
+        // Hide by default; show only via Shift+P when floating console is open
+        setDbButtonsVisible(false);
+        
+        // SHIFT+P toggles DB buttons when floating console is open (easy revert: remove this listener block)
+        document.addEventListener('keydown', (e) => {
+            if (floatingPanel.style.display === 'none') return;
+            if (e.shiftKey && (e.key === 'P' || e.key === 'p')) {
+                e.preventDefault();
+                setDbButtonsVisible(!dbButtonsState.visible);
+            }
+        });
         
         if (importDbBtn) {
             importDbBtn.addEventListener('mouseenter', () => {
