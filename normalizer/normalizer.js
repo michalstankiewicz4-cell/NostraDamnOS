@@ -79,7 +79,7 @@ export async function runNormalizer(db, raw, config = {}) {
     
     // 7. Zapytania pisemne (per term)
     if (raw.zapytania && raw.zapytania.length > 0) {
-        const normalized = normalizeZapytania(raw.zapytania, { enableRODO: config.rodoFilter });
+        const normalized = normalizeZapytania(raw.zapytania);
         saveZapytania(db, normalized);
         stats.zapytania = normalized.zapytania.length;
     }

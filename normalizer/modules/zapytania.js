@@ -12,32 +12,26 @@
  * - Zapytania: odpowiedź w 7 dni, krótsze
  */
 
-import { applyRodo, RODO_RULES } from '../../modules/rodo.js';
-
-export function normalizeZapytania(rawData, config = {}) {
+export function normalizeZapytania(rawData) {
     const zapytania = [];
     const odpowiedzi = [];
     
     console.log(`[NORMALIZER] Przetwarzanie ${rawData.length} zapytań pisemnych...`);
     
     for (const item of rawData) {
-        // RODO: usuwamy wrażliwe dane osobowe z metadanych
-        let title = item.title || '';
-        let to = item.to || [];
-        
-        // Dla RODO - nie modyfikujemy treści pytania, tylko metadane
-        // Treść pytania (title) jest publiczna
+        // Zapytania pisemne - brak pól wrażliwych (treść jest publiczna)
+        // RODO_RULES dla zapytania: [] (empty - no sensitive fields)
         
         // Główny rekord zapytania
         const zapytanie = {
             term: item.term,
             num: item.num,
-            title: title,
+            title: item.title || '',
             receiptDate: item.receiptDate || null,
             lastModified: item.lastModified || null,
             sentDate: item.sentDate || null,
             from_mp_ids: JSON.stringify(item.from || []),
-            to_ministries: JSON.stringify(to),
+            to_ministries: JSON.stringify(item.to || []),
             answerDelayedDays: item.answerDelayedDays || 0
         };
         
@@ -46,13 +40,11 @@ export function normalizeZapytania(rawData, config = {}) {
         // Odpowiedzi
         if (item.replies && Array.isArray(item.replies)) {
             for (const reply of item.replies) {
-                let fromAuthor = reply.from || '';
-                
                 const odpowiedz = {
                     zapytanie_term: item.term,
                     zapytanie_num: item.num,
                     key: reply.key || '',
-                    from_author: fromAuthor,
+                    from_author: reply.from || '',
                     receiptDate: reply.receiptDate || null,
                     lastModified: reply.lastModified || null,
                     onlyAttachment: reply.onlyAttachment ? 1 : 0,

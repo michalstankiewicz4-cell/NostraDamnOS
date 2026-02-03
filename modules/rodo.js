@@ -5,6 +5,8 @@ export const RODO_RULES = {
     poslowie: ['telefon', 'adres', 'pesel', 'email_domowy', 'email'],
     interpelacje: ['adres'],
     oswiadczenia: ['adres_zamieszkania'],
+    zapytania: [], // Zapytania pisemne - brak wrażliwych pól (zawartość jest publiczna)
+    zapytania_odpowiedzi: [], // Odpowiedzi na zapytania - brak wrażliwych pól
     // Możesz dopisywać kolejne moduły i pola
 };
 
