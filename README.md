@@ -1,7 +1,7 @@
 # 🏛️ Analiza Parlamentarna
 <sub>Created by Michał Stankiewicz, Claude Sonnet 4.5 & Copilot</sub>
 
-<sub>tel.: +48 797 486 355</sub>
+<sub>tel.: +48 797 486 355 Zfinansuj projekt drogi kolego gdyż cel jest szczytny :). Michał</sub>
 
 [![Last Commit](https://img.shields.io/github/last-commit/michalstankiewicz4-cell/NostraDamnOS?label=Ostatnia%20aktualizacja&color=blue)](https://github.com/michalstankiewicz4-cell/NostraDamnOS/commits/main) <sub>Jeżeli znalazłeś błąd o którym myślę to poprawka będzie o godzinie 15-16</sub>
 
