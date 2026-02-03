@@ -3,6 +3,7 @@
   'use strict';
 
   const CONSOLE_SELECTORS = [
+    '#floatingConsolePanel',
     '#console',
     '.console',
     '.console-panel',
