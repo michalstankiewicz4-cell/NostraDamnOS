@@ -563,3 +563,49 @@ input[type="number"]:focus {
     transform: translateY(-2px);
     box-shadow: 0 6px 12px rgba(0,0,0,0.4);
 }
+/* Advanced Options Panel */
+.etl-advanced {
+    margin-top: 20px;
+}
+
+.etl-advanced summary {
+    cursor: pointer;
+    font-weight: 600;
+    padding: 10px 12px;
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    user-select: none;
+    transition: background 0.2s;
+}
+
+.etl-advanced summary:hover {
+    background: #edf2f7;
+}
+
+.etl-advanced[open] summary {
+    background: #e2e8f0;
+    margin-bottom: 10px;
+}
+
+.etl-btn-secondary {
+    background: #64748b;
+    color: white;
+}
+
+.etl-btn-secondary:hover {
+    background: #475569;
+}
+
+.cache-status {
+    font-size: 13px;
+}
+
+.cache-status h4 {
+    margin-bottom: 10px;
+    color: #2d3748;
+}
+
+#cacheStatusDisplay div {
+    padding: 3px 0;
+}

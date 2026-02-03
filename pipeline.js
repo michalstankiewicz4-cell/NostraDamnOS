@@ -51,7 +51,41 @@ export async function runPipeline(config, callbacks = {}) {
         onProgress(12, 'Fetching sittings list');
         
         const allSittings = await fetchSittingsList(config);
-        const sittingsToFetch = filterNewSittings(allSittings, lastPosiedzenie, config);
+        
+        // SMART AUTO MODE - determine best fetch strategy
+        let fetchMode = config.fetchMode || 'auto';
+        let sittingsToFetch = [];
+        
+        if (fetchMode === 'auto') {
+            if (lastPosiedzenie === 0) {
+                onLog('🆕 First run - using user-selected range');
+                fetchMode = 'range'; // Use user's range selection
+                sittingsToFetch = filterNewSittings(allSittings, 0, config);
+            } else {
+                const maxSitting = Math.max(...allSittings);
+                if (maxSitting > lastPosiedzenie) {
+                    onLog(`📥 Smart Auto: Incremental mode - new sittings detected (${lastPosiedzenie + 1}-${maxSitting})`);
+                    fetchMode = 'incremental';
+                    sittingsToFetch = allSittings.filter(num => num > lastPosiedzenie);
+                } else {
+                    onLog('✅ All data up to date!');
+                    onProgress(100, 'Up to date');
+                    onComplete({ success: true, stats: {}, upToDate: true });
+                    return { success: true, upToDate: true };
+                }
+            }
+        } else if (fetchMode === 'full') {
+            onLog('🔄 Force Full mode - ignoring cache, fetching all');
+            sittingsToFetch = filterNewSittings(allSittings, 0, config);
+        } else if (fetchMode === 'verify') {
+            onLog('🔍 Verify mode - checking for differences...');
+            const differences = await verifyDataIntegrity(db2, config);
+            onComplete({ success: true, verify: true, differences });
+            return { success: true, verify: true, differences };
+        } else {
+            // Manual range mode
+            sittingsToFetch = filterNewSittings(allSittings, lastPosiedzenie, config);
+        }
         
         if (sittingsToFetch.length === 0) {
             onLog('✅ All data up to date!');
@@ -223,11 +257,14 @@ export function buildConfigFromUI() {
     // Get range mode
     const rangeMode = document.querySelector('input[name="rangeMode"]:checked')?.value || 'last';
     
+    // Get fetch mode (auto/full/verify)
+    const fetchMode = document.querySelector('input[name="fetchMode"]:checked')?.value || 'auto';
+    
     const config = {
         typ: document.querySelector('input[name="etlInst"]:checked')?.value || 'sejm',
         kadencja: parseInt(document.getElementById('etlTermSelect')?.value) || 10,
-        mode: document.querySelector('input[name="etlMode"]:checked')?.value || 'full',
         rodoFilter: document.getElementById('etlRodoFilter')?.checked ?? true,
+        fetchMode: fetchMode,
         rangeMode: rangeMode,
         rangeCount: parseInt(document.getElementById('etlRangeSelect')?.value) || 2,
         rangeFrom: parseInt(document.getElementById('etlRangeFrom')?.value) || 1,
@@ -260,4 +297,89 @@ export function buildConfigFromUI() {
     config.committees = selectedCommittees.includes('all') ? ['all'] : selectedCommittees;
     
     return config;
+}
+
+// ===== VERIFY DATA INTEGRITY =====
+
+async function verifyDataIntegrity(db, config) {
+    console.log('[Pipeline] Verifying data integrity...');
+    
+    const differences = [];
+    
+    try {
+        // Fetch sample data from API
+        const apiSample = await fetchSittingsList(config);
+        
+        // Get stored sittings from DB
+        const dbSittings = db.database.exec('SELECT numer FROM posiedzenia ORDER BY numer DESC LIMIT 10');
+        const dbNums = dbSittings[0]?.values.map(v => v[0]) || [];
+        
+        // Compare counts
+        if (apiSample.length > 0 && dbNums.length > 0) {
+            const maxAPI = Math.max(...apiSample);
+            const maxDB = Math.max(...dbNums);
+            
+            if (maxAPI > maxDB) {
+                differences.push({
+                    type: 'new_sittings',
+                    message: `Nowe posiedzenia dostępne: ${maxDB + 1}-${maxAPI}`,
+                    count: maxAPI - maxDB
+                });
+            }
+        }
+        
+        // Check for data freshness
+        const lastUpdate = getLastUpdate(db);
+        if (lastUpdate !== 'Never') {
+            const daysSinceUpdate = Math.floor((Date.now() - new Date(lastUpdate)) / (1000 * 60 * 60 * 24));
+            if (daysSinceUpdate > 7) {
+                differences.push({
+                    type: 'stale_data',
+                    message: `Dane mogą być nieaktualne (ostatnia aktualizacja: ${daysSinceUpdate} dni temu)`,
+                    days: daysSinceUpdate
+                });
+            }
+        }
+        
+    } catch (error) {
+        console.warn('[Pipeline] Verification error:', error);
+        differences.push({
+            type: 'error',
+            message: `Błąd weryfikacji: ${error.message}`
+        });
+    }
+    
+    return differences;
+}
+
+// ===== CACHE STATUS =====
+
+export function getCacheStatus(db) {
+    if (!db || !db.database) {
+        return {
+            initialized: false,
+            message: 'Baza nie została zainicjalizowana'
+        };
+    }
+    
+    try {
+        const stats = db.getStats();
+        const lastPosiedzenie = getLastPosiedzenie(db);
+        const lastUpdate = getLastUpdate(db);
+        
+        const totalRecords = Object.values(stats).reduce((sum, count) => sum + count, 0);
+        
+        return {
+            initialized: true,
+            lastPosiedzenie,
+            lastUpdate,
+            totalRecords,
+            stats
+        };
+    } catch (error) {
+        return {
+            initialized: true,
+            error: error.message
+        };
+    }
 }
