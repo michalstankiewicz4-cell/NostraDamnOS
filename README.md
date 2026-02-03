@@ -1,4 +1,6 @@
-# 🏛️ Analiza Parlamentarna
+# 🏛️ Parlament "puppy"
+<sub>Oficjalna nazwa: Parlament "puppy" | Repo: NostraDamnOS | v2.1.1</sub>
+
 <sub>Created by Michał Stankiewicz, Claude Sonnet 4.5 & Copilot</sub>
 
 <sub>tel.: +48 797 486 355 pomóż 🫀 autorowi projektu drogi kolego gdyż cel jest szczytny 😙 Michał</sub>
@@ -18,9 +20,9 @@ System do analizy wypowiedzi parlamentarnych z API Sejmu RP.
 
 ---
 
-Amatorski darmowy projekt - Parlament "puppy"
+## 🐶 O Projekcie Parlament "puppy"
 
-Parlament puppy to zaawansowany, w pełni zautomatyzowany system monitorowania pracy parlamentu, który działa w czasie rzeczywistym i opiera się wyłącznie na danych udostępnianych przez oficjalne API Sejmu. System śledzi każde głosowanie, analizuje frekwencję posłów, wykrywa nieobecności oraz monitoruje dyscyplinę klubową. Dzięki temu potrafi wskazać zarówno posłów głosujących zgodnie z linią ugrupowania, jak i tych, którzy się wyłamują. Obserwuje również zmiany w zachowaniach parlamentarzystów, tworząc dynamiczny obraz pracy izby — dokładnie tak, jak robią to profesjonalne narzędzia typu „parliament watchdog”.
+**Parlament "puppy"** to zaawansowany, w pełni zautomatyzowany system monitorowania pracy parlamentu, który działa w czasie rzeczywistym i opiera się wyłącznie na danych udostępnianych przez oficjalne API Sejmu. System śledzi każde głosowanie, analizuje frekwencję posłów, wykrywa nieobecności oraz monitoruje dyscyplinę klubową. Dzięki temu potrafi wskazać zarówno posłów głosujących zgodnie z linią ugrupowania, jak i tych, którzy się wyłamują. Obserwuje również zmiany w zachowaniach parlamentarzystów, tworząc dynamiczny obraz pracy izby — dokładnie tak, jak robią to profesjonalne narzędzia typu „parliament watchdog”.
 
 Dzięki pełnemu dostępowi do danych o głosowaniach system potrafi analizować relacje między klubami i wykrywać nieformalne koalicje. Pokazuje, które ugrupowania głosują razem, gdzie pojawiają się rozłamy oraz jakie są faktyczne linie podziału politycznego. To poziom analizy, który zwykle wymaga pracy politologów i analityków legislacyjnych, a tutaj jest generowany automatycznie.
 

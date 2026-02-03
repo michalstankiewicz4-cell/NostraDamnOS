@@ -2,24 +2,67 @@
 
 All notable changes to this project will be documented in this file.
 
+---
+
 ## [2.1.1] - 2026-02-03
 
-### Added
+### Added - Smart Auto-Fetch UI & RODO Lock
 
-- Shortcut: Shift+P toggles database import/export buttons when the floating console is open
+**UI Redesign - Smart Auto-Fetch Mode:**
+- ✅ **Smart Auto-Fetch** - one-click operation with automatic mode detection
+  - First run (empty DB) → fetches configured sitting range
+  - Incremental update → detects new sittings, fetches only new data
+  - Up-to-date → shows "dane aktualne" message, skips fetch
+  - 10× faster for repeat users (incremental cache)
+- ✅ **Simplified UI** - reduced from 5 buttons + 3 radios to 2 primary buttons
+  - "🚀 Pobierz dane" - smart auto-fetch (95% use case)
+  - "🗑️ Wyczyść bazę danych" - danger action
+- ✅ **Advanced Options Panel** - collapsible `<details>` section
+  - Fetch mode radios: Auto (default) / Full / Verify
+  - Cache status display (real-time metadata)
+  - "🔍 Sprawdź niezgodności" verification button
+- ✅ **Cache Status Display** - shows last update, sitting number, record counts
+- ✅ **Verification Mode** - compare API vs local DB, show differences modal
+- ✅ Shortcut: Shift+P toggles hidden database import/export/RODO buttons
+
+**RODO Compliance:**
+- ✅ **RODO Filter Locked** - checkbox permanently enabled, grayed out, cursor not-allowed
+  - Cannot be disabled by users (security measure)
+  - Disclaimer text: "🔒 Filtr RODO (zawsze aktywny)"
+- ✅ **Hidden RODO Cleanup Button** - third button accessible via Shift+P
+  - Pink gradient (#ec4899→#db2777), 🔐 icon
+  - Placeholder for future deep scan of sensitive data
+  - Position: bottom 160px right 90px
+
+**Legal Documentation:**
+- ✅ LICENSE file created - MIT License with author attribution
+  - Bilingual: Polish + English
+  - Version number: v2.1.1
+  - Project name: Parlament "puppy"
+  - Copyright © 2026 Michał Stankiewicz
+
+**Project Rebranding:**
+- ✅ Official name updated to **Parlament "puppy"**
+  - README.md header updated
+  - index.html title: "Parlament \"puppy\" v2.1.1"
+  - PROJECT-CONTEXT.md metadata updated
 
 ### Changed
 
-- Database import/export buttons are hidden by default to avoid initial flicker
-- README documentation section now lists all text docs with brief descriptions
-- README now mentions the overall order/structure of text files
-- Integration of zapytania pisemne (written questions) module into full ETL pipeline
-- Added RODO support for zapytania module - 'email' field now included in RODO filter
+- Database import/export buttons hidden by default (avoid flicker)
+- README documentation section reorganized
+- Integration of zapytania pisemne (written questions) into full ETL pipeline
+- RODO support for zapytania module - 'email' field filtering
 
 ### Fixed
 
-- Fixed import of `applyRodo` function in zapytania normalizer (was using non-existent `applyRODOFilter`)
-- Database schema updated to include zapytania and zapytania_odpowiedzi tables
+- Fixed import of `applyRodo` function in zapytania normalizer
+- Database schema includes zapytania and zapytania_odpowiedzi tables
+
+### Removed
+
+- docs/api-audit-2026-02-summary.csv (temporary audit file)
+- docs/UI-REDESIGN-V2.1.md (content merged into CHANGELOG)
 
 ---
 

@@ -1,7 +1,9 @@
-# 🏛️ Analiza Parlamentarna - Kontekst Projektu
+# 🏛️ Parlament "puppy" - Kontekst Projektu
 
+**Oficjalna nazwa:** Parlament "puppy"  
+**Repo:** NostraDamnOS  
+**Wersja:** 2.1.1  
 **Data utworzenia:** 2026-01-24  
-**Wersja:** 2.1.0  
 **Status:** Production-ready ✅
 
 ---
