@@ -46,7 +46,7 @@ Najbardziej zaawansowanym elementem Parlament puppy jest silnik AI‑asystenta p
 * **🛡️ RODO Filter** - automatyczne usuwanie danych wrażliwych (domyślnie aktywny)
 * **Incremental Cache** - pobiera tylko nowe dane (10× szybciej)
 * **SQLite w przeglądarce** - pełna baza danych lokalnie (sql.js)
-* **12 typów danych** - wypowiedzi, głosowania, interpelacje, komisje...
+* **13 typów danych** - wypowiedzi, głosowania, interpelacje, zapytania, komisje...
 * **Dynamic Progress** - dokładny tracking 0-100%
 * **📋 Console Interceptor** - wszystkie logi widoczne w UI
 * **100% lokalne** - wszystko w przeglądarce, zero backend
@@ -56,9 +56,9 @@ Najbardziej zaawansowanym elementem Parlament puppy jest silnik AI‑asystenta p
 
 ## 🌐 API Coverage
 
-System pokrywa **~90% użytecznych endpointów API Sejmu RP**:
+System pokrywa **~95% użytecznych endpointów API Sejmu RP**:
 
-### ✅ Zaimplementowane (11 modułów)
+### ✅ Zaimplementowane (12 modułów)
 
 | Kategoria | Endpoint | Status |
 |-----------|----------|--------|
@@ -68,6 +68,7 @@ System pokrywa **~90% użytecznych endpointów API Sejmu RP**:
 | **Głosowania** | `/sejm/term{N}/votings` | ✅ 200 |
 | **Głosy indywidualne** | `/sejm/term{N}/votings/{sitting}/{num}` | ✅ 200 |
 | **Interpelacje** | `/sejm/term{N}/interpellations` | ✅ 200 |
+| **Zapytania pisemne** | `/sejm/term{N}/writtenQuestions` | ✅ 200 |
 | **Projekty ustaw** | `/sejm/term{N}/prints`, `/processes` | ✅ 200 |
 | **Komisje** | `/sejm/term{N}/committees` | ✅ 200 |
 | **Komisje posiedzenia** | `/sejm/committees/{code}/sittings` | ✅ 200 |

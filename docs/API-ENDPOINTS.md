@@ -170,6 +170,34 @@ GET https://api.sejm.gov.pl/sejm/committees/FIN/sittings/1/transcripts
 
 ---
 
+### 8️⃣ Zapytania pisemne
+
+**Endpointy:**
+- **Lista**: `/sejm/term{N}/writtenQuestions`
+- **Szczegóły**: `/sejm/term{N}/writtenQuestions/{num}`
+- **Treść zapytania**: `/sejm/term{N}/writtenQuestions/{num}/body`
+- **Treść odpowiedzi**: `/sejm/term{N}/writtenQuestions/{num}/reply/{key}/body`
+
+**Moduł:** `fetcher/modules/zapytania.js`
+
+**Dane:**
+- Zapytania pisemne posłów
+- Odpowiedzi ministerstw (termin: 7 dni)
+- Status opóźnień odpowiedzi
+
+**Różnica vs Interpelacje:**
+- **Zapytania**: krótsze, odpowiedź w 7 dni
+- **Interpelacje**: dłuższe, odpowiedź w 21 dni
+
+**Przykłady:**
+```
+GET https://api.sejm.gov.pl/sejm/term10/writtenQuestions
+GET https://api.sejm.gov.pl/sejm/term10/writtenQuestions/1234
+GET https://api.sejm.gov.pl/sejm/term10/writtenQuestions/1234/body
+```
+
+---
+
 ## ❌ Endpointy NIE działające (404/204)
 
 **NIE UŻYWAĆ - endpointy zwracają błędy:**
@@ -228,8 +256,8 @@ Użyteczność: BARDZO NISKA
 ### ✅ Kompletność
 
 ```
-Zaimplementowane moduły:  11
-Pokrycie API:            ~90% użytecznych endpointów
+Zaimplementowane moduły:  12
+Pokrycie API:            ~95% użytecznych endpointów
 Redundancja:             Brak
 Problematyczne:          Prawidłowo pominięte
 ```
@@ -244,6 +272,7 @@ Problematyczne:          Prawidłowo pominięte
 | Głosowania | `/votings` | ✅ `glosowania.js` | Działa |
 | Głosy | `/votings/{s}/{v}` | ✅ `glosy.js` | Działa |
 | Interpelacje | `/interpellations` | ✅ `interpelacje.js` | Działa |
+| Zapytania pisemne | `/writtenQuestions` | ✅ `zapytania.js` | Działa |
 | Projekty ustaw | `/prints`, `/processes` | ✅ `projekty_ustaw.js` | Działa |
 | Komisje | `/committees` | ✅ `komisje.js` | Działa |
 | Komisje posiedzenia | `/committees/.../sittings` | ✅ `komisje_posiedzenia.js` | Działa |

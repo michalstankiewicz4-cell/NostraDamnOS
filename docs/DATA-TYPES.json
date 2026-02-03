@@ -1,7 +1,7 @@
 {
-  "version": "0.4.0",
-  "updated": "2025-01-23",
-  "description": "Kompletne dane z API Sejmu i Senatu RP - 11 typów danych",
+  "version": "0.5.0",
+  "updated": "2025-02-03",
+  "description": "Kompletne dane z API Sejmu i Senatu RP - 12 typów danych",
   "source": "final",
   "structure": {
     "poslowie.jsonl": {
@@ -46,10 +46,16 @@
     },
     "interpelacje.jsonl": {
       "scope": "global",
-      "description": "Interpelacje + zapytania + odpowiedzi",
+      "description": "Interpelacje posłów + odpowiedzi (termin: 21 dni)",
       "sources": [
-        "sejm/term10/interpellations",
-        "sejm/term10/questions"
+        "sejm/term10/interpellations"
+      ]
+    },
+    "zapytania.jsonl": {
+      "scope": "global",
+      "description": "Zapytania pisemne posłów + odpowiedzi (termin: 7 dni)",
+      "sources": [
+        "sejm/term10/writtenQuestions"
       ]
     },
     "projekty_ustaw.jsonl": {
@@ -93,7 +99,7 @@
   },
   "files": [],
   "notes": {
-    "design": "Każdy typ danych w osobnym pliku - 11 kategorii",
+    "design": "Każdy typ danych w osobnym pliku - 12 kategorii",
     "hierarchy": "Global → Kadencja → Posiedzenie → Szczegóły",
     "normalization": "Wszystkie dane znormalizowane z memberID + role",
     "updateFrequency": "Dane aktualizowane przez użytkownika przez fetch.html"
