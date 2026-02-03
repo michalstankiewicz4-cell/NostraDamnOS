@@ -15,7 +15,14 @@
             
             // Check if floating console is currently open
             const floatingPanel = document.getElementById('floatingConsolePanel');
-            if (!floatingPanel || floatingPanel.style.display === 'none') {
+            if (!floatingPanel) {
+                console.log('[Keyboard Toggle] Console panel not found - ignoring Shift+P');
+                return;
+            }
+            
+            // Check computed style to handle CSS classes and stylesheets
+            const computedDisplay = window.getComputedStyle(floatingPanel).display;
+            if (computedDisplay === 'none') {
                 console.log('[Keyboard Toggle] Console is closed - ignoring Shift+P');
                 return;
             }
