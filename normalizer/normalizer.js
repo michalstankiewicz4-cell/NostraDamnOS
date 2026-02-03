@@ -7,6 +7,7 @@ import { normalizeWypowiedzi, saveWypowiedzi } from './modules/wypowiedzi.js';
 import { normalizeGlosowania, saveGlosowania } from './modules/glosowania.js';
 import { normalizeGlosy, saveGlosy } from './modules/glosy.js';
 import { normalizeInterpelacje, saveInterpelacje } from './modules/interpelacje.js';
+import { normalizeZapytania, saveZapytania } from './modules/zapytania.js';
 import { normalizeProjektyUstaw, saveProjektyUstaw } from './modules/projekty_ustaw.js';
 import { normalizeKomisje, saveKomisje } from './modules/komisje.js';
 import { normalizeKomisjePosiedzenia, saveKomisjePosiedzenia } from './modules/komisje_posiedzenia.js';
@@ -23,6 +24,7 @@ export async function runNormalizer(db, raw) {
         glosowania: 0,
         glosy: 0,
         interpelacje: 0,
+        zapytania: 0,
         projekty_ustaw: 0,
         komisje: 0,
         komisje_posiedzenia: 0,
@@ -72,7 +74,14 @@ export async function runNormalizer(db, raw) {
         stats.interpelacje = normalized.length;
     }
     
-    // 7. Projekty ustaw (per term)
+    // 7. Zapytania pisemne (per term)
+    if (raw.zapytania && raw.zapytania.length > 0) {
+        const normalized = normalizeZapytania(raw.zapytania, { enableRODO: true });
+        saveZapytania(db, normalized);
+        stats.zapytania = normalized.zapytania.length;
+    }
+    
+    // 8. Projekty ustaw (per term)
     if (raw.projekty_ustaw && raw.projekty_ustaw.length > 0) {
         const normalized = normalizeProjektyUstaw(raw.projekty_ustaw);
         saveProjektyUstaw(db, normalized);

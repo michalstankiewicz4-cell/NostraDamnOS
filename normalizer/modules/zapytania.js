@@ -130,3 +130,50 @@ export function getZapytaniaIndexes() {
         'CREATE INDEX IF NOT EXISTS idx_zapytania_odpowiedzi_zapytanie ON zapytania_odpowiedzi(zapytanie_term, zapytanie_num)'
     ];
 }
+
+/**
+ * Zapisuje zapytania do bazy (UPSERT)
+ */
+export function saveZapytania(db, normalized) {
+    console.log(`[Normalizer] Saving ${normalized.zapytania.length} zapytania + ${normalized.zapytania_odpowiedzi.length} replies...`);
+    
+    // 1. Zapytania
+    const stmtZapytania = db.prepare(`
+        INSERT INTO zapytania (term, num, title, receiptDate, lastModified, sentDate, from_mp_ids, to_ministries, answerDelayedDays)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(term, num) DO UPDATE SET
+            title = excluded.title,
+            lastModified = excluded.lastModified,
+            sentDate = excluded.sentDate,
+            from_mp_ids = excluded.from_mp_ids,
+            to_ministries = excluded.to_ministries,
+            answerDelayedDays = excluded.answerDelayedDays
+    `);
+    
+    for (const z of normalized.zapytania) {
+        stmtZapytania.run(
+            z.term, z.num, z.title, z.receiptDate, z.lastModified, 
+            z.sentDate, z.from_mp_ids, z.to_ministries, z.answerDelayedDays
+        );
+    }
+    
+    // 2. Odpowiedzi
+    const stmtOdpowiedzi = db.prepare(`
+        INSERT INTO zapytania_odpowiedzi (zapytanie_term, zapytanie_num, key, from_author, receiptDate, lastModified, onlyAttachment, prolongation)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(zapytanie_term, zapytanie_num, key) DO UPDATE SET
+            from_author = excluded.from_author,
+            lastModified = excluded.lastModified,
+            onlyAttachment = excluded.onlyAttachment,
+            prolongation = excluded.prolongation
+    `);
+    
+    for (const o of normalized.zapytania_odpowiedzi) {
+        stmtOdpowiedzi.run(
+            o.zapytanie_term, o.zapytanie_num, o.key, o.from_author,
+            o.receiptDate, o.lastModified, o.onlyAttachment, o.prolongation
+        );
+    }
+    
+    console.log(`[Normalizer] ✓ Saved zapytania successfully`);
+}

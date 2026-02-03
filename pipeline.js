@@ -240,6 +240,7 @@ export function buildConfigFromUI() {
     if (document.getElementById('etlVotings')?.checked) config.modules.push('glosowania');
     if (document.getElementById('etlVotes')?.checked) config.modules.push('glosy');
     if (document.getElementById('etlInterpellations')?.checked) config.modules.push('interpelacje');
+    if (document.getElementById('etlWrittenQuestions')?.checked) config.modules.push('zapytania');
     if (document.getElementById('etlBills')?.checked) config.modules.push('projekty_ustaw');
     if (document.getElementById('etlDisclosures')?.checked) config.modules.push('oswiadczenia');
     

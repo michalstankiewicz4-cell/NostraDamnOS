@@ -7,6 +7,7 @@ import { fetchWypowiedzi } from './modules/wypowiedzi.js';
 import { fetchGlosowania } from './modules/glosowania.js';
 import { fetchGlosy } from './modules/glosy.js';
 import { fetchInterpelacje } from './modules/interpelacje.js';
+import { fetchWrittenQuestions } from './modules/zapytania.js';
 import { fetchProjektyUstaw } from './modules/projekty_ustaw.js';
 import { fetchKomisje } from './modules/komisje.js';
 import { fetchKomisjePosiedzenia } from './modules/komisje_posiedzenia.js';
@@ -66,6 +67,12 @@ export async function runFetcher(config) {
     if (config.modules.includes('interpelacje')) {
         console.log('[Fetcher] Fetching interpelacje...');
         results.interpelacje = await fetchInterpelacje(config);
+    }
+    
+    // Zapytania pisemne (per term)
+    if (config.modules.includes('zapytania')) {
+        console.log('[Fetcher] Fetching zapytania...');
+        results.zapytania = await fetchWrittenQuestions(config.apiBase, config.term);
     }
     
     // Projekty ustaw (per term)
