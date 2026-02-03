@@ -3,7 +3,7 @@
 
 <sub>tel.: +48 797 486 355</sub>
 
-[![Last Commit](https://img.shields.io/github/last-commit/michalstankiewicz4-cell/NostraDamnOS?label=Ostatnia%20aktualizacja&color=blue)](https://github.com/michalstankiewicz4-cell/NostraDamnOS/commits/main) Jeżeli znalazłęś błąd o którym myślę to poprawka będzie o godzinia 15-16
+[![Last Commit](https://img.shields.io/github/last-commit/michalstankiewicz4-cell/NostraDamnOS?label=Ostatnia%20aktualizacja&color=blue)](https://github.com/michalstankiewicz4-cell/NostraDamnOS/commits/main) Jeżeli znalazłeś błąd o którym myślę to poprawka będzie o godzinie 15-16
 
 System do analizy wypowiedzi parlamentarnych z API Sejmu RP.
 
