@@ -54,6 +54,47 @@ Najbardziej zaawansowanym elementem Parlament puppy jest silnik AI‑asystenta p
 
 ---
 
+## 🌐 API Coverage
+
+System pokrywa **~90% użytecznych endpointów API Sejmu RP**:
+
+### ✅ Zaimplementowane (11 modułów)
+
+| Kategoria | Endpoint | Status |
+|-----------|----------|--------|
+| **Posłowie** | `/sejm/term{N}/MP` | ✅ 200 |
+| **Posiedzenia** | `/sejm/term{N}/proceedings` | ✅ 200 |
+| **Wypowiedzi** | `/sejm/term{N}/proceedings/{id}/transcripts` | ✅ 200 |
+| **Głosowania** | `/sejm/term{N}/votings` | ✅ 200 |
+| **Głosy indywidualne** | `/sejm/term{N}/votings/{sitting}/{num}` | ✅ 200 |
+| **Interpelacje** | `/sejm/term{N}/interpellations` | ✅ 200 |
+| **Projekty ustaw** | `/sejm/term{N}/prints`, `/processes` | ✅ 200 |
+| **Komisje** | `/sejm/term{N}/committees` | ✅ 200 |
+| **Komisje posiedzenia** | `/sejm/committees/{code}/sittings` | ✅ 200 |
+| **Komisje wypowiedzi** | `/sejm/committees/{code}/transcripts` | ✅ 200 |
+| **Oświadczenia majątkowe** | `/sejm/term{N}/MP/{id}/statements` | ✅ 200 |
+
+### ❌ Pominięte (błędne endpointy)
+
+| Endpoint | Status | Powód |
+|----------|--------|-------|
+| `/clubs/{id}` | 404 | Pojedyncze kluby niedostępne |
+| `/committees/{id}` | 204 | Brak treści |
+| `/videos/{id}` | 404/204 | Nagrania niedostępne |
+
+### 📊 Statystyki audytu
+
+```
+Przeanalizowane endpointy: 1,459
+Status 200 (działają):     1,285 (88%)
+Status 404 (błąd):           124 (8.5%)
+Status 204 (puste):           50 (3.5%)
+```
+
+**Więcej:** Zobacz [docs/API-ENDPOINTS.md](docs/API-ENDPOINTS.md) - kompletna mapa endpointów
+
+---
+
 ## 🔒 RODO i Bezpieczeństwo
 
 ### Filtr RODO (domyślnie AKTYWNY ✅)
@@ -302,6 +343,7 @@ python -m http.server 8766
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) - Przegląd architektury systemu i głównych komponentów. Opisuje przepływ danych w ujęciu wysokopoziomowym.
 - [docs/DATABASE-V2.md](docs/DATABASE-V2.md) - Schemat bazy SQLite (12 tabel) i indeksy. Dokumentuje strukturę danych.
 - [docs/FILE-STRUCTURE.md](docs/FILE-STRUCTURE.md) - Pełna struktura katalogów i rola plików. Służy jako mapa projektu.
+- [docs/API-ENDPOINTS.md](docs/API-ENDPOINTS.md) - Kompletna mapa endpointów API Sejmu. Dokumentuje działające i niedziałające endpointy.
 
 **ETL Pipeline (docs):**
 - [docs/PIPELINE-V2.md](docs/PIPELINE-V2.md) - Orkiestracja całego ETL oraz etapy przetwarzania. Wyjaśnia kolejność i zależności.
