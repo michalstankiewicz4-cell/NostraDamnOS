@@ -456,6 +456,20 @@ footer a:hover {
     font-size: 14px;
 }
 
+/* Disabled state for checkbox items */
+.checkbox-item input:disabled {
+    pointer-events: none;
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.checkbox-item input:disabled + label,
+.checkbox-item input:disabled ~ label {
+    opacity: 0.55;
+    cursor: not-allowed;
+    color: #a0aec0;
+}
+
 /* Badges */
 .badge {
     display: inline-block;
@@ -523,6 +537,18 @@ select:focus,
 input[type="number"]:focus {
     border-color: var(--primary-color);
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* Disabled state for all form controls - prevent race conditions */
+.form-control:disabled,
+select:disabled,
+input[type="number"]:disabled,
+input:disabled {
+    pointer-events: none;
+    opacity: 0.55;
+    background-color: #f3f4f6;
+    cursor: not-allowed;
+    border-color: #e5e7eb;
 }
 
 /* Database Import/Export Floating Buttons */
