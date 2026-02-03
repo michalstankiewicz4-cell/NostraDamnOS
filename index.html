@@ -176,7 +176,7 @@
                     </div>
                     
                     <button class="etl-btn etl-btn-primary" id="etlFetchBtn">
-                        � Pobierz dane
+                        📥 Pobierz dane
                     </button>
                     <button class="etl-btn etl-btn-danger" id="etlClearBtn">
                         🗑️ Wyczyść bazę
@@ -265,9 +265,9 @@
                             Zakres:
                         </label>
                         <div style="display: flex; gap: 8px; align-items: center;">
-                            <span style="font-size: 14px;">od</span>
+                            <span id="etlRangeFromLabel" style="font-size: 14px;">od</span>
                             <input type="number" id="etlRangeFrom" value="1" min="1" style="width: 65px; padding: 6px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px;">
-                            <span style="font-size: 14px;">do:</span>
+                            <span id="etlRangeToLabel" style="font-size: 14px;">do:</span>
                             <input type="number" id="etlRangeTo" value="3" min="1" style="width: 65px; padding: 6px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px;">
                         </div>
                     </fieldset>

@@ -19,10 +19,75 @@ function initETLPanel() {
         updateETLEstimate();
     });
     
-    // Checkboxy - wywołaj updateETLEstimate przy zmianie
-    document.querySelectorAll('#etlTranscripts, #etlVotings, #etlVotes, #etlInterpellations, #etlWrittenQuestions, #etlBills, #etlDisclosures, #etlCommitteeSittings, #etlCommitteeStatements').forEach(cb => {
-        cb?.addEventListener('change', updateETLEstimate);
+    // Checkboxy - wywołaj zależności + updateETLEstimate przy zmianie
+    const checkboxSelector = '#etlTranscripts, #etlVotings, #etlVotes, #etlInterpellations, #etlWrittenQuestions, #etlBills, #etlDisclosures, #etlCommitteeSittings, #etlCommitteeStatements';
+    document.querySelectorAll(checkboxSelector).forEach(cb => {
+        cb?.addEventListener('change', () => {
+            applyDependencies();
+            updateETLEstimate();
+        });
     });
+
+    // Range mode - wywołaj zależności + updateETLEstimate przy zmianie
+    document.querySelectorAll('input[name="rangeMode"]').forEach(radio => {
+        radio?.addEventListener('change', () => {
+            applyDependencies();
+            updateETLEstimate();
+        });
+    });
+
+    // ===== DEPENDENCIES =====
+    function applyDependencies() {
+        const votings = document.getElementById('etlVotings');
+        const votes = document.getElementById('etlVotes');
+        const committeeSittings = document.getElementById('etlCommitteeSittings');
+        const committeeStatements = document.getElementById('etlCommitteeStatements');
+        const committeeSelect = document.getElementById('etlCommitteeSelect');
+        const rangeMode = document.querySelector('input[name="rangeMode"]:checked')?.value || 'last';
+        const rangeSelect = document.getElementById('etlRangeSelect');
+        const rangeFrom = document.getElementById('etlRangeFrom');
+        const rangeTo = document.getElementById('etlRangeTo');
+        const rangeFromLabel = document.getElementById('etlRangeFromLabel');
+        const rangeToLabel = document.getElementById('etlRangeToLabel');
+
+        // Głosy indywidualne wymagają głosowań
+        if (votings && votes) {
+            if (!votings.checked) {
+                votes.checked = false;
+                votes.disabled = true;
+            } else {
+                votes.disabled = false;
+            }
+        }
+
+        // Wypowiedzi komisji wymagają posiedzeń komisji
+        if (committeeSittings && committeeStatements) {
+            if (!committeeSittings.checked) {
+                committeeStatements.checked = false;
+                committeeStatements.disabled = true;
+            } else {
+                committeeStatements.disabled = false;
+            }
+        }
+
+        // Wybór komisji tylko gdy wybrano dane komisji
+        if (committeeSelect) {
+            const committeesEnabled = !!(committeeSittings?.checked || committeeStatements?.checked);
+            committeeSelect.disabled = !committeesEnabled;
+        }
+
+        // Zakres posiedzeń: last -> blokuje od/do; custom -> blokuje select
+        if (rangeSelect && rangeFrom && rangeTo) {
+            const isLast = rangeMode === 'last';
+            rangeSelect.disabled = !isLast;
+            rangeFrom.disabled = isLast;
+            rangeTo.disabled = isLast;
+
+            const labelColor = isLast ? '#a0aec0' : '#000000';
+            if (rangeFromLabel) rangeFromLabel.style.color = labelColor;
+            if (rangeToLabel) rangeToLabel.style.color = labelColor;
+        }
+    }
     
     // ===== UPDATE ESTIMATE =====
     function updateETLEstimate() {
@@ -109,6 +174,7 @@ function initETLPanel() {
     }
     
     // Initial update
+    applyDependencies();
     updateETLEstimate();
     
     // ===== ADVANCED OPTIONS =====
