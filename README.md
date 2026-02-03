@@ -293,18 +293,24 @@ python -m http.server 8766
 
 ## 📚 Dokumentacja
 
-**Core:**
-- [ARCHITECTURE.md](docs/ARCHITECTURE.md) - System overview
-- [DATABASE-V2.md](docs/DATABASE-V2.md) - Schema (12 tables)
+**Root:**
+- [README.md](README.md) - Główny opis projektu, funkcje i szybki start. Zawiera ogólny kontekst oraz odnośniki do pozostałej dokumentacji.
+- [CHANGELOG.md](CHANGELOG.md) - Historia zmian i wersji projektu. Ułatwia śledzenie nowości oraz poprawek.
+- [PROJECT-CONTEXT.md](PROJECT-CONTEXT.md) - Kontekst projektowy i założenia. Pomaga zrozumieć cele oraz ograniczenia.
 
-**ETL Pipeline:**
-- [PIPELINE-V2.md](docs/PIPELINE-V2.md) - Complete orchestration
-- [FETCHER-V2.md](docs/FETCHER-V2.md) - Data fetching (12 modules)
-- [NORMALIZER-V2.md](docs/NORMALIZER-V2.md) - Transformation (11 modules)
-- [INCREMENTAL-CACHE.md](docs/INCREMENTAL-CACHE.md) - Smart caching
+**Core (docs):**
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) - Przegląd architektury systemu i głównych komponentów. Opisuje przepływ danych w ujęciu wysokopoziomowym.
+- [docs/DATABASE-V2.md](docs/DATABASE-V2.md) - Schemat bazy SQLite (12 tabel) i indeksy. Dokumentuje strukturę danych.
+- [docs/FILE-STRUCTURE.md](docs/FILE-STRUCTURE.md) - Pełna struktura katalogów i rola plików. Służy jako mapa projektu.
 
-**Features:**
-- [GEO.md](docs/GEO.md) - Geolocation (Europe only)
+**ETL Pipeline (docs):**
+- [docs/PIPELINE-V2.md](docs/PIPELINE-V2.md) - Orkiestracja całego ETL oraz etapy przetwarzania. Wyjaśnia kolejność i zależności.
+- [docs/FETCHER-V2.md](docs/FETCHER-V2.md) - Pobieranie danych z API (12 modułów). Zawiera opis modułów i retry.
+- [docs/NORMALIZER-V2.md](docs/NORMALIZER-V2.md) - Transformacje do rekordów SQL (11 modułów). Opisuje mapowania i walidacje.
+- [docs/INCREMENTAL-CACHE.md](docs/INCREMENTAL-CACHE.md) - Mechanizm przyrostowego cache. Tłumaczy zasady wykrywania zmian.
+
+**Features (docs):**
+- [docs/GEO.md](docs/GEO.md) - Geolokalizacja (tylko Europa). Wyjaśnia zasady blokady regionów.
 
 ---
 
