@@ -1,0 +1,58 @@
+# GitHub Action - Auto-update version in all files
+# Triggers when project.json is modified
+
+name: Update Version
+
+on:
+  push:
+    paths:
+      - 'project.json'
+    branches:
+      - main
+
+jobs:
+  update-version:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Read project.json
+        id: project
+        run: |
+          NAME=$(jq -r '.name' project.json)
+          VERSION=$(jq -r '.version' project.json)
+          echo "name=$NAME" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+      
+      - name: Update index.html
+        run: |
+          sed -i "s|<title>.*</title>|<title>${{ steps.project.outputs.name }} v${{ steps.project.outputs.version }}</title>|g" index.html
+          sed -i "s|<h1>🏛️ .*</h1>|<h1>🏛️ ${{ steps.project.outputs.name }}</h1>|g" index.html
+          sed -i "s|System lokalnej analizy wypowiedzi parlamentarnych | v[0-9.]*|System lokalnej analizy wypowiedzi parlamentarnych | v${{ steps.project.outputs.version }}|g" index.html
+      
+      - name: Update README.md
+        run: |
+          sed -i "s|# 🏛️ .*|# 🏛️ ${{ steps.project.outputs.name }}|g" README.md
+          sed -i "s|Repo: NostraDamnOS | v[0-9.]*|Repo: NostraDamnOS | v${{ steps.project.outputs.version }}|g" README.md
+      
+      - name: Update PROJECT-CONTEXT.md
+        run: |
+          sed -i "s|# 🏛️ .* - Kontekst Projektu|# 🏛️ ${{ steps.project.outputs.name }} - Kontekst Projektu|g" PROJECT-CONTEXT.md
+          sed -i "s|\*\*Wersja:\*\* [0-9.]*|\*\*Wersja:\*\* ${{ steps.project.outputs.version }}|g" PROJECT-CONTEXT.md
+      
+      - name: Update LICENSE
+        run: |
+          sed -i "s|\*\*Projekt:\*\* .* - NostraDamnOS|\*\*Projekt:\*\* ${{ steps.project.outputs.name }} - NostraDamnOS|g" LICENSE
+          sed -i "s|\*\*Wersja:\*\* v[0-9.]*|\*\*Wersja:\*\* v${{ steps.project.outputs.version }}|g" LICENSE
+      
+      - name: Commit changes
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add -A
+          git diff-index --quiet HEAD || git commit -m "🤖 Auto-update version to v${{ steps.project.outputs.version }}"
+          git push

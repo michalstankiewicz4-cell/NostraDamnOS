@@ -1,0 +1,30 @@
+{
+  "name": "Parlament \"puppy\"",
+  "version": "2.1.1",
+  "description": "System lokalnej analizy wypowiedzi parlamentarnych",
+  "author": {
+    "name": "Michał Stankiewicz",
+    "email": "dostępny w profilu GitHub",
+    "phone": "+48 797 486 355",
+    "github": "michalstankiewicz4-cell"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/michalstankiewicz4-cell/NostraDamnOS.git",
+    "name": "NostraDamnOS"
+  },
+  "license": "MIT",
+  "created": "2026-01-24",
+  "updated": "2026-02-03",
+  "status": "production",
+  "keywords": [
+    "parlament",
+    "sejm",
+    "senat",
+    "api",
+    "etl",
+    "rodo",
+    "sqlite",
+    "watchdog"
+  ]
+}
