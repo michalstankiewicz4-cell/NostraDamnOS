@@ -14,7 +14,7 @@ import { normalizeKomisjePosiedzenia, saveKomisjePosiedzenia } from './modules/k
 import { normalizeKomisjeWypowiedzi, saveKomisjeWypowiedzi } from './modules/komisje_wypowiedzi.js';
 import { normalizeOswiadczeniaMajatkowe, saveOswiadczeniaMajatkowe } from './modules/oswiadczenia_majatkowe.js';
 
-export async function runNormalizer(db, raw) {
+export async function runNormalizer(db, raw, config = {}) {
     console.log('[Normalizer] Starting...');
     
     let stats = {
@@ -34,7 +34,10 @@ export async function runNormalizer(db, raw) {
     
     // 1. Poslowie (foundation - always first)
     if (raw.poslowie && raw.poslowie.length > 0) {
-        const normalized = normalizePoslowie(raw.poslowie);
+        let normalized = normalizePoslowie(raw.poslowie);
+        if (config.rodoFilter) {
+            normalized = normalized.map(r => ({ ...r, email: null }));
+        }
         savePoslowie(db, normalized);
         stats.poslowie = normalized.length;
     }
@@ -76,7 +79,7 @@ export async function runNormalizer(db, raw) {
     
     // 7. Zapytania pisemne (per term)
     if (raw.zapytania && raw.zapytania.length > 0) {
-        const normalized = normalizeZapytania(raw.zapytania, { enableRODO: true });
+        const normalized = normalizeZapytania(raw.zapytania, { enableRODO: config.rodoFilter });
         saveZapytania(db, normalized);
         stats.zapytania = normalized.zapytania.length;
     }

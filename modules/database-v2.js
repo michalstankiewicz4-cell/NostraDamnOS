@@ -168,7 +168,41 @@ export const db2 = {
             CREATE INDEX IF NOT EXISTS idx_oswiadcz_osoba ON oswiadczenia_majatkowe(id_osoby);
             CREATE INDEX IF NOT EXISTS idx_oswiadcz_rok ON oswiadczenia_majatkowe(rok);
             
-            -- 12. Metadata (cache, wersje, logi)
+            -- 12. Zapytania pisemne
+            CREATE TABLE IF NOT EXISTS zapytania (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                term INTEGER NOT NULL,
+                num INTEGER NOT NULL,
+                title TEXT,
+                receiptDate TEXT,
+                lastModified TEXT,
+                sentDate TEXT,
+                from_mp_ids TEXT,
+                to_ministries TEXT,
+                answerDelayedDays INTEGER DEFAULT 0,
+                UNIQUE(term, num)
+            );
+            CREATE INDEX IF NOT EXISTS idx_zapytania_term ON zapytania(term);
+            CREATE INDEX IF NOT EXISTS idx_zapytania_receiptDate ON zapytania(receiptDate);
+            CREATE INDEX IF NOT EXISTS idx_zapytania_lastModified ON zapytania(lastModified);
+            CREATE INDEX IF NOT EXISTS idx_zapytania_delayed ON zapytania(answerDelayedDays);
+            
+            -- 13. Odpowiedzi na zapytania pisemne
+            CREATE TABLE IF NOT EXISTS zapytania_odpowiedzi (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                zapytanie_term INTEGER NOT NULL,
+                zapytanie_num INTEGER NOT NULL,
+                key TEXT NOT NULL,
+                from_author TEXT,
+                receiptDate TEXT,
+                lastModified TEXT,
+                onlyAttachment INTEGER DEFAULT 0,
+                prolongation INTEGER DEFAULT 0,
+                UNIQUE(zapytanie_term, zapytanie_num, key)
+            );
+            CREATE INDEX IF NOT EXISTS idx_zapytania_odpowiedzi_zapytanie ON zapytania_odpowiedzi(zapytanie_term, zapytanie_num);
+            
+            -- 14. Metadata (cache, wersje, logi)
             CREATE TABLE IF NOT EXISTS metadata (
                 klucz TEXT PRIMARY KEY,
                 wartosc TEXT,
@@ -182,7 +216,7 @@ export const db2 = {
         this.upsertMetadata('schema_version', '2.0');
         this.upsertMetadata('created_at', new Date().toISOString());
         
-        console.log('[DB v2] Schema created - 12 tables + indexes');
+        console.log('[DB v2] Schema created - 13 tables + metadata + indexes');
     },
     
     // ===== UPSERT METHODS =====
@@ -355,7 +389,7 @@ export const db2 = {
         const tables = [
             'poslowie', 'posiedzenia', 'wypowiedzi', 'glosowania', 'glosy',
             'interpelacje', 'projekty_ustaw', 'komisje', 'komisje_posiedzenia',
-            'komisje_wypowiedzi', 'oswiadczenia_majatkowe'
+            'komisje_wypowiedzi', 'oswiadczenia_majatkowe', 'zapytania'
         ];
         
         tables.forEach(table => {
@@ -370,7 +404,7 @@ export const db2 = {
         const tables = [
             'poslowie', 'posiedzenia', 'wypowiedzi', 'glosowania', 'glosy',
             'interpelacje', 'projekty_ustaw', 'komisje', 'komisje_posiedzenia',
-            'komisje_wypowiedzi', 'oswiadczenia_majatkowe', 'metadata'
+            'komisje_wypowiedzi', 'oswiadczenia_majatkowe', 'zapytania', 'zapytania_odpowiedzi', 'metadata'
         ];
         
         tables.forEach(table => {
@@ -540,6 +574,50 @@ export const db2 = {
         
         data.forEach(row => {
             stmt.run([row.id_oswiadczenia, row.id_osoby, row.rok, row.tresc, row.data_zlozenia]);
+        });
+        
+        stmt.free();
+    },
+    
+    upsertZapytania(data) {
+        const stmt = this.database.prepare(`
+            INSERT INTO zapytania (term, num, title, receiptDate, lastModified, sentDate, from_mp_ids, to_ministries, answerDelayedDays)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(term, num) DO UPDATE SET
+                title = excluded.title,
+                lastModified = excluded.lastModified,
+                sentDate = excluded.sentDate,
+                from_mp_ids = excluded.from_mp_ids,
+                to_ministries = excluded.to_ministries,
+                answerDelayedDays = excluded.answerDelayedDays
+        `);
+        
+        data.forEach(row => {
+            stmt.run([
+                row.term, row.num, row.title, row.receiptDate, row.lastModified,
+                row.sentDate, row.from_mp_ids, row.to_ministries, row.answerDelayedDays
+            ]);
+        });
+        
+        stmt.free();
+    },
+    
+    upsertZapytaniaOdpowiedzi(data) {
+        const stmt = this.database.prepare(`
+            INSERT INTO zapytania_odpowiedzi (zapytanie_term, zapytanie_num, key, from_author, receiptDate, lastModified, onlyAttachment, prolongation)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(zapytanie_term, zapytanie_num, key) DO UPDATE SET
+                from_author = excluded.from_author,
+                lastModified = excluded.lastModified,
+                onlyAttachment = excluded.onlyAttachment,
+                prolongation = excluded.prolongation
+        `);
+        
+        data.forEach(row => {
+            stmt.run([
+                row.zapytanie_term, row.zapytanie_num, row.key, row.from_author,
+                row.receiptDate, row.lastModified, row.onlyAttachment, row.prolongation
+            ]);
         });
         
         stmt.free();

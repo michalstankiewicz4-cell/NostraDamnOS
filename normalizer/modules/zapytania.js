@@ -12,7 +12,7 @@
  * - Zapytania: odpowiedź w 7 dni, krótsze
  */
 
-import { applyRODOFilter } from '../../modules/rodo.js';
+import { applyRodo, RODO_RULES } from '../../modules/rodo.js';
 
 export function normalizeZapytania(rawData, config = {}) {
     const zapytania = [];
@@ -21,14 +21,12 @@ export function normalizeZapytania(rawData, config = {}) {
     console.log(`[NORMALIZER] Przetwarzanie ${rawData.length} zapytań pisemnych...`);
     
     for (const item of rawData) {
-        // RODO: usuwamy wrażliwe dane osobowe
+        // RODO: usuwamy wrażliwe dane osobowe z metadanych
         let title = item.title || '';
         let to = item.to || [];
         
-        if (config.enableRODO) {
-            title = applyRODOFilter(title, ['nazwisko', 'imie', 'pesel', 'adres']);
-            to = to.map(minister => applyRODOFilter(minister, ['nazwisko', 'imie']));
-        }
+        // Dla RODO - nie modyfikujemy treści pytania, tylko metadane
+        // Treść pytania (title) jest publiczna
         
         // Główny rekord zapytania
         const zapytanie = {
@@ -49,10 +47,6 @@ export function normalizeZapytania(rawData, config = {}) {
         if (item.replies && Array.isArray(item.replies)) {
             for (const reply of item.replies) {
                 let fromAuthor = reply.from || '';
-                
-                if (config.enableRODO) {
-                    fromAuthor = applyRODOFilter(fromAuthor, ['nazwisko', 'imie']);
-                }
                 
                 const odpowiedz = {
                     zapytanie_term: item.term,
@@ -138,42 +132,10 @@ export function saveZapytania(db, normalized) {
     console.log(`[Normalizer] Saving ${normalized.zapytania.length} zapytania + ${normalized.zapytania_odpowiedzi.length} replies...`);
     
     // 1. Zapytania
-    const stmtZapytania = db.prepare(`
-        INSERT INTO zapytania (term, num, title, receiptDate, lastModified, sentDate, from_mp_ids, to_ministries, answerDelayedDays)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT(term, num) DO UPDATE SET
-            title = excluded.title,
-            lastModified = excluded.lastModified,
-            sentDate = excluded.sentDate,
-            from_mp_ids = excluded.from_mp_ids,
-            to_ministries = excluded.to_ministries,
-            answerDelayedDays = excluded.answerDelayedDays
-    `);
-    
-    for (const z of normalized.zapytania) {
-        stmtZapytania.run(
-            z.term, z.num, z.title, z.receiptDate, z.lastModified, 
-            z.sentDate, z.from_mp_ids, z.to_ministries, z.answerDelayedDays
-        );
-    }
+    db.upsertZapytania(normalized.zapytania);
     
     // 2. Odpowiedzi
-    const stmtOdpowiedzi = db.prepare(`
-        INSERT INTO zapytania_odpowiedzi (zapytanie_term, zapytanie_num, key, from_author, receiptDate, lastModified, onlyAttachment, prolongation)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT(zapytanie_term, zapytanie_num, key) DO UPDATE SET
-            from_author = excluded.from_author,
-            lastModified = excluded.lastModified,
-            onlyAttachment = excluded.onlyAttachment,
-            prolongation = excluded.prolongation
-    `);
-    
-    for (const o of normalized.zapytania_odpowiedzi) {
-        stmtOdpowiedzi.run(
-            o.zapytanie_term, o.zapytanie_num, o.key, o.from_author,
-            o.receiptDate, o.lastModified, o.onlyAttachment, o.prolongation
-        );
-    }
+    db.upsertZapytaniaOdpowiedzi(normalized.zapytania_odpowiedzi);
     
     console.log(`[Normalizer] ✓ Saved zapytania successfully`);
 }

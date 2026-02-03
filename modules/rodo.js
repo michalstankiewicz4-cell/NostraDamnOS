@@ -2,7 +2,7 @@
 // Usuwa pola zdefiniowane w RODO_RULES z każdego modułu raw
 
 export const RODO_RULES = {
-    poslowie: ['telefon', 'adres', 'pesel', 'email_domowy'],
+    poslowie: ['telefon', 'adres', 'pesel', 'email_domowy', 'email'],
     interpelacje: ['adres'],
     oswiadczenia: ['adres_zamieszkania'],
     // Możesz dopisywać kolejne moduły i pola

@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.1] - 2026-02-03
+
+### Added
+
+- Shortcut: Shift+P toggles database import/export buttons when the floating console is open
+
+### Changed
+
+- Database import/export buttons are hidden by default to avoid initial flicker
+- README documentation section now lists all text docs with brief descriptions
+- README now mentions the overall order/structure of text files
+- Integration of zapytania pisemne (written questions) module into full ETL pipeline
+- Added RODO support for zapytania module - 'email' field now included in RODO filter
+
+### Fixed
+
+- Fixed import of `applyRodo` function in zapytania normalizer (was using non-existent `applyRODOFilter`)
+- Database schema updated to include zapytania and zapytania_odpowiedzi tables
+
+---
+
 ## [2.1.0] - 2026-01-26
 
 ### Added - RODO Compliance & Console Improvements

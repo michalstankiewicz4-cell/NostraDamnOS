@@ -98,7 +98,7 @@ export async function runPipeline(config, callbacks = {}) {
         onLog('🧹 Normalizing and saving to database...');
         onProgress(75, 'Normalizing data');
         
-        const stats = await runNormalizer(db2, processedRaw);
+        const stats = await runNormalizer(db2, processedRaw, config);
         
         onLog(`💾 Saved ${Object.values(stats).reduce((a, b) => a + b, 0)} records to database`);
         onProgress(90, 'Normalization complete');
