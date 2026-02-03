@@ -1,9 +1,9 @@
 # 🏛️ Parlament "puppy"
 <sub>Oficjalna nazwa: Parlament "puppy" | Repo: NostraDamnOS | v2.1.1</sub>
 
-<sub>Created by Michał Stankiewicz, Claude Sonnet 4.5 & Copilot</sub>
+<sub>Autor: Michał Stankiewicz | Współtwórcy: Claude Sonnet 4.5 & GitHub Copilot</sub>
 
-<sub>tel.: +48 797 486 355 pomóż 🫀 autorowi projektu drogi kolego gdyż cel jest szczytny 😙 Michał</sub>
+<sub>📞 +48 797 486 355 | 🐙 [GitHub](https://github.com/michalstankiewicz4-cell)</sub>
 
 [![Last Commit](https://img.shields.io/github/last-commit/michalstankiewicz4-cell/NostraDamnOS?label=Ostatnia%20aktualizacja&color=blue)](https://github.com/michalstankiewicz4-cell/NostraDamnOS/commits/main)
 

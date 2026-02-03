@@ -1,9 +1,12 @@
 # 🏛️ Parlament "puppy" - Kontekst Projektu
 
-**Oficjalna nazwa:** Parlament "puppy"  
-**Repo:** NostraDamnOS  
+**Projekt:** Parlament "puppy"  
+**Repository:** NostraDamnOS  
 **Wersja:** 2.1.1  
+**Autor:** Michał Stankiewicz  
+**Współtwórcy:** Claude Sonnet 4.5, GitHub Copilot  
 **Data utworzenia:** 2026-01-24  
+**Ostatnia aktualizacja:** 2026-02-03  
 **Status:** Production-ready ✅
 
 ---

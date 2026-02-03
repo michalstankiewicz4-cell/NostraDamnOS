@@ -1,4 +1,9 @@
-# Changelog
+# 📋 Changelog - Parlament "puppy"
+
+**Projekt:** Parlament "puppy" (v2.1.1)  
+**Autor:** Michał Stankiewicz  
+**Współtwórcy:** Claude Sonnet 4.5, GitHub Copilot  
+**Ostatnia aktualizacja:** 2026-02-03
 
 All notable changes to this project will be documented in this file.
 

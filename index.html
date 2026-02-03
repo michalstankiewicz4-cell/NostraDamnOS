@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Parlament "puppy" v2.1.1</title>
     <link rel="icon" href="data:,">
+    <meta name="author" content="Michał Stankiewicz">
+    <meta name="description" content="Parlament puppy - System lokalnej analizy wypowiedzi parlamentarnych z API Sejmu RP. Autor: Michał Stankiewicz. Współtwórcy: Claude Sonnet 4.5, GitHub Copilot">
     <link rel="stylesheet" href="style.css">
     
     <!-- ✅ GEOLOKALIZACJA - AKTYWNA -->
@@ -14,6 +16,19 @@
     </script>
 </head>
 <body>
+    <!-- Project Metadata -->
+    <script>
+        window.PROJECT = {
+            name: "Parlament \"puppy\"",
+            version: "2.1.1",
+            author: "Michał Stankiewicz",
+            contributors: "Claude Sonnet 4.5, GitHub Copilot",
+            repository: "https://github.com/michalstankiewicz4-cell/NostraDamnOS"
+        };
+        console.log(`%c${window.PROJECT.name} v${window.PROJECT.version}`, 'font-weight: bold; font-size: 14px; color: #667eea;');
+        console.log(`%cAutor: ${window.PROJECT.author} | Współtwórcy: ${window.PROJECT.contributors}`, 'font-size: 12px; color: #718096;');
+    </script>
+    
     <!-- Console Log Interceptor - catches ALL logs and redirects to UI -->
     <script>
         // Buffer for early logs (before UI console exists)
