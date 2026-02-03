@@ -11,10 +11,14 @@ const state = {
 };
 
 // Inicjalizacja po załadowaniu DOM
-document.addEventListener('DOMContentLoaded', () => {
-    initUI();
-    setupEventListeners();
-});
+// Deduplication check to prevent duplicate initialization
+if (!window.__modelsInitialized) {
+    window.__modelsInitialized = true;
+    document.addEventListener('DOMContentLoaded', () => {
+        initUI();
+        setupEventListeners();
+    });
+}
 
 function initUI() {
     console.log('🤖 Models handler uruchomiony');

@@ -4,6 +4,10 @@ import { db2 } from './modules/database-v2.js';
 
 let isFetching = false;
 
+// Deduplication check to prevent duplicate event listeners
+if (!window.__apiHandlerInitialized) {
+    window.__apiHandlerInitialized = true;
+
 // Main ETL fetch button handler
 document.getElementById('etlFetchBtn')?.addEventListener('click', async () => {
     if (isFetching) return;
@@ -50,13 +54,43 @@ async function startPipelineETL() {
         
         // Show success or stats
         if (result.success) {
-            const stats = result.stats || {};
-            const details = Object.entries(stats)
-                .filter(([_, count]) => count > 0)
-                .map(([name, count]) => `${name}: ${count}`)
-                .join(', ');
+            // Get stats from pipeline result or from database if result is empty
+            let stats = result.stats || {};
             
-            alert(`✅ Pobrano dane:\n\n${details || 'Brak nowych danych'}`);
+            // If no new data (up to date), fetch all data from database
+            if (result.upToDate || Object.values(stats).every(v => v === 0)) {
+                console.log('[API Handler] No new data, fetching from database');
+                stats = db2.getStats();
+            }
+            
+            console.log('[API Handler] Config:', { typ: config.typ, kadencja: config.kadencja });
+            console.log('[API Handler] Stats:', stats);
+            
+            // Format institution name
+            const instytucja = config.typ === 'sejm' ? 'Sejm RP' : 'Senat RP';
+            
+            // Build message parts
+            const parts = [];
+            
+            // Always show: instytucja, kadencja, posiedzenia
+            parts.push(`instytucja: ${instytucja}`);
+            parts.push(`kadencja: ${config.kadencja}`);
+            if (stats.posiedzenia > 0) {
+                parts.push(`posiedzenia: ${stats.posiedzenia}`);
+            }
+            
+            // Add other selected data modules (excluding poslowie and posiedzenia)
+            const otherEntries = Object.entries(stats)
+                .filter(([name, count]) => count > 0 && name !== 'poslowie' && name !== 'posiedzenia')
+                .map(([name, count]) => `${name}: ${count}`);
+            
+            parts.push(...otherEntries);
+            
+            console.log('[API Handler] Message parts:', parts);
+            const details = parts.join(', ');
+            console.log('[API Handler] Final message:', details);
+            
+            alert(`✅ Pobrano dane:\n\n${details || 'Brak danych w bazie'}`);
         }
         
     } catch (error) {
@@ -88,3 +122,5 @@ document.getElementById('etlClearBtn')?.addEventListener('click', async () => {
 });
 
 console.log('[API Handler v2] Loaded - using Pipeline ETL');
+
+} // End of deduplication check

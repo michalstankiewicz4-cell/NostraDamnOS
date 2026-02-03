@@ -208,9 +208,12 @@ function showVerificationResults(differences) {
     }
 }
 
-// Init when DOM ready
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initETLPanel);
-} else {
-    initETLPanel();
+// Init when DOM ready (with deduplication check)
+if (!window.__etlBridgeInitialized) {
+    window.__etlBridgeInitialized = true;
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initETLPanel);
+    } else {
+        initETLPanel();
+    }
 }
