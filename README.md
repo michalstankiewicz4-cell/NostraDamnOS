@@ -20,35 +20,28 @@ System do analizy wypowiedzi parlamentarnych z API Sejmu RP.
 
 ---
 
-## 🐶 O Projekcie Parlament "puppy"
+## 🐶 O Projekcie
 
-**Parlament "puppy"** to zaawansowany, w pełni zautomatyzowany system monitorowania pracy parlamentu, który działa w czasie rzeczywistym i opiera się wyłącznie na danych udostępnianych przez oficjalne API Sejmu. System śledzi każde głosowanie, analizuje frekwencję posłów, wykrywa nieobecności oraz monitoruje dyscyplinę klubową. Dzięki temu potrafi wskazać zarówno posłów głosujących zgodnie z linią ugrupowania, jak i tych, którzy się wyłamują. Obserwuje również zmiany w zachowaniach parlamentarzystów, tworząc dynamiczny obraz pracy izby — dokładnie tak, jak robią to profesjonalne narzędzia typu „parliament watchdog”.
+**Parlament "puppy"** to zaawansowany system monitorowania pracy parlamentu w czasie rzeczywistym, oparty na danych z oficjalnego API Sejmu.
 
-Dzięki pełnemu dostępowi do danych o głosowaniach system potrafi analizować relacje między klubami i wykrywać nieformalne koalicje. Pokazuje, które ugrupowania głosują razem, gdzie pojawiają się rozłamy oraz jakie są faktyczne linie podziału politycznego. To poziom analizy, który zwykle wymaga pracy politologów i analityków legislacyjnych, a tutaj jest generowany automatycznie.
+**Kluczowe możliwości:**
+- 🗳️ **Analiza głosowań** - pełne dane o głosowaniach, dyscyplinie klubowej, nieobecnościach
+- 📊 **Profile posłów** - statystyki aktywności, zgodność z linią klubu, interpelacje, komisje
+- 📜 **Monitoring legislacyjny** - śledzenie projektów ustaw, tempo prac, opóźnienia
+- 📈 **Wizualizacje** - wykresy, mapy klubów, heatmapy zgodności, dashboard
+- 🔔 **System alertów** - powiadomienia o nowych głosowaniach, drukach, interpelacjach
+- 📚 **Analiza historyczna** - porównywanie kadencji, trendy, zmiany w zachowaniach
+- 🤖 **AI asystent** - odpowiedzi na pytania o głosowania, generowanie raportów
 
-Parlament puppy tworzy również szczegółowe profile posłów. Na podstawie danych z API system analizuje aktywność parlamentarzystów, ich udział w głosowaniach, zgodność z linią klubu, zaangażowanie w proces legislacyjny, liczbę interpelacji oraz pracę w komisjach. Dzięki temu każdy poseł otrzymuje przejrzysty zestaw statystyk, przypominający sportowe profile zawodników — z jasnym obrazem mocnych i słabych stron.
+---
 
-System obejmuje także pełną analizę ustaw i procesów legislacyjnych. Korzystając z danych o drukach, procesach i interpelacjach, śledzi drogę każdej ustawy, analizuje tempo prac, wykrywa opóźnienia i bada aktywność komisji. Pozwala również określić, kto jest autorem projektu, kto go popiera i jak przebiegała cała ścieżka legislacyjna. To fundament profesjonalnego monitoringu legislacyjnego.
+## 🎯 Główne Funkcje
 
-Wszystkie dane mogą być prezentowane w formie przejrzystych wizualizacji i dashboardów. System generuje wykresy głosowań, mapy klubów, heatmapy zgodności, osie czasu prac legislacyjnych oraz zestawienia aktywności posłów. Tak przygotowane materiały nadają się do raportów, prezentacji oraz integracji z narzędziami analitycznymi, takimi jak Power BI, Grafana czy Tableau — i nie wymagają żadnych plików multimedialnych.
-
-Parlament puppy może również działać jako system alertów. Użytkownik może otrzymywać powiadomienia o nowych głosowaniach, drukach, interpelacjach czy zmianach w klubach. Dzięki temu system pełni funkcję monitoringu parlamentu w czasie rzeczywistym, pozwalając reagować na bieżące wydarzenia bez konieczności ręcznego śledzenia stron sejmowych.
-
-Ponieważ system obsługuje wiele kadencji, możliwa jest analiza historyczna. Parlament puppy porównuje kadencje, bada trendy, analizuje zmiany w zachowaniach klubów i posłów oraz śledzi ewolucję procesu legislacyjnego. To narzędzie, które umożliwia prowadzenie badań na poziomie naukowym, z pełnym kontekstem historycznym.
-
-Projekt jest również niezwykle wartościowy dla dziennikarzy i organizacji watchdogowych. Może służyć jako źródło danych, narzędzie do fact‑checkingu oraz wsparcie w analizie decyzji politycznych. Ułatwia szybkie sprawdzanie faktów i przygotowywanie materiałów analitycznych.
-
-Dla obywateli system oferuje prosty dostęp do informacji o pracy parlamentu. Umożliwia wyszukiwanie głosowań, przeglądanie profili posłów, analizę zgodności z obietnicami wyborczymi oraz sprawdzanie, jak głosował konkretny przedstawiciel danego okręgu. To narzędzie wzmacniające obywatelską kontrolę nad władzą.
-
-Najbardziej zaawansowanym elementem Parlament puppy jest silnik AI‑asystenta parlamentarnego. Dzięki danym z API potrafi odpowiadać na pytania o głosowania, analizować trendy, tłumaczyć proces legislacyjny, generować raporty i udzielać odpowiedzi na pytania typu „kto głosował przeciw?”, „kto najczęściej opuszcza głosowania?” czy „jak zmieniała się frekwencja klubu X?”. To pełnoprawny asystent analityczny, który udostępnia wiedzę o parlamencie w sposób szybki, intuicyjny i dostępny dla każdego.
-
-## 🎯 Funkcje
-
-* **ETL v2.0 Pipeline** - kompletny system Extract-Transform-Load
+* **ETL v2.0 Pipeline** - kompletny system Extract-Transform-Load → [docs/PIPELINE-V2.md](docs/PIPELINE-V2.md)
 * **🛡️ RODO Filter** - automatyczne usuwanie danych wrażliwych (domyślnie aktywny)
-* **Incremental Cache** - pobiera tylko nowe dane (10× szybciej)
-* **SQLite w przeglądarce** - pełna baza danych lokalnie (sql.js)
-* **13 typów danych** - wypowiedzi, głosowania, interpelacje, zapytania, komisje...
+* **Incremental Cache** - pobiera tylko nowe dane (10× szybciej) → [docs/INCREMENTAL-CACHE.md](docs/INCREMENTAL-CACHE.md)
+* **SQLite w przeglądarce** - pełna baza danych lokalnie (sql.js) → [docs/DATABASE-V2.md](docs/DATABASE-V2.md)
+* **12 modułów API** - wypowiedzi, głosowania, interpelacje, komisje... → [docs/API-ENDPOINTS.md](docs/API-ENDPOINTS.md)
 * **Dynamic Progress** - dokładny tracking 0-100%
 * **📋 Console Interceptor** - wszystkie logi widoczne w UI
 * **100% lokalne** - wszystko w przeglądarce, zero backend
@@ -56,189 +49,7 @@ Najbardziej zaawansowanym elementem Parlament puppy jest silnik AI‑asystenta p
 
 ---
 
-## 🌐 API Coverage
-
-System pokrywa **~95% użytecznych endpointów API Sejmu RP**:
-
-### ✅ Zaimplementowane (12 modułów)
-
-| Kategoria | Endpoint | Status |
-|-----------|----------|--------|
-| **Posłowie** | `/sejm/term{N}/MP` | ✅ 200 |
-| **Posiedzenia** | `/sejm/term{N}/proceedings` | ✅ 200 |
-| **Wypowiedzi** | `/sejm/term{N}/proceedings/{id}/transcripts` | ✅ 200 |
-| **Głosowania** | `/sejm/term{N}/votings` | ✅ 200 |
-| **Głosy indywidualne** | `/sejm/term{N}/votings/{sitting}/{num}` | ✅ 200 |
-| **Interpelacje** | `/sejm/term{N}/interpellations` | ✅ 200 |
-| **Zapytania pisemne** | `/sejm/term{N}/writtenQuestions` | ✅ 200 |
-| **Projekty ustaw** | `/sejm/term{N}/prints`, `/processes` | ✅ 200 |
-| **Komisje** | `/sejm/term{N}/committees` | ✅ 200 |
-| **Komisje posiedzenia** | `/sejm/committees/{code}/sittings` | ✅ 200 |
-| **Komisje wypowiedzi** | `/sejm/committees/{code}/transcripts` | ✅ 200 |
-| **Oświadczenia majątkowe** | `/sejm/term{N}/MP/{id}/statements` | ✅ 200 |
-
-### ❌ Pominięte (błędne endpointy)
-
-| Endpoint | Status | Powód |
-|----------|--------|-------|
-| `/clubs/{id}` | 404 | Pojedyncze kluby niedostępne |
-| `/committees/{id}` | 204 | Brak treści |
-| `/videos/{id}` | 404/204 | Nagrania niedostępne |
-
-### 📊 Statystyki audytu
-
-```
-Przeanalizowane endpointy: 1,459
-Status 200 (działają):     1,285 (88%)
-Status 404 (błąd):           124 (8.5%)
-Status 204 (puste):           50 (3.5%)
-```
-
-**Więcej:** Zobacz [docs/API-ENDPOINTS.md](docs/API-ENDPOINTS.md) - kompletna mapa endpointów
-
----
-
-## 🔒 RODO i Bezpieczeństwo
-
-### Filtr RODO (domyślnie AKTYWNY ✅)
-
-System automatycznie usuwa dane wrażliwe przed zapisem do bazy:
-
-**Usuwane pola:**
-- `poslowie`: telefon, adres, PESEL, email_domowy
-- `interpelacje`: adres
-- `oswiadczenia`: adres_zamieszkania
-
-**Kontrola:**
-- Checkbox "🔒 Filtr RODO" w ETL Panel
-- Domyślnie: WŁĄCZONY
-- Możliwość wyłączenia dla celów badawczych
-
-**Implementacja:**
-```javascript
-// modules/rodo.js
-export const RODO_RULES = {
-    poslowie: ['telefon', 'adres', 'pesel', 'email_domowy'],
-    // ...
-};
-
-// Pipeline automatycznie aplikuje filtr
-if (config.rodoFilter) {
-    processedRaw = applyRodo(raw);
-}
-```
-
-**Rozszerzanie:**
-Edytuj `modules/rodo.js` aby dodać kolejne moduły/pola do filtrowania.
-
----
-
-## 🏗️ Architektura v2.0
-
-### Przepływ danych
-```
-UI (ETL Panel) + Checkbox RODO
-    ↓
-Pipeline v2.0
-    ↓
-Fetcher v2.0 (12 modules) → Raw JSON
-    ↓
-🛡️ RODO Filter (optional) → Filtered JSON
-    ↓
-Normalizer v2.0 (11 modules) → SQL Records
-    ↓
-Database v2.0 (12 tables + indexes)
-```
-
-### Komponenty
-
-**Fetcher v2.0:**
-- 12 modułów (poslowie, wypowiedzi, glosowania...)
-- safeFetch z retry + exponential backoff
-- Modes: 'full' vs 'meta'
-- Ranges: 'last N' vs 'custom'
-
-**Normalizer v2.0:**
-- 11 modułów transformujących
-- Field mapping (id vs id_osoby)
-- UPSERT do bazy (no duplicates)
-- Dependency order maintained
-
-**Pipeline v2.0:**
-- Complete orchestration
-- Incremental cache (tracks last_posiedzenie)
-- Dynamic progress (0-100%)
-- UI callbacks (onProgress, onLog, onError)
-
----
-
-## 📊 Dane z API Sejmu
-
-**12 typów danych:**
-1. Posłowie/Senatorowie
-2. Posiedzenia
-3. Wypowiedzi
-4. Głosowania
-5. Głosy indywidualne
-6. Interpelacje
-7. Projekty ustaw
-8. Komisje
-9. Posiedzenia komisji
-10. Wypowiedzi komisji
-11. Oświadczenia majątkowe
-12. Metadata (cache)
-
-**Wydajność:**
-- Pierwsze pobieranie: ~2 min (100 posiedzeń)
-- Kolejne (up to date): ~1s ⚡ (100× szybciej)
-- Nowe (3 posiedzenia): ~10s ⚡ (10× szybciej)
-
----
-
-## 📁 Struktura Projektu v2.0
-
-**Pełna dokumentacja:** [docs/FILE-STRUCTURE.md](docs/FILE-STRUCTURE.md) - szczegółowy opis każdego pliku
-
-```
-/
-├── index.html              ← UI z ETL Panel
-├── style.css               ← ETL Panel height: 50vh
-├── app.js                  ← AI models loader
-├── api-handler-v2.js       ← UI integration
-├── etl-bridge.js           ← ETL Panel bridge
-│
-├── /fetcher
-│   ├── fetcher.js          ← Orchestrator + safeFetch
-│   └── /modules            ← 12 fetch modules
-│       ├── poslowie.js
-│       ├── wypowiedzi.js
-│       └── ... (10 more)
-│
-├── /normalizer
-│   ├── normalizer.js       ← Orchestrator
-│   └── /modules            ← 11 transform modules
-│       ├── poslowie.js
-│       ├── wypowiedzi.js
-│       └── ... (9 more)
-│
-├── pipeline.js             ← Complete ETL orchestrator
-│
-├── /modules
-│   ├── database-v2.js      ← SQLite (12 tables)
-│   ├── nlp.js              ← Transformers.js (plan)
-│   └── webllm.js           ← WebLLM (plan)
-│
-└── /docs
-    ├── FETCHER-V2.md
-    ├── NORMALIZER-V2.md
-    ├── PIPELINE-V2.md
-    ├── INCREMENTAL-CACHE.md
-    └── DATABASE-V2.md
-```
-
----
-
-## 🚀 Użycie
+## 🚀 Szybki Start
 
 ### Live Demo (GitHub Pages)
 
@@ -246,7 +57,7 @@ Database v2.0 (12 tables + indexes)
 https://michalstankiewicz4-cell.github.io/NostraDamnOS/
 ```
 
-**ETL Panel workflow:**
+**Workflow:**
 1. Wybierz instytucję (Sejm/Senat)
 2. Wybierz kadencję (7-10)
 3. Wybierz zakres (ostatnie X posiedzeń)
@@ -273,95 +84,80 @@ python -m http.server 8766
 
 ## 🧰 Technologie
 
-**Frontend:**
-- sql.js - SQLite w WebAssembly
-- Fetch API - API Sejmu
-- ETL Pipeline - modular architecture
-- HTML/CSS/JS - zero frameworków
-
-**Backend (opcjonalny):**
-- Node.js 18+ - development scripts
+* **sql.js** - SQLite w WebAssembly
+* **Fetch API** - komunikacja z API Sejmu
+* **ETL Pipeline** - modułowa architektura
+* **HTML/CSS/JS** - zero frameworków, vanilla JavaScript
 
 ---
 
-## ⚠️ Ograniczenia
+## 📚 Dokumentacja
 
-1. **SQLite non-persistent** - resetuje się przy F5
-2. **Cache w metadata table** - persistent w SQLite
-3. **Geolokalizacja** - tylko Europa (timezone check)
+### Podstawowa
+| Plik | Opis |
+|------|------|
+| [README.md](README.md) | Ten plik - szybki start i przegląd projektu |
+| [CHANGELOG.md](CHANGELOG.md) | Historia zmian i wersji projektu |
+| [PROJECT-CONTEXT.md](PROJECT-CONTEXT.md) | Kontekst projektowy, założenia i cele |
+| [LICENSE](LICENSE) | Licencja MIT |
+
+### Architektura (/docs)
+| Plik | Opis |
+|------|------|
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Przegląd architektury systemu, przepływ danych, scenariusze użycia |
+| [docs/FILE-STRUCTURE.md](docs/FILE-STRUCTURE.md) | Pełna struktura katalogów i rola każdego pliku |
+| [docs/DATABASE-V2.md](docs/DATABASE-V2.md) | Schemat bazy SQLite (12 tabel), foreign keys, indexes |
+| [docs/API-ENDPOINTS.md](docs/API-ENDPOINTS.md) | Kompletna mapa endpointów API Sejmu (działające i niedziałające) |
+
+### ETL Pipeline (/docs)
+| Plik | Opis |
+|------|------|
+| [docs/PIPELINE-V2.md](docs/PIPELINE-V2.md) | Orkiestracja całego ETL, etapy przetwarzania, RODO Filter |
+| [docs/FETCHER-V2.md](docs/FETCHER-V2.md) | Pobieranie danych z API (12 modułów), retry logic, safeFetch |
+| [docs/NORMALIZER-V2.md](docs/NORMALIZER-V2.md) | Transformacje do rekordów SQL (11 modułów), mapowania |
+| [docs/INCREMENTAL-CACHE.md](docs/INCREMENTAL-CACHE.md) | Mechanizm przyrostowego cache, wykrywanie zmian |
+
+### Funkcje specjalne (/docs)
+| Plik | Opis |
+|------|------|
+| [docs/GEO.md](docs/GEO.md) | Geolokalizacja - blokada dostępu spoza Europy |
+| [docs/DATA-TYPES.json](docs/DATA-TYPES.json) | Definicje typów danych w formacie JSON |
 
 ---
 
 ## 🗺️ Roadmap
 
-### ✅ Faza 1 (DONE - 2026-01-24)
+### ✅ Faza 1 - ETL System (DONE - 2026-01-24)
 - [x] ETL v2.0 Pipeline
 - [x] Fetcher v2.0 (12 modules)
 - [x] Normalizer v2.0 (11 modules)
 - [x] Database v2.0 (12 tables)
 - [x] Incremental Cache
 - [x] Dynamic Progress
-- [x] UI Integration
 
-### ✅ Faza 2.1 (DONE - 2026-01-26)
+### ✅ Faza 2.1 - RODO & UI (DONE - 2026-01-26)
 - [x] 🛡️ RODO Filter (modules/rodo.js)
 - [x] 📋 Console Log Interceptor
-- [x] Pipeline Fixes (real fetcher integration)
 - [x] UI Improvements (radio buttons, floating console)
-- [x] Documentation Updates
 
-### 🚧 Faza 2 (IN PROGRESS)
-- [ ] AI Models Integration
-  - [ ] WebLLM 4B
-  - [ ] Transformers.js
-- [ ] Analysis Features
-  - [ ] Sentiment analysis
-  - [ ] Topic detection
-  - [ ] Summarization
-  - [ ] Comparison
+### 🚧 Faza 2 - AI Integration (IN PROGRESS)
+- [ ] WebLLM 4B
+- [ ] Transformers.js
+- [ ] Sentiment analysis
+- [ ] Topic detection
+- [ ] Summarization
 
-### ⚡ Faza 2.2 (TODO - Database & RODO Improvements)
-- [ ] **A) Rozszerzony filtr RODO** - regex scanning email/telefon/PESEL w treściach
-- [ ] **B) Sprawdzanie zmian w bazie** - detect changes API vs lokalna baza
-- [ ] **C) Przycisk "🔄 Aktualizuj bazę"** - pobierz tylko delty
-- [ ] **D) Przycisk "🗑️ Wyczyść bazę"** - usuń dane + cache
-- [ ] Dokumentacja: zaktualizować FETCHER-V2.md i NORMALIZER-V2.md
+### ⚡ Faza 2.2 - Database Improvements (TODO)
+- [ ] Rozszerzony filtr RODO (regex scanning)
+- [ ] Sprawdzanie zmian API vs lokalna baza
+- [ ] Przycisk "🔄 Aktualizuj bazę"
+- [ ] Przycisk "🗑️ Wyczyść bazę"
 
-### 📅 Faza 3 (PLANNED)
+### 📅 Faza 3 - Advanced Features (PLANNED)
 - [ ] IndexedDB persistence
 - [ ] Advanced queries UI
 - [ ] Export .db / .csv
-- [ ] Visualizations
-
----
-
-## 📚 Dokumentacja
-
-**Root:**
-- [README.md](README.md) - Główny opis projektu, funkcje i szybki start. Zawiera ogólny kontekst oraz odnośniki do pozostałej dokumentacji.
-- [CHANGELOG.md](CHANGELOG.md) - Historia zmian i wersji projektu. Ułatwia śledzenie nowości oraz poprawek.
-- [PROJECT-CONTEXT.md](PROJECT-CONTEXT.md) - Kontekst projektowy i założenia. Pomaga zrozumieć cele oraz ograniczenia.
-
-**Core (docs):**
-- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) - Przegląd architektury systemu i głównych komponentów. Opisuje przepływ danych w ujęciu wysokopoziomowym.
-- [docs/DATABASE-V2.md](docs/DATABASE-V2.md) - Schemat bazy SQLite (12 tabel) i indeksy. Dokumentuje strukturę danych.
-- [docs/FILE-STRUCTURE.md](docs/FILE-STRUCTURE.md) - Pełna struktura katalogów i rola plików. Służy jako mapa projektu.
-- [docs/API-ENDPOINTS.md](docs/API-ENDPOINTS.md) - Kompletna mapa endpointów API Sejmu. Dokumentuje działające i niedziałające endpointy.
-
-**ETL Pipeline (docs):**
-- [docs/PIPELINE-V2.md](docs/PIPELINE-V2.md) - Orkiestracja całego ETL oraz etapy przetwarzania. Wyjaśnia kolejność i zależności.
-- [docs/FETCHER-V2.md](docs/FETCHER-V2.md) - Pobieranie danych z API (12 modułów). Zawiera opis modułów i retry.
-- [docs/NORMALIZER-V2.md](docs/NORMALIZER-V2.md) - Transformacje do rekordów SQL (11 modułów). Opisuje mapowania i walidacje.
-- [docs/INCREMENTAL-CACHE.md](docs/INCREMENTAL-CACHE.md) - Mechanizm przyrostowego cache. Tłumaczy zasady wykrywania zmian.
-
-**Features (docs):**
-- [docs/GEO.md](docs/GEO.md) - Geolokalizacja (tylko Europa). Wyjaśnia zasady blokady regionów.
-
----
-
-## 📝 Licencja
-
-MIT License
+- [ ] Visualizations (charts, graphs)
 
 ---
 
@@ -373,6 +169,6 @@ MIT License
 
 ---
 
-**Wersja:** 2.0.0  
-**Data:** 2026-01-24  
-**Status:** Production-ready ETL system ✅
+**Wersja:** 2.1.1  
+**Data:** 2026-02-03  
+**Status:** Production-ready ✅

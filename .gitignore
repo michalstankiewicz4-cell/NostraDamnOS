@@ -42,3 +42,4 @@ __pycache__/
 # GitHub będzie miał puste pliki jako template
 /data/final/*.jsonl.local
 /data/sejm/*.jsonl.local
+README.backup.md
