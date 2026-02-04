@@ -9,6 +9,7 @@ import { fetchGlosy } from './modules/glosy.js';
 import { fetchInterpelacje } from './modules/interpelacje.js';
 import { fetchZapytania } from './modules/zapytania.js';
 import { fetchProjektyUstaw } from './modules/projekty_ustaw.js';
+import { fetchUstawy } from './modules/ustawy.js';
 import { fetchKomisje } from './modules/komisje.js';
 import { fetchKomisjePosiedzenia } from './modules/komisje_posiedzenia.js';
 import { fetchKomisjeWypowiedzi } from './modules/komisje_wypowiedzi.js';
@@ -79,6 +80,16 @@ export async function runFetcher(config) {
     if (config.modules.includes('projekty_ustaw')) {
         console.log('[Fetcher] Fetching projekty_ustaw...');
         results.projekty_ustaw = await fetchProjektyUstaw(config);
+    }
+    
+    // Ustawy (legal acts from ELI API)
+    if (config.modules.includes('ustawy')) {
+        console.log('[Fetcher] Fetching ustawy...');
+        results.ustawy = await fetchUstawy({
+            publisher: config.ustawyPublisher || 'DU',
+            year: config.ustawyYear || new Date().getFullYear(),
+            limit: config.ustawyLimit || 500
+        });
     }
     
     // Komisje

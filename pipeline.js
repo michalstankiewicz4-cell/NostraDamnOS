@@ -276,6 +276,7 @@ export function buildConfigFromUI() {
     if (document.getElementById('etlInterpellations')?.checked) config.modules.push('interpelacje');
     if (document.getElementById('etlWrittenQuestions')?.checked) config.modules.push('zapytania');
     if (document.getElementById('etlBills')?.checked) config.modules.push('projekty_ustaw');
+    if (document.getElementById('etlLegalActs')?.checked) config.modules.push('ustawy');
     if (document.getElementById('etlDisclosures')?.checked) config.modules.push('oswiadczenia');
     
     // Committee modules
