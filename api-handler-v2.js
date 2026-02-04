@@ -159,27 +159,19 @@ async function smartFetch() {
     const dbEmpty = isDatabaseEmpty();
     const configChanged = !configsAreEqual(currentConfig, lastConfig);
 
-    console.log('[Smart Fetch] DB empty:', dbEmpty);
-    console.log('[Smart Fetch] Config changed:', configChanged);
-    console.log('[Smart Fetch] Current config:', currentConfig);
-    console.log('[Smart Fetch] Last config:', lastConfig);
-
     // Case 1: Empty database - just fetch without asking
     if (dbEmpty) {
-        console.log('[Smart Fetch] Empty database - fetching without confirmation');
         await startPipelineETL();
         return;
     }
 
     // Case 2: Form configuration changed - just fetch without asking
     if (configChanged) {
-        console.log('[Smart Fetch] Configuration changed - fetching without confirmation');
         await startPipelineETL();
         return;
     }
 
     // Case 3: Same configuration - check for new records first
-    console.log('[Smart Fetch] Same configuration - checking for new records first');
     const btn = document.getElementById('etlFetchBtn');
     
     if (btn) {
@@ -236,28 +228,15 @@ async function startPipelineETL() {
         // Build config from ETL Panel UI
         const config = buildConfigFromUI();
         
-        console.log('[API Handler] Starting pipeline with config:', config);
-        
         // Run pipeline with callbacks
         const result = await runPipeline(config, {
-            onProgress: (percent, text) => {
-                console.log(`[Progress] ${percent}%: ${text}`);
-            },
-            
-            onLog: (message) => {
-                console.log(`[Pipeline] ${message}`);
-            },
-            
+            onProgress: (percent, text) => {},
+            onLog: (message) => {},
             onError: (error) => {
                 console.error('[Pipeline Error]', error);
             },
-            
-            onComplete: (result) => {
-                console.log('[Pipeline] Complete:', result);
-            }
+            onComplete: (result) => {}
         });
-        
-        console.log('[API Handler] Pipeline result:', result);
         
         // Show success or stats
         if (result.success) {
@@ -266,12 +245,8 @@ async function startPipelineETL() {
             
             // If no new data (up to date), fetch all data from database
             if (result.upToDate || Object.values(stats).every(v => v === 0)) {
-                console.log('[API Handler] No new data, fetching from database');
                 stats = db2.getStats();
             }
-            
-            console.log('[API Handler] Config:', { typ: config.typ, kadencja: config.kadencja });
-            console.log('[API Handler] Stats:', stats);
             
             // Format institution name
             const instytucja = config.typ === 'sejm' ? 'Sejm RP' : 'Senat RP';
@@ -293,9 +268,7 @@ async function startPipelineETL() {
             
             parts.push(...otherEntries);
             
-            console.log('[API Handler] Message parts:', parts);
             const details = parts.join(', ');
-            console.log('[API Handler] Final message:', details);
             
             // Auto-save to localStorage
             db2.saveToLocalStorage();
