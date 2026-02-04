@@ -125,13 +125,16 @@ export function getSittingNumbers(posiedzenia, config) {
         return config.sittingsToFetch;
     }
     
+    // Filter out planned sittings with number=0
+    const validPosiedzenia = posiedzenia.filter(p => p.number > 0);
+    
     // Otherwise filter from posiedzenia list
     if (config.rangeMode === 'last') {
-        return posiedzenia.slice(-config.rangeCount).map(p => p.num);
+        return validPosiedzenia.slice(-config.rangeCount).map(p => p.number);
     } else if (config.rangeMode === 'custom') {
-        return posiedzenia
-            .filter(p => p.num >= config.rangeFrom && p.num <= config.rangeTo)
-            .map(p => p.num);
+        return validPosiedzenia
+            .filter(p => p.number >= config.rangeFrom && p.number <= config.rangeTo)
+            .map(p => p.number);
     }
     return [];
 }
