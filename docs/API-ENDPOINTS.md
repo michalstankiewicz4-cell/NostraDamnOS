@@ -150,8 +150,8 @@ GET https://api.sejm.gov.pl/sejm/term10/processes
 
 **Endpointy:**
 - **Lista komisji**: `/sejm/term{N}/committees`
-- **Posiedzenia komisji**: `/sejm/committees/{code}/sittings`
-- **Stenogramy komisji**: `/sejm/committees/{code}/sittings/{num}/transcripts`
+- **Posiedzenia komisji**: `/sejm/term{N}/committees/{code}/sittings`
+- **Stenogramy komisji**: `/sejm/term{N}/committees/{code}/sittings/{num}/transcripts`
 
 **Moduły:** `fetcher/modules/komisje.js`, `komisje_posiedzenia.js`, `komisje_wypowiedzi.js`
 
@@ -164,8 +164,8 @@ GET https://api.sejm.gov.pl/sejm/term10/processes
 **Przykłady:**
 ```
 GET https://api.sejm.gov.pl/sejm/term10/committees
-GET https://api.sejm.gov.pl/sejm/committees/FIN/sittings
-GET https://api.sejm.gov.pl/sejm/committees/FIN/sittings/1/transcripts
+GET https://api.sejm.gov.pl/sejm/term10/committees/FIN/sittings
+GET https://api.sejm.gov.pl/sejm/term10/committees/FIN/sittings/1/transcripts
 ```
 
 ---
