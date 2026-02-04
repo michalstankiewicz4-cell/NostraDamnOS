@@ -430,13 +430,53 @@
         🔐
     </button>
 
-    <!-- Floating Console Button -->
-    <button id="floatingConsoleBtn" style="position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; font-size: 24px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 1000; transition: transform 0.2s;">
+    <!-- Floating Status Bar (Bottom) -->
+    <div id="floatingStatusBar" style="position: fixed; bottom: 0; left: 0; right: 0; width: 100%; height: 25px; background: #2d3748; border-top: 2px solid #1a202c; display: flex; align-items: center; padding: 0 20px; gap: 16px; z-index: 2000; box-shadow: 0 -2px 12px rgba(0,0,0,0.3); font-size: 0.8rem; color: #e2e8f0;">
+        
+        <!-- Status Indicators Section -->
+        <div id="statusIndicators" style="display: flex; gap: 20px; align-items: center;">
+            <!-- Baza Indicator -->
+            <div class="floating-status-item" id="floatingStatusDbState" title="Stan bazy danych" style="display: flex; align-items: center; gap: 8px; cursor: help;">
+                <div class="floating-lamp" style="background-color: #ef4444;"></div>
+                <span>Baza</span>
+            </div>
+            
+            <!-- Separator -->
+            <div style="width: 1px; height: 24px; background: #475569;"></div>
+            
+            <!-- Rekordy Indicator -->
+            <div class="floating-status-item" id="floatingStatusRecords" title="Stan rekordów w API" style="display: flex; align-items: center; gap: 8px; cursor: help;">
+                <div class="floating-lamp" style="background-color: #10b981;"></div>
+                <span>Rekordy</span>
+            </div>
+            
+            <!-- Separator -->
+            <div style="width: 1px; height: 24px; background: #475569;"></div>
+            
+            <!-- Poprawność Indicator -->
+            <div class="floating-status-item" id="floatingStatusValidity" title="Stan poprawności danych" style="display: flex; align-items: center; gap: 8px; cursor: help;">
+                <div class="floating-lamp" style="background-color: #10b981;"></div>
+                <span>Poprawność</span>
+            </div>
+        </div>
+        
+        <!-- Spacer -->
+        <div style="flex: 1;"></div>
+        
+        <!-- Console Section -->
+        <div id="consoleSection" style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px 12px; border-radius: 6px; transition: background 0.2s; user-select: none;" title="Otwórz konsolę (Shift+C)">
+            <div style="width: 1px; height: 24px; background: #475569; margin-right: 8px;"></div>
+            <span style="font-weight: 500;">📋 KONSOLA</span>
+        </div>
+    </div>
+
+    <!-- Floating Console Button (Hidden - kept for compatibility) -->
+    <button id="floatingConsoleBtn" style="position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; font-size: 24px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 999; transition: transform 0.2s; display: none;">
         📋
     </button>
 
     <!-- Floating Console Panel -->
-    <div id="floatingConsolePanel" style="position: fixed; bottom: 90px; right: 20px; width: 400px; max-height: 500px; background: white; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); display: none; z-index: 999; overflow: hidden;">
+    <div id="floatingConsolePanel" style="position: fixed; bottom: 70px; right: 20px; width: 400px; max-height: 500px; background: white; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); display: none; z-index: 998; overflow: hidden;">
         <div style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 12px; display: flex; justify-content: space-between; align-items: center;">
             <span style="font-weight: 600;">📋 Console</span>
             <button id="closeFloatingConsole" style="background: transparent; border: none; color: white; font-size: 20px; cursor: pointer; padding: 0; width: 24px; height: 24px;">×</button>
@@ -538,8 +578,10 @@
         const floatingBtn = document.getElementById('floatingConsoleBtn');
         const floatingPanel = document.getElementById('floatingConsolePanel');
         const closeBtn = document.getElementById('closeFloatingConsole');
+        const consoleSection = document.getElementById('consoleSection');
         
-        floatingBtn.addEventListener('click', () => {
+        // Function to toggle console
+        const toggleConsole = () => {
             floatingPanel.style.display = floatingPanel.style.display === 'none' ? 'block' : 'none';
             floatingBtn.style.transform = floatingPanel.style.display === 'none' ? 'scale(1)' : 'scale(0.9)';
             if (floatingPanel.style.display === 'none') {
@@ -547,6 +589,20 @@
             } else {
                 // Stop pulsing when console is opened
                 window.stopPulseConsoleButton && window.stopPulseConsoleButton();
+            }
+        };
+        
+        // Old floating button click (for compatibility)
+        floatingBtn.addEventListener('click', toggleConsole);
+        
+        // New console section click (from floating bar)
+        consoleSection.addEventListener('click', toggleConsole);
+        
+        // Console section keyboard shortcut (Shift+C)
+        document.addEventListener('keydown', (e) => {
+            if (e.shiftKey && (e.key === 'C' || e.key === 'c')) {
+                e.preventDefault();
+                toggleConsole();
             }
         });
         
@@ -669,6 +725,81 @@
     </script>
 
     <!-- Database Import/Export Logic -->
+    <!-- Sync Status Indicators to Floating Bar -->
+    <script>
+        // Function to sync status from old sidebar to floating bar
+        window.updateFloatingStatusIndicators = function() {
+            const oldDbState = document.getElementById('statusDbState');
+            const oldRecords = document.getElementById('statusRecords');
+            const oldValidity = document.getElementById('statusValidity');
+            
+            const floatingDbState = document.getElementById('floatingStatusDbState');
+            const floatingRecords = document.getElementById('floatingStatusRecords');
+            const floatingValidity = document.getElementById('floatingStatusValidity');
+            
+            if (oldDbState && floatingDbState) {
+                const oldLamp = oldDbState.querySelector('.etl-lamp');
+                const floatingLamp = floatingDbState.querySelector('.floating-lamp');
+                if (oldLamp && floatingLamp) {
+                    floatingLamp.className = 'floating-lamp ' + oldLamp.className.replace('etl-lamp', '').trim();
+                    floatingDbState.title = oldDbState.title;
+                }
+            }
+            
+            if (oldRecords && floatingRecords) {
+                const oldLamp = oldRecords.querySelector('.etl-lamp');
+                const floatingLamp = floatingRecords.querySelector('.floating-lamp');
+                if (oldLamp && floatingLamp) {
+                    floatingLamp.className = 'floating-lamp ' + oldLamp.className.replace('etl-lamp', '').trim();
+                    floatingRecords.title = oldRecords.title;
+                }
+            }
+            
+            if (oldValidity && floatingValidity) {
+                const oldLamp = oldValidity.querySelector('.etl-lamp');
+                const floatingLamp = floatingValidity.querySelector('.floating-lamp');
+                if (oldLamp && floatingLamp) {
+                    floatingLamp.className = 'floating-lamp ' + oldLamp.className.replace('etl-lamp', '').trim();
+                    floatingValidity.title = oldValidity.title;
+                }
+            }
+        };
+        
+        // Observe changes to old status indicators and sync to floating bar
+        const oldStatusDbState = document.getElementById('statusDbState');
+        const oldStatusRecords = document.getElementById('statusRecords');
+        const oldStatusValidity = document.getElementById('statusValidity');
+        
+        if (oldStatusDbState) {
+            new MutationObserver(() => window.updateFloatingStatusIndicators()).observe(oldStatusDbState, { 
+                attributes: true, 
+                attributeFilter: ['title', 'class'],
+                subtree: true
+            });
+        }
+        
+        if (oldStatusRecords) {
+            new MutationObserver(() => window.updateFloatingStatusIndicators()).observe(oldStatusRecords, { 
+                attributes: true, 
+                attributeFilter: ['title', 'class'],
+                subtree: true
+            });
+        }
+        
+        if (oldStatusValidity) {
+            new MutationObserver(() => window.updateFloatingStatusIndicators()).observe(oldStatusValidity, { 
+                attributes: true, 
+                attributeFilter: ['title', 'class'],
+                subtree: true
+            });
+        }
+        
+        // Initial sync
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => window.updateFloatingStatusIndicators(), 500);
+        });
+    </script>
+
     <script type="module">
         import { initDbButtons } from './modules/db-buttons.js';
         initDbButtons();
