@@ -407,28 +407,20 @@
             </p>
         </footer>
     </div>
+    <!-- Floating Buttons Container -->
+    <div id="floatingButtonsContainer">
+        <!-- UI Toggle Button (always visible) -->
+        <button id="toggleUIBtn" class="floating-btn btn-toggle" title="Przełącz UI: Status Bar / Tools">⚙️</button>
 
-    <!-- Top Right Buttons (TODO) -->
-    <button id="languageBtn" style="position: fixed; top: 20px; right: 90px; width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; font-size: 28px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 1000; transition: transform 0.2s;" title="Zmień język (TODO)">
-        🇵🇱
-    </button>
-
-    <button id="helpBtn" style="position: fixed; top: 20px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; font-size: 28px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 1000; transition: transform 0.2s;" title="Podpowiedzi (TODO)">
-        ❓
-    </button>
-
-    <!-- Database Import/Export Buttons -->
-    <button id="importDbBtn" style="display: none; position: fixed; bottom: 160px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; font-size: 24px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 1000; transition: all 0.2s;" title="Import bazy danych">
-        📥
-    </button>
-
-    <button id="exportDbBtn" style="display: none; position: fixed; bottom: 90px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; border: none; font-size: 24px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 1000; transition: all 0.2s;" title="Export bazy danych">
-        📤
-    </button>
-
-    <button id="cleanRodoBtn" style="display: none; position: fixed; bottom: 160px; right: 90px; width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #ec4899, #db2777); color: white; border: none; font-size: 24px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 1000; transition: all 0.2s;" title="Wyczyść dane wrażliwe (RODO)">
-        🔐
-    </button>
+        <!-- Tools Mode Buttons (hidden by default) -->
+        <button id="languageBtn" class="floating-btn btn-language" title="Zmień język (TODO)">🇵🇱</button>
+        <button id="helpBtn" class="floating-btn btn-help" title="Podpowiedzi (TODO)">❓</button>
+        
+        <!-- Database Buttons -->
+        <button id="importDbBtn" class="floating-btn btn-import" title="Import bazy danych">📥</button>
+        <button id="exportDbBtn" class="floating-btn btn-export" title="Export bazy danych">📤</button>
+        <button id="cleanRodoBtn" class="floating-btn btn-rodo" title="Wyczyść dane wrażliwe (RODO)">🔐</button>
+    </div>
 
     <!-- Floating Status Bar (Bottom) -->
     <div id="floatingStatusBar" style="position: fixed; bottom: 0; left: 0; right: 0; width: 100%; height: 25px; background: #2d3748; border-top: 2px solid #1a202c; display: flex; align-items: center; padding: 0 20px; gap: 16px; z-index: 2000; box-shadow: 0 -2px 12px rgba(0,0,0,0.3); font-size: 0.8rem; color: #e2e8f0; font-family: 'Courier New', 'Consolas', 'Monaco', monospace;">
@@ -634,98 +626,154 @@
         const languageBtn = document.getElementById('languageBtn');
         const helpBtn = document.getElementById('helpBtn');
         
-        // Database buttons hover effects
-        const importDbBtn = document.getElementById('importDbBtn');
-        const exportDbBtn = document.getElementById('exportDbBtn');
-        const cleanRodoBtn = document.getElementById('cleanRodoBtn');
-        const dbButtonsState = { visible: false };
-        
-        const setDbButtonsVisible = (visible) => {
-            if (!importDbBtn || !exportDbBtn || !cleanRodoBtn) return;
-            [importDbBtn, exportDbBtn, cleanRodoBtn].forEach(btn => {
-                if (!btn.dataset.defaultDisplay) {
-                    btn.dataset.defaultDisplay = btn.style.display || '';
+        // Initialize all floating buttons and UI toggle logic in ONE place
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('[DOMContentLoaded] Starting initialization');
+            
+            // Get all button elements
+            const importDbBtn = document.getElementById('importDbBtn');
+            const exportDbBtn = document.getElementById('exportDbBtn');
+            const cleanRodoBtn = document.getElementById('cleanRodoBtn');
+            const languageBtn = document.getElementById('languageBtn');
+            const helpBtn = document.getElementById('helpBtn');
+            const toggleUIBtn = document.getElementById('toggleUIBtn');
+            const floatingStatusBar = document.getElementById('floatingStatusBar');
+            const dbButtonsState = { visible: false };
+            let isBarMode = true; // Start in bar mode (status bar visible)
+            
+            console.log('[DOMContentLoaded] Elements found:',
+                'importDbBtn:', !!importDbBtn,
+                'exportDbBtn:', !!exportDbBtn,
+                'cleanRodoBtn:', !!cleanRodoBtn,
+                'languageBtn:', !!languageBtn,
+                'helpBtn:', !!helpBtn,
+                'toggleUIBtn:', !!toggleUIBtn,
+                'floatingStatusBar:', !!floatingStatusBar
+            );
+            
+            // Define setDbButtonsVisible function
+            const setDbButtonsVisible = (visible) => {
+                console.log('[setDbButtonsVisible] Setting visibility to:', visible);
+                const toolsButtons = [
+                    importDbBtn, 
+                    exportDbBtn, 
+                    cleanRodoBtn,
+                    languageBtn,
+                    helpBtn
+                ];
+                
+                toolsButtons.forEach(btn => {
+                    if (!btn) return;
+                    if (visible) {
+                        btn.style.setProperty('display', 'flex', 'important');
+                        console.log('[setDbButtonsVisible] Showed button:', btn.id);
+                    } else {
+                        btn.style.setProperty('display', 'none', 'important');
+                        console.log('[setDbButtonsVisible] Hid button:', btn.id);
+                    }
+                });
+                dbButtonsState.visible = visible;
+            };
+            
+            // Define updateUIMode function
+            const updateUIMode = () => {
+                console.log('[updateUIMode] Called with isBarMode =', isBarMode);
+                if (isBarMode) {
+                    // Mode 1: Show status bar, hide tools
+                    console.log('[updateUIMode] Mode 1: Showing status bar');
+                    if (floatingStatusBar) {
+                        floatingStatusBar.style.display = 'flex';
+                        console.log('[updateUIMode] Status bar displayed');
+                    }
+                    setDbButtonsVisible(false);
+                    if (toggleUIBtn) {
+                        toggleUIBtn.style.setProperty('background', 'linear-gradient(135deg, #667eea, #764ba2)', 'important');
+                        toggleUIBtn.title = 'Przełącz do trybu: Narzędzia (Tools)';
+                    }
+                } else {
+                    // Mode 2: Hide status bar, show tools
+                    console.log('[updateUIMode] Mode 2: Hiding status bar, showing tools');
+                    if (floatingStatusBar) {
+                        floatingStatusBar.style.display = 'none';
+                        console.log('[updateUIMode] Status bar hidden');
+                    }
+                    setDbButtonsVisible(true);
+                    if (toggleUIBtn) {
+                        toggleUIBtn.style.setProperty('background', 'linear-gradient(135deg, #f59e0b, #d97706)', 'important');
+                        toggleUIBtn.title = 'Przełącz do trybu: Status Bar';
+                    }
                 }
-                const showDisplay = btn.dataset.defaultDisplay && btn.dataset.defaultDisplay !== 'none'
-                    ? btn.dataset.defaultDisplay
-                    : 'block';
-                btn.style.display = visible ? showDisplay : 'none';
-            });
-            dbButtonsState.visible = visible;
-        };
-        
-        // Hide by default; show only via Shift+P when floating console is open
-        setDbButtonsVisible(false);
-        
-        // SHIFT+P toggles DB buttons when floating console is open (easy revert: remove this listener block)
-        document.addEventListener('keydown', (e) => {
-            if (floatingPanel.style.display === 'none') return;
-            if (e.shiftKey && (e.key === 'P' || e.key === 'p')) {
-                e.preventDefault();
-                setDbButtonsVisible(!dbButtonsState.visible);
+            };
+            
+            // Initialize UI mode on load
+            console.log('[DOMContentLoaded] Calling updateUIMode for first time');
+            updateUIMode();
+            
+            // Attach toggle button click listener
+            if (toggleUIBtn) {
+                console.log('[DOMContentLoaded] Attaching click listener to toggleUIBtn');
+                toggleUIBtn.addEventListener('click', () => {
+                    console.log('[toggleUIBtn] Clicked! Current isBarMode:', isBarMode);
+                    toggleUIBtn.style.transform = 'scale(0.9)';
+                    setTimeout(() => toggleUIBtn.style.transform = 'scale(1)', 200);
+                    isBarMode = !isBarMode;
+                    console.log('[toggleUIBtn] isBarMode toggled to:', isBarMode);
+                    updateUIMode();
+                });
+            } else {
+                console.error('[DOMContentLoaded] toggleUIBtn not found!');
             }
-        });
-        
-        if (importDbBtn) {
-            importDbBtn.addEventListener('mouseenter', () => {
-                importDbBtn.style.transform = 'scale(1.1)';
-            });
-            importDbBtn.addEventListener('mouseleave', () => {
-                importDbBtn.style.transform = 'scale(1)';
-            });
-        }
-        
-         if (exportDbBtn) {
-            exportDbBtn.addEventListener('mouseenter', () => {
-                exportDbBtn.style.transform = 'scale(1.1)';
-            });
-            exportDbBtn.addEventListener('mouseleave', () => {
-                exportDbBtn.style.transform = 'scale(1)';
-            });
-         }
-        
-        if (cleanRodoBtn) {
-            cleanRodoBtn.addEventListener('mouseenter', () => {
-                cleanRodoBtn.style.transform = 'scale(1.1)';
-            });
-            cleanRodoBtn.addEventListener('mouseleave', () => {
-                cleanRodoBtn.style.transform = 'scale(1)';
-            });
-            cleanRodoBtn.addEventListener('click', async () => {
-                cleanRodoBtn.style.transform = 'scale(0.9)';
-                setTimeout(() => cleanRodoBtn.style.transform = 'scale(1)', 200);
-                console.log('🔐 RODO Data Cleanup - Starting sensitive data scan...');
-                
-                // TODO: Implementacja czyszczenia danych wrażliwych
-                // Będzie szukać wrażliwych danych w każdym polu bazy
-                const sensitivePatterns = {
-                    email: /[^\s@]+@[^\s@]+\.[^\s@]+/gi,
-                    phone: /\d{3}[-.]?\d{3}[-.]?\d{4}/g,
-                    pesel: /\d{11}/g,
-                    ipAddress: /\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/g
-                };
-                
-                console.log('📊 Sensitive data patterns to scan:', Object.keys(sensitivePatterns));
-                console.log('⏳ Placeholder: Scan all database fields for sensitive data');
-                console.log('🗑️ Placeholder: Remove or mask sensitive data according to RODO');
-                console.log('📝 Placeholder: Log cleanup report with records modified');
-                
-                alert('🔐 RODO Data Cleanup\n\nFunkcja w przygotowaniu (TODO v2.2)\n\nBędzie:\n- Skanować wszystkie pola bazy\n- Szukać danych wrażliwych (email, telefon, PESEL)\n- Usuwać/maskować dane niezgodne z RODO');
-            });
-        }
-        
-        languageBtn.addEventListener('click', () => {
-            languageBtn.style.transform = 'scale(0.9)';
-            setTimeout(() => languageBtn.style.transform = 'scale(1)', 200);
-            console.log('🇵🇱 TODO: Zmiana języka - Language selector not implemented yet');
-            alert('🇵🇱 Zmiana języka\n\nFunkcja w przygotowaniu (TODO v2.2)');
-        });
-        
-        helpBtn.addEventListener('click', () => {
-            helpBtn.style.transform = 'scale(0.9)';
-            setTimeout(() => helpBtn.style.transform = 'scale(1)', 200);
-            console.log('❓ TODO: Podpowiedzi - Help tooltips not implemented yet');
-            alert('❓ Podpowiedzi\n\nSystem podpowiedzi w przygotowaniu (TODO v2.2)');
+            
+            // Attach RODO button listener
+            if (cleanRodoBtn) {
+                cleanRodoBtn.addEventListener('mouseenter', () => {
+                    cleanRodoBtn.style.transform = 'scale(1.1)';
+                });
+                cleanRodoBtn.addEventListener('mouseleave', () => {
+                    cleanRodoBtn.style.transform = 'scale(1)';
+                });
+                cleanRodoBtn.addEventListener('click', async () => {
+                    cleanRodoBtn.style.transform = 'scale(0.9)';
+                    setTimeout(() => cleanRodoBtn.style.transform = 'scale(1)', 200);
+                    console.log('🔐 RODO Data Cleanup - Starting sensitive data scan...');
+                    
+                    const sensitivePatterns = {
+                        email: /[^\s@]+@[^\s@]+\.[^\s@]+/gi,
+                        phone: /\d{3}[-.]?\d{3}[-.]?\d{4}/g,
+                        pesel: /\d{11}/g,
+                        ipAddress: /\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/g
+                    };
+                    
+                    console.log('📊 Sensitive data patterns to scan:', Object.keys(sensitivePatterns));
+                    console.log('⏳ Placeholder: Scan all database fields for sensitive data');
+                    console.log('🗑️ Placeholder: Remove or mask sensitive data according to RODO');
+                    console.log('📝 Placeholder: Log cleanup report with records modified');
+                    
+                    alert('🔐 RODO Data Cleanup\n\nFunkcja w przygotowaniu (TODO v2.2)\n\nBędzie:\n- Skanować wszystkie pola bazy\n- Szukać danych wrażliwych (email, telefon, PESEL)\n- Usuwać/maskować dane niezgodne z RODO');
+                });
+            }
+            
+            // Attach language button listener
+            if (languageBtn) {
+                languageBtn.addEventListener('click', () => {
+                    languageBtn.style.transform = 'scale(0.9)';
+                    setTimeout(() => languageBtn.style.transform = 'scale(1)', 200);
+                    console.log('🇵🇱 TODO: Zmiana języka - Language selector not implemented yet');
+                    alert('🇵🇱 Zmiana języka\n\nFunkcja w przygotowaniu (TODO v2.2)');
+                });
+            }
+            
+            // Attach help button listener
+            if (helpBtn) {
+                helpBtn.addEventListener('click', () => {
+                    helpBtn.style.transform = 'scale(0.9)';
+                    setTimeout(() => helpBtn.style.transform = 'scale(1)', 200);
+                    console.log('❓ TODO: Podpowiedzi - Help tooltips not implemented yet');
+                    alert('❓ Podpowiedzi\n\nSystem podpowiedzi w przygotowaniu (TODO v2.2)');
+                });
+            }
+            
+            console.log('[DOMContentLoaded] Initialization complete');
         });
     </script>
 

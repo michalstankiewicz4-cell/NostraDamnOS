@@ -552,44 +552,7 @@ input:disabled {
     border-color: #e5e7eb;
 }
 
-/* Database Import/Export Floating Buttons */
-#db-export-btn,
-#db-import-btn {
-    position: fixed;
-    bottom: 20px;
-    z-index: 9998;
-    padding: 12px 20px;
-    background: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 25px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: bold;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-    transition: all 0.3s ease;
-}
 
-#db-export-btn {
-    left: 20px;
-}
-
-#db-import-btn {
-    left: 140px;
-    background: #2196F3;
-}
-
-#db-export-btn:hover {
-    background: #45a049;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 12px rgba(0,0,0,0.4);
-}
-
-#db-import-btn:hover {
-    background: #1976D2;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 12px rgba(0,0,0,0.4);
-}
 /* Advanced Options Panel */
 .etl-advanced {
     margin-top: 20px;
@@ -742,4 +705,81 @@ input:disabled {
 
 #consoleSection:active {
     background: rgba(255, 255, 255, 0.15);
+}
+
+/* Floating Buttons Container and Base Style */
+#floatingButtonsContainer {
+    position: relative;
+}
+
+.floating-btn {
+    position: fixed;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    color: white;
+    border: none;
+    font-size: 26px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Toggle Button (always visible) */
+.btn-toggle {
+    display: flex !important;
+    z-index: 2001;
+    top: 20px;
+    left: 20px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+}
+
+/* Language Button */
+.btn-language {
+    display: none !important;
+    top: 20px;
+    right: 90px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+}
+
+/* Help Button */
+.btn-help {
+    display: none !important;
+    top: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+}
+
+/* Import Button */
+.btn-import {
+    display: none !important;
+    bottom: 160px;
+    right: 20px;
+    background: linear-gradient(135deg, #10b981, #059669);
+}
+
+/* Export Button */
+.btn-export {
+    display: none !important;
+    bottom: 90px;
+    right: 20px;
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+}
+
+/* RODO Button */
+.btn-rodo {
+    display: none !important;
+    bottom: 160px;
+    right: 90px;
+    background: linear-gradient(135deg, #ec4899, #db2777);
+}
+
+#toggleUIBtn {
+    z-index: 2001 !important;
+    top: 20px;
+    right: 20px;
 }

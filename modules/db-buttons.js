@@ -14,9 +14,7 @@ export function initDbButtons() {
         return;
     }
     
-    // Show buttons (they are hidden by default)
-    importBtn.style.display = 'block';
-    exportBtn.style.display = 'block';
+    // Buttons stay hidden - they are controlled by setDbButtonsVisible() in main script
     
     // Export button
     exportBtn.addEventListener('click', async () => {
