@@ -4,7 +4,6 @@
     padding: 0;
     box-sizing: border-box;
 }
-
 :root {
     --primary-color: #2563eb;
     --secondary-color: #64748b;
@@ -18,7 +17,6 @@
     --border-color: #e2e8f0;
     --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
 }
-
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     background-color: var(--bg-color);
@@ -26,13 +24,11 @@ body {
     line-height: 1.6;
     padding-bottom: 25px;
 }
-
 .container {
     max-width: 1200px;
     margin: 0 auto;
     padding: 2rem;
 }
-
 /* Header */
 header {
     text-align: center;
@@ -49,14 +45,12 @@ header p {
     color: var(--text-secondary);
     font-size: 1.1rem;
 }
-
 /* Main sections */
 .etl-heading {
     margin-bottom: 1.5rem;
     color: #2d3748;
     font-size: 1.8rem;
 }
-
 /* Sidebar avec tab cards */
 .sidebar {
     position: fixed;
@@ -203,7 +197,6 @@ header p {
         opacity: 1;
     }
 }
-
 /* Sections */
 section {
     background: var(--card-bg);
@@ -218,7 +211,6 @@ section h2 {
     margin-bottom: 12px;
     color: var(--text-primary);
 }
-
 /* Upload Area */
 .upload-area {
     border: 2px dashed var(--border-color);
@@ -255,7 +247,6 @@ section h2 {
 .file-info.visible {
     display: block;
 }
-
 /* Model Status */
 .model-status {
     display: flex;
@@ -283,7 +274,6 @@ section h2 {
     font-size: 0.875rem;
     font-weight: 500;
 }
-
 /* Buttons */
 .btn {
     padding: 0.75rem 1.5rem;
@@ -315,7 +305,6 @@ section h2 {
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 1rem;
 }
-
 /* Results */
 .results-container {
     min-height: 200px;
@@ -329,7 +318,6 @@ section h2 {
     text-align: center;
     font-style: italic;
 }
-
 /* Footer */
 footer {
     text-align: center;
@@ -347,7 +335,6 @@ footer a {
 footer a:hover {
     text-decoration: underline;
 }
-
 /* Responsive */
 @media (max-width: 768px) {
     .container {
@@ -362,7 +349,6 @@ footer a:hover {
         grid-template-columns: 1fr;
     }
 }
-
 /* Automatyczne ładowanie danych */
 .auto-load {
     text-align: center;
@@ -405,7 +391,6 @@ footer a:hover {
 .divider::after {
     right: 0;
 }
-
 /* Status danych */
 .data-status {
     margin-top: 12px;
@@ -930,4 +915,260 @@ input:disabled {
     bottom: 160px;
     right: 90px;
     background: linear-gradient(135deg, #ec4899, #db2777);
+}
+
+/* ETL Utility Classes */
+.etl-summary-column {
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.etl-section-hint {
+    font-size: 12px;
+    color: #718096;
+    margin-bottom: 8px;
+}
+
+.etl-rodo-box {
+    background: #f8f9fa;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 15px;
+    opacity: 0.7;
+}
+
+.etl-rodo-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: not-allowed;
+    font-size: 14px;
+}
+
+.etl-rodo-description {
+    font-size: 12px;
+    color: #718096;
+    margin-top: 6px;
+    line-height: 1.4;
+}
+
+.etl-input-group {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.etl-input-label {
+    font-size: 14px;
+}
+
+.etl-number-input {
+    width: 65px;
+    padding: 6px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.etl-radio-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    font-size: 14px;
+}
+
+.etl-checkbox-label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.etl-relative-container {
+    position: relative;
+    margin-bottom: 12px;
+}
+
+.etl-radio-group {
+    display: flex;
+    gap: 15px;
+}
+
+.etl-radio-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.etl-select-margin {
+    margin-bottom: 15px;
+}
+
+.etl-fieldset-margin {
+    margin-top: 12px;
+}
+
+.etl-committee-select {
+    font-size: 13px;
+    line-height: 4;
+}
+
+/* Floating Status Bar Components */
+.status-bar-separator {
+    width: 1px;
+    height: 24px;
+    background: #475569;
+}
+
+.status-bar-spacer {
+    flex: 1;
+}
+
+.status-bar-version {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-right: 12px;
+    border-right: 1px solid #475569;
+}
+
+.status-bar-version-text {
+    color: #90cdf4;
+    font-weight: 600;
+}
+
+.status-bar-indicators {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+}
+
+.status-bar-console {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 6px;
+    transition: background 0.2s;
+    user-select: none;
+}
+
+.status-bar-console-separator {
+    width: 1px;
+    height: 24px;
+    background: #475569;
+    margin-right: 8px;
+}
+
+.status-bar-console-text {
+    font-weight: 500;
+}
+
+/* Floating Console Panel */
+.floating-console-panel {
+    position: fixed;
+    bottom: 70px;
+    right: 20px;
+    width: 400px;
+    max-height: 500px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    display: none;
+    z-index: 998;
+    overflow: hidden;
+}
+
+.floating-console-header {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    padding: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.floating-console-title {
+    font-weight: 600;
+}
+
+.floating-console-close {
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+}
+
+.floating-console-logs {
+    padding: 12px;
+    max-height: 440px;
+    overflow-y: auto;
+    background: #f7fafc;
+    font-family: monospace;
+    font-size: 0.85rem;
+    line-height: 1.6;
+}
+
+/* Progress & Logs Section */
+.api-progress-container {
+    margin: 2rem 0;
+}
+
+.api-progress-bar-wrapper {
+    background: #e2e8f0;
+    border-radius: 10px;
+    height: 25px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+}
+
+.api-progress-bar {
+    background: linear-gradient(90deg, #667eea, #764ba2);
+    height: 100%;
+    width: 0%;
+    transition: width 0.3s;
+}
+
+.api-progress-text {
+    text-align: center;
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 1rem;
+}
+
+.api-logs {
+    max-height: 300px;
+    overflow-y: auto;
+    background: #f7fafc;
+    padding: 0.75rem;
+    border-radius: 5px;
+    font-family: monospace;
+    font-size: 0.85rem;
+    line-height: 1.6;
+}
+
+.api-status-box {
+    padding: 1rem;
+    background: #f7fafc;
+    border-radius: 5px;
+    border-left: 4px solid #667eea;
+    display: none;
+    margin: 2rem 0;
+}
+
+.api-status-title {
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+}
+
+.api-status-details {
+    font-size: 0.9rem;
+    color: #666;
 }
