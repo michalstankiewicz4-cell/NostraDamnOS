@@ -178,6 +178,21 @@
                     <button class="etl-btn etl-btn-primary" id="etlFetchBtn">
                         📥 Pobierz/Zaktualizuj dane
                     </button>
+                    <div class="etl-status-row">
+                        <div class="etl-status-indicator" id="statusDbState" title="Stan bazy danych">
+                            <div class="etl-lamp" style="background-color: #ef4444;"></div>
+                            <span>Baza</span>
+                        </div>
+                        <div class="etl-status-indicator" id="statusRecords" title="Stan rekordów w API">
+                            <div class="etl-lamp" style="background-color: #10b981;"></div>
+                            <span>Rekordy</span>
+                        </div>
+                        <div class="etl-status-indicator" id="statusValidity" title="Stan poprawności danych">
+                            <div class="etl-lamp" style="background-color: #10b981;"></div>
+                            <span>Poprawność</span>
+                        </div>
+                    </div>
+                    
                     <button class="etl-btn etl-btn-secondary" id="etlVerifyBtn" style="background: #ef4444; color: white; margin-bottom: 12px;">
                         🔍 Sprawdź niezgodności
                     </button>

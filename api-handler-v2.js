@@ -1,5 +1,5 @@
 // API Handler v2.0 - Uses Pipeline ETL
-import { runPipeline, buildConfigFromUI } from './pipeline.js';
+import { runPipeline, buildConfigFromUI, getCacheStatus } from './pipeline.js';
 import { db2 } from './modules/database-v2.js';
 
 let isFetching = false;
@@ -55,28 +55,89 @@ function configsAreEqual(config1, config2) {
 }
 
 function isDatabaseEmpty() {
-  if (!db2.database) return true;
-  
-  try {
-    // Check if poslowie table has any records
-    const result = db2.database.exec('SELECT COUNT(*) as count FROM poslowie');
-    if (result.length > 0 && result[0].values.length > 0) {
-      const count = result[0].values[0][0];
-      return count === 0;
+    try {
+        const cacheStatus = getCacheStatus(db2);
+        return !cacheStatus.initialized || cacheStatus.totalRecords === 0;
+    } catch (error) {
+        console.error('[isDatabaseEmpty] Error:', error);
+        return true;
     }
-    return true;
+}
+
+// === STATUS INDICATORS ===
+
+function updateStatusIndicators() {
+  try {
+    const dbEmpty = isDatabaseEmpty();
+    const stats = db2.getStats();
+    const statusDbState = document.getElementById('statusDbState');
+    const statusRecords = document.getElementById('statusRecords');
+    const statusValidity = document.getElementById('statusValidity');
+    
+    if (!statusDbState || !statusRecords || !statusValidity) return;
+    
+    // Stan bazy: czerwony=pusty, zielony=ma dane
+    const dbLamp = statusDbState.querySelector('.etl-lamp');
+    if (dbEmpty) {
+        dbLamp.className = 'etl-lamp status-error';
+        statusDbState.title = `Brak danych (0 rekordów)`;
+    } else {
+        const totalRecords = Object.values(stats).reduce((sum, count) => sum + count, 0);
+        dbLamp.className = 'etl-lamp status-ok';
+        statusDbState.title = `Baza zawiera dane (${totalRecords} rekordów)`;
+    }
+    
+    // Stan rekordów i poprawności - domyślnie OK, zmienia się przy sprawdzeniu
+    const recordsLamp = statusRecords.querySelector('.etl-lamp');
+    const validityLamp = statusValidity.querySelector('.etl-lamp');
+    
+    recordsLamp.className = 'etl-lamp status-ok';
+    validityLamp.className = 'etl-lamp status-ok';
   } catch (error) {
-    console.error('[isDatabaseEmpty] Error:', error);
-    return true;
+    console.error('[updateStatusIndicators] Error:', error);
+  }
+}
+
+function setRecordsStatus(hasNewRecords) {
+  const statusRecords = document.getElementById('statusRecords');
+  if (!statusRecords) return;
+  
+  const lamp = statusRecords.querySelector('.etl-lamp');
+  if (hasNewRecords) {
+    lamp.className = 'etl-lamp status-error';
+    statusRecords.title = 'Znaleziono nowe rekordy';
+  } else {
+    lamp.className = 'etl-lamp status-ok';
+    statusRecords.title = 'Brak nowych rekordów';
+  }
+}
+
+function setValidityStatus(hasErrors) {
+  const statusValidity = document.getElementById('statusValidity');
+  if (!statusValidity) return;
+  
+  const lamp = statusValidity.querySelector('.etl-lamp');
+  if (hasErrors) {
+    lamp.className = 'etl-lamp status-error';
+    statusValidity.title = 'Znaleziono błędy';
+  } else {
+    lamp.className = 'etl-lamp status-ok';
+    statusValidity.title = 'Dane są poprawne';
   }
 }
 
 // Export db2 globally for debugging
 window.db2 = db2;
 
+// Export status functions globally for etl-bridge.js
+window.updateStatusIndicators = updateStatusIndicators;
+window.setRecordsStatus = setRecordsStatus;
+window.setValidityStatus = setValidityStatus;
+
 // Initialize database on load
 db2.init().then(() => {
     console.log('[API Handler] Database initialized');
+    updateStatusIndicators();
 }).catch(err => {
     console.error('[API Handler] Failed to initialize database:', err);
 });
@@ -141,11 +202,13 @@ async function smartFetch() {
 
         // Check if there are differences
         if (result.differences && result.differences.length > 0) {
+            setRecordsStatus(true);
             const msg = `🆕 Znaleziono ${result.differences.length} nowych/zmienionych rekordów w API.\n\nCzy pobrać?`;
             if (confirm(msg)) {
                 await startPipelineETL();
             }
         } else {
+            setRecordsStatus(false);
             alert('✅ Brak nowych danych w API. Baza jest aktualna.');
         }
     } catch (error) {
@@ -238,6 +301,10 @@ async function startPipelineETL() {
             db2.saveToLocalStorage();
             saveLastFetchConfig(config);
             
+            // Update status indicators
+            updateStatusIndicators();
+            setRecordsStatus(false);
+            
             alert(`✅ Pobrano dane:\n\n${details || 'Brak danych w bazie'}`);
         }
         
@@ -261,6 +328,12 @@ document.getElementById('etlClearBtn')?.addEventListener('click', async () => {
             await db2.init();
             db2.clearAll();
             console.log('[API Handler] Database cleared');
+            
+            // Update status indicators after clearing
+            updateStatusIndicators();
+            setRecordsStatus(false);
+            setValidityStatus(false);
+            
             alert('✅ Baza wyczyszczona');
         } catch (error) {
             console.error('[API Handler] Clear error:', error);

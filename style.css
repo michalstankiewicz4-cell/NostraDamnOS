@@ -649,3 +649,46 @@ input:disabled {
 #floatingConsoleBtn.pulse-red {
     animation: pulse-red 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
+
+/* Status indicators */
+.etl-status-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+    padding: 8px;
+    background: #f8fafc;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+}
+
+.etl-status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #64748b;
+}
+
+.etl-lamp {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 6px rgba(0, 0, 0, 0.1);
+}
+
+.etl-lamp.status-ok {
+    background-color: #10b981 !important;
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+}
+
+.etl-lamp.status-warning {
+    background-color: #f59e0b !important;
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.5);
+}
+
+.etl-lamp.status-error {
+    background-color: #ef4444 !important;
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
+}
