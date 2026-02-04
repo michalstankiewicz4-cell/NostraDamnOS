@@ -1,4 +1,5 @@
 /**
+ * Module: zapytania.js
  * Fetcher dla zapytań pisemnych (writtenQuestions)
  * 
  * Endpoint: /sejm/term{N}/writtenQuestions
@@ -7,7 +8,7 @@
  * - Interpelacje: odpowiedź ministra w 21 dni
  * - Zapytania pisemne: odpowiedź ministra w 7 dni, krótsze
  * 
- * Parametry:
+ * Parametry API:
  * - limit: max liczba wyników (default 50)
  * - offset: offset (paginacja)
  * - modifiedSince: tylko zmodyfikowane od daty
@@ -20,72 +21,48 @@
  * - sort_by: sortowanie (np. -lastModified)
  */
 
-export async function fetchWrittenQuestions(apiBase, term, options = {}) {
-    const {
-        limit = 500,
-        offset = 0,
-        modifiedSince = null,
-        delayed = null,
-        from = null,
-        to = null,
-        title = null,
-        since = null,
-        till = null,
-        sort_by = '-lastModified'
-    } = options;
+import { safeFetch } from '../fetcher.js';
 
+export async function fetchZapytania({ kadencja = 10, typ = 'sejm', limit = 500, offset = 0, ...options }) {
+    const base = typ === 'sejm' ? 'sejm' : 'senat';
+    
     // Build query params
     const params = new URLSearchParams();
     if (limit) params.append('limit', limit);
     if (offset) params.append('offset', offset);
-    if (modifiedSince) params.append('modifiedSince', modifiedSince);
-    if (delayed !== null) params.append('delayed', delayed);
-    if (from) params.append('from', from);
-    if (to) params.append('to', to);
-    if (title) params.append('title', title);
-    if (since) params.append('since', since);
-    if (till) params.append('till', till);
-    if (sort_by) params.append('sort_by', sort_by);
-
-    const url = `${apiBase}/term${term}/writtenQuestions?${params.toString()}`;
     
-    console.log(`[FETCHER] Pobieranie zapytań pisemnych: term=${term}, params=${params.toString()}`);
+    // Optional filters
+    if (options.modifiedSince) params.append('modifiedSince', options.modifiedSince);
+    if (options.delayed !== null && options.delayed !== undefined) params.append('delayed', options.delayed);
+    if (options.from) params.append('from', options.from);
+    if (options.to) params.append('to', options.to);
+    if (options.title) params.append('title', options.title);
+    if (options.since) params.append('since', options.since);
+    if (options.till) params.append('till', options.till);
+    if (options.sort_by) params.append('sort_by', options.sort_by);
     
-    const response = await fetch(url);
-    if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    const url = `https://api.sejm.gov.pl/${base}/term${kadencja}/writtenQuestions?${params.toString()}`;
+    
+    try {
+        const data = await safeFetch(url);
+        return Array.isArray(data) ? data : [];
+    } catch (e) {
+        console.error(`[Zapytania] Error:`, e.message);
+        return [];
     }
-    
-    const data = await response.json();
-    console.log(`[FETCHER] Pobrano ${data.length} zapytań pisemnych`);
-    
-    return data;
 }
 
 /**
  * Pobiera szczegóły pojedynczego zapytania
  */
-export async function fetchWrittenQuestionDetails(apiBase, term, num) {
-    const url = `${apiBase}/term${term}/writtenQuestions/${num}`;
+export async function fetchZapytanieDetails({ kadencja = 10, typ = 'sejm', num }) {
+    const base = typ === 'sejm' ? 'sejm' : 'senat';
+    const url = `https://api.sejm.gov.pl/${base}/term${kadencja}/writtenQuestions/${num}`;
     
-    const response = await fetch(url);
-    if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    try {
+        return await safeFetch(url);
+    } catch (e) {
+        console.error(`[Zapytania] Error fetching details for ${num}:`, e.message);
+        return null;
     }
-    
-    return await response.json();
-}
-
-/**
- * INCREMENTAL CACHE
- * Pobiera tylko zapytania zmodyfikowane od ostatniego fetcha
- */
-export async function fetchWrittenQuestionsIncremental(apiBase, term, lastModified) {
-    console.log(`[FETCHER] Incremental fetch: zapytania od ${lastModified}`);
-    
-    return await fetchWrittenQuestions(apiBase, term, {
-        modifiedSince: lastModified,
-        sort_by: 'lastModified',
-        limit: 500
-    });
 }
