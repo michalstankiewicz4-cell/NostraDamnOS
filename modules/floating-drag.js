@@ -133,9 +133,6 @@ export function initFloatingButtonsDragDrop() {
                 btn.style.right = 'auto';
                 btn.style.bottom = 'auto';
             }
-            // Pokaż przycisk po załadowaniu pozycji
-            btn.classList.remove('data-loading');
-            btn.classList.add('loaded');
         });
     }
 }

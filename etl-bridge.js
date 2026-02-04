@@ -300,13 +300,18 @@ function initSidebar() {
 
     function startTabDrag(e) {
         const card = e.currentTarget;
-        card.classList.add('dragging-tab');
+        let isDragging = false;
+        let holdTimer = null;
+        const holdDuration = 500; // 500ms hold required before drag starts
         
         const tabCards = document.querySelectorAll('.tab-card');
         let draggedCard = card;
         const startIndex = Array.from(tabCards).indexOf(card);
         
         function onMove(moveEvent) {
+            // Tylko jeśli drag jest aktywny
+            if (!isDragging) return;
+            
             moveEvent.preventDefault();
             const clientX = moveEvent.touches ? moveEvent.touches[0].clientX : moveEvent.clientX;
             const clientY = moveEvent.touches ? moveEvent.touches[0].clientY : moveEvent.clientY;
@@ -330,14 +335,29 @@ function initSidebar() {
         }
 
         function onEnd() {
+            // Anuluj timer jeśli puścimy przed czasem
+            if (holdTimer) {
+                clearTimeout(holdTimer);
+                holdTimer = null;
+            }
+            
             card.classList.remove('dragging-tab');
             document.removeEventListener('mousemove', onMove);
             document.removeEventListener('touchmove', onMove);
             document.removeEventListener('mouseup', onEnd);
             document.removeEventListener('touchend', onEnd);
-            // Zapisz nową kolejność
-            saveTabOrder();
+            
+            // Zapisz nową kolejność tylko jeśli był aktywny drag
+            if (isDragging) {
+                saveTabOrder();
+            }
         }
+
+        // Start timer - po 500ms włącz drag
+        holdTimer = setTimeout(() => {
+            isDragging = true;
+            card.classList.add('dragging-tab');
+        }, holdDuration);
 
         document.addEventListener('mousemove', onMove);
         document.addEventListener('touchmove', onMove, { passive: false });
@@ -430,12 +450,6 @@ function initSidebar() {
                 }
             });
         }
-        
-        // Pokaż sidebary po załadowaniu pozycji
-        sidebarRight.classList.remove('data-loading');
-        sidebarRight.classList.add('loaded');
-        sidebarLeft.classList.remove('data-loading');
-        sidebarLeft.classList.add('loaded');
     }
 }
 

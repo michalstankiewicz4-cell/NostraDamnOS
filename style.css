@@ -886,17 +886,7 @@ input:disabled {
     position: relative;
 }
 
-/* Data Loading - ukryj elementy aż będą załadowane z localStorage */
-.data-loading {
-    opacity: 0;
-    pointer-events: none;
-}
-
-.data-loading.loaded {
-    opacity: 1;
-    pointer-events: auto;
-}
-
+/* Floating Buttons */
 .floating-btn {
     position: fixed;
     width: 60px;
