@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Parlament "puppy" v2.1.1</title>
+    <title>Parlament "puppy"</title>
     <link rel="icon" href="data:,">
     <meta name="author" content="Michał Stankiewicz">
     <meta name="description" content="Parlament puppy - System lokalnej analizy wypowiedzi parlamentarnych z API Sejmu RP. Autor: Michał Stankiewicz. Współtwórcy: Claude Sonnet 4.5, GitHub Copilot">
@@ -20,13 +20,46 @@
     <script>
         window.PROJECT = {
             name: "Parlament \"puppy\"",
-            version: "2.1.1",
+            version: "0.0.0",
             author: "Michał Stankiewicz",
             contributors: "Claude Sonnet 4.5, GitHub Copilot",
             repository: "https://github.com/michalstankiewicz4-cell/NostraDamnOS"
         };
-        console.log(`%c${window.PROJECT.name} v${window.PROJECT.version}`, 'font-weight: bold; font-size: 14px; color: #667eea;');
-        console.log(`%cAutor: ${window.PROJECT.author} | Współtwórcy: ${window.PROJECT.contributors}`, 'font-size: 12px; color: #718096;');
+
+        function logProjectInfo() {
+            console.log(`%c${window.PROJECT.name} v${window.PROJECT.version}`, 'font-weight: bold; font-size: 14px; color: #667eea;');
+            console.log(`%cAutor: ${window.PROJECT.author} | Współtwórcy: ${window.PROJECT.contributors}`, 'font-size: 12px; color: #718096;');
+        }
+
+        async function loadProjectMetadata() {
+            try {
+                const response = await fetch('./project.json', { cache: 'no-store' });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
+
+                if (data?.name) window.PROJECT.name = data.name;
+                if (data?.version) window.PROJECT.version = data.version;
+                if (data?.author?.name) window.PROJECT.author = data.author.name;
+                if (data?.contributors) window.PROJECT.contributors = data.contributors;
+
+                document.title = `${window.PROJECT.name} v${window.PROJECT.version}`;
+
+                const headerTitle = document.querySelector('header h1');
+                if (headerTitle) headerTitle.textContent = `🏛️ ${window.PROJECT.name}`;
+
+                const versionEl = document.getElementById('projectVersion');
+                if (versionEl) versionEl.textContent = `v${window.PROJECT.version}`;
+
+                const programVersionEl = document.getElementById('programVersion');
+                if (programVersionEl) programVersionEl.textContent = window.PROJECT.version;
+            } catch (error) {
+                console.warn('Nie udało się wczytać project.json:', error);
+            } finally {
+                logProjectInfo();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadProjectMetadata);
     </script>
     
     <!-- Console Log Interceptor - catches ALL logs and redirects to UI -->
@@ -114,7 +147,7 @@
     <div class="container">
         <header>
             <h1>🏛️ Parlament "puppy"</h1>
-            <p>System lokalnej analizy wypowiedzi parlamentarnych | v2.1.1</p>
+            <p>System lokalnej analizy wypowiedzi parlamentarnych | <span id="projectVersion">v0.0.0</span></p>
         </header>
 
         <main>
@@ -427,7 +460,7 @@
         
         <!-- Version Section -->
         <div id="versionSection" style="display: flex; align-items: center; gap: 8px; padding-right: 12px; border-right: 1px solid #475569;">
-            <span style="color: #90cdf4; font-weight: 600;">v<span id="programVersion">3.1.1</span></span>
+            <span style="color: #90cdf4; font-weight: 600;">v<span id="programVersion">0.0.0</span></span>
         </div>
         
         <!-- Status Indicators Section -->
@@ -639,7 +672,7 @@
             const toggleUIBtn = document.getElementById('toggleUIBtn');
             const floatingStatusBar = document.getElementById('floatingStatusBar');
             const dbButtonsState = { visible: false };
-            let isBarMode = true; // Start in bar mode (status bar visible)
+            let uiMode = 0; // 0: Status bar, 1: Tools, 2: Status bar + Tools
             
             console.log('[DOMContentLoaded] Elements found:',
                 'importDbBtn:', !!importDbBtn,
@@ -677,10 +710,10 @@
             
             // Define updateUIMode function
             const updateUIMode = () => {
-                console.log('[updateUIMode] Called with isBarMode =', isBarMode);
-                if (isBarMode) {
-                    // Mode 1: Show status bar, hide tools
-                    console.log('[updateUIMode] Mode 1: Showing status bar');
+                console.log('[updateUIMode] Called with uiMode =', uiMode);
+                if (uiMode === 0) {
+                    // Mode 0: Show status bar, hide tools
+                    console.log('[updateUIMode] Mode 0: Showing status bar only');
                     if (floatingStatusBar) {
                         floatingStatusBar.style.display = 'flex';
                         console.log('[updateUIMode] Status bar displayed');
@@ -690,9 +723,9 @@
                         toggleUIBtn.style.setProperty('background', 'linear-gradient(135deg, #667eea, #764ba2)', 'important');
                         toggleUIBtn.title = 'Przełącz do trybu: Narzędzia (Tools)';
                     }
-                } else {
-                    // Mode 2: Hide status bar, show tools
-                    console.log('[updateUIMode] Mode 2: Hiding status bar, showing tools');
+                } else if (uiMode === 1) {
+                    // Mode 1: Hide status bar, show tools
+                    console.log('[updateUIMode] Mode 1: Hiding status bar, showing tools');
                     if (floatingStatusBar) {
                         floatingStatusBar.style.display = 'none';
                         console.log('[updateUIMode] Status bar hidden');
@@ -700,6 +733,18 @@
                     setDbButtonsVisible(true);
                     if (toggleUIBtn) {
                         toggleUIBtn.style.setProperty('background', 'linear-gradient(135deg, #f59e0b, #d97706)', 'important');
+                        toggleUIBtn.title = 'Przełącz do trybu: Status Bar + Narzędzia';
+                    }
+                } else {
+                    // Mode 2: Show status bar and tools
+                    console.log('[updateUIMode] Mode 2: Showing status bar and tools');
+                    if (floatingStatusBar) {
+                        floatingStatusBar.style.display = 'flex';
+                        console.log('[updateUIMode] Status bar displayed');
+                    }
+                    setDbButtonsVisible(true);
+                    if (toggleUIBtn) {
+                        toggleUIBtn.style.setProperty('background', 'linear-gradient(135deg, #22c55e, #16a34a)', 'important');
                         toggleUIBtn.title = 'Przełącz do trybu: Status Bar';
                     }
                 }
@@ -713,11 +758,11 @@
             if (toggleUIBtn) {
                 console.log('[DOMContentLoaded] Attaching click listener to toggleUIBtn');
                 toggleUIBtn.addEventListener('click', () => {
-                    console.log('[toggleUIBtn] Clicked! Current isBarMode:', isBarMode);
+                    console.log('[toggleUIBtn] Clicked! Current uiMode:', uiMode);
                     toggleUIBtn.style.transform = 'scale(0.9)';
                     setTimeout(() => toggleUIBtn.style.transform = 'scale(1)', 200);
-                    isBarMode = !isBarMode;
-                    console.log('[toggleUIBtn] isBarMode toggled to:', isBarMode);
+                    uiMode = (uiMode + 1) % 3;
+                    console.log('[toggleUIBtn] uiMode toggled to:', uiMode);
                     updateUIMode();
                 });
             } else {
@@ -780,14 +825,6 @@
     <!-- Database Import/Export Logic -->
     <!-- Sync Status Indicators to Floating Bar -->
     <script>
-        // Load version from window.PROJECT into floating bar
-        document.addEventListener('DOMContentLoaded', () => {
-            const versionElement = document.getElementById('programVersion');
-            if (versionElement && window.PROJECT && window.PROJECT.version) {
-                versionElement.textContent = window.PROJECT.version;
-            }
-        });
-        
         // Function to sync status from old sidebar to floating bar
         window.updateFloatingStatusIndicators = function() {
             const oldDbState = document.getElementById('statusDbState');
