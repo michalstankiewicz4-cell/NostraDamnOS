@@ -854,13 +854,24 @@ input:disabled {
     color: white;
     border: none;
     font-size: 26px;
-    cursor: pointer;
+    cursor: grab;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     z-index: 1000;
     transition: all 0.2s ease;
     display: flex;
     align-items: center;
     justify-content: center;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.floating-btn:active {
+    cursor: grabbing;
+}
+
+.floating-btn.dragging {
+    opacity: 0.8;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
 }
 
 /* Toggle Button (always visible) */

@@ -267,6 +267,71 @@ function initSidebar() {
     });
 }
 
+// Floating Buttons Drag and Drop
+function initFloatingButtonsDragDrop() {
+    const floatingBtns = document.querySelectorAll('.floating-btn');
+    let draggedElement = null;
+    let offset = { x: 0, y: 0 };
+    let isDraggingEnabled = false;
+    let holdTimer = null;
+    const holdDuration = 2000; // 2 sekundy
+
+    floatingBtns.forEach(btn => {
+        btn.addEventListener('mousedown', (e) => {
+            draggedElement = btn;
+            isDraggingEnabled = false;
+            
+            const rect = btn.getBoundingClientRect();
+            offset.x = e.clientX - rect.left;
+            offset.y = e.clientY - rect.top;
+
+            // Start timer - po 2 sekundach włącz tryb przeciągania
+            holdTimer = setTimeout(() => {
+                isDraggingEnabled = true;
+                draggedElement.classList.add('dragging');
+                // Wibracja jeśli dostępna
+                if (navigator.vibrate) navigator.vibrate(50);
+            }, holdDuration);
+        });
+
+        // Prevent click if element was dragged
+        btn.addEventListener('click', (e) => {
+            if (isDraggingEnabled) {
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+            }
+        }, true);
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (draggedElement && isDraggingEnabled) {
+            draggedElement.style.left = (e.clientX - offset.x) + 'px';
+            draggedElement.style.top = (e.clientY - offset.y) + 'px';
+            draggedElement.style.right = 'auto';
+            draggedElement.style.bottom = 'auto';
+        }
+    });
+
+    document.addEventListener('mouseup', () => {
+        // Anuluj timer jeśli puścimy przed 2 sekundami
+        if (holdTimer) {
+            clearTimeout(holdTimer);
+            holdTimer = null;
+        }
+
+        if (draggedElement) {
+            draggedElement.classList.remove('dragging');
+            draggedElement = null;
+            
+            // Opóźnij reset isDraggingEnabled, żeby event click mógł go zobaczyć
+            setTimeout(() => {
+                isDraggingEnabled = false;
+            }, 100);
+        }
+    });
+}
+
 // Init when DOM ready (with deduplication check)
 if (!window.__etlBridgeInitialized) {
     window.__etlBridgeInitialized = true;
@@ -274,9 +339,11 @@ if (!window.__etlBridgeInitialized) {
         document.addEventListener('DOMContentLoaded', () => {
             initETLPanel();
             initSidebar();
+            initFloatingButtonsDragDrop();
         });
     } else {
         initETLPanel();
         initSidebar();
+        initFloatingButtonsDragDrop();
     }
 }
