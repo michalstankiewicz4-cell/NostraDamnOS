@@ -196,7 +196,7 @@
                                 <span class="estimate-label">Czas:</span>
                                 <span class="estimate-value" id="etlTime">~10-15s</span>
                             </div>
-                            <div class="estimate-row" style="border:none">
+                            <div class="estimate-row estimate-row-last">
                                 <span class="estimate-label">Requesty:</span>
                                 <span class="estimate-value" id="etlRequests">~25</span>
                             </div>
@@ -205,8 +205,8 @@
                     
                     <div class="etl-rodo-box">
                         <label class="etl-rodo-label">
-                            <input type="checkbox" id="etlRodoFilter" checked disabled style="cursor: not-allowed;">
-                            <span style="font-weight: 600; color: #718096;">🔒 Filtr RODO (zawsze aktywny)</span>
+                            <input type="checkbox" id="etlRodoFilter" checked disabled>
+                            <span class="etl-rodo-span">🔒 Filtr RODO (zawsze aktywny)</span>
                         </label>
                         <div class="etl-rodo-description">
                             ✓ Usuwa dane wrażliwe: email, telefon, PESEL
@@ -220,7 +220,7 @@
                         </button>
                     </div>
                     
-                    <button class="etl-btn etl-btn-secondary" id="etlVerifyBtn" style="background: #ef4444; color: white; margin-bottom: 12px;">
+                    <button class="etl-btn etl-btn-verify" id="etlVerifyBtn">
                         🔍 Sprawdź niezgodności
                     </button>
                     <button class="etl-btn etl-btn-danger" id="etlClearBtn">
@@ -397,7 +397,7 @@
             </div>
 
             <!-- Sekcja statusu modeli AI -->
-            <section class="models-section" style="margin-top: 3rem;">
+            <section class="models-section models-section-spacing">
                 <h2>🤖 Status modeli AI</h2>
                 <div class="model-status">
                     <div class="model-item">
@@ -466,8 +466,8 @@
         <!-- Status Indicators Section -->
         <div id="statusIndicators" class="status-bar-indicators">
             <!-- Baza Indicator -->
-            <div class="floating-status-item" id="floatingStatusDbState" title="Stan bazy danych" style="display: flex; align-items: center; gap: 8px; cursor: help;">
-                <div class="floating-lamp" style="background-color: #ef4444;"></div>
+            <div class="floating-status-item" id="floatingStatusDbState" title="Stan bazy danych">
+                <div class="floating-lamp floating-lamp-error"></div>
                 <span>Baza</span>
             </div>
             
@@ -475,8 +475,8 @@
             <div class="status-bar-separator"></div>
             
             <!-- Rekordy Indicator -->
-            <div class="floating-status-item" id="floatingStatusRecords" title="Stan rekordów w API" style="display: flex; align-items: center; gap: 8px; cursor: help;">
-                <div class="floating-lamp" style="background-color: #10b981;"></div>
+            <div class="floating-status-item" id="floatingStatusRecords" title="Stan rekordów w API">
+                <div class="floating-lamp floating-lamp-ok"></div>
                 <span>Rekordy</span>
             </div>
             
@@ -484,8 +484,8 @@
             <div class="status-bar-separator"></div>
             
             <!-- Poprawność Indicator -->
-            <div class="floating-status-item" id="floatingStatusValidity" title="Stan poprawności danych" style="display: flex; align-items: center; gap: 8px; cursor: help;">
-                <div class="floating-lamp" style="background-color: #10b981;"></div>
+            <div class="floating-status-item" id="floatingStatusValidity" title="Stan poprawności danych">
+                <div class="floating-lamp floating-lamp-ok"></div>
                 <span>Poprawność</span>
             </div>
         </div>

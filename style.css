@@ -763,6 +763,10 @@ input:disabled {
     transition: all 0.2s ease;
     padding: 4px 8px;
     border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: help;
 }
 
 .floating-status-item:hover {
@@ -777,17 +781,20 @@ input:disabled {
     box-shadow: 0 0 6px rgba(0, 0, 0, 0.3);
 }
 
-.floating-lamp.status-ok {
+.floating-lamp.status-ok,
+.floating-lamp-ok {
     background-color: #10b981;
     box-shadow: 0 0 8px rgba(16, 185, 129, 0.8);
 }
 
-.floating-lamp.status-warning {
+.floating-lamp.status-warning,
+.floating-lamp-warning {
     background-color: #f59e0b;
     box-shadow: 0 0 8px rgba(245, 158, 11, 0.8);
 }
 
-.floating-lamp.status-error {
+.floating-lamp.status-error,
+.floating-lamp-error {
     background-color: #ef4444;
     box-shadow: 0 0 8px rgba(239, 68, 68, 0.8);
 }
@@ -946,6 +953,15 @@ input:disabled {
     font-size: 14px;
 }
 
+.etl-rodo-label input {
+    cursor: not-allowed;
+}
+
+.etl-rodo-span {
+    font-weight: 600;
+    color: #718096;
+}
+
 .etl-rodo-description {
     font-size: 12px;
     color: #718096;
@@ -1015,6 +1031,20 @@ input:disabled {
     line-height: 4;
 }
 
+.etl-btn-verify {
+    background: #ef4444;
+    color: white;
+    margin-bottom: 12px;
+}
+
+.estimate-row-last {
+    border: none;
+}
+
+.models-section-spacing {
+    margin-top: 3rem;
+}
+
 /* Floating Status Bar Components */
 .status-bar-separator {
     width: 1px;
@@ -1043,6 +1073,25 @@ input:disabled {
     display: flex;
     gap: 20px;
     align-items: center;
+}
+
+.floating-status-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: help;
+}
+
+.floating-lamp-ok {
+    background-color: #10b981;
+}
+
+.floating-lamp-error {
+    background-color: #ef4444;
+}
+
+.floating-lamp-warning {
+    background-color: #f59e0b;
 }
 
 .status-bar-console {
