@@ -460,23 +460,21 @@
             </p>
         </footer>
     </div>
-    <!-- Floating Buttons Container -->
-    <div id="floatingButtonsContainer">
-        <!-- UI Toggle Button (always visible) -->
-        <button id="toggleUIBtn" class="floating-btn btn-toggle" title="Przełącz UI: Status Bar / Tools">⚙️</button>
-        <div id="uiHoldProgress" aria-hidden="true">
-            <div id="uiHoldProgressBar"></div>
-        </div>
 
-        <!-- Tools Mode Buttons (hidden by default) -->
-        <button id="languageBtn" class="floating-btn btn-language" title="Zmień język (TODO)">🇵🇱</button>
-        <button id="helpBtn" class="floating-btn btn-help" title="Podpowiedzi (TODO)">❓</button>
-        
-        <!-- Database Buttons -->
-        <button id="importDbBtn" class="floating-btn btn-import" title="Import bazy danych">📥</button>
-        <button id="exportDbBtn" class="floating-btn btn-export" title="Export bazy danych">📤</button>
-        <button id="cleanRodoBtn" class="floating-btn btn-rodo" title="Wyczyść dane wrażliwe (RODO)">🔐</button>
+    <!-- Floating UI Buttons -->
+    <button id="toggleUIBtn" class="floating-btn btn-toggle" title="Przełącz UI: Status Bar / Tools">⚙️</button>
+    <div id="uiHoldProgress" aria-hidden="true">
+        <div id="uiHoldProgressBar"></div>
     </div>
+
+    <!-- Tools Mode Buttons (hidden by default) -->
+    <button id="languageBtn" class="floating-btn btn-language" title="Zmień język (TODO)">🇵🇱</button>
+    <button id="helpBtn" class="floating-btn btn-help" title="Podpowiedzi (TODO)">❓</button>
+
+    <!-- Database Buttons -->
+    <button id="importDbBtn" class="floating-btn btn-import" title="Import bazy danych">📥</button>
+    <button id="exportDbBtn" class="floating-btn btn-export" title="Export bazy danych">📤</button>
+    <button id="cleanRodoBtn" class="floating-btn btn-rodo" title="Wyczyść dane wrażliwe (RODO)">🔐</button>
 
     <!-- Floating Status Bar (Bottom) -->
     <div id="floatingStatusBar" style="position: fixed; bottom: 0; left: 0; right: 0; width: 100%; height: 25px; background: #2d3748; border-top: 2px solid #1a202c; display: flex; align-items: center; padding: 0 20px; gap: 16px; z-index: 2000; box-shadow: 0 -2px 12px rgba(0,0,0,0.3); font-size: 0.8rem; color: #e2e8f0; font-family: 'Courier New', 'Consolas', 'Monaco', monospace;">
@@ -635,10 +633,6 @@
                 floatingLogs.scrollTop = floatingLogs.scrollHeight;
             }
         }
-        
-        // Top Right Buttons (TODO placeholders)
-        const languageBtn = document.getElementById('languageBtn');
-        const helpBtn = document.getElementById('helpBtn');
         
         // Initialize all floating buttons and UI toggle logic in ONE place
         document.addEventListener('DOMContentLoaded', () => {

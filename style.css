@@ -819,10 +819,6 @@ input:disabled {
     background: rgba(255, 255, 255, 0.15);
 }
 
-/* Floating Buttons Container and Base Style */
-#floatingButtonsContainer {
-    position: relative;
-}
 
 /* Floating Buttons */
 .floating-btn {
@@ -934,10 +930,4 @@ input:disabled {
     bottom: 160px;
     right: 90px;
     background: linear-gradient(135deg, #ec4899, #db2777);
-}
-
-#toggleUIBtn {
-    z-index: 2001 !important;
-    top: 20px;
-    right: 20px;
 }

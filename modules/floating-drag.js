@@ -24,10 +24,10 @@ export function initTabCardsDragDrop() {
         card.addEventListener('touchstart', startTabDrag);
     });
 
-    // Double-click na karteczkę zmienia jej stronę (lewo/prawo)
-    let lastClickTime = {};
+    // Single-click otwiera/zamyka, double-click zmienia stronę
     tabCards.forEach(card => {
         const tabName = card.getAttribute('data-tab');
+        
         card.addEventListener('click', (e) => {
             // Jeśli to było przeciąganie, nie otwieraj
             if (card.classList.contains('dragging')) {
@@ -35,27 +35,24 @@ export function initTabCardsDragDrop() {
                 return;
             }
 
-            const now = new Date().getTime();
-            if (lastClickTime[tabName] && now - lastClickTime[tabName] < 300) {
-                // Double click - zmień stronę tej karteczki
-                toggleTabSide(card);
-                lastClickTime[tabName] = 0;
+            const isActive = card.classList.contains('active');
+            
+            if (isActive) {
+                card.classList.remove('active');
+                document.getElementById(`panel-${tabName}`)?.classList.remove('active');
             } else {
-                // Single click - otwórz/zamknij
-                lastClickTime[tabName] = now;
-                const isActive = card.classList.contains('active');
+                tabCards.forEach(c => c.classList.remove('active'));
+                card.classList.add('active');
                 
-                if (isActive) {
-                    card.classList.remove('active');
-                    document.getElementById(`panel-${tabName}`)?.classList.remove('active');
-                } else {
-                    tabCards.forEach(c => c.classList.remove('active'));
-                    card.classList.add('active');
-                    
-                    document.querySelectorAll('.sidebar-panel').forEach(p => p.classList.remove('active'));
-                    document.getElementById(`panel-${tabName}`)?.classList.add('active');
-                }
+                document.querySelectorAll('.sidebar-panel').forEach(p => p.classList.remove('active'));
+                document.getElementById(`panel-${tabName}`)?.classList.add('active');
             }
+        });
+        
+        // Double-click zmienia stronę karteczki
+        card.addEventListener('dblclick', (e) => {
+            e.preventDefault();
+            toggleTabSide(card);
         });
     });
 
@@ -231,8 +228,8 @@ export function initUIMode() {
 
     let uiMode = parseInt(localStorage.getItem('uiMode') || '0');
     const holdDurationMs = 10000;
-    let holdStartTime = null;
-    let holdRafId = null;
+    let holdInterval = null;
+    let holdProgress = 0;
     let holdActive = false;
     let holdTriggered = false;
 
@@ -315,46 +312,39 @@ export function initUIMode() {
         uiHoldProgressBar.style.width = '0%';
     };
 
-    const updateHoldProgress = (timestamp) => {
-        if (!holdActive) return;
-        if (!holdStartTime) holdStartTime = timestamp;
-        const elapsed = timestamp - holdStartTime;
-        const progress = Math.min(elapsed / holdDurationMs, 1);
-        if (uiHoldProgressBar) {
-            uiHoldProgressBar.style.width = `${Math.round(progress * 100)}%`;
-        }
-
-        if (progress >= 1) {
-            holdActive = false;
-            holdTriggered = true;
-            hideHoldProgress();
-            resetFloatingButtonPositions();
-            resetTabsLayout();
-            uiMode = 1;
-            localStorage.setItem('uiMode', uiMode);
-            updateUIMode();
-            return;
-        }
-
-        holdRafId = requestAnimationFrame(updateHoldProgress);
-    };
-
     const startHold = (e) => {
         if (e.type === 'mousedown' && e.button !== 0) return;
         if (holdActive) return;
         holdActive = true;
-        holdStartTime = null;
+        holdProgress = 0;
         showHoldProgress();
-        holdRafId = requestAnimationFrame(updateHoldProgress);
+        
+        holdInterval = setInterval(() => {
+            holdProgress += 100; // +100ms co tick
+            const progress = Math.min(holdProgress / holdDurationMs, 1);
+            if (uiHoldProgressBar) {
+                uiHoldProgressBar.style.width = `${Math.round(progress * 100)}%`;
+            }
+
+            if (progress >= 1) {
+                cancelHold();
+                holdTriggered = true;
+                resetFloatingButtonPositions();
+                resetTabsLayout();
+                uiMode = 1;
+                localStorage.setItem('uiMode', uiMode);
+                updateUIMode();
+            }
+        }, 100); // Update co 100ms (10 razy na sekundę)
     };
 
     const cancelHold = () => {
         if (!holdActive) return;
         holdActive = false;
-        holdStartTime = null;
-        if (holdRafId) {
-            cancelAnimationFrame(holdRafId);
-            holdRafId = null;
+        holdProgress = 0;
+        if (holdInterval) {
+            clearInterval(holdInterval);
+            holdInterval = null;
         }
         hideHoldProgress();
     };
@@ -366,10 +356,6 @@ export function initUIMode() {
     document.addEventListener('touchend', cancelHold);
     document.addEventListener('touchcancel', cancelHold);
     window.addEventListener('blur', cancelHold);
-
-    if (!window.resetTabsLayout) {
-        window.resetTabsLayout = resetTabsLayout;
-    }
 }
 
 export function resetFloatingButtonPositions() {
@@ -419,19 +405,13 @@ export function initFloatingButtonsDragDrop() {
     let isDraggingEnabled = false;
     let holdTimer = null;
     const holdDuration = 2000; // 2 sekundy
-    const lockedButtonIds = ['toggleUIBtn']; // Przyciski zablokowane przed przeciąganiem
 
     // Wczytaj zapisane pozycje z localStorage
     loadButtonPositions();
 
-    // Udostępnij reset pozycji globalnie (dla UI long-press)
-    if (!window.resetFloatingButtonPositions) {
-        window.resetFloatingButtonPositions = resetFloatingButtonPositions;
-    }
-
     floatingBtns.forEach(btn => {
-        // Pomiń zablokowane przyciski
-        if (lockedButtonIds.includes(btn.id)) {
+        // Pomiń toggleUIBtn - jest zablokowany przed przeciąganiem
+        if (btn.id === 'toggleUIBtn') {
             return;
         }
 
