@@ -489,6 +489,9 @@
     <div id="floatingButtonsContainer">
         <!-- UI Toggle Button (always visible) -->
         <button id="toggleUIBtn" class="floating-btn btn-toggle" title="Przełącz UI: Status Bar / Tools">⚙️</button>
+        <div id="uiHoldProgress" aria-hidden="true">
+            <div id="uiHoldProgressBar"></div>
+        </div>
 
         <!-- Tools Mode Buttons (hidden by default) -->
         <button id="languageBtn" class="floating-btn btn-language" title="Zmień język (TODO)">🇵🇱</button>
@@ -715,9 +718,16 @@
             const languageBtn = document.getElementById('languageBtn');
             const helpBtn = document.getElementById('helpBtn');
             const toggleUIBtn = document.getElementById('toggleUIBtn');
+            const uiHoldProgress = document.getElementById('uiHoldProgress');
+            const uiHoldProgressBar = document.getElementById('uiHoldProgressBar');
             const floatingStatusBar = document.getElementById('floatingStatusBar');
             const dbButtonsState = { visible: false };
             let uiMode = parseInt(localStorage.getItem('uiMode') || '0'); // 0: Status bar, 1: Tools, 2: Status bar + Tools
+            const holdDurationMs = 10000;
+            let holdStartTime = null;
+            let holdRafId = null;
+            let holdActive = false;
+            let holdTriggered = false;
             
             console.log('[DOMContentLoaded] Elements found:',
                 'importDbBtn:', !!importDbBtn,
@@ -830,7 +840,13 @@
             // Attach toggle button click listener
             if (toggleUIBtn) {
                 console.log('[DOMContentLoaded] Attaching click listener to toggleUIBtn');
-                toggleUIBtn.addEventListener('click', () => {
+                toggleUIBtn.addEventListener('click', (e) => {
+                    if (holdTriggered) {
+                        holdTriggered = false;
+                        e.preventDefault();
+                        e.stopPropagation();
+                        return;
+                    }
                     console.log('[toggleUIBtn] Clicked! Current uiMode:', uiMode);
                     toggleUIBtn.style.transform = 'scale(0.9)';
                     setTimeout(() => toggleUIBtn.style.transform = 'scale(1)', 200);
@@ -839,6 +855,74 @@
                     console.log('[toggleUIBtn] uiMode toggled to:', uiMode);
                     updateUIMode();
                 });
+
+                const showHoldProgress = () => {
+                    if (!uiHoldProgress || !uiHoldProgressBar) return;
+                    uiHoldProgress.style.display = 'block';
+                    uiHoldProgressBar.style.width = '0%';
+                };
+
+                const hideHoldProgress = () => {
+                    if (!uiHoldProgress || !uiHoldProgressBar) return;
+                    uiHoldProgress.style.display = 'none';
+                    uiHoldProgressBar.style.width = '0%';
+                };
+
+                const updateHoldProgress = (timestamp) => {
+                    if (!holdActive) return;
+                    if (!holdStartTime) holdStartTime = timestamp;
+                    const elapsed = timestamp - holdStartTime;
+                    const progress = Math.min(elapsed / holdDurationMs, 1);
+                    if (uiHoldProgressBar) {
+                        uiHoldProgressBar.style.width = `${Math.round(progress * 100)}%`;
+                    }
+
+                    if (progress >= 1) {
+                        holdActive = false;
+                        holdTriggered = true;
+                        hideHoldProgress();
+                        if (window.resetFloatingButtonPositions) {
+                            window.resetFloatingButtonPositions();
+                        }
+                        if (window.resetTabsLayout) {
+                            window.resetTabsLayout();
+                        }
+                        uiMode = 1;
+                        localStorage.setItem('uiMode', uiMode);
+                        updateUIMode();
+                        return;
+                    }
+
+                    holdRafId = requestAnimationFrame(updateHoldProgress);
+                };
+
+                const startHold = (e) => {
+                    if (e.type === 'mousedown' && e.button !== 0) return;
+                    if (holdActive) return;
+                    holdActive = true;
+                    holdStartTime = null;
+                    showHoldProgress();
+                    holdRafId = requestAnimationFrame(updateHoldProgress);
+                };
+
+                const cancelHold = () => {
+                    if (!holdActive) return;
+                    holdActive = false;
+                    holdStartTime = null;
+                    if (holdRafId) {
+                        cancelAnimationFrame(holdRafId);
+                        holdRafId = null;
+                    }
+                    hideHoldProgress();
+                };
+
+                toggleUIBtn.addEventListener('mousedown', startHold);
+                toggleUIBtn.addEventListener('touchstart', startHold, { passive: true });
+                toggleUIBtn.addEventListener('mouseleave', cancelHold);
+                document.addEventListener('mouseup', cancelHold);
+                document.addEventListener('touchend', cancelHold);
+                document.addEventListener('touchcancel', cancelHold);
+                window.addEventListener('blur', cancelHold);
             } else {
                 console.error('[DOMContentLoaded] toggleUIBtn not found!');
             }

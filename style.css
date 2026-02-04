@@ -934,6 +934,30 @@ input:disabled {
     background: linear-gradient(135deg, #667eea, #764ba2);
 }
 
+/* UI Hold Progress (10s reset) */
+#uiHoldProgress {
+    position: fixed;
+    left: 20px;
+    top: 90px;
+    width: 140px;
+    height: 8px;
+    background: rgba(15, 23, 42, 0.35);
+    border: 1px solid rgba(148, 163, 184, 0.4);
+    border-radius: 999px;
+    overflow: hidden;
+    display: none;
+    z-index: 2002;
+    pointer-events: none;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+}
+
+#uiHoldProgressBar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #22c55e, #16a34a);
+    transition: width 0.05s linear;
+}
+
 /* Language Button */
 .btn-language {
     display: none !important;

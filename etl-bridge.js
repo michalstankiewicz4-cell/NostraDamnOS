@@ -304,9 +304,8 @@ function initSidebar() {
         let holdTimer = null;
         const holdDuration = 500; // 500ms hold required before drag starts
         
-        const tabCards = document.querySelectorAll('.tab-card');
         let draggedCard = card;
-        const startIndex = Array.from(tabCards).indexOf(card);
+        let dragContainer = card.parentNode;
         
         function onMove(moveEvent) {
             // Tylko jeśli drag jest aktywny
@@ -316,19 +315,25 @@ function initSidebar() {
             const clientX = moveEvent.touches ? moveEvent.touches[0].clientX : moveEvent.clientX;
             const clientY = moveEvent.touches ? moveEvent.touches[0].clientY : moveEvent.clientY;
             
+            // Ogranicz drag do bieżącego kontenera (lewy/prawy sidebar)
+            if (draggedCard.parentNode !== dragContainer) {
+                dragContainer = draggedCard.parentNode;
+            }
+
+            const currentCards = Array.from(dragContainer.querySelectorAll('.tab-card'));
+            const currentIndex = currentCards.indexOf(draggedCard);
+
             // Znajdź karteczkę na którą przesuwamy
-            for (let i = 0; i < tabCards.length; i++) {
-                if (i === startIndex) continue;
-                const rect = tabCards[i].getBoundingClientRect();
+            for (let i = 0; i < currentCards.length; i++) {
+                if (i === currentIndex) continue;
+                const rect = currentCards[i].getBoundingClientRect();
                 if (clientY > rect.top && clientY < rect.bottom) {
-                    // Zamień karteczki
-                    if (i < startIndex) {
-                        draggedCard.parentNode.insertBefore(draggedCard, tabCards[i]);
+                    // Zamień karteczki w tym samym sidebarze
+                    if (i < currentIndex) {
+                        dragContainer.insertBefore(draggedCard, currentCards[i]);
                     } else {
-                        draggedCard.parentNode.insertBefore(draggedCard, tabCards[i].nextSibling);
+                        dragContainer.insertBefore(draggedCard, currentCards[i].nextSibling);
                     }
-                    // Zaktualizuj referencje
-                    tabCards = document.querySelectorAll('.tab-card');
                     break;
                 }
             }
@@ -449,6 +454,31 @@ function initSidebar() {
                     parent.appendChild(card);
                 }
             });
+        }
+
+        function resetTabsLayout() {
+            const sidebarRight = document.getElementById('sidebar');
+            const sidebarLeft = document.getElementById('sidebarLeft');
+            const cards = document.querySelectorAll('.tab-card');
+
+            localStorage.removeItem('tabOrder');
+
+            Object.keys(localStorage).forEach(key => {
+                if (key.startsWith('tabSide-')) {
+                    localStorage.removeItem(key);
+                }
+            });
+
+            cards.forEach(card => {
+                sidebarRight.appendChild(card);
+                card.classList.remove('tab-left');
+            });
+
+            updateSidebarContentPosition();
+        }
+
+        if (!window.resetTabsLayout) {
+            window.resetTabsLayout = resetTabsLayout;
         }
     }
 }

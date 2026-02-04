@@ -1,4 +1,17 @@
 // Floating Buttons Drag and Drop - obsługa desktop i mobile
+export function resetFloatingButtonPositions() {
+    const floatingBtns = document.querySelectorAll('.floating-btn');
+    localStorage.removeItem('floatingButtonPositions');
+
+    floatingBtns.forEach(btn => {
+        btn.style.left = '';
+        btn.style.top = '';
+        btn.style.right = '';
+        btn.style.bottom = '';
+        btn.classList.remove('dragging');
+    });
+}
+
 export function initFloatingButtonsDragDrop() {
     const floatingBtns = document.querySelectorAll('.floating-btn');
     let draggedElement = null;
@@ -10,6 +23,11 @@ export function initFloatingButtonsDragDrop() {
 
     // Wczytaj zapisane pozycje z localStorage
     loadButtonPositions();
+
+    // Udostępnij reset pozycji globalnie (dla UI long-press)
+    if (!window.resetFloatingButtonPositions) {
+        window.resetFloatingButtonPositions = resetFloatingButtonPositions;
+    }
 
     floatingBtns.forEach(btn => {
         // Pomiń zablokowane przyciski
