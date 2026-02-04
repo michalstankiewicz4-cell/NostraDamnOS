@@ -245,10 +245,21 @@ function showVerificationResults(differences) {
 // Sidebar Menu Handler
 function initSidebar() {
     const tabCards = document.querySelectorAll('.tab-card');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarContent = document.getElementById('sidebarContent');
+
+    // Wczytaj pozycje karteczek z localStorage
+    loadTabPositions();
 
     // Tab card click handlers
-    tabCards.forEach(card => {
-        card.addEventListener('click', () => {
+    tabCards.forEach((card, index) => {
+        card.addEventListener('click', (e) => {
+            // Jeśli to było przeciąganie, nie otwieraj
+            if (card.classList.contains('dragging-tab')) {
+                card.classList.remove('dragging-tab');
+                return;
+            }
+
             const tabName = card.getAttribute('data-tab');
             const isActive = card.classList.contains('active');
             
@@ -265,7 +276,155 @@ function initSidebar() {
                 document.getElementById(`panel-${tabName}`)?.classList.add('active');
             }
         });
+
+        // Drag to reorder
+        card.addEventListener('mousedown', startTabDrag);
+        card.addEventListener('touchstart', startTabDrag);
     });
+
+    // Double-click na karteczkę zmienia jej stronę (lewo/prawo)
+    let lastClickTime = {};
+    tabCards.forEach(card => {
+        const tabName = card.getAttribute('data-tab');
+        card.addEventListener('click', (e) => {
+            const now = new Date().getTime();
+            if (lastClickTime[tabName] && now - lastClickTime[tabName] < 300) {
+                // Double click - zmień stronę tej karteczki
+                toggleTabSide(card);
+                lastClickTime[tabName] = 0; // Reset double-click timer
+            } else {
+                lastClickTime[tabName] = now;
+            }
+        });
+    });
+
+    function startTabDrag(e) {
+        const card = e.currentTarget;
+        card.classList.add('dragging-tab');
+        
+        const tabCards = document.querySelectorAll('.tab-card');
+        let draggedCard = card;
+        const startIndex = Array.from(tabCards).indexOf(card);
+        
+        function onMove(moveEvent) {
+            moveEvent.preventDefault();
+            const clientX = moveEvent.touches ? moveEvent.touches[0].clientX : moveEvent.clientX;
+            const clientY = moveEvent.touches ? moveEvent.touches[0].clientY : moveEvent.clientY;
+            
+            // Znajdź karteczkę na którą przesuwamy
+            for (let i = 0; i < tabCards.length; i++) {
+                if (i === startIndex) continue;
+                const rect = tabCards[i].getBoundingClientRect();
+                if (clientY > rect.top && clientY < rect.bottom) {
+                    // Zamień karteczki
+                    if (i < startIndex) {
+                        draggedCard.parentNode.insertBefore(draggedCard, tabCards[i]);
+                    } else {
+                        draggedCard.parentNode.insertBefore(draggedCard, tabCards[i].nextSibling);
+                    }
+                    // Zaktualizuj referencje
+                    tabCards = document.querySelectorAll('.tab-card');
+                    break;
+                }
+            }
+        }
+
+        function onEnd() {
+            card.classList.remove('dragging-tab');
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('touchmove', onMove);
+            document.removeEventListener('mouseup', onEnd);
+            document.removeEventListener('touchend', onEnd);
+            // Zapisz nową kolejność
+            saveTabOrder();
+        }
+
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('touchmove', onMove, { passive: false });
+        document.addEventListener('mouseup', onEnd);
+        document.addEventListener('touchend', onEnd);
+    }
+
+    function toggleTabSide(card) {
+        const tabName = card.getAttribute('data-tab');
+        const currentSide = localStorage.getItem(`tabSide-${tabName}`) || 'right';
+        const newSide = currentSide === 'right' ? 'left' : 'right';
+        
+        localStorage.setItem(`tabSide-${tabName}`, newSide);
+        
+        // Przenieś zakładkę do drugiego sidebaru
+        const sidebarRight = document.getElementById('sidebar');
+        const sidebarLeft = document.getElementById('sidebarLeft');
+        
+        if (newSide === 'left') {
+            // Przenieś na lewą stronę
+            sidebarLeft.appendChild(card);
+            card.classList.add('tab-left');
+        } else {
+            // Przenieś na prawą stronę
+            sidebarRight.appendChild(card);
+            card.classList.remove('tab-left');
+        }
+        
+        // Zaktualizuj wygląd sidebarContent jeśli jest otwarty
+        const panel = document.getElementById(`panel-${tabName}`);
+        if (panel && panel.classList.contains('active')) {
+            updateSidebarContentPosition();
+        }
+    }
+
+    function updateSidebarContentPosition() {
+        // Sprawdź którą karteczkę mamy aktywną
+        const activeCard = document.querySelector('.tab-card.active');
+        if (!activeCard) return;
+        
+        const tabName = activeCard.getAttribute('data-tab');
+        const side = localStorage.getItem(`tabSide-${tabName}`) || 'right';
+        const sidebarContent = document.getElementById('sidebarContent');
+        
+        if (side === 'left') {
+            sidebarContent.classList.add('sidebar-left');
+        } else {
+            sidebarContent.classList.remove('sidebar-left');
+        }
+    }
+
+    function saveTabOrder() {
+        const cards = Array.from(document.querySelectorAll('.tab-card'));
+        const order = cards.map(card => card.getAttribute('data-tab'));
+        localStorage.setItem('tabOrder', JSON.stringify(order));
+    }
+
+    function loadTabPositions() {
+        const sidebarRight = document.getElementById('sidebar');
+        const sidebarLeft = document.getElementById('sidebarLeft');
+        const cards = document.querySelectorAll('.tab-card');
+        
+        cards.forEach(card => {
+            const tabName = card.getAttribute('data-tab');
+            const side = localStorage.getItem(`tabSide-${tabName}`) || 'right';
+            
+            if (side === 'left') {
+                sidebarLeft.appendChild(card);
+                card.classList.add('tab-left');
+            } else {
+                sidebarRight.appendChild(card);
+                card.classList.remove('tab-left');
+            }
+        });
+    }
+
+    // Wczytaj zapisaną kolejność
+    const savedOrder = localStorage.getItem('tabOrder');
+    if (savedOrder) {
+        const order = JSON.parse(savedOrder);
+        const sidebar = document.getElementById('sidebar');
+        const cards = Array.from(document.querySelectorAll('.tab-card'));
+        order.forEach(tabName => {
+            const card = cards.find(c => c.getAttribute('data-tab') === tabName);
+            if (card) sidebar.appendChild(card);
+        });
+    }
 }
 
 // Init when DOM ready (with deduplication check)

@@ -61,6 +61,12 @@ header p {
     gap: 15px;
     z-index: 999;
     padding: 15px 0;
+    transition: all 0.3s ease;
+}
+
+.sidebar.sidebar-left {
+    right: auto;
+    left: 0;
 }
 
 .tab-card {
@@ -73,25 +79,36 @@ header p {
     border-radius: 8px 0 0 8px;
     border: 2px solid var(--border-color);
     border-right: none;
-    cursor: pointer;
+    cursor: grab;
     transition: all 0.3s ease;
     box-shadow: -2px 2px 8px rgba(0,0,0,0.1);
     font-weight: 600;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
-.tab-card:nth-child(1) {
+/* Karteczka na lewej stronie */
+.tab-card.tab-left {
+    border-radius: 0 8px 8px 0;
+    border-right: 2px solid var(--border-color);
+    border-left: none;
+    box-shadow: 2px 2px 8px rgba(0,0,0,0.1);
+}
+
+/* Kolory karteczek przypisane do konkretnych zakładek */
+.tab-card[data-tab="settings"] {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     border-color: #667eea;
 }
 
-.tab-card:nth-child(2) {
+.tab-card[data-tab="info"] {
     background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
     color: white;
     border-color: #f5576c;
 }
 
-.tab-card:nth-child(3) {
+.tab-card[data-tab="help"] {
     background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
     color: white;
     border-color: #00f2fe;
@@ -102,8 +119,22 @@ header p {
     box-shadow: -4px 4px 12px rgba(0,0,0,0.15);
 }
 
+.tab-card.tab-left:hover {
+    transform: translateX(5px);
+    box-shadow: 4px 4px 12px rgba(0,0,0,0.15);
+}
+
 .tab-card.active {
     transform: translateX(-5px);
+}
+
+.tab-card.tab-left.active {
+    transform: translateX(5px);
+}
+
+.tab-card.dragging-tab {
+    opacity: 0.7;
+    cursor: grabbing;
 }
 
 .tab-label {
@@ -129,6 +160,14 @@ header p {
     box-shadow: -3px 0 15px rgba(0,0,0,0.1);
     z-index: 998;
     overflow-y: auto;
+    transition: all 0.3s ease;
+}
+
+.sidebar-content.sidebar-left {
+    right: auto;
+    left: 120px;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 3px 0 15px rgba(0,0,0,0.1);
 }
 
 .sidebar-panel {
