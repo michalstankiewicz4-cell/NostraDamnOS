@@ -793,17 +793,17 @@ input:disabled {
 }
 
 .floating-lamp.status-ok {
-    background-color: #10b981 !important;
+    background-color: #10b981;
     box-shadow: 0 0 8px rgba(16, 185, 129, 0.8);
 }
 
 .floating-lamp.status-warning {
-    background-color: #f59e0b !important;
+    background-color: #f59e0b;
     box-shadow: 0 0 8px rgba(245, 158, 11, 0.8);
 }
 
 .floating-lamp.status-error {
-    background-color: #ef4444 !important;
+    background-color: #ef4444;
     box-shadow: 0 0 8px rgba(239, 68, 68, 0.8);
 }
 
@@ -861,7 +861,7 @@ input:disabled {
 
 /* Toggle Button (always visible) */
 .btn-toggle {
-    display: flex !important;
+    display: flex;
     z-index: 2001;
     top: 20px;
     left: 20px;
@@ -894,7 +894,7 @@ input:disabled {
 
 /* Language Button */
 .btn-language {
-    display: none !important;
+    display: none;
     top: 20px;
     right: 90px;
     background: linear-gradient(135deg, #667eea, #764ba2);
@@ -902,7 +902,7 @@ input:disabled {
 
 /* Help Button */
 .btn-help {
-    display: none !important;
+    display: none;
     top: 20px;
     right: 20px;
     background: linear-gradient(135deg, #667eea, #764ba2);
@@ -910,7 +910,7 @@ input:disabled {
 
 /* Import Button */
 .btn-import {
-    display: none !important;
+    display: none;
     bottom: 160px;
     right: 20px;
     background: linear-gradient(135deg, #10b981, #059669);
@@ -918,7 +918,7 @@ input:disabled {
 
 /* Export Button */
 .btn-export {
-    display: none !important;
+    display: none;
     bottom: 90px;
     right: 20px;
     background: linear-gradient(135deg, #3b82f6, #2563eb);
@@ -926,7 +926,7 @@ input:disabled {
 
 /* RODO Button */
 .btn-rodo {
-    display: none !important;
+    display: none;
     bottom: 160px;
     right: 90px;
     background: linear-gradient(135deg, #ec4899, #db2777);

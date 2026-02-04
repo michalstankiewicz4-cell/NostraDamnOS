@@ -644,15 +644,13 @@
             const cleanRodoBtn = document.getElementById('cleanRodoBtn');
             const languageBtn = document.getElementById('languageBtn');
             const helpBtn = document.getElementById('helpBtn');
-            const floatingStatusBar = document.getElementById('floatingStatusBar');
             
             console.log('[DOMContentLoaded] Elements found:',
                 'importDbBtn:', !!importDbBtn,
                 'exportDbBtn:', !!exportDbBtn,
                 'cleanRodoBtn:', !!cleanRodoBtn,
                 'languageBtn:', !!languageBtn,
-                'helpBtn:', !!helpBtn,
-                'floatingStatusBar:', !!floatingStatusBar
+                'helpBtn:', !!helpBtn
             );
             
             // Define setDbButtonsVisible function (used by floating console)
@@ -731,82 +729,6 @@
             }
             
             console.log('[DOMContentLoaded] Initialization complete');
-        });
-    </script>
-
-    <!-- Database Import/Export Logic -->
-    <!-- Sync Status Indicators to Floating Bar -->
-    <script>
-        // Function to sync status from old sidebar to floating bar
-        window.updateFloatingStatusIndicators = function() {
-            const oldDbState = document.getElementById('statusDbState');
-            const oldRecords = document.getElementById('statusRecords');
-            const oldValidity = document.getElementById('statusValidity');
-            
-            const floatingDbState = document.getElementById('floatingStatusDbState');
-            const floatingRecords = document.getElementById('floatingStatusRecords');
-            const floatingValidity = document.getElementById('floatingStatusValidity');
-            
-            if (oldDbState && floatingDbState) {
-                const oldLamp = oldDbState.querySelector('.etl-lamp');
-                const floatingLamp = floatingDbState.querySelector('.floating-lamp');
-                if (oldLamp && floatingLamp) {
-                    floatingLamp.className = 'floating-lamp ' + oldLamp.className.replace('etl-lamp', '').trim();
-                    floatingDbState.title = oldDbState.title;
-                }
-            }
-            
-            if (oldRecords && floatingRecords) {
-                const oldLamp = oldRecords.querySelector('.etl-lamp');
-                const floatingLamp = floatingRecords.querySelector('.floating-lamp');
-                if (oldLamp && floatingLamp) {
-                    floatingLamp.className = 'floating-lamp ' + oldLamp.className.replace('etl-lamp', '').trim();
-                    floatingRecords.title = oldRecords.title;
-                }
-            }
-            
-            if (oldValidity && floatingValidity) {
-                const oldLamp = oldValidity.querySelector('.etl-lamp');
-                const floatingLamp = floatingValidity.querySelector('.floating-lamp');
-                if (oldLamp && floatingLamp) {
-                    floatingLamp.className = 'floating-lamp ' + oldLamp.className.replace('etl-lamp', '').trim();
-                    floatingValidity.title = oldValidity.title;
-                }
-            }
-        };
-        
-        // Observe changes to old status indicators and sync to floating bar
-        const oldStatusDbState = document.getElementById('statusDbState');
-        const oldStatusRecords = document.getElementById('statusRecords');
-        const oldStatusValidity = document.getElementById('statusValidity');
-        
-        if (oldStatusDbState) {
-            new MutationObserver(() => window.updateFloatingStatusIndicators()).observe(oldStatusDbState, { 
-                attributes: true, 
-                attributeFilter: ['title', 'class'],
-                subtree: true
-            });
-        }
-        
-        if (oldStatusRecords) {
-            new MutationObserver(() => window.updateFloatingStatusIndicators()).observe(oldStatusRecords, { 
-                attributes: true, 
-                attributeFilter: ['title', 'class'],
-                subtree: true
-            });
-        }
-        
-        if (oldStatusValidity) {
-            new MutationObserver(() => window.updateFloatingStatusIndicators()).observe(oldStatusValidity, { 
-                attributes: true, 
-                attributeFilter: ['title', 'class'],
-                subtree: true
-            });
-        }
-        
-        // Initial sync
-        document.addEventListener('DOMContentLoaded', () => {
-            setTimeout(() => window.updateFloatingStatusIndicators(), 500);
         });
     </script>
 
