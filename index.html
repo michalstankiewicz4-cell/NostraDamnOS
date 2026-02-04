@@ -88,25 +88,20 @@
             const timestamp = new Date().toLocaleTimeString();
             const formattedLog = `[${timestamp}] ${message}`;
             
-            // Try to add to UI consoles
+            // Try to add to UI console
             const apiLogs = document.getElementById('apiLogs');
-            const floatingLogs = document.getElementById('floatingConsoleLogs');
             
-            if (apiLogs || floatingLogs) {
+            if (apiLogs) {
                 const line = document.createElement('div');
                 line.textContent = formattedLog;
                 line.style.fontSize = '0.85rem';
                 line.style.fontFamily = 'monospace';
                 line.style.lineHeight = '1.6';
+                apiLogs.appendChild(line);
+                apiLogs.scrollTop = apiLogs.scrollHeight;
                 
-                if (apiLogs) {
-                    apiLogs.appendChild(line.cloneNode(true));
-                    apiLogs.scrollTop = apiLogs.scrollHeight;
-                }
-                if (floatingLogs) {
-                    floatingLogs.appendChild(line.cloneNode(true));
-                    floatingLogs.scrollTop = floatingLogs.scrollHeight;
-                }
+                // Sync to floating console
+                window.syncFloatingConsoleLogs && window.syncFloatingConsoleLogs();
             } else {
                 // Buffer for later (console doesn't exist yet)
                 window.logBuffer.push(formattedLog);
@@ -116,30 +111,24 @@
         // Flush buffer when DOM is ready
         document.addEventListener('DOMContentLoaded', () => {
             const apiLogs = document.getElementById('apiLogs');
-            const floatingLogs = document.getElementById('floatingConsoleLogs');
             
-            if (window.logBuffer.length > 0 && (apiLogs || floatingLogs)) {
-                // Clear placeholder text
-                if (apiLogs) apiLogs.innerHTML = '';
-                if (floatingLogs) floatingLogs.innerHTML = '';
+            if (window.logBuffer.length > 0 && apiLogs) {
+                apiLogs.innerHTML = '';
                 
-                // Add buffered logs
                 window.logBuffer.forEach(formattedLog => {
                     const line = document.createElement('div');
                     line.textContent = formattedLog;
                     line.style.fontSize = '0.85rem';
                     line.style.fontFamily = 'monospace';
                     line.style.lineHeight = '1.6';
-                    
-                    if (apiLogs) apiLogs.appendChild(line.cloneNode(true));
-                    if (floatingLogs) floatingLogs.appendChild(line.cloneNode(true));
+                    apiLogs.appendChild(line);
                 });
                 
-                // Clear buffer
                 window.logBuffer = [];
+                apiLogs.scrollTop = apiLogs.scrollHeight;
                 
-                if (apiLogs) apiLogs.scrollTop = apiLogs.scrollHeight;
-                if (floatingLogs) floatingLogs.scrollTop = floatingLogs.scrollHeight;
+                // Sync to floating console
+                window.syncFloatingConsoleLogs && window.syncFloatingConsoleLogs();
             }
         });
     </script>
@@ -250,20 +239,6 @@
                         <button class="etl-btn etl-btn-primary" id="etlFetchBtn">
                             📥 Pobierz/Zaktualizuj dane
                         </button>
-                    </div>
-                    <div class="etl-status-row">
-                        <div class="etl-status-indicator" id="statusDbState" title="Stan bazy danych">
-                            <div class="etl-lamp" style="background-color: #ef4444;"></div>
-                            <span>Baza</span>
-                        </div>
-                        <div class="etl-status-indicator" id="statusRecords" title="Stan rekordów w API">
-                            <div class="etl-lamp" style="background-color: #10b981;"></div>
-                            <span>Rekordy</span>
-                        </div>
-                        <div class="etl-status-indicator" id="statusValidity" title="Stan poprawności danych">
-                            <div class="etl-lamp" style="background-color: #10b981;"></div>
-                            <span>Poprawność</span>
-                        </div>
                     </div>
                     
                     <button class="etl-btn etl-btn-secondary" id="etlVerifyBtn" style="background: #ef4444; color: white; margin-bottom: 12px;">
@@ -548,11 +523,6 @@
         </div>
     </div>
 
-    <!-- Floating Console Button (Hidden - kept for compatibility) -->
-    <button id="floatingConsoleBtn" style="position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; font-size: 24px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 999; transition: transform 0.2s; display: none;">
-        📋
-    </button>
-
     <!-- Floating Console Panel -->
     <div id="floatingConsolePanel" style="position: fixed; bottom: 70px; right: 20px; width: 400px; max-height: 500px; background: white; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); display: none; z-index: 998; overflow: hidden;">
         <div style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 12px; display: flex; justify-content: space-between; align-items: center;">
@@ -573,14 +543,13 @@
         // Startup integrity check
         async function runStartupCheck() {
             try {
-                // Wait for db2.database to be available
-                let attempts = 0;
-                while ((!window.db2 || !window.db2.database) && attempts < 50) {
+                // Wait for db2.database to be available (max 5 seconds)
+                for (let i = 0; i < 50; i++) {
+                    if (window.db2?.database) break;
                     await new Promise(r => setTimeout(r, 100));
-                    attempts++;
                 }
 
-                if (!window.db2 || !window.db2.database) {
+                if (!window.db2?.database) {
                     console.warn('[Startup Check] db2 database not initialized');
                     return;
                 }
@@ -588,53 +557,30 @@
                 const cache = getCacheStatus(window.db2);
                 console.log('[Startup Check] Cache status:', cache);
 
-                // Skip if database is not initialized or has no data
-                if (!cache.initialized || !cache.totalRecords || cache.totalRecords === 0) {
-                    console.log('[Startup Check] ✅ Database empty or first run - no verification needed');
+                // Skip if database is empty
+                if (!cache.initialized || !cache.totalRecords) {
+                    console.log('[Startup Check] ✅ Database empty - no verification needed');
                     return;
                 }
 
                 console.log('[Startup Check] Running verification...');
                 
-                // Build config to match what was previously fetched
                 const verifyConfig = buildConfigFromUI();
                 verifyConfig.fetchMode = 'verify';
-
-                console.log('[Startup Check] Config:', verifyConfig);
                 
-                // Run verify pipeline
                 await runPipeline(verifyConfig, {
                     onProgress: (msg) => console.log('[Verify]', msg),
                     onComplete: (result) => {
-                        console.log('[Startup Check] Verification complete:', result);
-                        
-                        // Check if there are discrepancies
-                        if (result.discrepancies && Object.keys(result.discrepancies).length > 0) {
+                        const hasDiscrepancies = result.discrepancies && Object.keys(result.discrepancies).length > 0;
+                        if (hasDiscrepancies) {
                             console.warn('[Startup Check] ⚠️ Discrepancies found:', result.discrepancies);
-                            pulseConsoleButton();
                         } else {
                             console.log('[Startup Check] ✅ Database matches API');
                         }
                     }
                 });
-
             } catch (err) {
                 console.error('[Startup Check] Error:', err);
-            }
-        }
-
-        function pulseConsoleButton() {
-            const btn = document.getElementById('floatingConsoleBtn');
-            if (btn) {
-                btn.classList.add('pulse-red');
-                console.log('[Startup Check] Console button pulsing red (discrepancies detected)');
-            }
-        }
-
-        function stopPulseConsoleButton() {
-            const btn = document.getElementById('floatingConsoleBtn');
-            if (btn) {
-                btn.classList.remove('pulse-red');
             }
         }
 
@@ -645,36 +591,27 @@
 
         // Expose for debugging
         window.runStartupCheck = runStartupCheck;
-        window.pulseConsoleButton = pulseConsoleButton;
-        window.stopPulseConsoleButton = stopPulseConsoleButton;
     </script>
     <script type="module" src="etl-bridge.js"></script>
     <script type="module" src="models.js"></script>
     
     <!-- Floating Console Logic -->
     <script>
-        const floatingBtn = document.getElementById('floatingConsoleBtn');
         const floatingPanel = document.getElementById('floatingConsolePanel');
         const closeBtn = document.getElementById('closeFloatingConsole');
         const consoleSection = document.getElementById('consoleSection');
         
         // Function to toggle console
         const toggleConsole = () => {
-            floatingPanel.style.display = floatingPanel.style.display === 'none' ? 'block' : 'none';
-            floatingBtn.style.transform = floatingPanel.style.display === 'none' ? 'scale(1)' : 'scale(0.9)';
-            if (floatingPanel.style.display === 'none') {
-                setDbButtonsVisible(false);
-            } else {
-                // Stop pulsing when console is opened
-                window.stopPulseConsoleButton && window.stopPulseConsoleButton();
+            const isVisible = floatingPanel.style.display !== 'none';
+            floatingPanel.style.display = isVisible ? 'none' : 'block';
+            if (isVisible) {
+                window.setDbButtonsVisible && window.setDbButtonsVisible(false);
             }
         };
         
-        // Old floating button click (for compatibility)
-        floatingBtn.addEventListener('click', toggleConsole);
-        
-        // New console section click (from floating bar)
-        consoleSection.addEventListener('click', toggleConsole);
+        // Console section click (from floating bar)
+        consoleSection?.addEventListener('click', toggleConsole);
         
         // Console section keyboard shortcut (Shift+C)
         document.addEventListener('keydown', (e) => {
@@ -684,23 +621,19 @@
             }
         });
         
-        closeBtn.addEventListener('click', () => {
+        closeBtn?.addEventListener('click', () => {
             floatingPanel.style.display = 'none';
-            floatingBtn.style.transform = 'scale(1)';
-            setDbButtonsVisible(false);
+            window.setDbButtonsVisible && window.setDbButtonsVisible(false);
         });
         
-        // Sync logs from main console to floating console
-        const mainLogs = document.getElementById('apiLogs');
-        const floatingLogs = document.getElementById('floatingConsoleLogs');
-        
-        const observer = new MutationObserver(() => {
-            floatingLogs.innerHTML = mainLogs.innerHTML;
-            floatingLogs.scrollTop = floatingLogs.scrollHeight;
-        });
-        
-        if (mainLogs) {
-            observer.observe(mainLogs, { childList: true, subtree: true, characterData: true });
+        // Simple sync function for logs (called by console interceptor)
+        window.syncFloatingConsoleLogs = function() {
+            const mainLogs = document.getElementById('apiLogs');
+            const floatingLogs = document.getElementById('floatingConsoleLogs');
+            if (mainLogs && floatingLogs) {
+                floatingLogs.innerHTML = mainLogs.innerHTML;
+                floatingLogs.scrollTop = floatingLogs.scrollHeight;
+            }
         }
         
         // Top Right Buttons (TODO placeholders)
