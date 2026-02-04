@@ -717,17 +717,7 @@
             const cleanRodoBtn = document.getElementById('cleanRodoBtn');
             const languageBtn = document.getElementById('languageBtn');
             const helpBtn = document.getElementById('helpBtn');
-            const toggleUIBtn = document.getElementById('toggleUIBtn');
-            const uiHoldProgress = document.getElementById('uiHoldProgress');
-            const uiHoldProgressBar = document.getElementById('uiHoldProgressBar');
             const floatingStatusBar = document.getElementById('floatingStatusBar');
-            const dbButtonsState = { visible: false };
-            let uiMode = parseInt(localStorage.getItem('uiMode') || '0'); // 0: Status bar, 1: Tools, 2: Status bar + Tools
-            const holdDurationMs = 10000;
-            let holdStartTime = null;
-            let holdRafId = null;
-            let holdActive = false;
-            let holdTriggered = false;
             
             console.log('[DOMContentLoaded] Elements found:',
                 'importDbBtn:', !!importDbBtn,
@@ -735,11 +725,10 @@
                 'cleanRodoBtn:', !!cleanRodoBtn,
                 'languageBtn:', !!languageBtn,
                 'helpBtn:', !!helpBtn,
-                'toggleUIBtn:', !!toggleUIBtn,
                 'floatingStatusBar:', !!floatingStatusBar
             );
             
-            // Define setDbButtonsVisible function
+            // Define setDbButtonsVisible function (used by floating console)
             const setDbButtonsVisible = (visible) => {
                 console.log('[setDbButtonsVisible] Setting visibility to:', visible);
                 const toolsButtons = [
@@ -760,174 +749,12 @@
                         console.log('[setDbButtonsVisible] Hid button:', btn.id);
                     }
                 });
-                dbButtonsState.visible = visible;
             };
             
-            // Define updateUIMode function
-            const updateUIMode = () => {
-                console.log('[updateUIMode] Called with uiMode =', uiMode);
-                
-                const sidebar = document.getElementById('sidebar');
-                const sidebarLeft = document.getElementById('sidebarLeft');
-                const sidebarContent = document.getElementById('sidebarContent');
-                const toolsButtons = [importDbBtn, exportDbBtn, cleanRodoBtn, languageBtn, helpBtn];
-                
-                // Floating bar zawsze widoczny
-                // Stan 1 (uiMode=1): widać przyciski i zakładki
-                // Stan 2 (uiMode=2): widać tylko przyciski
-                // Stan 3 (uiMode=3): widać tylko zakładki
-                // Stan 0 (uiMode=0): nic nie widać
-                
-                if (uiMode === 1) {
-                    // Mode 1: Show tools and tabs
-                    console.log('[updateUIMode] Mode 1: Showing tools and tabs');
-                    toolsButtons.forEach(btn => {
-                        if (btn) btn.style.setProperty('display', 'flex', 'important');
-                    });
-                    if (sidebar) sidebar.style.setProperty('display', 'flex', 'important');
-                    if (sidebarLeft) sidebarLeft.style.setProperty('display', 'flex', 'important');
-                    if (sidebarContent) sidebarContent.style.setProperty('display', 'block', 'important');
-                    if (toggleUIBtn) {
-                        toggleUIBtn.style.setProperty('background', 'linear-gradient(135deg, #667eea, #764ba2)', 'important');
-                        toggleUIBtn.title = 'Stan 1: Przyciski + Zakładki';
-                    }
-                } else if (uiMode === 2) {
-                    // Mode 2: Show tools only
-                    console.log('[updateUIMode] Mode 2: Showing tools only');
-                    toolsButtons.forEach(btn => {
-                        if (btn) btn.style.setProperty('display', 'flex', 'important');
-                    });
-                    if (sidebar) sidebar.style.setProperty('display', 'none', 'important');
-                    if (sidebarLeft) sidebarLeft.style.setProperty('display', 'none', 'important');
-                    if (sidebarContent) sidebarContent.style.setProperty('display', 'none', 'important');
-                    if (toggleUIBtn) {
-                        toggleUIBtn.style.setProperty('background', 'linear-gradient(135deg, #f59e0b, #d97706)', 'important');
-                        toggleUIBtn.title = 'Stan 2: Tylko Przyciski';
-                    }
-                } else if (uiMode === 3) {
-                    // Mode 3: Show tabs only
-                    console.log('[updateUIMode] Mode 3: Showing tabs only');
-                    toolsButtons.forEach(btn => {
-                        if (btn) btn.style.setProperty('display', 'none', 'important');
-                    });
-                    if (sidebar) sidebar.style.setProperty('display', 'flex', 'important');
-                    if (sidebarLeft) sidebarLeft.style.setProperty('display', 'flex', 'important');
-                    if (sidebarContent) sidebarContent.style.setProperty('display', 'block', 'important');
-                    if (toggleUIBtn) {
-                        toggleUIBtn.style.setProperty('background', 'linear-gradient(135deg, #22c55e, #16a34a)', 'important');
-                        toggleUIBtn.title = 'Stan 3: Tylko Zakładki';
-                    }
-                } else {
-                    // Mode 0: Hide everything (floating bar always visible)
-                    console.log('[updateUIMode] Mode 0: Hiding everything');
-                    toolsButtons.forEach(btn => {
-                        if (btn) btn.style.setProperty('display', 'none', 'important');
-                    });
-                    if (sidebar) sidebar.style.setProperty('display', 'none', 'important');
-                    if (sidebarLeft) sidebarLeft.style.setProperty('display', 'none', 'important');
-                    if (sidebarContent) sidebarContent.style.setProperty('display', 'none', 'important');
-                    if (toggleUIBtn) {
-                        toggleUIBtn.style.setProperty('background', 'linear-gradient(135deg, #8b5cf6, #6d28d9)', 'important');
-                        toggleUIBtn.title = 'Stan 0: Tylko Status Bar';
-                    }
-                }
-            };
+            // Expose globally for floating console
+            window.setDbButtonsVisible = setDbButtonsVisible;
             
-            // Initialize UI mode on load
-            console.log('[DOMContentLoaded] Calling updateUIMode for first time');
-            updateUIMode();
-            
-            // Attach toggle button click listener
-            if (toggleUIBtn) {
-                console.log('[DOMContentLoaded] Attaching click listener to toggleUIBtn');
-                toggleUIBtn.addEventListener('click', (e) => {
-                    if (holdTriggered) {
-                        holdTriggered = false;
-                        e.preventDefault();
-                        e.stopPropagation();
-                        return;
-                    }
-                    console.log('[toggleUIBtn] Clicked! Current uiMode:', uiMode);
-                    toggleUIBtn.style.transform = 'scale(0.9)';
-                    setTimeout(() => toggleUIBtn.style.transform = 'scale(1)', 200);
-                    uiMode = (uiMode + 1) % 4;
-                    localStorage.setItem('uiMode', uiMode); // Zapisz nowy stan
-                    console.log('[toggleUIBtn] uiMode toggled to:', uiMode);
-                    updateUIMode();
-                });
-
-                const showHoldProgress = () => {
-                    if (!uiHoldProgress || !uiHoldProgressBar) return;
-                    uiHoldProgress.style.display = 'block';
-                    uiHoldProgressBar.style.width = '0%';
-                };
-
-                const hideHoldProgress = () => {
-                    if (!uiHoldProgress || !uiHoldProgressBar) return;
-                    uiHoldProgress.style.display = 'none';
-                    uiHoldProgressBar.style.width = '0%';
-                };
-
-                const updateHoldProgress = (timestamp) => {
-                    if (!holdActive) return;
-                    if (!holdStartTime) holdStartTime = timestamp;
-                    const elapsed = timestamp - holdStartTime;
-                    const progress = Math.min(elapsed / holdDurationMs, 1);
-                    if (uiHoldProgressBar) {
-                        uiHoldProgressBar.style.width = `${Math.round(progress * 100)}%`;
-                    }
-
-                    if (progress >= 1) {
-                        holdActive = false;
-                        holdTriggered = true;
-                        hideHoldProgress();
-                        if (window.resetFloatingButtonPositions) {
-                            window.resetFloatingButtonPositions();
-                        }
-                        if (window.resetTabsLayout) {
-                            window.resetTabsLayout();
-                        }
-                        uiMode = 1;
-                        localStorage.setItem('uiMode', uiMode);
-                        updateUIMode();
-                        return;
-                    }
-
-                    holdRafId = requestAnimationFrame(updateHoldProgress);
-                };
-
-                const startHold = (e) => {
-                    if (e.type === 'mousedown' && e.button !== 0) return;
-                    if (holdActive) return;
-                    holdActive = true;
-                    holdStartTime = null;
-                    showHoldProgress();
-                    holdRafId = requestAnimationFrame(updateHoldProgress);
-                };
-
-                const cancelHold = () => {
-                    if (!holdActive) return;
-                    holdActive = false;
-                    holdStartTime = null;
-                    if (holdRafId) {
-                        cancelAnimationFrame(holdRafId);
-                        holdRafId = null;
-                    }
-                    hideHoldProgress();
-                };
-
-                toggleUIBtn.addEventListener('mousedown', startHold);
-                toggleUIBtn.addEventListener('touchstart', startHold, { passive: true });
-                toggleUIBtn.addEventListener('mouseleave', cancelHold);
-                document.addEventListener('mouseup', cancelHold);
-                document.addEventListener('touchend', cancelHold);
-                document.addEventListener('touchcancel', cancelHold);
-                window.addEventListener('blur', cancelHold);
-            } else {
-                console.error('[DOMContentLoaded] toggleUIBtn not found!');
-            }
-            
-            // Attach RODO button listener
+            // Attach button listeners
             if (cleanRodoBtn) {
                 cleanRodoBtn.addEventListener('mouseenter', () => {
                     cleanRodoBtn.style.transform = 'scale(1.1)';

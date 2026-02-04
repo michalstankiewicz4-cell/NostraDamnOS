@@ -1,4 +1,377 @@
-// Floating Buttons Drag and Drop - obsługa desktop i mobile
+/**
+ * Floating UI Drag & Drop + Memory Management Module
+ * Handles:
+ * - Floating button dragging and position persistence
+ * - Tab card dragging and reordering
+ * - UI mode persistence (localStorage)
+ * - Position reset functionality
+ */
+
+// ===== TAB CARD DRAG & DROP + MEMORY =====
+
+export function initTabCardsDragDrop() {
+    const tabCards = document.querySelectorAll('.tab-card');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarLeft = document.getElementById('sidebarLeft');
+    const sidebarContent = document.getElementById('sidebarContent');
+
+    // Wczytaj pozycje karteczek z localStorage
+    loadTabPositions();
+
+    tabCards.forEach((card) => {
+        // Drag to reorder
+        card.addEventListener('mousedown', startTabDrag);
+        card.addEventListener('touchstart', startTabDrag);
+    });
+
+    // Double-click na karteczkę zmienia jej stronę (lewo/prawo)
+    let lastClickTime = {};
+    tabCards.forEach(card => {
+        const tabName = card.getAttribute('data-tab');
+        card.addEventListener('click', (e) => {
+            // Jeśli to było przeciąganie, nie otwieraj
+            if (card.classList.contains('dragging')) {
+                card.classList.remove('dragging');
+                return;
+            }
+
+            const now = new Date().getTime();
+            if (lastClickTime[tabName] && now - lastClickTime[tabName] < 300) {
+                // Double click - zmień stronę tej karteczki
+                toggleTabSide(card);
+                lastClickTime[tabName] = 0;
+            } else {
+                // Single click - otwórz/zamknij
+                lastClickTime[tabName] = now;
+                const isActive = card.classList.contains('active');
+                
+                if (isActive) {
+                    card.classList.remove('active');
+                    document.getElementById(`panel-${tabName}`)?.classList.remove('active');
+                } else {
+                    tabCards.forEach(c => c.classList.remove('active'));
+                    card.classList.add('active');
+                    
+                    document.querySelectorAll('.sidebar-panel').forEach(p => p.classList.remove('active'));
+                    document.getElementById(`panel-${tabName}`)?.classList.add('active');
+                }
+            }
+        });
+    });
+
+    function startTabDrag(e) {
+        const card = e.currentTarget;
+        let isDragging = false;
+        let holdTimer = null;
+        const holdDuration = 500;
+        
+        let draggedCard = card;
+        let dragContainer = card.parentNode;
+        
+        function onMove(moveEvent) {
+            if (!isDragging) return;
+            
+            moveEvent.preventDefault();
+            const clientX = moveEvent.touches ? moveEvent.touches[0].clientX : moveEvent.clientX;
+            const clientY = moveEvent.touches ? moveEvent.touches[0].clientY : moveEvent.clientY;
+            
+            if (draggedCard.parentNode !== dragContainer) {
+                dragContainer = draggedCard.parentNode;
+            }
+
+            const currentCards = Array.from(dragContainer.querySelectorAll('.tab-card'));
+            const currentIndex = currentCards.indexOf(draggedCard);
+
+            for (let i = 0; i < currentCards.length; i++) {
+                if (i === currentIndex) continue;
+                const rect = currentCards[i].getBoundingClientRect();
+                if (clientY > rect.top && clientY < rect.bottom) {
+                    if (i < currentIndex) {
+                        dragContainer.insertBefore(draggedCard, currentCards[i]);
+                    } else {
+                        dragContainer.insertBefore(draggedCard, currentCards[i].nextSibling);
+                    }
+                    break;
+                }
+            }
+        }
+
+        function onEnd() {
+            if (holdTimer) {
+                clearTimeout(holdTimer);
+                holdTimer = null;
+            }
+            
+            card.classList.remove('dragging');
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('touchmove', onMove);
+            document.removeEventListener('mouseup', onEnd);
+            document.removeEventListener('touchend', onEnd);
+            
+            if (isDragging) {
+                saveTabOrder();
+            }
+        }
+
+        holdTimer = setTimeout(() => {
+            isDragging = true;
+            card.classList.add('dragging');
+        }, holdDuration);
+
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('touchmove', onMove, { passive: false });
+        document.addEventListener('mouseup', onEnd);
+        document.addEventListener('touchend', onEnd);
+    }
+
+    function toggleTabSide(card) {
+        const tabName = card.getAttribute('data-tab');
+        const currentSide = localStorage.getItem(`tabSide-${tabName}`) || 'right';
+        const newSide = currentSide === 'right' ? 'left' : 'right';
+        
+        localStorage.setItem(`tabSide-${tabName}`, newSide);
+        
+        if (newSide === 'left') {
+            sidebarLeft.appendChild(card);
+            card.classList.add('tab-left');
+        } else {
+            sidebar.appendChild(card);
+            card.classList.remove('tab-left');
+        }
+        
+        const panel = document.getElementById(`panel-${tabName}`);
+        if (panel && panel.classList.contains('active')) {
+            updateSidebarContentPosition();
+        }
+    }
+
+    function updateSidebarContentPosition() {
+        const activeCard = document.querySelector('.tab-card.active');
+        if (!activeCard) return;
+        
+        const tabName = activeCard.getAttribute('data-tab');
+        const side = localStorage.getItem(`tabSide-${tabName}`) || 'right';
+        
+        if (side === 'left') {
+            sidebarContent.classList.add('sidebar-left');
+        } else {
+            sidebarContent.classList.remove('sidebar-left');
+        }
+    }
+
+    function saveTabOrder() {
+        const cards = Array.from(document.querySelectorAll('.tab-card'));
+        const order = cards.map(card => card.getAttribute('data-tab'));
+        localStorage.setItem('tabOrder', JSON.stringify(order));
+    }
+
+    function loadTabPositions() {
+        const cards = document.querySelectorAll('.tab-card');
+        
+        cards.forEach(card => {
+            const tabName = card.getAttribute('data-tab');
+            const side = localStorage.getItem(`tabSide-${tabName}`) || 'right';
+            
+            if (side === 'left') {
+                sidebarLeft.appendChild(card);
+                card.classList.add('tab-left');
+            } else {
+                sidebar.appendChild(card);
+                card.classList.remove('tab-left');
+            }
+        });
+        
+        const savedOrder = localStorage.getItem('tabOrder');
+        if (savedOrder) {
+            const order = JSON.parse(savedOrder);
+            const rightCards = Array.from(sidebar.querySelectorAll('.tab-card'));
+            const leftCards = Array.from(sidebarLeft.querySelectorAll('.tab-card'));
+            
+            order.forEach(tabName => {
+                const card = rightCards.find(c => c.getAttribute('data-tab') === tabName) ||
+                            leftCards.find(c => c.getAttribute('data-tab') === tabName);
+                if (card) {
+                    const parent = card.parentNode;
+                    parent.appendChild(card);
+                }
+            });
+        }
+    }
+}
+
+export function resetTabsLayout() {
+    const sidebar = document.getElementById('sidebar');
+    const sidebarLeft = document.getElementById('sidebarLeft');
+    const sidebarContent = document.getElementById('sidebarContent');
+    const cards = document.querySelectorAll('.tab-card');
+
+    localStorage.removeItem('tabOrder');
+    Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('tabSide-')) {
+            localStorage.removeItem(key);
+        }
+    });
+
+    cards.forEach(card => {
+        sidebar.appendChild(card);
+        card.classList.remove('tab-left');
+    });
+
+    sidebarContent.classList.remove('sidebar-left');
+}
+
+// ===== UI MODE MANAGEMENT =====
+
+export function initUIMode() {
+    const toggleUIBtn = document.getElementById('toggleUIBtn');
+    const uiHoldProgress = document.getElementById('uiHoldProgress');
+    const uiHoldProgressBar = document.getElementById('uiHoldProgressBar');
+    
+    if (!toggleUIBtn) return;
+
+    let uiMode = parseInt(localStorage.getItem('uiMode') || '0');
+    const holdDurationMs = 10000;
+    let holdStartTime = null;
+    let holdRafId = null;
+    let holdActive = false;
+    let holdTriggered = false;
+
+    const importDbBtn = document.getElementById('importDbBtn');
+    const exportDbBtn = document.getElementById('exportDbBtn');
+    const cleanRodoBtn = document.getElementById('cleanRodoBtn');
+    const languageBtn = document.getElementById('languageBtn');
+    const helpBtn = document.getElementById('helpBtn');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarLeft = document.getElementById('sidebarLeft');
+    const sidebarContent = document.getElementById('sidebarContent');
+
+    const toolsButtons = [importDbBtn, exportDbBtn, cleanRodoBtn, languageBtn, helpBtn];
+
+    const updateUIMode = () => {
+        if (uiMode === 1) {
+            toolsButtons.forEach(btn => {
+                if (btn) btn.style.setProperty('display', 'flex', 'important');
+            });
+            if (sidebar) sidebar.style.setProperty('display', 'flex', 'important');
+            if (sidebarLeft) sidebarLeft.style.setProperty('display', 'flex', 'important');
+            if (sidebarContent) sidebarContent.style.setProperty('display', 'block', 'important');
+            toggleUIBtn.style.setProperty('background', 'linear-gradient(135deg, #667eea, #764ba2)', 'important');
+            toggleUIBtn.title = 'Stan 1: Przyciski + Zakładki';
+        } else if (uiMode === 2) {
+            toolsButtons.forEach(btn => {
+                if (btn) btn.style.setProperty('display', 'flex', 'important');
+            });
+            if (sidebar) sidebar.style.setProperty('display', 'none', 'important');
+            if (sidebarLeft) sidebarLeft.style.setProperty('display', 'none', 'important');
+            if (sidebarContent) sidebarContent.style.setProperty('display', 'none', 'important');
+            toggleUIBtn.style.setProperty('background', 'linear-gradient(135deg, #f59e0b, #d97706)', 'important');
+            toggleUIBtn.title = 'Stan 2: Tylko Przyciski';
+        } else if (uiMode === 3) {
+            toolsButtons.forEach(btn => {
+                if (btn) btn.style.setProperty('display', 'none', 'important');
+            });
+            if (sidebar) sidebar.style.setProperty('display', 'flex', 'important');
+            if (sidebarLeft) sidebarLeft.style.setProperty('display', 'flex', 'important');
+            if (sidebarContent) sidebarContent.style.setProperty('display', 'block', 'important');
+            toggleUIBtn.style.setProperty('background', 'linear-gradient(135deg, #22c55e, #16a34a)', 'important');
+            toggleUIBtn.title = 'Stan 3: Tylko Zakładki';
+        } else {
+            toolsButtons.forEach(btn => {
+                if (btn) btn.style.setProperty('display', 'none', 'important');
+            });
+            if (sidebar) sidebar.style.setProperty('display', 'none', 'important');
+            if (sidebarLeft) sidebarLeft.style.setProperty('display', 'none', 'important');
+            if (sidebarContent) sidebarContent.style.setProperty('display', 'none', 'important');
+            toggleUIBtn.style.setProperty('background', 'linear-gradient(135deg, #8b5cf6, #6d28d9)', 'important');
+            toggleUIBtn.title = 'Stan 0: Tylko Status Bar';
+        }
+    };
+
+    updateUIMode();
+
+    toggleUIBtn.addEventListener('click', (e) => {
+        if (holdTriggered) {
+            holdTriggered = false;
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+        }
+        toggleUIBtn.style.transform = 'scale(0.9)';
+        setTimeout(() => toggleUIBtn.style.transform = 'scale(1)', 200);
+        uiMode = (uiMode + 1) % 4;
+        localStorage.setItem('uiMode', uiMode);
+        updateUIMode();
+    });
+
+    const showHoldProgress = () => {
+        if (!uiHoldProgress || !uiHoldProgressBar) return;
+        uiHoldProgress.style.display = 'block';
+        uiHoldProgressBar.style.width = '0%';
+    };
+
+    const hideHoldProgress = () => {
+        if (!uiHoldProgress || !uiHoldProgressBar) return;
+        uiHoldProgress.style.display = 'none';
+        uiHoldProgressBar.style.width = '0%';
+    };
+
+    const updateHoldProgress = (timestamp) => {
+        if (!holdActive) return;
+        if (!holdStartTime) holdStartTime = timestamp;
+        const elapsed = timestamp - holdStartTime;
+        const progress = Math.min(elapsed / holdDurationMs, 1);
+        if (uiHoldProgressBar) {
+            uiHoldProgressBar.style.width = `${Math.round(progress * 100)}%`;
+        }
+
+        if (progress >= 1) {
+            holdActive = false;
+            holdTriggered = true;
+            hideHoldProgress();
+            resetFloatingButtonPositions();
+            resetTabsLayout();
+            uiMode = 1;
+            localStorage.setItem('uiMode', uiMode);
+            updateUIMode();
+            return;
+        }
+
+        holdRafId = requestAnimationFrame(updateHoldProgress);
+    };
+
+    const startHold = (e) => {
+        if (e.type === 'mousedown' && e.button !== 0) return;
+        if (holdActive) return;
+        holdActive = true;
+        holdStartTime = null;
+        showHoldProgress();
+        holdRafId = requestAnimationFrame(updateHoldProgress);
+    };
+
+    const cancelHold = () => {
+        if (!holdActive) return;
+        holdActive = false;
+        holdStartTime = null;
+        if (holdRafId) {
+            cancelAnimationFrame(holdRafId);
+            holdRafId = null;
+        }
+        hideHoldProgress();
+    };
+
+    toggleUIBtn.addEventListener('mousedown', startHold);
+    toggleUIBtn.addEventListener('touchstart', startHold, { passive: true });
+    toggleUIBtn.addEventListener('mouseleave', cancelHold);
+    document.addEventListener('mouseup', cancelHold);
+    document.addEventListener('touchend', cancelHold);
+    document.addEventListener('touchcancel', cancelHold);
+    window.addEventListener('blur', cancelHold);
+
+    if (!window.resetTabsLayout) {
+        window.resetTabsLayout = resetTabsLayout;
+    }
+}
+
 export function resetFloatingButtonPositions() {
     const floatingBtns = document.querySelectorAll('.floating-btn');
     localStorage.removeItem('floatingButtonPositions');
@@ -9,6 +382,33 @@ export function resetFloatingButtonPositions() {
         btn.style.right = '';
         btn.style.bottom = '';
         btn.classList.remove('dragging');
+    });
+}
+
+function saveButtonPosition(btn) {
+    const btnId = btn.id;
+    if (!btnId) return;
+
+    const positions = JSON.parse(localStorage.getItem('floatingButtonPositions') || '{}');
+    positions[btnId] = {
+        left: btn.style.left,
+        top: btn.style.top
+    };
+    localStorage.setItem('floatingButtonPositions', JSON.stringify(positions));
+}
+
+function loadButtonPositions() {
+    const positions = JSON.parse(localStorage.getItem('floatingButtonPositions') || '{}');
+    const floatingBtns = document.querySelectorAll('.floating-btn');
+    
+    floatingBtns.forEach(btn => {
+        const btnId = btn.id;
+        if (btnId && positions[btnId]) {
+            btn.style.left = positions[btnId].left;
+            btn.style.top = positions[btnId].top;
+            btn.style.right = 'auto';
+            btn.style.bottom = 'auto';
+        }
     });
 }
 
@@ -124,33 +524,5 @@ export function initFloatingButtonsDragDrop() {
                 isDraggingEnabled = false;
             }, 100);
         }
-    }
-
-    // Zapisz pozycję przycisku do localStorage
-    function saveButtonPosition(btn) {
-        const btnId = btn.id;
-        if (!btnId) return;
-
-        const positions = JSON.parse(localStorage.getItem('floatingButtonPositions') || '{}');
-        positions[btnId] = {
-            left: btn.style.left,
-            top: btn.style.top
-        };
-        localStorage.setItem('floatingButtonPositions', JSON.stringify(positions));
-    }
-
-    // Wczytaj pozycje przycisków z localStorage
-    function loadButtonPositions() {
-        const positions = JSON.parse(localStorage.getItem('floatingButtonPositions') || '{}');
-        
-        floatingBtns.forEach(btn => {
-            const btnId = btn.id;
-            if (btnId && positions[btnId]) {
-                btn.style.left = positions[btnId].left;
-                btn.style.top = positions[btnId].top;
-                btn.style.right = 'auto';
-                btn.style.bottom = 'auto';
-            }
-        });
     }
 }

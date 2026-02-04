@@ -1,5 +1,9 @@
 // ETL Panel Bridge - obsługa nowego panelu ETL
-import { initFloatingButtonsDragDrop } from './modules/floating-drag.js';
+import { 
+    initFloatingButtonsDragDrop, 
+    initTabCardsDragDrop,
+    initUIMode
+} from './modules/floating-drag.js';
 
 function initETLPanel() {
     // Instytucja
@@ -244,243 +248,8 @@ function showVerificationResults(differences) {
 
 // Sidebar Menu Handler
 function initSidebar() {
-    const tabCards = document.querySelectorAll('.tab-card');
-    const sidebar = document.getElementById('sidebar');
-    const sidebarContent = document.getElementById('sidebarContent');
-
-    // Wczytaj pozycje karteczek z localStorage
-    loadTabPositions();
-
-    // Tab card click handlers
-    tabCards.forEach((card, index) => {
-        card.addEventListener('click', (e) => {
-            // Jeśli to było przeciąganie, nie otwieraj
-            if (card.classList.contains('dragging-tab')) {
-                card.classList.remove('dragging-tab');
-                return;
-            }
-
-            const tabName = card.getAttribute('data-tab');
-            const isActive = card.classList.contains('active');
-            
-            if (isActive) {
-                // Drugie kliknięcie - schowaj
-                card.classList.remove('active');
-                document.getElementById(`panel-${tabName}`)?.classList.remove('active');
-            } else {
-                // Pierwsze kliknięcie lub zmiana karteczki
-                tabCards.forEach(c => c.classList.remove('active'));
-                card.classList.add('active');
-                
-                document.querySelectorAll('.sidebar-panel').forEach(p => p.classList.remove('active'));
-                document.getElementById(`panel-${tabName}`)?.classList.add('active');
-            }
-        });
-
-        // Drag to reorder
-        card.addEventListener('mousedown', startTabDrag);
-        card.addEventListener('touchstart', startTabDrag);
-    });
-
-    // Double-click na karteczkę zmienia jej stronę (lewo/prawo)
-    let lastClickTime = {};
-    tabCards.forEach(card => {
-        const tabName = card.getAttribute('data-tab');
-        card.addEventListener('click', (e) => {
-            const now = new Date().getTime();
-            if (lastClickTime[tabName] && now - lastClickTime[tabName] < 300) {
-                // Double click - zmień stronę tej karteczki
-                toggleTabSide(card);
-                lastClickTime[tabName] = 0; // Reset double-click timer
-            } else {
-                lastClickTime[tabName] = now;
-            }
-        });
-    });
-
-    function startTabDrag(e) {
-        const card = e.currentTarget;
-        let isDragging = false;
-        let holdTimer = null;
-        const holdDuration = 500; // 500ms hold required before drag starts
-        
-        let draggedCard = card;
-        let dragContainer = card.parentNode;
-        
-        function onMove(moveEvent) {
-            // Tylko jeśli drag jest aktywny
-            if (!isDragging) return;
-            
-            moveEvent.preventDefault();
-            const clientX = moveEvent.touches ? moveEvent.touches[0].clientX : moveEvent.clientX;
-            const clientY = moveEvent.touches ? moveEvent.touches[0].clientY : moveEvent.clientY;
-            
-            // Ogranicz drag do bieżącego kontenera (lewy/prawy sidebar)
-            if (draggedCard.parentNode !== dragContainer) {
-                dragContainer = draggedCard.parentNode;
-            }
-
-            const currentCards = Array.from(dragContainer.querySelectorAll('.tab-card'));
-            const currentIndex = currentCards.indexOf(draggedCard);
-
-            // Znajdź karteczkę na którą przesuwamy
-            for (let i = 0; i < currentCards.length; i++) {
-                if (i === currentIndex) continue;
-                const rect = currentCards[i].getBoundingClientRect();
-                if (clientY > rect.top && clientY < rect.bottom) {
-                    // Zamień karteczki w tym samym sidebarze
-                    if (i < currentIndex) {
-                        dragContainer.insertBefore(draggedCard, currentCards[i]);
-                    } else {
-                        dragContainer.insertBefore(draggedCard, currentCards[i].nextSibling);
-                    }
-                    break;
-                }
-            }
-        }
-
-        function onEnd() {
-            // Anuluj timer jeśli puścimy przed czasem
-            if (holdTimer) {
-                clearTimeout(holdTimer);
-                holdTimer = null;
-            }
-            
-            card.classList.remove('dragging-tab');
-            document.removeEventListener('mousemove', onMove);
-            document.removeEventListener('touchmove', onMove);
-            document.removeEventListener('mouseup', onEnd);
-            document.removeEventListener('touchend', onEnd);
-            
-            // Zapisz nową kolejność tylko jeśli był aktywny drag
-            if (isDragging) {
-                saveTabOrder();
-            }
-        }
-
-        // Start timer - po 500ms włącz drag
-        holdTimer = setTimeout(() => {
-            isDragging = true;
-            card.classList.add('dragging-tab');
-        }, holdDuration);
-
-        document.addEventListener('mousemove', onMove);
-        document.addEventListener('touchmove', onMove, { passive: false });
-        document.addEventListener('mouseup', onEnd);
-        document.addEventListener('touchend', onEnd);
-    }
-
-    function toggleTabSide(card) {
-        const tabName = card.getAttribute('data-tab');
-        const currentSide = localStorage.getItem(`tabSide-${tabName}`) || 'right';
-        const newSide = currentSide === 'right' ? 'left' : 'right';
-        
-        localStorage.setItem(`tabSide-${tabName}`, newSide);
-        
-        // Przenieś zakładkę do drugiego sidebaru
-        const sidebarRight = document.getElementById('sidebar');
-        const sidebarLeft = document.getElementById('sidebarLeft');
-        
-        if (newSide === 'left') {
-            // Przenieś na lewą stronę
-            sidebarLeft.appendChild(card);
-            card.classList.add('tab-left');
-        } else {
-            // Przenieś na prawą stronę
-            sidebarRight.appendChild(card);
-            card.classList.remove('tab-left');
-        }
-        
-        // Zaktualizuj wygląd sidebarContent jeśli jest otwarty
-        const panel = document.getElementById(`panel-${tabName}`);
-        if (panel && panel.classList.contains('active')) {
-            updateSidebarContentPosition();
-        }
-    }
-
-    function updateSidebarContentPosition() {
-        // Sprawdź którą karteczkę mamy aktywną
-        const activeCard = document.querySelector('.tab-card.active');
-        if (!activeCard) return;
-        
-        const tabName = activeCard.getAttribute('data-tab');
-        const side = localStorage.getItem(`tabSide-${tabName}`) || 'right';
-        const sidebarContent = document.getElementById('sidebarContent');
-        
-        if (side === 'left') {
-            sidebarContent.classList.add('sidebar-left');
-        } else {
-            sidebarContent.classList.remove('sidebar-left');
-        }
-    }
-
-    function saveTabOrder() {
-        const cards = Array.from(document.querySelectorAll('.tab-card'));
-        const order = cards.map(card => card.getAttribute('data-tab'));
-        localStorage.setItem('tabOrder', JSON.stringify(order));
-    }
-
-    function loadTabPositions() {
-        const sidebarRight = document.getElementById('sidebar');
-        const sidebarLeft = document.getElementById('sidebarLeft');
-        const cards = document.querySelectorAll('.tab-card');
-        
-        cards.forEach(card => {
-            const tabName = card.getAttribute('data-tab');
-            const side = localStorage.getItem(`tabSide-${tabName}`) || 'right';
-            
-            if (side === 'left') {
-                sidebarLeft.appendChild(card);
-                card.classList.add('tab-left');
-            } else {
-                sidebarRight.appendChild(card);
-                card.classList.remove('tab-left');
-            }
-        });
-        
-        // Wczytaj zapisaną kolejność po rozdzieleniu na strony
-        const savedOrder = localStorage.getItem('tabOrder');
-        if (savedOrder) {
-            const order = JSON.parse(savedOrder);
-            const rightCards = Array.from(sidebarRight.querySelectorAll('.tab-card'));
-            const leftCards = Array.from(sidebarLeft.querySelectorAll('.tab-card'));
-            
-            // Sortuj karteczki wg zapisanej kolejności
-            order.forEach(tabName => {
-                const card = rightCards.find(c => c.getAttribute('data-tab') === tabName) ||
-                            leftCards.find(c => c.getAttribute('data-tab') === tabName);
-                if (card) {
-                    const parent = card.parentNode;
-                    parent.appendChild(card);
-                }
-            });
-        }
-
-        function resetTabsLayout() {
-            const sidebarRight = document.getElementById('sidebar');
-            const sidebarLeft = document.getElementById('sidebarLeft');
-            const cards = document.querySelectorAll('.tab-card');
-
-            localStorage.removeItem('tabOrder');
-
-            Object.keys(localStorage).forEach(key => {
-                if (key.startsWith('tabSide-')) {
-                    localStorage.removeItem(key);
-                }
-            });
-
-            cards.forEach(card => {
-                sidebarRight.appendChild(card);
-                card.classList.remove('tab-left');
-            });
-
-            updateSidebarContentPosition();
-        }
-
-        if (!window.resetTabsLayout) {
-            window.resetTabsLayout = resetTabsLayout;
-        }
-    }
+    // Wczytaj i init drag&drop dla zakładek
+    initTabCardsDragDrop();
 }
 
 // Init when DOM ready (with deduplication check)
@@ -491,10 +260,12 @@ if (!window.__etlBridgeInitialized) {
             initETLPanel();
             initSidebar();
             initFloatingButtonsDragDrop();
+            initUIMode();
         });
     } else {
         initETLPanel();
         initSidebar();
         initFloatingButtonsDragDrop();
+        initUIMode();
     }
 }

@@ -133,9 +133,10 @@ header p {
     box-shadow: 4px 4px 12px rgba(0,0,0,0.15);
 }
 
-.tab-card.dragging-tab {
+.tab-card.dragging {
     opacity: 0.7;
     cursor: grabbing;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
 
 .tab-label {
@@ -409,8 +410,8 @@ footer a:hover {
 .data-status {
     margin-top: 12px;
     padding: 1rem;
-    background: var(--bg-secondary);
-    border-radius: var(--radius);
+    background: var(--bg-color);
+    border-radius: 8px;
     border: 1px solid var(--border-color);
 }
 
@@ -421,8 +422,8 @@ footer a:hover {
 .progress-bar {
     width: 100%;
     height: 8px;
-    background: var(--bg-secondary);
-    border-radius: var(--radius);
+    background: var(--bg-color);
+    border-radius: 8px;
     margin: 1rem 0;
     overflow: hidden;
 }
@@ -683,6 +684,10 @@ footer a:hover {
     border: 2px solid var(--primary-color);
 }
 
+.etl-btn-secondary:hover {
+    background: #f0f4f8;
+}
+
 .etl-btn-danger {
     background: white;
     color: var(--danger-color);
@@ -714,7 +719,7 @@ input[type="number"]:focus {
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
-/* Disabled state for all form controls - prevent race conditions */
+/* Disabled state for all form controls */
 .form-control:disabled,
 select:disabled,
 input[type="number"]:disabled,
@@ -725,7 +730,6 @@ input:disabled {
     cursor: not-allowed;
     border-color: #e5e7eb;
 }
-
 
 /* Advanced Options Panel */
 .etl-advanced {
@@ -750,15 +754,6 @@ input:disabled {
 .etl-advanced[open] summary {
     background: #e2e8f0;
     margin-bottom: 10px;
-}
-
-.etl-btn-secondary {
-    background: #64748b;
-    color: white;
-}
-
-.etl-btn-secondary:hover {
-    background: #475569;
 }
 
 .cache-status {
