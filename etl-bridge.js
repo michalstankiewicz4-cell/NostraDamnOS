@@ -241,12 +241,42 @@ function showVerificationResults(differences) {
     }
 }
 
+// Sidebar Menu Handler
+function initSidebar() {
+    const tabCards = document.querySelectorAll('.tab-card');
+
+    // Tab card click handlers
+    tabCards.forEach(card => {
+        card.addEventListener('click', () => {
+            const tabName = card.getAttribute('data-tab');
+            const isActive = card.classList.contains('active');
+            
+            if (isActive) {
+                // Drugie kliknięcie - schowaj
+                card.classList.remove('active');
+                document.getElementById(`panel-${tabName}`)?.classList.remove('active');
+            } else {
+                // Pierwsze kliknięcie lub zmiana karteczki
+                tabCards.forEach(c => c.classList.remove('active'));
+                card.classList.add('active');
+                
+                document.querySelectorAll('.sidebar-panel').forEach(p => p.classList.remove('active'));
+                document.getElementById(`panel-${tabName}`)?.classList.add('active');
+            }
+        });
+    });
+}
+
 // Init when DOM ready (with deduplication check)
 if (!window.__etlBridgeInitialized) {
     window.__etlBridgeInitialized = true;
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initETLPanel);
+        document.addEventListener('DOMContentLoaded', () => {
+            initETLPanel();
+            initSidebar();
+        });
     } else {
         initETLPanel();
+        initSidebar();
     }
 }

@@ -37,6 +37,7 @@ body {
 header {
     text-align: center;
     margin-bottom: 12px;
+    position: relative;
 }
 
 header h1 {
@@ -47,6 +48,119 @@ header h1 {
 header p {
     color: var(--text-secondary);
     font-size: 1.1rem;
+}
+
+/* Sidebar avec tab cards */
+.sidebar {
+    position: fixed;
+    right: 0;
+    top: 100px;
+    width: 120px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    z-index: 999;
+    padding: 15px 0;
+}
+
+.tab-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 12px 15px;
+    background: white;
+    border-radius: 8px 0 0 8px;
+    border: 2px solid var(--border-color);
+    border-right: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: -2px 2px 8px rgba(0,0,0,0.1);
+    font-weight: 600;
+}
+
+.tab-card:nth-child(1) {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-color: #667eea;
+}
+
+.tab-card:nth-child(2) {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+    border-color: #f5576c;
+}
+
+.tab-card:nth-child(3) {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    color: white;
+    border-color: #00f2fe;
+}
+
+.tab-card:hover {
+    transform: translateX(-5px);
+    box-shadow: -4px 4px 12px rgba(0,0,0,0.15);
+}
+
+.tab-card.active {
+    transform: translateX(-5px);
+}
+
+.tab-label {
+    font-size: 24px;
+}
+
+.tab-text {
+    font-size: 11px;
+    text-align: center;
+    line-height: 1.2;
+}
+
+/* Sidebar Content Panel */
+.sidebar-content {
+    position: fixed;
+    right: 0;
+    top: 100px;
+    width: 320px;
+    max-height: calc(100vh - 140px);
+    background: white;
+    border-radius: 8px 0 0 8px;
+    border: 1px solid var(--border-color);
+    box-shadow: -3px 0 15px rgba(0,0,0,0.1);
+    z-index: 998;
+    overflow-y: auto;
+}
+
+.sidebar-panel {
+    display: none;
+    padding: 20px;
+    animation: slideIn 0.3s ease;
+}
+
+.sidebar-panel.active {
+    display: block;
+}
+
+.sidebar-panel h3 {
+    margin: 0 0 15px 0;
+    color: var(--primary-color);
+    font-size: 1.2rem;
+}
+
+.sidebar-panel p {
+    margin: 10px 0;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
 }
 
 /* Sections */
