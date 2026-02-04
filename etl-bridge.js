@@ -178,41 +178,6 @@ function initETLPanel() {
     updateETLEstimate();
     
     
-    // Check API button - new button to check for new records
-    const checkApiBtn = document.getElementById('etlCheckApiBtn');
-    if (checkApiBtn) {
-        checkApiBtn.addEventListener('click', async () => {
-            checkApiBtn.disabled = true;
-            checkApiBtn.textContent = '⏳ Sprawdzanie API...';
-            
-            try {
-                const { runPipeline, buildConfigFromUI } = await import('./pipeline.js');
-                const config = buildConfigFromUI();
-                config.fetchMode = 'verify'; // Check mode - no download
-                
-                let newRecordsCount = 0;
-                
-                const result = await runPipeline(config, {
-                    onLog: (msg) => console.log(msg),
-                    onProgress: () => {},
-                    onComplete: (res) => {
-                        if (res.differences && res.differences.length > 0) {
-                            newRecordsCount = res.differences.length;
-                            showNewRecordsDialog(newRecordsCount);
-                        } else {
-                            alert('✅ Niema nowych pozycji w API');
-                        }
-                    }
-                });
-            } catch (error) {
-                alert('❌ Błąd sprawdzenia API: ' + error.message);
-            } finally {
-                checkApiBtn.disabled = false;
-                checkApiBtn.textContent = '🔍 Sprawdź API';
-            }
-        });
-    }
-    
     // Verify button - check for differences/discrepancies
     const verifyBtn = document.getElementById('etlVerifyBtn');
     if (verifyBtn) {
@@ -243,22 +208,6 @@ function initETLPanel() {
                 verifyBtn.textContent = '🔍 Sprawdź niezgodności';
             }
         });
-    }
-}
-
-function showNewRecordsDialog(count) {
-    const message = `🆕 Znaleziono ${count} nowych pozycji w API!\n\nCzy chcesz zaktualizować bazę o nowe rekordy?`;
-    
-    const shouldUpdate = confirm(message);
-    
-    if (shouldUpdate) {
-        // Trigger full fetch with hidden fetch mode set to full
-        const config = {
-            type: 'fullFetch',
-            forceUpdate: true
-        };
-        // Manually trigger fetch with full mode
-        document.getElementById('etlFetchBtn').click();
     }
 }
 
