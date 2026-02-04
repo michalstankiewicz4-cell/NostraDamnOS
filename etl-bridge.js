@@ -36,6 +36,18 @@ function initETLPanel() {
         });
     });
 
+    // Full database checkbox - przełączanie bez funkcjonalności na razie
+    const fullDatabaseCheckbox = document.getElementById('fullDatabaseCheckbox');
+    if (fullDatabaseCheckbox) {
+        // Prevent button click when clicking checkbox
+        fullDatabaseCheckbox.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+        fullDatabaseCheckbox.addEventListener('change', (e) => {
+            console.log('Full database mode:', e.target.checked ? 'enabled' : 'disabled');
+        });
+    }
+
     // ===== DEPENDENCIES =====
     function applyDependencies() {
         const votings = document.getElementById('etlVotings');

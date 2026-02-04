@@ -208,9 +208,12 @@
                         </div>
                     </div>
                     
-                    <button class="etl-btn etl-btn-primary" id="etlFetchBtn">
-                        📥 Pobierz/Zaktualizuj dane
-                    </button>
+                    <div style="position: relative; margin-bottom: 12px;">
+                        <input type="checkbox" id="fullDatabaseCheckbox" class="btn-checkbox">
+                        <button class="etl-btn etl-btn-primary" id="etlFetchBtn">
+                            📥 Pobierz/Zaktualizuj dane
+                        </button>
+                    </div>
                     <div class="etl-status-row">
                         <div class="etl-status-indicator" id="statusDbState" title="Stan bazy danych">
                             <div class="etl-lamp" style="background-color: #ef4444;"></div>
