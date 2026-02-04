@@ -247,39 +247,39 @@ export function initUIMode() {
     const updateUIMode = () => {
         if (uiMode === 1) {
             toolsButtons.forEach(btn => {
-                if (btn) btn.style.setProperty('display', 'flex', 'important');
+                if (btn) btn.style.display = 'flex';
             });
-            if (sidebar) sidebar.style.setProperty('display', 'flex', 'important');
-            if (sidebarLeft) sidebarLeft.style.setProperty('display', 'flex', 'important');
-            if (sidebarContent) sidebarContent.style.setProperty('display', 'block', 'important');
-            toggleUIBtn.style.setProperty('background', 'linear-gradient(135deg, #667eea, #764ba2)', 'important');
+            if (sidebar) sidebar.style.display = 'flex';
+            if (sidebarLeft) sidebarLeft.style.display = 'flex';
+            if (sidebarContent) sidebarContent.style.display = 'block';
+            toggleUIBtn.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
             toggleUIBtn.title = 'Stan 1: Przyciski + Zakładki';
         } else if (uiMode === 2) {
             toolsButtons.forEach(btn => {
-                if (btn) btn.style.setProperty('display', 'flex', 'important');
+                if (btn) btn.style.display = 'flex';
             });
-            if (sidebar) sidebar.style.setProperty('display', 'none', 'important');
-            if (sidebarLeft) sidebarLeft.style.setProperty('display', 'none', 'important');
-            if (sidebarContent) sidebarContent.style.setProperty('display', 'none', 'important');
-            toggleUIBtn.style.setProperty('background', 'linear-gradient(135deg, #f59e0b, #d97706)', 'important');
+            if (sidebar) sidebar.style.display = 'none';
+            if (sidebarLeft) sidebarLeft.style.display = 'none';
+            if (sidebarContent) sidebarContent.style.display = 'none';
+            toggleUIBtn.style.background = 'linear-gradient(135deg, #f59e0b, #d97706)';
             toggleUIBtn.title = 'Stan 2: Tylko Przyciski';
         } else if (uiMode === 3) {
             toolsButtons.forEach(btn => {
-                if (btn) btn.style.setProperty('display', 'none', 'important');
+                if (btn) btn.style.display = 'none';
             });
-            if (sidebar) sidebar.style.setProperty('display', 'flex', 'important');
-            if (sidebarLeft) sidebarLeft.style.setProperty('display', 'flex', 'important');
-            if (sidebarContent) sidebarContent.style.setProperty('display', 'block', 'important');
-            toggleUIBtn.style.setProperty('background', 'linear-gradient(135deg, #22c55e, #16a34a)', 'important');
+            if (sidebar) sidebar.style.display = 'flex';
+            if (sidebarLeft) sidebarLeft.style.display = 'flex';
+            if (sidebarContent) sidebarContent.style.display = 'block';
+            toggleUIBtn.style.background = 'linear-gradient(135deg, #22c55e, #16a34a)';
             toggleUIBtn.title = 'Stan 3: Tylko Zakładki';
         } else {
             toolsButtons.forEach(btn => {
-                if (btn) btn.style.setProperty('display', 'none', 'important');
+                if (btn) btn.style.display = 'none';
             });
-            if (sidebar) sidebar.style.setProperty('display', 'none', 'important');
-            if (sidebarLeft) sidebarLeft.style.setProperty('display', 'none', 'important');
-            if (sidebarContent) sidebarContent.style.setProperty('display', 'none', 'important');
-            toggleUIBtn.style.setProperty('background', 'linear-gradient(135deg, #8b5cf6, #6d28d9)', 'important');
+            if (sidebar) sidebar.style.display = 'none';
+            if (sidebarLeft) sidebarLeft.style.display = 'none';
+            if (sidebarContent) sidebarContent.style.display = 'none';
+            toggleUIBtn.style.background = 'linear-gradient(135deg, #8b5cf6, #6d28d9)';
             toggleUIBtn.title = 'Stan 0: Tylko Status Bar';
         }
     };

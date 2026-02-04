@@ -52,6 +52,9 @@
 
                 const programVersionEl = document.getElementById('programVersion');
                 if (programVersionEl) programVersionEl.textContent = window.PROJECT.version;
+                
+                const infoVersionEl = document.getElementById('infoVersion');
+                if (infoVersionEl) infoVersionEl.textContent = window.PROJECT.version;
             } catch (error) {
                 console.warn('Nie udało się wczytać project.json:', error);
             } finally {
@@ -107,30 +110,6 @@
                 window.logBuffer.push(formattedLog);
             }
         };
-        
-        // Flush buffer when DOM is ready
-        document.addEventListener('DOMContentLoaded', () => {
-            const apiLogs = document.getElementById('apiLogs');
-            
-            if (window.logBuffer.length > 0 && apiLogs) {
-                apiLogs.innerHTML = '';
-                
-                window.logBuffer.forEach(formattedLog => {
-                    const line = document.createElement('div');
-                    line.textContent = formattedLog;
-                    line.style.fontSize = '0.85rem';
-                    line.style.fontFamily = 'monospace';
-                    line.style.lineHeight = '1.6';
-                    apiLogs.appendChild(line);
-                });
-                
-                window.logBuffer = [];
-                apiLogs.scrollTop = apiLogs.scrollHeight;
-                
-                // Sync to floating console
-                window.syncFloatingConsoleLogs && window.syncFloatingConsoleLogs();
-            }
-        });
     </script>
     
     <div class="container">
@@ -167,7 +146,7 @@
             </div>
             <div class="sidebar-panel" id="panel-info">
                 <h3>ℹ️ Informacje</h3>
-                <p>Parlament "puppy" v<span id="programVersion">0.0.0</span></p>
+                <p>Parlament "puppy" v<span id="infoVersion">0.0.0</span></p>
                 <p>System lokalnej analizy wypowiedzi parlamentarnych</p>
             </div>
             <div class="sidebar-panel" id="panel-help">
@@ -634,9 +613,28 @@
             }
         }
         
-        // Initialize all floating buttons and UI toggle logic in ONE place
+        // Initialize UI elements when DOM is ready
         document.addEventListener('DOMContentLoaded', () => {
-            console.log('[DOMContentLoaded] Starting initialization');
+            console.log('[DOMContentLoaded] Starting UI initialization');
+            
+            // Flush console buffer
+            const apiLogs = document.getElementById('apiLogs');
+            if (window.logBuffer.length > 0 && apiLogs) {
+                apiLogs.innerHTML = '';
+                
+                window.logBuffer.forEach(formattedLog => {
+                    const line = document.createElement('div');
+                    line.textContent = formattedLog;
+                    line.style.fontSize = '0.85rem';
+                    line.style.fontFamily = 'monospace';
+                    line.style.lineHeight = '1.6';
+                    apiLogs.appendChild(line);
+                });
+                
+                window.logBuffer = [];
+                apiLogs.scrollTop = apiLogs.scrollHeight;
+                window.syncFloatingConsoleLogs && window.syncFloatingConsoleLogs();
+            }
             
             // Get all button elements
             const importDbBtn = document.getElementById('importDbBtn');
@@ -655,24 +653,9 @@
             
             // Define setDbButtonsVisible function (used by floating console)
             const setDbButtonsVisible = (visible) => {
-                console.log('[setDbButtonsVisible] Setting visibility to:', visible);
-                const toolsButtons = [
-                    importDbBtn, 
-                    exportDbBtn, 
-                    cleanRodoBtn,
-                    languageBtn,
-                    helpBtn
-                ];
-                
+                const toolsButtons = [importDbBtn, exportDbBtn, cleanRodoBtn, languageBtn, helpBtn];
                 toolsButtons.forEach(btn => {
-                    if (!btn) return;
-                    if (visible) {
-                        btn.style.setProperty('display', 'flex', 'important');
-                        console.log('[setDbButtonsVisible] Showed button:', btn.id);
-                    } else {
-                        btn.style.setProperty('display', 'none', 'important');
-                        console.log('[setDbButtonsVisible] Hid button:', btn.id);
-                    }
+                    if (btn) btn.style.display = visible ? 'flex' : 'none';
                 });
             };
             
