@@ -6,8 +6,17 @@ export function initFloatingButtonsDragDrop() {
     let isDraggingEnabled = false;
     let holdTimer = null;
     const holdDuration = 2000; // 2 sekundy
+    const lockedButtonIds = ['toggleUIBtn']; // Przyciski zablokowane przed przeciąganiem
+
+    // Wczytaj zapisane pozycje z localStorage
+    loadButtonPositions();
 
     floatingBtns.forEach(btn => {
+        // Pomiń zablokowane przyciski
+        if (lockedButtonIds.includes(btn.id)) {
+            return;
+        }
+
         // Mouse events
         btn.addEventListener('mousedown', (e) => {
             startDrag(e, e.clientX, e.clientY);
@@ -84,6 +93,12 @@ export function initFloatingButtonsDragDrop() {
 
         if (draggedElement) {
             draggedElement.classList.remove('dragging');
+            
+            // Zapisz pozycję przycisku do localStorage
+            if (isDraggingEnabled) {
+                saveButtonPosition(draggedElement);
+            }
+            
             draggedElement = null;
             
             // Opóźnij reset isDraggingEnabled, żeby event click mógł go zobaczyć
@@ -91,5 +106,33 @@ export function initFloatingButtonsDragDrop() {
                 isDraggingEnabled = false;
             }, 100);
         }
+    }
+
+    // Zapisz pozycję przycisku do localStorage
+    function saveButtonPosition(btn) {
+        const btnId = btn.id;
+        if (!btnId) return;
+
+        const positions = JSON.parse(localStorage.getItem('floatingButtonPositions') || '{}');
+        positions[btnId] = {
+            left: btn.style.left,
+            top: btn.style.top
+        };
+        localStorage.setItem('floatingButtonPositions', JSON.stringify(positions));
+    }
+
+    // Wczytaj pozycje przycisków z localStorage
+    function loadButtonPositions() {
+        const positions = JSON.parse(localStorage.getItem('floatingButtonPositions') || '{}');
+        
+        floatingBtns.forEach(btn => {
+            const btnId = btn.id;
+            if (btnId && positions[btnId]) {
+                btn.style.left = positions[btnId].left;
+                btn.style.top = positions[btnId].top;
+                btn.style.right = 'auto';
+                btn.style.bottom = 'auto';
+            }
+        });
     }
 }
