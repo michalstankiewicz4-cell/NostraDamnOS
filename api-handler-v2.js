@@ -214,6 +214,7 @@ async function smartFetch() {
 }
 
 async function startPipelineETL() {
+    console.log('🚀 [Zadanie] Pobierz/Zaktualizuj dane rozpoczęty');
     isFetching = true;
     
     const btn = document.getElementById('etlFetchBtn');
@@ -279,11 +280,13 @@ async function startPipelineETL() {
             setRecordsStatus(false);
             
             alert(`✅ Pobrano dane:\n\n${details || 'Brak danych w bazie'}`);
+            console.log('✅ [Zadanie] Pobierz/Zaktualizuj dane zakończony');
         }
         
     } catch (error) {
         console.error('[API Handler] Error:', error);
         alert(`❌ Błąd ETL: ${error.message}`);
+        console.log('❌ [Zadanie] Pobierz/Zaktualizuj dane zakończony z błędem');
         
     } finally {
         isFetching = false;
@@ -297,6 +300,7 @@ async function startPipelineETL() {
 // Clear cache button
 document.getElementById('etlClearBtn')?.addEventListener('click', async () => {
     if (confirm('Wyczyścić wszystkie dane z bazy?')) {
+        console.log('🚀 [Zadanie] Wyczyść bazę rozpoczęty');
         try {
             await db2.init();
             db2.clearAll();
@@ -308,6 +312,7 @@ document.getElementById('etlClearBtn')?.addEventListener('click', async () => {
             setValidityStatus(false);
             
             alert('✅ Baza wyczyszczona');
+            console.log('✅ [Zadanie] Wyczyść bazę zakończony');
         } catch (error) {
             console.error('[API Handler] Clear error:', error);
             alert(`❌ Błąd: ${error.message}`);

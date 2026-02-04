@@ -14,8 +14,13 @@ export function initDbButtons() {
         return;
     }
     
+    // Show buttons (they are hidden by default)
+    importBtn.style.display = 'block';
+    exportBtn.style.display = 'block';
+    
     // Export button
     exportBtn.addEventListener('click', async () => {
+        console.log('🚀 [Zadanie] Export bazy rozpoczęty');
         try {
             exportBtn.style.transform = 'scale(0.9)';
             setTimeout(() => exportBtn.style.transform = 'scale(1)', 200);
@@ -81,6 +86,8 @@ export function initDbButtons() {
             
             console.log(`[DB Export] ✅ Database exported: ${filename} (${(blob.size / 1024).toFixed(2)} KB)`);
             alert(`✅ Baza wyeksportowana!\n\n📁 ${filename}\n📊 Rozmiar: ${(blob.size / 1024).toFixed(2)} KB\n\n💡 Plik zapisany w domyślnym folderze pobierania`);
+            
+            console.log('✅ [Zadanie] Export bazy zakończony');
             
         } catch (error) {
             console.error('[DB Export] Error:', error);
@@ -154,6 +161,7 @@ export function initDbButtons() {
     
     // Helper function to load database from file
     async function loadDatabaseFromFile(file) {
+        console.log('🚀 [Zadanie] Import bazy rozpoczęty');
         try {
             // Read file as ArrayBuffer
             const arrayBuffer = await file.arrayBuffer();
@@ -201,6 +209,8 @@ export function initDbButtons() {
                 .join('\n');
             
             alert(`✅ Baza zaimportowana z Pulpitu!\n\n📁 ${file.name}\n📊 Rozmiar: ${(file.size / 1024).toFixed(2)} KB\n\n📋 Rekordy:\n${summary}`);
+            
+            console.log('✅ [Zadanie] Import bazy zakończony');
             
         } catch (error) {
             console.error('[DB Import] Error loading database:', error);

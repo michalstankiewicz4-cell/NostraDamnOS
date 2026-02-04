@@ -35,51 +35,61 @@ export async function runFetcher(config) {
     
     // Poslowie (always needed as foundation)
     if (config.modules.includes('poslowie')) {
+        console.log('[Fetcher] Fetching poslowie...');
         results.poslowie = await fetchPoslowie(config);
     }
     
     // Posiedzenia (always needed for per-sitting data)
     if (config.modules.includes('posiedzenia')) {
+        console.log('[Fetcher] Fetching posiedzenia...');
         results.posiedzenia = await fetchPosiedzenia(config);
     }
     
     // Wypowiedzi (per sitting)
     if (config.modules.includes('wypowiedzi')) {
+        console.log('[Fetcher] Fetching wypowiedzi...');
         results.wypowiedzi = await fetchWypowiedzi(config);
     }
     
     // Glosowania (per sitting)
     if (config.modules.includes('glosowania')) {
+        console.log('[Fetcher] Fetching glosowania...');
         results.glosowania = await fetchGlosowania(config);
     }
     
     // Glosy (individual votes - requires glosowania)
     if (config.modules.includes('glosy') && results.glosowania) {
+        console.log('[Fetcher] Fetching glosy...');
         results.glosy = await fetchGlosy({ ...config, glosowania: results.glosowania });
     }
     
     // Interpelacje (per term)
     if (config.modules.includes('interpelacje')) {
+        console.log('[Fetcher] Fetching interpelacje...');
         results.interpelacje = await fetchInterpelacje(config);
     }
     
     // Zapytania pisemne (per term)
     if (config.modules.includes('zapytania')) {
+        console.log('[Fetcher] Fetching zapytania...');
         results.zapytania = await fetchWrittenQuestions(config.apiBase, config.term);
     }
     
     // Projekty ustaw (per term)
     if (config.modules.includes('projekty_ustaw')) {
+        console.log('[Fetcher] Fetching projekty_ustaw...');
         results.projekty_ustaw = await fetchProjektyUstaw(config);
     }
     
     // Komisje
     if (config.modules.includes('komisje')) {
+        console.log('[Fetcher] Fetching komisje...');
         results.komisje = await fetchKomisje(config);
     }
     
     // Komisje posiedzenia
     if (config.modules.includes('komisje_posiedzenia') && results.komisje) {
+        console.log('[Fetcher] Fetching komisje_posiedzenia...');
         results.komisje_posiedzenia = await fetchKomisjePosiedzenia({
             ...config,
             komisje: results.komisje
@@ -88,6 +98,7 @@ export async function runFetcher(config) {
     
     // Komisje wypowiedzi
     if (config.modules.includes('komisje_wypowiedzi') && results.komisje_posiedzenia) {
+        console.log('[Fetcher] Fetching komisje_wypowiedzi...');
         results.komisje_wypowiedzi = await fetchKomisjeWypowiedzi({
             ...config,
             posiedzenia_komisji: results.komisje_posiedzenia
@@ -96,6 +107,7 @@ export async function runFetcher(config) {
     
     // Oświadczenia majątkowe
     if (config.modules.includes('oswiadczenia') && results.poslowie) {
+        console.log('[Fetcher] Fetching oswiadczenia...');
         results.oswiadczenia = await fetchOswiadczenia({
             ...config,
             poslowie: results.poslowie
