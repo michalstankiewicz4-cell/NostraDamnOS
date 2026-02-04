@@ -50,6 +50,13 @@ header p {
     font-size: 1.1rem;
 }
 
+/* Main sections */
+.etl-heading {
+    margin-bottom: 1.5rem;
+    color: #2d3748;
+    font-size: 1.8rem;
+}
+
 /* Sidebar avec tab cards */
 .sidebar {
     position: fixed;
@@ -114,22 +121,16 @@ header p {
     border-color: #00f2fe;
 }
 
-.tab-card:hover {
+.tab-card:hover,
+.tab-card.active {
     transform: translateX(-5px);
     box-shadow: -4px 4px 12px rgba(0,0,0,0.15);
 }
 
-.tab-card.tab-left:hover {
-    transform: translateX(5px);
-    box-shadow: 4px 4px 12px rgba(0,0,0,0.15);
-}
-
-.tab-card.active {
-    transform: translateX(-5px);
-}
-
+.tab-card.tab-left:hover,
 .tab-card.tab-left.active {
     transform: translateX(5px);
+    box-shadow: 4px 4px 12px rgba(0,0,0,0.15);
 }
 
 .tab-card.dragging-tab {
@@ -883,6 +884,17 @@ input:disabled {
 /* Floating Buttons Container and Base Style */
 #floatingButtonsContainer {
     position: relative;
+}
+
+/* Data Loading - ukryj elementy aż będą załadowane z localStorage */
+.data-loading {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.data-loading.loaded {
+    opacity: 1;
+    pointer-events: auto;
 }
 
 .floating-btn {

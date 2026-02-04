@@ -151,7 +151,7 @@
         </header>
 
         <!-- Sidebar z karteczkami na prawo -->
-        <aside class="sidebar" id="sidebar">
+        <aside class="sidebar data-loading" id="sidebar">
             <div class="tab-card" data-tab="settings">
                 <span class="tab-label">⚙️</span>
                 <span class="tab-text">Ustawienia</span>
@@ -167,7 +167,7 @@
         </aside>
 
         <!-- Sidebar z karteczkami na lewą (dla zakładek przeniesionych na lewą stronę) -->
-        <aside class="sidebar sidebar-left" id="sidebarLeft">
+        <aside class="sidebar sidebar-left data-loading" id="sidebarLeft">
         </aside>
 
         <!-- Panel zawartości sidebar -->
@@ -189,7 +189,7 @@
 
         <main>
             <!-- ETL PANEL -->
-            <h2 style="margin-bottom: 1.5rem; color: #2d3748; font-size: 1.8rem;">
+            <h2 class="etl-heading">
                 📥 Import Danych z API Sejmu
             </h2>
             
@@ -491,13 +491,13 @@
         <button id="toggleUIBtn" class="floating-btn btn-toggle" title="Przełącz UI: Status Bar / Tools">⚙️</button>
 
         <!-- Tools Mode Buttons (hidden by default) -->
-        <button id="languageBtn" class="floating-btn btn-language" title="Zmień język (TODO)">🇵🇱</button>
-        <button id="helpBtn" class="floating-btn btn-help" title="Podpowiedzi (TODO)">❓</button>
+        <button id="languageBtn" class="floating-btn btn-language data-loading" title="Zmień język (TODO)">🇵🇱</button>
+        <button id="helpBtn" class="floating-btn btn-help data-loading" title="Podpowiedzi (TODO)">❓</button>
         
         <!-- Database Buttons -->
-        <button id="importDbBtn" class="floating-btn btn-import" title="Import bazy danych">📥</button>
-        <button id="exportDbBtn" class="floating-btn btn-export" title="Export bazy danych">📤</button>
-        <button id="cleanRodoBtn" class="floating-btn btn-rodo" title="Wyczyść dane wrażliwe (RODO)">🔐</button>
+        <button id="importDbBtn" class="floating-btn btn-import data-loading" title="Import bazy danych">📥</button>
+        <button id="exportDbBtn" class="floating-btn btn-export data-loading" title="Export bazy danych">📤</button>
+        <button id="cleanRodoBtn" class="floating-btn btn-rodo data-loading" title="Wyczyść dane wrażliwe (RODO)">🔐</button>
     </div>
 
     <!-- Floating Status Bar (Bottom) -->
@@ -717,7 +717,7 @@
             const toggleUIBtn = document.getElementById('toggleUIBtn');
             const floatingStatusBar = document.getElementById('floatingStatusBar');
             const dbButtonsState = { visible: false };
-            let uiMode = 0; // 0: Status bar, 1: Tools, 2: Status bar + Tools
+            let uiMode = parseInt(localStorage.getItem('uiMode') || '0'); // 0: Status bar, 1: Tools, 2: Status bar + Tools
             
             console.log('[DOMContentLoaded] Elements found:',
                 'importDbBtn:', !!importDbBtn,
@@ -756,41 +756,69 @@
             // Define updateUIMode function
             const updateUIMode = () => {
                 console.log('[updateUIMode] Called with uiMode =', uiMode);
-                if (uiMode === 0) {
-                    // Mode 0: Show status bar, hide tools
-                    console.log('[updateUIMode] Mode 0: Showing status bar only');
-                    if (floatingStatusBar) {
-                        floatingStatusBar.style.display = 'flex';
-                        console.log('[updateUIMode] Status bar displayed');
-                    }
-                    setDbButtonsVisible(false);
+                
+                const sidebar = document.getElementById('sidebar');
+                const sidebarLeft = document.getElementById('sidebarLeft');
+                const sidebarContent = document.getElementById('sidebarContent');
+                const toolsButtons = [importDbBtn, exportDbBtn, cleanRodoBtn, languageBtn, helpBtn];
+                
+                // Floating bar zawsze widoczny
+                // Stan 1 (uiMode=1): widać przyciski i zakładki
+                // Stan 2 (uiMode=2): widać tylko przyciski
+                // Stan 3 (uiMode=3): widać tylko zakładki
+                // Stan 0 (uiMode=0): nic nie widać
+                
+                if (uiMode === 1) {
+                    // Mode 1: Show tools and tabs
+                    console.log('[updateUIMode] Mode 1: Showing tools and tabs');
+                    toolsButtons.forEach(btn => {
+                        if (btn) btn.style.setProperty('display', 'flex', 'important');
+                    });
+                    if (sidebar) sidebar.style.setProperty('display', 'flex', 'important');
+                    if (sidebarLeft) sidebarLeft.style.setProperty('display', 'flex', 'important');
+                    if (sidebarContent) sidebarContent.style.setProperty('display', 'block', 'important');
                     if (toggleUIBtn) {
                         toggleUIBtn.style.setProperty('background', 'linear-gradient(135deg, #667eea, #764ba2)', 'important');
-                        toggleUIBtn.title = 'Przełącz do trybu: Narzędzia (Tools)';
+                        toggleUIBtn.title = 'Stan 1: Przyciski + Zakładki';
                     }
-                } else if (uiMode === 1) {
-                    // Mode 1: Hide status bar, show tools
-                    console.log('[updateUIMode] Mode 1: Hiding status bar, showing tools');
-                    if (floatingStatusBar) {
-                        floatingStatusBar.style.display = 'none';
-                        console.log('[updateUIMode] Status bar hidden');
-                    }
-                    setDbButtonsVisible(true);
+                } else if (uiMode === 2) {
+                    // Mode 2: Show tools only
+                    console.log('[updateUIMode] Mode 2: Showing tools only');
+                    toolsButtons.forEach(btn => {
+                        if (btn) btn.style.setProperty('display', 'flex', 'important');
+                    });
+                    if (sidebar) sidebar.style.setProperty('display', 'none', 'important');
+                    if (sidebarLeft) sidebarLeft.style.setProperty('display', 'none', 'important');
+                    if (sidebarContent) sidebarContent.style.setProperty('display', 'none', 'important');
                     if (toggleUIBtn) {
                         toggleUIBtn.style.setProperty('background', 'linear-gradient(135deg, #f59e0b, #d97706)', 'important');
-                        toggleUIBtn.title = 'Przełącz do trybu: Status Bar + Narzędzia';
+                        toggleUIBtn.title = 'Stan 2: Tylko Przyciski';
                     }
-                } else {
-                    // Mode 2: Show status bar and tools
-                    console.log('[updateUIMode] Mode 2: Showing status bar and tools');
-                    if (floatingStatusBar) {
-                        floatingStatusBar.style.display = 'flex';
-                        console.log('[updateUIMode] Status bar displayed');
-                    }
-                    setDbButtonsVisible(true);
+                } else if (uiMode === 3) {
+                    // Mode 3: Show tabs only
+                    console.log('[updateUIMode] Mode 3: Showing tabs only');
+                    toolsButtons.forEach(btn => {
+                        if (btn) btn.style.setProperty('display', 'none', 'important');
+                    });
+                    if (sidebar) sidebar.style.setProperty('display', 'flex', 'important');
+                    if (sidebarLeft) sidebarLeft.style.setProperty('display', 'flex', 'important');
+                    if (sidebarContent) sidebarContent.style.setProperty('display', 'block', 'important');
                     if (toggleUIBtn) {
                         toggleUIBtn.style.setProperty('background', 'linear-gradient(135deg, #22c55e, #16a34a)', 'important');
-                        toggleUIBtn.title = 'Przełącz do trybu: Status Bar';
+                        toggleUIBtn.title = 'Stan 3: Tylko Zakładki';
+                    }
+                } else {
+                    // Mode 0: Hide everything (floating bar always visible)
+                    console.log('[updateUIMode] Mode 0: Hiding everything');
+                    toolsButtons.forEach(btn => {
+                        if (btn) btn.style.setProperty('display', 'none', 'important');
+                    });
+                    if (sidebar) sidebar.style.setProperty('display', 'none', 'important');
+                    if (sidebarLeft) sidebarLeft.style.setProperty('display', 'none', 'important');
+                    if (sidebarContent) sidebarContent.style.setProperty('display', 'none', 'important');
+                    if (toggleUIBtn) {
+                        toggleUIBtn.style.setProperty('background', 'linear-gradient(135deg, #8b5cf6, #6d28d9)', 'important');
+                        toggleUIBtn.title = 'Stan 0: Tylko Status Bar';
                     }
                 }
             };
@@ -806,7 +834,8 @@
                     console.log('[toggleUIBtn] Clicked! Current uiMode:', uiMode);
                     toggleUIBtn.style.transform = 'scale(0.9)';
                     setTimeout(() => toggleUIBtn.style.transform = 'scale(1)', 200);
-                    uiMode = (uiMode + 1) % 3;
+                    uiMode = (uiMode + 1) % 4;
+                    localStorage.setItem('uiMode', uiMode); // Zapisz nowy stan
                     console.log('[toggleUIBtn] uiMode toggled to:', uiMode);
                     updateUIMode();
                 });

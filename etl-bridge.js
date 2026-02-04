@@ -412,18 +412,30 @@ function initSidebar() {
                 card.classList.remove('tab-left');
             }
         });
-    }
-
-    // Wczytaj zapisaną kolejność
-    const savedOrder = localStorage.getItem('tabOrder');
-    if (savedOrder) {
-        const order = JSON.parse(savedOrder);
-        const sidebar = document.getElementById('sidebar');
-        const cards = Array.from(document.querySelectorAll('.tab-card'));
-        order.forEach(tabName => {
-            const card = cards.find(c => c.getAttribute('data-tab') === tabName);
-            if (card) sidebar.appendChild(card);
-        });
+        
+        // Wczytaj zapisaną kolejność po rozdzieleniu na strony
+        const savedOrder = localStorage.getItem('tabOrder');
+        if (savedOrder) {
+            const order = JSON.parse(savedOrder);
+            const rightCards = Array.from(sidebarRight.querySelectorAll('.tab-card'));
+            const leftCards = Array.from(sidebarLeft.querySelectorAll('.tab-card'));
+            
+            // Sortuj karteczki wg zapisanej kolejności
+            order.forEach(tabName => {
+                const card = rightCards.find(c => c.getAttribute('data-tab') === tabName) ||
+                            leftCards.find(c => c.getAttribute('data-tab') === tabName);
+                if (card) {
+                    const parent = card.parentNode;
+                    parent.appendChild(card);
+                }
+            });
+        }
+        
+        // Pokaż sidebary po załadowaniu pozycji
+        sidebarRight.classList.remove('data-loading');
+        sidebarRight.classList.add('loaded');
+        sidebarLeft.classList.remove('data-loading');
+        sidebarLeft.classList.add('loaded');
     }
 }
 
