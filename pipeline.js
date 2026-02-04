@@ -257,14 +257,11 @@ export function buildConfigFromUI() {
     // Get range mode
     const rangeMode = document.querySelector('input[name="rangeMode"]:checked')?.value || 'last';
     
-    // Get fetch mode (auto/full/verify)
-    const fetchMode = document.querySelector('input[name="fetchMode"]:checked')?.value || 'auto';
-    
     const config = {
         typ: document.querySelector('input[name="etlInst"]:checked')?.value || 'sejm',
         kadencja: parseInt(document.getElementById('etlTermSelect')?.value) || 10,
         rodoFilter: document.getElementById('etlRodoFilter')?.checked ?? true,
-        fetchMode: fetchMode,
+        fetchMode: 'auto',  // Always auto mode from UI
         rangeMode: rangeMode,
         rangeCount: parseInt(document.getElementById('etlRangeSelect')?.value) || 2,
         rangeFrom: parseInt(document.getElementById('etlRangeFrom')?.value) || 1,

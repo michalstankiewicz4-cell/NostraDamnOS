@@ -635,3 +635,17 @@ input:disabled {
 #cacheStatusDisplay div {
     padding: 3px 0;
 }
+
+/* Pulse animation for console button */
+@keyframes pulse-red {
+    0%, 100% {
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+    }
+    50% {
+        box-shadow: 0 4px 24px rgba(239, 68, 68, 0.8);
+    }
+}
+
+#floatingConsoleBtn.pulse-red {
+    animation: pulse-red 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}

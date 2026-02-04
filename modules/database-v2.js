@@ -16,6 +16,20 @@ export const db2 = {
             locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/${file}`
         });
         
+        // Try to load from localStorage first
+        const savedDb = localStorage.getItem('nostradamnos_db');
+        if (savedDb) {
+            try {
+                const uint8Array = new Uint8Array(JSON.parse(savedDb));
+                this.database = new this.sql.Database(uint8Array);
+                console.log('[DB v2] ✅ Loaded from localStorage');
+                return this;
+            } catch (err) {
+                console.warn('[DB v2] Failed to load from localStorage:', err);
+            }
+        }
+        
+        // If no saved data, create new database
         this.database = new this.sql.Database();
         await this.createSchema();
         
@@ -412,6 +426,25 @@ export const db2 = {
         });
         
         console.log('[DB v2] All data cleared');
+        this.saveToLocalStorage(); // Auto-save after clear
+    },
+    
+    saveToLocalStorage() {
+        try {
+            if (!this.database) {
+                console.warn('[DB v2] Cannot save - database not initialized');
+                return;
+            }
+            
+            const data = this.database.export();
+            const dataArray = Array.from(data);
+            localStorage.setItem('nostradamnos_db', JSON.stringify(dataArray));
+            
+            const sizeKB = (data.length / 1024).toFixed(2);
+            console.log(`[DB v2] 💾 Auto-saved to localStorage (${sizeKB} KB)`);
+        } catch (err) {
+            console.error('[DB v2] Failed to save to localStorage:', err);
+        }
     },
     
     export() {

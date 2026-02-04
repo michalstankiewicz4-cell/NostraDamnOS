@@ -177,64 +177,53 @@ function initETLPanel() {
     applyDependencies();
     updateETLEstimate();
     
-    // ===== ADVANCED OPTIONS =====
     
-    // Update cache status display
-    function updateCacheStatus() {
-        import('./pipeline.js').then(({ getCacheStatus }) => {
-            import('./modules/database-v2.js').then(({ db2 }) => {
-                const status = getCacheStatus(db2);
-                const display = document.getElementById('cacheStatusDisplay');
-                
-                if (!display) return;
-                
-                if (!status.initialized) {
-                    display.innerHTML = `<div style="color: #64748b;">• ${status.message}</div>`;
-                } else if (status.error) {
-                    display.innerHTML = `<div style="color: #ef4444;">• Błąd: ${status.error}</div>`;
-                } else {
-                    const updateDate = status.lastUpdate !== 'Never' 
-                        ? new Date(status.lastUpdate).toLocaleString('pl-PL')
-                        : 'Nigdy';
-                    
-                    display.innerHTML = `
-                        <div><strong>Last update:</strong> ${updateDate}</div>
-                        <div><strong>Last sitting:</strong> ${status.lastPosiedzenie || 0}</div>
-                        <div><strong>Total records:</strong> ${status.totalRecords.toLocaleString('pl-PL')}</div>
-                        <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #e2e8f0;">
-                            <small style="color: #64748b;">
-                                Posłowie: ${(status.stats.poslowie || 0).toLocaleString('pl-PL')} • 
-                                Posiedzenia: ${(status.stats.posiedzenia || 0).toLocaleString('pl-PL')} • 
-                                Wypowiedzi: ${(status.stats.wypowiedzi || 0).toLocaleString('pl-PL')}
-                            </small>
-                        </div>
-                    `;
-                }
-            });
-        });
-    }
-    
-    // Update cache status on panel open
-    const advancedPanel = document.querySelector('.etl-advanced');
-    if (advancedPanel) {
-        advancedPanel.addEventListener('toggle', (e) => {
-            if (e.target.open) {
-                updateCacheStatus();
-            }
-        });
-    }
-    
-    // Verify button
-    const verifyBtn = document.getElementById('etlVerifyBtn');
-    if (verifyBtn) {
-        verifyBtn.addEventListener('click', async () => {
-            verifyBtn.disabled = true;
-            verifyBtn.textContent = '🔍 Sprawdzanie...';
+    // Check API button - new button to check for new records
+    const checkApiBtn = document.getElementById('etlCheckApiBtn');
+    if (checkApiBtn) {
+        checkApiBtn.addEventListener('click', async () => {
+            checkApiBtn.disabled = true;
+            checkApiBtn.textContent = '⏳ Sprawdzanie API...';
             
             try {
                 const { runPipeline, buildConfigFromUI } = await import('./pipeline.js');
                 const config = buildConfigFromUI();
-                config.fetchMode = 'verify';
+                config.fetchMode = 'verify'; // Check mode - no download
+                
+                let newRecordsCount = 0;
+                
+                const result = await runPipeline(config, {
+                    onLog: (msg) => console.log(msg),
+                    onProgress: () => {},
+                    onComplete: (res) => {
+                        if (res.differences && res.differences.length > 0) {
+                            newRecordsCount = res.differences.length;
+                            showNewRecordsDialog(newRecordsCount);
+                        } else {
+                            alert('✅ Niema nowych pozycji w API');
+                        }
+                    }
+                });
+            } catch (error) {
+                alert('❌ Błąd sprawdzenia API: ' + error.message);
+            } finally {
+                checkApiBtn.disabled = false;
+                checkApiBtn.textContent = '🔍 Sprawdź API';
+            }
+        });
+    }
+    
+    // Verify button - check for differences/discrepancies
+    const verifyBtn = document.getElementById('etlVerifyBtn');
+    if (verifyBtn) {
+        verifyBtn.addEventListener('click', async () => {
+            verifyBtn.disabled = true;
+            verifyBtn.textContent = '⏳ Sprawdzanie...';
+            
+            try {
+                const { runPipeline, buildConfigFromUI } = await import('./pipeline.js');
+                const config = buildConfigFromUI();
+                config.fetchMode = 'verify'; // Verify mode - check differences
                 
                 const result = await runPipeline(config, {
                     onLog: (msg) => console.log(msg),
@@ -243,7 +232,7 @@ function initETLPanel() {
                         if (res.differences && res.differences.length > 0) {
                             showVerificationResults(res.differences);
                         } else {
-                            alert('✅ Brak niezgodności - dane są aktualne!');
+                            alert('✅ Niema żadnych zmian - baza i API się zgadzają!');
                         }
                     }
                 });
@@ -257,19 +246,34 @@ function initETLPanel() {
     }
 }
 
+function showNewRecordsDialog(count) {
+    const message = `🆕 Znaleziono ${count} nowych pozycji w API!\n\nCzy chcesz zaktualizować bazę o nowe rekordy?`;
+    
+    const shouldUpdate = confirm(message);
+    
+    if (shouldUpdate) {
+        // Trigger full fetch with hidden fetch mode set to full
+        const config = {
+            type: 'fullFetch',
+            forceUpdate: true
+        };
+        // Manually trigger fetch with full mode
+        document.getElementById('etlFetchBtn').click();
+    }
+}
+
 function showVerificationResults(differences) {
-    let message = '🔍 Raport weryfikacji:\n\n';
-    message += `Znaleziono ${differences.length} niezgodności:\n\n`;
+    let message = '🔍 Raport niezgodności:\n\n';
+    message += `Znaleziono ${differences.length} różnic(y):\n\n`;
     
     differences.forEach((diff, i) => {
         message += `${i + 1}. ${diff.message}\n`;
     });
     
-    const shouldUpdate = confirm(message + '\nCzy chcesz zaktualizować bazę danych?');
+    const shouldUpdate = confirm(message + '\nCzy chcesz poprawić bazę danych?');
     
     if (shouldUpdate) {
         // Trigger full fetch
-        document.querySelector('input[name="fetchMode"][value="full"]').checked = true;
         document.getElementById('etlFetchBtn').click();
     }
 }

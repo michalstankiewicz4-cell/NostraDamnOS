@@ -176,47 +176,17 @@
                     </div>
                     
                     <button class="etl-btn etl-btn-primary" id="etlFetchBtn">
-                        📥 Pobierz dane
+                        ⬇️ Ściągnij bazę
+                    </button>
+                    <button class="etl-btn etl-btn-secondary" id="etlCheckApiBtn" style="background: #667eea; color: white; margin-bottom: 12px;">
+                        🔍 Sprawdź API
+                    </button>
+                    <button class="etl-btn etl-btn-secondary" id="etlVerifyBtn" style="background: #ef4444; color: white; margin-bottom: 12px;">
+                        🔍 Sprawdź niezgodności
                     </button>
                     <button class="etl-btn etl-btn-danger" id="etlClearBtn">
                         🗑️ Wyczyść bazę
                     </button>
-                    
-                    <!-- Advanced Options Panel -->
-                    <details class="etl-advanced" style="margin-top: 20px;">
-                        <summary style="cursor: pointer; font-weight: 600; padding: 10px; background: #f7fafc; border-radius: 6px; user-select: none;">
-                            ⚙️ Opcje zaawansowane
-                        </summary>
-                        
-                        <div style="padding: 15px; background: #f7fafc; border-radius: 6px; margin-top: 10px;">
-                            <fieldset style="border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px; margin-bottom: 15px;">
-                                <legend style="font-size: 13px; font-weight: 600; padding: 0 8px;">Tryb pobierania</legend>
-                                <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 13px;">
-                                    <input type="radio" name="fetchMode" value="auto" checked>
-                                    <strong>Smart Auto</strong> (zalecane) - automatyczny incremental
-                                </label>
-                                <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 13px;">
-                                    <input type="radio" name="fetchMode" value="full">
-                                    <strong>Wymuś pełne</strong> - ignoruje cache, pobiera wszystko
-                                </label>
-                                <label style="display: flex; align-items: center; gap: 8px; font-size: 13px;">
-                                    <input type="radio" name="fetchMode" value="verify">
-                                    <strong>Tylko weryfikacja</strong> - sprawdza różnice bez pobierania
-                                </label>
-                            </fieldset>
-                            
-                            <button class="etl-btn etl-btn-secondary" id="etlVerifyBtn" style="width: 100%; margin-bottom: 15px;">
-                                🔍 Sprawdź niezgodności
-                            </button>
-                            
-                            <div class="cache-status" style="background: white; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px;">
-                                <h4 style="margin: 0 0 10px 0; font-size: 14px; font-weight: 600;">📊 Status cache</h4>
-                                <div id="cacheStatusDisplay" style="font-size: 13px; color: #4a5568; line-height: 1.6;">
-                                    <div>• Ładowanie...</div>
-                                </div>
-                            </div>
-                        </div>
-                    </details>
                 </div>
                 
                 <div class="etl-main">
@@ -466,6 +436,88 @@
     <!-- Moduły -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.js"></script>
     <script type="module" src="api-handler-v2.js"></script>
+    <script type="module">
+        // Import needed functions
+        import { getCacheStatus, runPipeline, buildConfigFromUI } from './pipeline.js';
+
+        // Startup integrity check
+        async function runStartupCheck() {
+            try {
+                // Wait for db2.database to be available
+                let attempts = 0;
+                while ((!window.db2 || !window.db2.database) && attempts < 50) {
+                    await new Promise(r => setTimeout(r, 100));
+                    attempts++;
+                }
+
+                if (!window.db2 || !window.db2.database) {
+                    console.warn('[Startup Check] db2 database not initialized');
+                    return;
+                }
+
+                const cache = getCacheStatus(window.db2);
+                console.log('[Startup Check] Cache status:', cache);
+
+                // Skip if database is not initialized or has no data
+                if (!cache.initialized || !cache.totalRecords || cache.totalRecords === 0) {
+                    console.log('[Startup Check] ✅ Database empty or first run - no verification needed');
+                    return;
+                }
+
+                console.log('[Startup Check] Running verification...');
+                
+                // Build config to match what was previously fetched
+                const verifyConfig = buildConfigFromUI();
+                verifyConfig.fetchMode = 'verify';
+
+                console.log('[Startup Check] Config:', verifyConfig);
+                
+                // Run verify pipeline
+                await runPipeline(verifyConfig, {
+                    onProgress: (msg) => console.log('[Verify]', msg),
+                    onComplete: (result) => {
+                        console.log('[Startup Check] Verification complete:', result);
+                        
+                        // Check if there are discrepancies
+                        if (result.discrepancies && Object.keys(result.discrepancies).length > 0) {
+                            console.warn('[Startup Check] ⚠️ Discrepancies found:', result.discrepancies);
+                            pulseConsoleButton();
+                        } else {
+                            console.log('[Startup Check] ✅ Database matches API');
+                        }
+                    }
+                });
+
+            } catch (err) {
+                console.error('[Startup Check] Error:', err);
+            }
+        }
+
+        function pulseConsoleButton() {
+            const btn = document.getElementById('floatingConsoleBtn');
+            if (btn) {
+                btn.classList.add('pulse-red');
+                console.log('[Startup Check] Console button pulsing red (discrepancies detected)');
+            }
+        }
+
+        function stopPulseConsoleButton() {
+            const btn = document.getElementById('floatingConsoleBtn');
+            if (btn) {
+                btn.classList.remove('pulse-red');
+            }
+        }
+
+        // Run check after page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            runStartupCheck().catch(err => console.error('[Startup] Fatal error:', err));
+        });
+
+        // Expose for debugging
+        window.runStartupCheck = runStartupCheck;
+        window.pulseConsoleButton = pulseConsoleButton;
+        window.stopPulseConsoleButton = stopPulseConsoleButton;
+    </script>
     <script type="module" src="etl-bridge.js"></script>
     <script type="module" src="models.js"></script>
     
@@ -480,6 +532,9 @@
             floatingBtn.style.transform = floatingPanel.style.display === 'none' ? 'scale(1)' : 'scale(0.9)';
             if (floatingPanel.style.display === 'none') {
                 setDbButtonsVisible(false);
+            } else {
+                // Stop pulsing when console is opened
+                window.stopPulseConsoleButton && window.stopPulseConsoleButton();
             }
         });
         

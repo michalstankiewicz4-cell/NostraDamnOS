@@ -4,6 +4,16 @@ import { db2 } from './modules/database-v2.js';
 
 let isFetching = false;
 
+// Export db2 globally for debugging
+window.db2 = db2;
+
+// Initialize database on load
+db2.init().then(() => {
+    console.log('[API Handler] Database initialized');
+}).catch(err => {
+    console.error('[API Handler] Failed to initialize database:', err);
+});
+
 // Deduplication check to prevent duplicate event listeners
 if (!window.__apiHandlerInitialized) {
     window.__apiHandlerInitialized = true;
@@ -89,6 +99,9 @@ async function startPipelineETL() {
             console.log('[API Handler] Message parts:', parts);
             const details = parts.join(', ');
             console.log('[API Handler] Final message:', details);
+            
+            // Auto-save to localStorage
+            db2.saveToLocalStorage();
             
             alert(`✅ Pobrano dane:\n\n${details || 'Brak danych w bazie'}`);
         }
