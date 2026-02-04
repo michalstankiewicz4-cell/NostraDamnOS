@@ -43,7 +43,7 @@ Znajdź w `<head>` sekcję:
 </script>
 ```
 
-### Opcja 2: W `app.js` (bardziej elastyczna)
+### Opcja 2: W module inicjalizacyjnym (np. w index.html) 
 
 Na początku pliku dodaj:
 ```javascript

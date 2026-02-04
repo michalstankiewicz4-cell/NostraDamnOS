@@ -69,6 +69,7 @@ UI Config → Fetcher → Raw JSON → Normalizer → Database
     komisje_posiedzenia.js
     komisje_wypowiedzi.js
     oswiadczenia.js
+    zapytania.js
 ```
 
 ---
@@ -196,6 +197,12 @@ fetchOswiadczenia({ poslowie, typ })
 • Limited to 100 deputies for safety
 ```
 
+### 12. zapytania.js
+```javascript
+fetchZapytania({ kadencja, typ })
+→ Array of written questions
+```
+
 ---
 
 ## Error Handling
@@ -246,7 +253,8 @@ try {
         'komisje',
         'komisje_posiedzenia',
         'komisje_wypowiedzi',
-        'oswiadczenia'
+        'oswiadczenia',
+        'zapytania'
     ],
     
     // Committee filter (optional)

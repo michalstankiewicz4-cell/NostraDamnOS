@@ -30,14 +30,14 @@ Complete integration of all v2.0 components into a single, streamlined data pipe
         ↓                   ↓
 ┌──────────────┐    ┌──────────────┐
 │   Fetcher    │    │  Database    │
-│  12 modules  │    │  12 tables   │
+│  12 modules  │    │  13 tables   │
 └──────┬───────┘    └──────┬───────┘
        │ Raw JSON          │
        ↓                   ↓
 ┌─────────────────────────────┐
 │      Normalizer             │
 │   normalize() + save()      │
-│      11 modules             │
+│      12 modules             │
 └─────────────────────────────┘
                   │
                   ↓ UPSERT
@@ -360,8 +360,8 @@ await runPipeline(config, {
 });
 
 // ↓ Fetcher runs (12 modules)
-// ↓ Normalizer runs (11 modules)
-// ↓ Database saves (12 tables)
+// ↓ Normalizer runs (12 modules)
+// ↓ Database saves (13 tables)
 // ✅ Done!
 ```
 

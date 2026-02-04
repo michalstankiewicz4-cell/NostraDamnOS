@@ -12,7 +12,6 @@ Kompletny przewodnik po plikach w repozytorium NostraDamnOS.
 |------|------|---------------|
 | **index.html** | Główny plik HTML, UI aplikacji z ETL Panel | Przeglądarka |
 | **style.css** | Style CSS, ETL Panel height: 50vh | index.html |
-| **app.js** | Główna logika aplikacji, ładowanie modeli AI | index.html |
 
 ### ETL System v2.0
 
@@ -32,15 +31,7 @@ Kompletny przewodnik po plikach w repozytorium NostraDamnOS.
 
 ### Narzędzia
 
-| Plik | Opis | Kiedy używać |
-|------|------|--------------|
-| **fix-height.js** | Utility do szybkiej zmiany wysokości CSS | Gdy trzeba zmienić max-height w style.css |
-
-### Legacy/Mockup
-
-| Plik | Opis |
-|------|------|
-| **mockup-formularz.html** | Mockup formularza ETL (design reference) |
+*(Brak narzędzi legacy w repo)*
 
 ---
 
@@ -67,6 +58,7 @@ Kompletny przewodnik po plikach w repozytorium NostraDamnOS.
 | **komisje_posiedzenia.js** | `/sejm/term{X}/committees/{code}/sittings` | Posiedzenia komisji |
 | **komisje_wypowiedzi.js** | `/sejm/term{X}/committees/{code}/sittings/{num}/statements` | Wypowiedzi w komisjach |
 | **oswiadczenia.js** | `/sejm/term{X}/MP/{id}/assets` | Oświadczenia majątkowe |
+| **zapytania.js** | `/sejm/term{X}/writtenQuestions` | Zapytania pisemne |
 
 **Pattern każdego modułu:**
 ```javascript
@@ -86,7 +78,7 @@ export async function fetchModuleName({ kadencja, ... }) {
 |------|------|-----------|
 | **normalizer.js** | Orchestrator, kolejność wykonania | `runNormalizer(db, rawData)` |
 
-### /normalizer/modules (11 modułów)
+### /normalizer/modules (12 modułów)
 
 | Moduł | Funkcje | Tabela docelowa |
 |-------|---------|-----------------|
@@ -101,6 +93,7 @@ export async function fetchModuleName({ kadencja, ... }) {
 | **komisje_posiedzenia.js** | `normalizeKomisjePosiedzenia()`, `saveKomisjePosiedzenia()` | `komisje_posiedzenia` |
 | **komisje_wypowiedzi.js** | `normalizeKomisjeWypowiedzi()`, `saveKomisjeWypowiedzi()` | `komisje_wypowiedzi` |
 | **oswiadczenia_majatkowe.js** | `normalizeOswiadczenia()`, `saveOswiadczenia()` | `oswiadczenia_majatkowe` |
+| **zapytania.js** | `normalizeZapytania()`, `saveZapytania()` | `zapytania` + `zapytania_odpowiedzi` |
 
 **Pattern każdego modułu:**
 ```javascript
@@ -125,15 +118,13 @@ export function saveModuleName(db, records) {
 
 | Plik | Opis | Eksportuje |
 |------|------|-----------|
-| **database-v2.js** | SQLite wrapper, 12 tabel + indexes | `db2` object |
+| **database-v2.js** | SQLite wrapper, 13 tabel + metadata + indexes | `db2` object |
 | **rodo.js** | 🛡️ Filtr danych wrażliwych (email, telefon, PESEL) | `applyRodo(raw)`, `RODO_RULES` |
 | **geo.js** | Geolokalizacja (tylko Europa), timezone check | `enforceEuropeOnly()` |
 | **nlp.js** | Transformers.js integration (plan) | `initNLP()`, `analyzeSentiment()` |
 | **webllm.js** | WebLLM 4B integration (plan) | `initWebLLM()`, `generateSummary()` |
-| **utils.js** | Utilities (parseJSONL, countWords) | Various helpers |
 | **api-fetcher.js** | Legacy fetcher v1 (opcjonalny) | `fetchData()` |
-| **cache.js** | Legacy localStorage cache (opcjonalny) | Cache helpers |
-| **data-loader.js** | Legacy JSONL loader (opcjonalny) | `loadAll()` |
+| **db-buttons.js** | Helpers dla przycisków DB (UI) | `bindDbButtons()` |
 
 ### rodo.js szczegóły 🔒
 
@@ -173,11 +164,11 @@ export const db2 = {
     async init()
     async createSchema()
     
-    // UPSERT methods (11x)
+    // UPSERT methods (13x)
     upsertPoslowie(data)
     upsertPosiedzenia(data)
     upsertWypowiedzi(data)
-    // ... (8 more)
+    // ... (10 more)
     
     // Query methods
     getPoslowie(filters)
@@ -192,7 +183,7 @@ export const db2 = {
 }
 ```
 
-**12 tabel:**
+**13 tabel + metadata:**
 1. `poslowie` - Posłowie/Senatorowie
 2. `posiedzenia` - Posiedzenia
 3. `wypowiedzi` - Wypowiedzi plenarne
@@ -204,7 +195,9 @@ export const db2 = {
 9. `komisje_posiedzenia` - Posiedzenia komisji
 10. `komisje_wypowiedzi` - Wypowiedzi w komisjach
 11. `oswiadczenia_majatkowe` - Oświadczenia majątkowe
-12. `metadata` - Cache + metadane
+12. `zapytania` - Zapytania pisemne
+13. `zapytania_odpowiedzi` - Odpowiedzi na zapytania
+14. `metadata` - Cache + metadane
 
 ---
 
@@ -215,16 +208,13 @@ export const db2 = {
 | Plik | Opis | Dla kogo |
 |------|------|----------|
 | **ARCHITECTURE.md** | Przegląd architektury systemu | Developers |
-| **DATABASE-V2.md** | Schema 12 tabel, indexes, queries | Developers |
-| **FETCHER-V2.md** | Dokumentacja 12 modułów fetch | Developers |
-| **NORMALIZER-V2.md** | Dokumentacja 11 modułów transform | Developers |
+| **DATABASE-V2.md** | Schema bazy (tabele + indexes) | Developers |
+| **FETCHER-V2.md** | Dokumentacja modułów fetch | Developers |
+| **NORMALIZER-V2.md** | Dokumentacja modułów transform | Developers |
 | **PIPELINE-V2.md** | Orchestration, callbacks, flow | Developers |
 | **INCREMENTAL-CACHE.md** | Smart caching (10× faster) | Developers |
 | **GEO.md** | Geolocation restriction (Europa) | Developers |
-| **DATA-STRUCTURE-V2.md** | Struktura danych z API | Developers |
-| **TESTING.md** | Testing strategy | Developers |
-| **TODO-DATA.md** | Roadmap, status, future features | Everyone |
-| **UI-MOCKUP-*.txt** | UI mockups (design reference) | Designers |
+| **DATA-TYPES.json** | Definicje typów danych | Developers |
 
 ---
 
@@ -316,7 +306,6 @@ Skrypty do pobierania danych lokalnie przez Node.js zamiast przeglądarki.
 
 ### Dla maintainerów:
 - **CHANGELOG.md** - historia zmian
-- **fix-height.js** - narzędzie do CSS
 - **.gitignore** - co ignorować
 
 ---

@@ -51,8 +51,8 @@ System pobiera dane z API Sejmu bezpośrednio w przeglądarce, wykorzystując:
        │                       │
        │                       ▼
        │              ┌─────────────────┐
-       │              │  Normalizer v2.0│
-       │              │  • 11 modułów   │
+      │              │  Normalizer v2.0│
+      │              │  • 12 modułów   │
        │              │  • UPSERT       │
        │              │  • Clean data   │
        │              └────────┬────────┘
@@ -63,7 +63,7 @@ System pobiera dane z API Sejmu bezpośrednio w przeglądarce, wykorzystując:
       │   SQLite DB    │
       │   (sql.js)     │
       │                │
-      │ • 12 tabel     │
+      │ • 13 tabel     │
       │ • Foreign keys │
       │ • Indexes      │
       │                │
@@ -214,22 +214,22 @@ System wraca do scenariusza 1 (pierwsze uruchomienie)
 
 ## Komponenty
 
-### 1. api-handler.js (272 linie)
-**Rola:** Główny koordynator
+### 1. pipeline.js (ETL orchestrator)
+**Rola:** Główny koordynator ETL v2.0
 
 **Kluczowe funkcje:**
 ```javascript
-startFetching(range, getTranscripts, getVotings)
-  ├─ ensureDbInit() - inicjalizuj SQLite
-  ├─ cache.getPlan() - co pobrać?
-  ├─ apiFetcher.fetchX() - pobierz z API
-  ├─ normalizer.normalizeAll() - dopasuj ID
-  ├─ db.insertX() - zapisz do SQLite
-  └─ cache.saveCache() - zapisz metadata
+runPipeline(config, callbacks)
+  ├─ ensureDbInit() - inicjalizuj SQLite (db2)
+  ├─ getCachedSittings() - sprawdź incremental cache
+  ├─ runFetcher() - pobierz z API
+  ├─ applyRodo() - usuń dane wrażliwe
+  ├─ runNormalizer() - UPSERT do DB
+  └─ updateCacheMetadata() - zapisz metadata
 ```
 
 **Logika:**
-- Sprawdza cache PRZED każdym pobieraniem
+- Sprawdza cache PRZED pobieraniem
 - Pobiera TYLKO brakujące dane
 - Progress bar (0-100%)
 - Szczegółowe logi
@@ -237,8 +237,25 @@ startFetching(range, getTranscripts, getVotings)
 
 ---
 
-### 2. modules/cache.js (141 linii)
-**Rola:** Lekki cache metadanych
+### 2. api-handler-v2.js (UI integration)
+**Rola:** Łączy UI z Pipeline (config, callbacks, stan)
+
+**Kluczowe funkcje:**
+```javascript
+buildConfigFromUI()
+updateETLSummary(config)
+runPipeline(config, callbacks)
+```
+
+**Logika:**
+- Buduje config z UI
+- Rejestruje callbacki progresu/logów
+- Zapisuje ostatnią konfigurację w localStorage
+
+---
+
+### 3. pipeline.js (cache helpers)
+**Rola:** Lekki cache metadanych (incremental)
 
 **Struktura danych:**
 ```javascript
@@ -261,54 +278,29 @@ startFetching(range, getTranscripts, getVotings)
 
 **Kluczowe metody:**
 ```javascript
-getPlan(apiFetcher, range, needTranscripts, needVotings)
+getCachedSittings(db)
   ↓
   Zwraca:
   {
-    needDeputies: false,              // są w cache
-    needProceedings: false,           // są w cache
-    sittingsToFetch: [49],            // brakuje 49
-    cachedDeputies: [...],
-    cachedProceedings: [...]
+    last_posiedzenie: 51,
+    max_posiedzenie: 52,
+    sittingsToFetch: [52]
   }
 ```
 
 ---
 
-### 3. modules/database.js (181 linii)
+### 4. modules/database-v2.js
 **Rola:** SQLite w przeglądarce
 
 **Technologia:** sql.js (SQLite compiled to WebAssembly)
 
 **Schema:**
 ```sql
-CREATE TABLE deputies (
-    id INTEGER PRIMARY KEY,
-    firstName TEXT,
-    lastName TEXT,
-    fullName TEXT,
-    club TEXT,
-    active BOOLEAN
-);
-
-CREATE TABLE statements (
-    id TEXT PRIMARY KEY,
-    institution TEXT,
-    sitting INTEGER,
-    date TEXT,
-    speakerID INTEGER,
-    speakerName TEXT,
-    speakerRole TEXT,
-    speakerClub TEXT,
-    text TEXT,
-    textLength INTEGER,
-    wordCount INTEGER,
-    matched BOOLEAN
-);
-
-CREATE INDEX idx_speaker ON statements(speakerID);
-CREATE INDEX idx_date ON statements(date);
-CREATE INDEX idx_club ON statements(speakerClub);
+CREATE TABLE poslowie (...);
+CREATE TABLE wypowiedzi (...);
+CREATE TABLE glosowania (...);
+-- + 10 innych tabel (w tym zapytania, zapytania_odpowiedzi)
 ```
 
 **⚠️ Ograniczenia:**
@@ -318,38 +310,27 @@ CREATE INDEX idx_club ON statements(speakerClub);
 
 **API:**
 ```javascript
-await db.init()                    // Ładuje sql.js + tworzy schema
-await db.insertDeputies([...])     // Batch insert
-await db.insertStatements([...])   // Batch insert
-const rows = db.query(sql, params) // SELECT
-const stats = db.getStats()        // Statystyki
-const blob = db.export()           // Eksport .db
+await db2.init()                    // Ładuje sql.js + tworzy schema
+db2.upsertPoslowie([...])           // UPSERT
+db2.upsertWypowiedzi([...])         // UPSERT
+const rows = db2.query(sql, params) // SELECT
+const stats = db2.getStats()        // Statystyki
+const blob = db2.export()           // Eksport .db
 ```
 
 ---
 
-### 4. modules/normalizer.js (170 linii)
-**Rola:** Dopasowanie mówcy do ID posła
+### 5. normalizer/normalizer.js
+**Rola:** Transform raw → SQL + UPSERT (12 modułów)
 
 **Algorytm:**
 ```
-1. parseSpeaker(speakerRaw)
-   Input:  "Sekretarz Poseł Joanna Wicha"
-   Output: {
-     role: "poseł",
-     position: "Sekretarz Poseł...",
-     name: "Joanna Wicha"
-   }
-
-2. findDeputyID(name)
-   - Normalizuj nazwisko (bez diakrytyków, lowercase)
-   - Szukaj exact match w deputiesMap
-   - Fallback: częściowe dopasowanie nazwiska
-   
-3. normalizeStatement()
-   - Dopasuj ID (97.6% sukces)
-   - Dodaj: speakerID, speakerRole, speakerClub
-   - Generuj unikalne ID wypowiedzi
+1. normalize*(raw)
+  - Mapowanie pól API → SQL
+  - Walidacja + domyślne wartości
+2. save*(db, records)
+  - UPSERT do bazy
+  - Logi ilości zapisanych rekordów
 ```
 
 **Wykrywane role:**
@@ -360,65 +341,46 @@ const blob = db.export()           // Eksport .db
 
 ---
 
-### 5. modules/api-fetcher.js (262 linie)
-**Rola:** Pobieranie z API Sejmu
+### 6. fetcher/fetcher.js
+**Rola:** Pobieranie z API Sejmu (12 modułów)
 
-**Kluczowe optymalizacje:**
+**Główne elementy:**
 ```javascript
-// 1. UTF-8 decode (polskie znaki)
-const buffer = await response.arrayBuffer();
-const decoder = new TextDecoder('utf-8');
-const html = decoder.decode(buffer);
-
-// 2. Parallel fetching (batches po 5)
-for (let i = 0; i < nums.length; i += 5) {
-    const batch = nums.slice(i, i + 5);
-    const results = await Promise.all(
-        batch.map(num => fetchTranscript(num))
-    );
-}
-
-// 3. Probe co 10 (szybkie znajdowanie końca)
-for (let probe = 10; probe < 300; probe += 10) {
-    const html = await fetch(url);
-    if (!html) break;
-    maxNum = probe + 10;
-}
-
-// 4. Retry 3x + timeout 30s
-for (let i = 0; i < 3; i++) {
-    const controller = new AbortController();
-    setTimeout(() => controller.abort(), 30000);
+// Safe fetch (retry + backoff)
+export async function safeFetch(url) {
+  for (let i = 0; i < 3; i++) {
     try {
-        return await fetch(url, { signal: controller.signal });
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.json();
     } catch (e) {
-        if (i === 2) throw e;
+      if (i === 2) throw e;
+      await new Promise(r => setTimeout(r, 500 * (i + 1)));
     }
+  }
+}
+
+// Orkiestracja modułów
+export async function runFetcher(config) {
+  // uruchamia moduły: poslowie, posiedzenia, wypowiedzi, ...
 }
 ```
-
-**Wydajność:**
-- Serial: ~200s dla 578 wypowiedzi
-- Parallel (5x): ~15-20s dla 578 wypowiedzi
-- **10-20× szybciej!**
 
 ---
 
 ## Przepływ danych - szczegóły
 
-### localStorage (Cache)
+### Metadata (SQLite + localStorage snapshot)
 ```
-Rozmiar: ~50-100KB
-Trwałość: Do wyczyszczenia przeglądarki
-Format: JSON string
+Rozmiar: ~1-5KB
+Trwałość: w SQLite + auto-save do localStorage
+Format: tabela metadata
 
 Zawartość:
-├─ deputies: Array<Deputy>          (~30KB)
-├─ proceedings: Array<Proceeding>   (~5KB)
-├─ fetchedSittings: number[]        (~0.1KB)
-├─ range: number
-├─ flags: boolean
-└─ timestamps: ISO strings
+├─ last_posiedzenie: number
+├─ last_update: ISO string
+├─ last_fetch_config: JSON
+└─ last_fetch_stats: JSON
 
 Cel: Szybkie sprawdzenie "co już mamy"
 ```
@@ -430,8 +392,9 @@ Trwałość: Do zamknięcia zakładki (RAM)
 Format: SQLite binary (WebAssembly)
 
 Zawartość:
-├─ deputies: 498 rows
-└─ statements: 578-10000+ rows
+├─ poslowie: 498 rows
+├─ posiedzenia: 50-100+ rows
+└─ wypowiedzi: 578-10000+ rows
 
 Cel: Pełne dane do analizy
 ```

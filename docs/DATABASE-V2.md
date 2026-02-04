@@ -24,14 +24,14 @@ Edytuj `modules/rodo.js` → `RODO_RULES` aby dodać kolejne pola.
 
 ## Architektura
 
-**12 tabel relacyjnych** + metadata dla pełnego ETL pipeline:
+**13 tabel relacyjnych** + metadata dla pełnego ETL pipeline:
 
 ```
 poslowie (fundament)
     ↓
 posiedzenia → wypowiedzi → glosowania → glosy
     ↓
-interpelacje, projekty_ustaw, oswiadczenia_majatkowe
+interpelacje, projekty_ustaw, oswiadczenia_majatkowe, zapytania, zapytania_odpowiedzi
     ↓
 komisje → komisje_posiedzenia → komisje_wypowiedzi
     ↓
@@ -223,7 +223,44 @@ CREATE TABLE oswiadczenia_majatkowe (
 
 ---
 
-### 12. **metadata** (cache, wersje, logi)
+### 12. **zapytania** (zapytania pisemne)
+
+```sql
+CREATE TABLE zapytania (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    term INTEGER NOT NULL,
+    num INTEGER NOT NULL,
+    title TEXT,
+    receiptDate TEXT,
+    lastModified TEXT,
+    sentDate TEXT,
+    from_mp_ids TEXT,
+    to_ministries TEXT,
+    answerDelayedDays INTEGER DEFAULT 0
+);
+```
+
+---
+
+### 13. **zapytania_odpowiedzi** (odpowiedzi na zapytania)
+
+```sql
+CREATE TABLE zapytania_odpowiedzi (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    zapytanie_term INTEGER NOT NULL,
+    zapytanie_num INTEGER NOT NULL,
+    key TEXT NOT NULL,
+    from_author TEXT,
+    receiptDate TEXT,
+    lastModified TEXT,
+    onlyAttachment INTEGER DEFAULT 0,
+    prolongation INTEGER DEFAULT 0
+);
+```
+
+---
+
+### 14. **metadata** (cache, wersje, logi)
 
 ```sql
 CREATE TABLE metadata (
@@ -366,7 +403,7 @@ db2.import(new Uint8Array(saved));
 // Stara baza (v1.0) - 1 tabela
 const oldData = oldDb.getAll();
 
-// Nowa baza (v2.0) - 12 tabel
+// Nowa baza (v2.0) - 13 tabel
 await db2.init();
 
 // Migruj posłów
@@ -382,6 +419,6 @@ db2.upsertWypowiedzi(oldData.filter(r => r.type === 'statement'));
 
 **Schema Version:** 2.0  
 **Created:** 2026-01-24  
-**Tables:** 12 + metadata  
+**Tables:** 13 + metadata  
 **Indexes:** 20+  
-**UPSERT Methods:** 11
+**UPSERT Methods:** 13

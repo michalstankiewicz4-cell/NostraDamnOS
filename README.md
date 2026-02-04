@@ -106,7 +106,7 @@ python -m http.server 8766
 |------|------|
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Przegląd architektury systemu, przepływ danych, scenariusze użycia |
 | [docs/FILE-STRUCTURE.md](docs/FILE-STRUCTURE.md) | Pełna struktura katalogów i rola każdego pliku |
-| [docs/DATABASE-V2.md](docs/DATABASE-V2.md) | Schemat bazy SQLite (12 tabel), foreign keys, indexes |
+| [docs/DATABASE-V2.md](docs/DATABASE-V2.md) | Schemat bazy SQLite (13 tabel), foreign keys, indexes |
 | [docs/API-ENDPOINTS.md](docs/API-ENDPOINTS.md) | Kompletna mapa endpointów API Sejmu (działające i niedziałające) |
 
 ### ETL Pipeline (/docs)
@@ -114,7 +114,7 @@ python -m http.server 8766
 |------|------|
 | [docs/PIPELINE-V2.md](docs/PIPELINE-V2.md) | Orkiestracja całego ETL, etapy przetwarzania, RODO Filter |
 | [docs/FETCHER-V2.md](docs/FETCHER-V2.md) | Pobieranie danych z API (12 modułów), retry logic, safeFetch |
-| [docs/NORMALIZER-V2.md](docs/NORMALIZER-V2.md) | Transformacje do rekordów SQL (11 modułów), mapowania |
+| [docs/NORMALIZER-V2.md](docs/NORMALIZER-V2.md) | Transformacje do rekordów SQL (12 modułów), mapowania |
 | [docs/INCREMENTAL-CACHE.md](docs/INCREMENTAL-CACHE.md) | Mechanizm przyrostowego cache, wykrywanie zmian |
 
 ### Funkcje specjalne (/docs)
@@ -130,8 +130,8 @@ python -m http.server 8766
 ### ✅ Faza 1 - ETL System (DONE - 2026-01-24)
 - [x] ETL v2.0 Pipeline
 - [x] Fetcher v2.0 (12 modules)
-- [x] Normalizer v2.0 (11 modules)
-- [x] Database v2.0 (12 tables)
+- [x] Normalizer v2.0 (12 modules)
+- [x] Database v2.0 (13 tables)
 - [x] Incremental Cache
 - [x] Dynamic Progress
 

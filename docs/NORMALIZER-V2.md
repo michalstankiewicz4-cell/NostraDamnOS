@@ -79,7 +79,7 @@ const stats = await runNormalizer(db2, raw);
 
 ---
 
-## Complete Modules (11/11) ✅
+## Complete Modules (12/12) ✅
 
 1. **poslowie.js** - Deputies/Senators
 2. **posiedzenia.js** - Parliamentary sittings
@@ -92,6 +92,7 @@ const stats = await runNormalizer(db2, raw);
 9. **komisje_posiedzenia.js** - Committee sittings ✅ NEW
 10. **komisje_wypowiedzi.js** - Committee statements ✅ NEW
 11. **oswiadczenia_majatkowe.js** - Financial disclosures ✅ NEW
+12. **zapytania.js** - Written questions + replies ✅ NEW
 
 ---
 
@@ -185,7 +186,7 @@ przeciw → przeciw (default: 0)
 wstrzymalo → wstrzymalo (default: 0)
 ```
 
-*(Similar mappings for all 11 modules)*
+*(Similar mappings for all 12 modules)*
 
 ---
 
@@ -222,6 +223,7 @@ wstrzymalo → wstrzymalo (default: 0)
 9. **komisje_posiedzenia** (needs: komisje)
 10. **komisje_wypowiedzi** (needs: komisje_posiedzenia, poslowie)
 11. **oswiadczenia_majatkowe** (needs: poslowie)
+12. **zapytania** (needs: poslowie)
 
 ---
 
@@ -251,7 +253,9 @@ const stats = await runNormalizer(db2, raw);
 //   komisje: 28,
 //   komisje_posiedzenia: 145,
 //   komisje_wypowiedzi: 2340,
-//   oswiadczenia_majatkowe: 460
+//   oswiadczenia_majatkowe: 460,
+//   zapytania: 120,
+//   zapytania_odpowiedzi: 240
 // }
 ```
 
@@ -294,6 +298,6 @@ const poslowie = db2.getPoslowie({ kadencja: 10 });
 ---
 
 **Version:** 2.0  
-**Status:** ✅ Complete (11/11 modules)  
+**Status:** ✅ Complete (12/12 modules)  
 **Lines:** ~400 total  
 **Dependencies:** database-v2.js

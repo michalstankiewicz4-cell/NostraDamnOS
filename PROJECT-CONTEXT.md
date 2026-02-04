@@ -81,13 +81,13 @@ npx http-server -p 8766
 **ETL Pipeline v2.0:**
 - Complete orchestration (UI → Fetcher → Normalizer → Database)
 - 12 modułów fetch (poslowie, wypowiedzi, głosowania, interpelacje, komisje...)
-- 11 modułów transform (normalizacja + UPSERT)
+- 12 modułów transform (normalizacja + UPSERT)
 - Incremental cache (10× szybciej przy kolejnych pobraniach)
 - Dynamic progress (0-100%)
 - **RODO Filter** - usuwa dane wrażliwe (email, telefon, PESEL, adresy)
 
 **Database v2.0:**
-- 12 tabel SQLite (in-memory)
+- 13 tabel SQLite (in-memory) + metadata
 - Foreign keys + indexes
 - UPSERT methods (no duplicates)
 
@@ -194,7 +194,6 @@ npx http-server -p 8766
 ### Entry Points
 ```
 index.html          - UI (ETL Panel)
-app.js              - Ładowanie AI models (plan)
 api-handler-v2.js   - UI integration, callbacks
 ```
 
@@ -207,15 +206,13 @@ etl-bridge.js                  - UI ↔ Pipeline bridge
 /fetcher/modules/*.js          - 12 modułów fetch
 
 /normalizer/normalizer.js      - Transform orchestrator  
-/normalizer/modules/*.js       - 11 modułów transform
+/normalizer/modules/*.js       - 12 modułów transform
 ```
 
 ### Database & Utilities
 ```
-/modules/database-v2.js        - SQLite wrapper (12 tabel)
+/modules/database-v2.js        - SQLite wrapper (13 tabel + metadata)
 /modules/geo.js                - Geolocation (Europa only)
-/modules/cache.js              - localStorage cache (legacy)
-/modules/utils.js              - Helpers
 ```
 
 ### AI (planned)
@@ -286,7 +283,7 @@ docs/ARCHITECTURE.md        - System overview
 docs/PIPELINE-V2.md         - ETL orchestration
 docs/FETCHER-V2.md          - 12 fetch modules
 docs/NORMALIZER-V2.md       - 11 transform modules
-docs/DATABASE-V2.md         - Schema (12 tables)
+docs/DATABASE-V2.md         - Schema (13 tables)
 docs/INCREMENTAL-CACHE.md   - Smart caching
 docs/GEO.md                 - Geolocation
 docs/TODO-DATA.md           - Roadmap
@@ -322,7 +319,6 @@ git push origin main
 
 ### Utility Scripts (zachowane)
 ```
-fix-height.js       - Szybka zmiana CSS height
 ```
 
 ### Usuniętych Debug Files (17)
