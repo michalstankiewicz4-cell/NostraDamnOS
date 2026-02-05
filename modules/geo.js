@@ -9,12 +9,23 @@ const EUROPE = [
 ];
 
 // Blokada strony
-function blockAccess(reason) {
+async function blockAccess(reason) {
+    let phone = '';
+    try {
+        const res = await fetch('./project.json', { cache: 'no-store' });
+        const data = await res.json();
+        phone = data?.author?.phone || '';
+    } catch { /* brak project.json */ }
+
+    const contactLine = phone
+        ? `<p>Poproś o dostęp (SMS) tel.: ${phone}</p>`
+        : '';
+
     document.body.innerHTML = `
         <div style="padding:40px; font-family:Arial; text-align:center;">
             <h1>🌍 Dostęp ograniczony</h1>
             <p>Ta strona jest dostępna wyłącznie dla użytkowników z Europy.</p>
-            <p>Poproś o dostęp (SMS) tel.: +48 797 486 355</p>
+            ${contactLine}
             <p><strong>Powód:</strong> ${reason}</p>
         </div>
     `;

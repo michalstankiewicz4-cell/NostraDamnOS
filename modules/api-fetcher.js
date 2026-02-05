@@ -29,13 +29,13 @@ export class APIFetcher {
                     } // Normalny brak danych
                     
                     if (response.status === 429) {
-                        console.warn(`âš ď¸Ź Rate limit (429) - czekam 5s...`);
+                        console.warn(`⚠️ Rate limit (429) - czekam 5s...`);
                         await this.sleep(5000);
                         continue; // Retry bez liczenia
                     }
                     
                     if (response.status >= 500) {
-                        throw new Error(`Serwer niedostÄ™pny (${response.status})`);
+                        throw new Error(`Serwer niedostępny (${response.status})`);
                     }
                     
                     throw new Error(`HTTP ${response.status}`);
@@ -57,12 +57,12 @@ export class APIFetcher {
                     if (i === retries - 1) {
                         throw new Error(`Przekroczono czas oczekiwania (${timeoutMs/1000}s)`);
                     }
-                    console.warn(`âŹ±ď¸Ź Timeout - prĂłba ${i+1}/${retries}`);
+                    console.warn(`⏱️ Timeout - próba ${i+1}/${retries}`);
                 } else if (error.message.includes('Failed to fetch')) {
-                    throw new Error('Brak poĹ‚Ä…czenia z internetem lub problem CORS');
+                    throw new Error('Brak połączenia z internetem lub problem CORS');
                 } else {
                     if (i === retries - 1) throw error;
-                    console.warn(`âš ď¸Ź ${error.message} - prĂłba ${i+1}/${retries}`);
+                    console.warn(`⚠️ ${error.message} - próba ${i+1}/${retries}`);
                 }
                 
                 await this.sleep(this.delay * 2);

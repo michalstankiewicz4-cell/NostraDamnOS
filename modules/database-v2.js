@@ -271,7 +271,7 @@ export const db2 = {
         const stmt = this.database.prepare(`
             INSERT INTO posiedzenia (id_posiedzenia, numer, data_start, data_koniec, kadencja, typ)
             VALUES (?, ?, ?, ?, ?, ?)
-            ON CONFLICT(id_posiedzenie) DO UPDATE SET
+            ON CONFLICT(id_posiedzenia) DO UPDATE SET
                 numer = excluded.numer,
                 data_start = excluded.data_start,
                 data_koniec = excluded.data_koniec,
