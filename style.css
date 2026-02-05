@@ -1229,6 +1229,73 @@ input:disabled {
     background: linear-gradient(135deg, #10b981, #059669);
 }
 
+/* AI Status Lamps Bar - now in floating status bar */
+.status-bar-ai {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.status-bar-ai-lamps {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.status-lamp {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #64748b;
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+}
+
+.status-lamp.checking {
+    background: #f59e0b;
+    box-shadow: 0 0 6px rgba(245, 158, 11, 0.6);
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+.status-lamp.success {
+    background: #10b981;
+    box-shadow: 0 0 6px rgba(16, 185, 129, 0.8);
+}
+
+.status-lamp.error {
+    background: #ef4444;
+    box-shadow: 0 0 6px rgba(239, 68, 68, 0.8);
+}
+
+.status-lamp:hover::after {
+    content: attr(data-model);
+    position: absolute;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(15, 23, 42, 0.95);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 10000;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.6;
+        transform: scale(1.1);
+    }
+}
+
 #aiChatWindow {
     position: fixed;
     bottom: 170px;
@@ -1642,6 +1709,109 @@ input:disabled {
     box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 }
 
+/* Floating Status Bar */
+.floating-status-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: 25px;
+    background: #2d3748;
+    border-top: 2px solid #1a202c;
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    gap: 16px;
+    z-index: 2000;
+    box-shadow: 0 -2px 12px rgba(0,0,0,0.3);
+    font-size: 0.8rem;
+    color: #e2e8f0;
+    font-family: 'Courier New', 'Consolas', 'Monaco', monospace;
+}
+
+.status-bar-version {
+    display: flex;
+    align-items: center;
+}
+
+.status-bar-version-text {
+    font-weight: 600;
+    color: #cbd5e0;
+    letter-spacing: 0.5px;
+}
+
+.status-bar-indicators {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.floating-status-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    user-select: none;
+}
+
+.floating-lamp {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    box-shadow: 0 0 4px rgba(0,0,0,0.5);
+    transition: all 0.3s ease;
+}
+
+.floating-lamp-ok {
+    background: #48bb78;
+    box-shadow: 0 0 6px rgba(72, 187, 120, 0.6);
+}
+
+.floating-lamp-warning {
+    background: #f6ad55;
+    box-shadow: 0 0 6px rgba(246, 173, 85, 0.6);
+}
+
+.floating-lamp-error {
+    background: #f56565;
+    box-shadow: 0 0 6px rgba(245, 101, 101, 0.6);
+}
+
+.status-bar-separator {
+    width: 1px;
+    height: 12px;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.status-bar-spacer {
+    flex: 1;
+}
+
+.status-bar-console {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    padding: 0 8px;
+    border-radius: 3px;
+    transition: all 0.2s;
+}
+
+.status-bar-console:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.status-bar-console-separator {
+    width: 1px;
+    height: 12px;
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.status-bar-console-text {
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    color: #e2e8f0;
+}
 #sendChatBtn:disabled {
     opacity: 0.5;
     cursor: not-allowed;

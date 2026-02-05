@@ -545,11 +545,11 @@
     </div>
 
     <!-- Floating Status Bar (Bottom) -->
-    <div id="floatingStatusBar" style="position: fixed; bottom: 0; left: 0; right: 0; width: 100%; height: 25px; background: #2d3748; border-top: 2px solid #1a202c; display: flex; align-items: center; padding: 0 20px; gap: 16px; z-index: 2000; box-shadow: 0 -2px 12px rgba(0,0,0,0.3); font-size: 0.8rem; color: #e2e8f0; font-family: 'Courier New', 'Consolas', 'Monaco', monospace;">
+    <div id="floatingStatusBar" class="floating-status-bar">
         
         <!-- Version Section -->
         <div id="versionSection" class="status-bar-version">
-            <span class="status-bar-version-text">v<span id="programVersion">0.0.0</span></span>
+            <span class="status-bar-version-text">v<span id="programVersion">3.5.3</span></span>
         </div>
         
         <!-- Status Indicators Section -->
@@ -577,6 +577,15 @@
                 <div class="floating-lamp floating-lamp-ok"></div>
                 <span>Poprawność</span>
             </div>
+        </div>
+        
+        <!-- Separator -->
+        <div class="status-bar-separator"></div>
+        
+        <!-- AI Models Status Section -->
+        <div id="aiStatusSection" class="status-bar-ai">
+            <span>AI:</span>
+            <div id="aiStatusLamps" class="status-bar-ai-lamps"></div>
         </div>
         
         <!-- Spacer -->
@@ -800,7 +809,6 @@
             console.log('[DOMContentLoaded] Initialization complete');
         });
     </script>
-
     <script type="module">
         import { initDbButtons } from './modules/db-buttons.js';
         initDbButtons();

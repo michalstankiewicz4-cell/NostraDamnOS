@@ -188,6 +188,9 @@ export function initAIChat() {
     updateFavoriteButton();
     updateFavoritesList();
     
+    // Initialize status lamps
+    initStatusLamps();
+    
     console.log('[AI Chat] Initialized');
 }
 
@@ -495,6 +498,7 @@ function toggleFavorite(modelKey) {
     saveChatPreferences();
     rebuildModelSelect();
     updateFavoritesList();
+    initStatusLamps(); // Refresh status lamps
 }
 
 // Export for global access
@@ -914,6 +918,158 @@ function loadChatPreferences() {
     
     updateModelUI();
 }
+
+/**
+ * Initialize status lamps for favorite models
+ */
+let pingCheckTimeout = null;
+let isPinging = false;
+
+function initStatusLamps() {
+    const container = document.getElementById('aiStatusLamps');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    // Create lamps only for favorite models
+    if (chatState.favoriteModels.length === 0) {
+        return;
+    }
+    
+    chatState.favoriteModels.forEach(modelKey => {
+        const config = MODEL_CONFIG[modelKey];
+        if (!config) return;
+        
+        const lamp = document.createElement('div');
+        lamp.className = 'status-lamp';
+        lamp.id = `lamp-${modelKey}`;
+        lamp.setAttribute('data-model', config.name);
+        lamp.title = config.name;
+        
+        // Click to manually recheck
+        lamp.addEventListener('click', () => {
+            pingModelAPI(modelKey);
+        });
+        
+        container.appendChild(lamp);
+    });
+    
+    // Debounce ping checks - cancel previous timeout
+    if (pingCheckTimeout) {
+        clearTimeout(pingCheckTimeout);
+    }
+    
+    // Wait a bit for page stabilization, then ping all models (only once)
+    pingCheckTimeout = setTimeout(() => {
+        if (!isPinging) {
+            console.log('[AI Status] Starting API health checks...');
+            checkAllFavoriteModels();
+        }
+    }, 2000);
+}
+
+/**
+ * Check all favorite models status
+ */
+async function checkAllFavoriteModels() {
+    if (isPinging) {
+        console.log('[AI Status] Already checking, skipping...');
+        return;
+    }
+    
+    isPinging = true;
+    
+    for (const modelKey of chatState.favoriteModels) {
+        await pingModelAPI(modelKey);
+        // Small delay between requests
+        await new Promise(resolve => setTimeout(resolve, 500));
+    }
+    
+    isPinging = false;
+}
+
+/**
+ * Ping a specific model API to check health
+ */
+async function pingModelAPI(modelKey) {
+    const lamp = document.getElementById(`lamp-${modelKey}`);
+    if (!lamp) return;
+    
+    const config = MODEL_CONFIG[modelKey];
+    if (!config) return;
+    
+    // Set checking state
+    lamp.className = 'status-lamp checking';
+    
+    try {
+        // Test with a minimal request
+        let response;
+        
+        if (config.provider === 'openai') {
+            response = await fetch(config.apiUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${chatState.apiKey || 'test'}`
+                },
+                body: JSON.stringify({
+                    model: config.model,
+                    messages: [{ role: 'user', content: 'test' }],
+                    max_tokens: 5
+                })
+            });
+        } else if (config.provider === 'claude') {
+            response = await fetch(config.apiUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-api-key': chatState.apiKey || 'test',
+                    'anthropic-version': '2023-06-01'
+                },
+                body: JSON.stringify({
+                    model: config.model,
+                    messages: [{ role: 'user', content: 'test' }],
+                    max_tokens: 5
+                })
+            });
+        } else if (config.provider === 'gemini') {
+            const apiKey = chatState.apiKey || 'test';
+            const url = `${config.apiUrl}?key=${apiKey}`;
+            response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    contents: [{
+                        parts: [{ text: 'test' }]
+                    }]
+                })
+            });
+        }
+        
+        // Check response
+        if (response && response.ok) {
+            lamp.className = 'status-lamp success';
+            console.log(`[AI Status] ${config.name}: ✅ OK`);
+        } else {
+            // API keys might be invalid, but endpoint exists
+            if (response && (response.status === 401 || response.status === 403)) {
+                lamp.className = 'status-lamp success';
+                console.log(`[AI Status] ${config.name}: ✅ OK (endpoint reachable)`);
+            } else {
+                lamp.className = 'status-lamp error';
+                console.log(`[AI Status] ${config.name}: ❌ Error`);
+            }
+        }
+    } catch (error) {
+        lamp.className = 'status-lamp error';
+        console.log(`[AI Status] ${config.name}: ❌ ${error.message}`);
+    }
+}
+
+// Export for external access
+window.recheckAIStatus = checkAllFavoriteModels;
 
 // Export for global access
 window.toggleAIChat = toggleChatWindow;
