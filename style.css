@@ -1354,6 +1354,117 @@ input:disabled {
     transform: translateY(0);
 }
 
+/* Model select wrapper with favorite button */
+.model-select-wrapper {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.model-select-wrapper select {
+    flex: 1;
+}
+
+.toggle-favorite-btn {
+    background: transparent;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    color: #fbbf24;
+    padding: 6px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.2s;
+    opacity: 0.4;
+}
+
+.toggle-favorite-btn:hover {
+    opacity: 0.8;
+    border-color: rgba(251, 191, 36, 0.5);
+    background: rgba(251, 191, 36, 0.1);
+}
+
+.toggle-favorite-btn.active {
+    opacity: 1;
+    border-color: rgba(251, 191, 36, 0.6);
+    background: rgba(251, 191, 36, 0.15);
+}
+
+.chat-favorites-section {
+    margin-top: 8px;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    background: white;
+}
+
+.chat-favorites-toggle {
+    padding: 8px 12px;
+    cursor: pointer;
+    user-select: none;
+    font-weight: 500;
+    font-size: 0.875rem;
+    color: #374151;
+}
+
+.chat-favorites-toggle:hover {
+    background: #f9fafb;
+}
+
+.favorites-list {
+    padding: 8px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.favorite-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 8px;
+    border-radius: 4px;
+    margin-bottom: 4px;
+    background: #f9fafb;
+}
+
+.favorite-item:hover {
+    background: #f3f4f6;
+}
+
+.favorite-name {
+    font-size: 0.875rem;
+    color: #374151;
+}
+
+.favorite-remove {
+    background: none;
+    border: none;
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.favorite-remove:hover {
+    background: #fef3c7;
+    transform: scale(1.2);
+}
+
+.favorites-empty {
+    padding: 12px;
+    text-align: center;
+    font-size: 0.875rem;
+    color: #9ca3af;
+}
+
+.favorites-help {
+    padding: 8px 12px;
+    font-size: 0.75rem;
+    color: #6b7280;
+    background: #f9fafb;
+    border-top: 1px solid #e5e7eb;
+    text-align: center;
+}
+
 #chatMessages {
     flex: 1;
     overflow-y: auto;

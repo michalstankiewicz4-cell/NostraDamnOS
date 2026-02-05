@@ -9,7 +9,8 @@ const chatState = {
     selectedModel: 'openai', // default model
     apiKey: '',
     messages: [],
-    isProcessing: false
+    isProcessing: false,
+    favoriteModels: [] // List of favorite model IDs
 };
 
 // Model configurations
@@ -67,6 +68,102 @@ const MODEL_CONFIG = {
         keyLink: 'https://aistudio.google.com/app/apikey',
         keyPlaceholder: 'AIza...',
         provider: 'gemini'
+    },
+    'gemini-2.0-flash': {
+        name: 'Gemini 2.0 Flash',
+        apiUrl: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent',
+        model: 'gemini-2.0-flash',
+        keyLink: 'https://aistudio.google.com/app/apikey',
+        keyPlaceholder: 'AIza...',
+        provider: 'gemini'
+    },
+    'gemini-2.0-flash-lite': {
+        name: 'Gemini 2.0 Flash Lite',
+        apiUrl: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent',
+        model: 'gemini-2.0-flash-lite',
+        keyLink: 'https://aistudio.google.com/app/apikey',
+        keyPlaceholder: 'AIza...',
+        provider: 'gemini'
+    },
+    'gemini-exp-1206': {
+        name: 'Gemini Exp 1206',
+        apiUrl: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-exp-1206:generateContent',
+        model: 'gemini-exp-1206',
+        keyLink: 'https://aistudio.google.com/app/apikey',
+        keyPlaceholder: 'AIza...',
+        provider: 'gemini'
+    },
+    'gemini-flash-latest': {
+        name: 'Gemini Flash Latest',
+        apiUrl: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent',
+        model: 'gemini-flash-latest',
+        keyLink: 'https://aistudio.google.com/app/apikey',
+        keyPlaceholder: 'AIza...',
+        provider: 'gemini'
+    },
+    'gemini-pro-latest': {
+        name: 'Gemini Pro Latest',
+        apiUrl: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-latest:generateContent',
+        model: 'gemini-pro-latest',
+        keyLink: 'https://aistudio.google.com/app/apikey',
+        keyPlaceholder: 'AIza...',
+        provider: 'gemini'
+    },
+    'gemini-2.5-flash-image': {
+        name: 'Gemini 2.5 Flash Image',
+        apiUrl: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent',
+        model: 'gemini-2.5-flash-image',
+        keyLink: 'https://aistudio.google.com/app/apikey',
+        keyPlaceholder: 'AIza...',
+        provider: 'gemini'
+    },
+    'gemini-3-pro-image': {
+        name: 'Gemini 3 Pro Image Preview',
+        apiUrl: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-image-preview:generateContent',
+        model: 'gemini-3-pro-image-preview',
+        keyLink: 'https://aistudio.google.com/app/apikey',
+        keyPlaceholder: 'AIza...',
+        provider: 'gemini'
+    },
+    'gemini-computer-use': {
+        name: 'Gemini Computer Use Preview',
+        apiUrl: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-computer-use-preview-10-2025:generateContent',
+        model: 'gemini-2.5-computer-use-preview-10-2025',
+        keyLink: 'https://aistudio.google.com/app/apikey',
+        keyPlaceholder: 'AIza...',
+        provider: 'gemini'
+    },
+    'deep-research-pro': {
+        name: 'Deep Research Pro Preview',
+        apiUrl: 'https://generativelanguage.googleapis.com/v1beta/models/deep-research-pro-preview-12-2025:generateContent',
+        model: 'deep-research-pro-preview-12-2025',
+        keyLink: 'https://aistudio.google.com/app/apikey',
+        keyPlaceholder: 'AIza...',
+        provider: 'gemini'
+    },
+    'gemini-robotics': {
+        name: 'Gemini Robotics 1.5 Preview',
+        apiUrl: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-robotics-er-1.5-preview:generateContent',
+        model: 'gemini-robotics-er-1.5-preview',
+        keyLink: 'https://aistudio.google.com/app/apikey',
+        keyPlaceholder: 'AIza...',
+        provider: 'gemini'
+    },
+    'gemma-12b': {
+        name: 'Gemma 3 12B',
+        apiUrl: 'https://generativelanguage.googleapis.com/v1beta/models/gemma-3-12b-it:generateContent',
+        model: 'gemma-3-12b-it',
+        keyLink: 'https://aistudio.google.com/app/apikey',
+        keyPlaceholder: 'AIza...',
+        provider: 'gemini'
+    },
+    'gemma-27b': {
+        name: 'Gemma 3 27B',
+        apiUrl: 'https://generativelanguage.googleapis.com/v1beta/models/gemma-3-27b-it:generateContent',
+        model: 'gemma-3-27b-it',
+        keyLink: 'https://aistudio.google.com/app/apikey',
+        keyPlaceholder: 'AIza...',
+        provider: 'gemini'
     }
 };
 
@@ -81,6 +178,14 @@ export function initAIChat() {
     
     // Setup event listeners
     setupChatEventListeners();
+    
+    // Rebuild model select with favorites
+    rebuildModelSelect();
+    
+    // Update UI states
+    updateModelUI();
+    updateFavoriteButton();
+    updateFavoritesList();
     
     console.log('[AI Chat] Initialized');
 }
@@ -124,7 +229,17 @@ function setupChatEventListeners() {
         modelSelect.addEventListener('change', (e) => {
             chatState.selectedModel = e.target.value;
             updateModelUI();
+            updateFavoriteButton();
             saveChatPreferences();
+        });
+    }
+    
+    // Toggle favorite button
+    const toggleFavoriteBtn = document.getElementById('toggleFavoriteBtn');
+    if (toggleFavoriteBtn) {
+        toggleFavoriteBtn.addEventListener('click', () => {
+            toggleFavorite(chatState.selectedModel);
+            updateFavoriteButton();
         });
     }
     
@@ -187,6 +302,177 @@ function updateModelUI() {
         apiKeyInput.placeholder = config.keyPlaceholder;
     }
 }
+
+/**
+ * Update favorite button visual state
+ */
+function updateFavoriteButton() {
+    const toggleBtn = document.getElementById('toggleFavoriteBtn');
+    if (!toggleBtn) return;
+    
+    const isFavorite = chatState.favoriteModels.includes(chatState.selectedModel);
+    if (isFavorite) {
+        toggleBtn.classList.add('active');
+        toggleBtn.title = 'Usuń z ulubionych';
+    } else {
+        toggleBtn.classList.remove('active');
+        toggleBtn.title = 'Dodaj do ulubionych';
+    }
+}
+
+/**
+ * Rebuild model select with favorites on top
+ */
+function rebuildModelSelect() {
+    const modelSelect = document.getElementById('aiModelSelect');
+    if (!modelSelect) return;
+    
+    const currentValue = modelSelect.value;
+    modelSelect.innerHTML = '';
+    
+    // Separate models into categories
+    const favoriteModels = [];
+    const openaiModel = [];
+    const claudeModel = [];
+    const geminiMain = [];
+    const gemini20 = [];
+    const geminiLatest = [];
+    const geminiSpecial = [];
+    const gemmaModels = [];
+    
+    Object.keys(MODEL_CONFIG).forEach(key => {
+        const config = MODEL_CONFIG[key];
+        const isFavorite = chatState.favoriteModels.includes(key);
+        
+        const option = { value: key, text: config.name, isFavorite };
+        
+        if (isFavorite) {
+            favoriteModels.push(option);
+        } else if (key === 'openai') {
+            openaiModel.push(option);
+        } else if (key === 'claude') {
+            claudeModel.push(option);
+        } else if (['gemini-3-flash', 'gemini-3-pro', 'gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.5-pro'].includes(key)) {
+            geminiMain.push(option);
+        } else if (['gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-exp-1206'].includes(key)) {
+            gemini20.push(option);
+        } else if (['gemini-flash-latest', 'gemini-pro-latest'].includes(key)) {
+            geminiLatest.push(option);
+        } else if (key.startsWith('gemma')) {
+            gemmaModels.push(option);
+        } else {
+            geminiSpecial.push(option);
+        }
+    });
+    
+    // Add favorites group if any
+    if (favoriteModels.length > 0) {
+        const favGroup = document.createElement('optgroup');
+        favGroup.label = '⭐ Ulubione';
+        favoriteModels.forEach(opt => {
+            const option = document.createElement('option');
+            option.value = opt.value;
+            option.textContent = opt.text;
+            favGroup.appendChild(option);
+        });
+        modelSelect.appendChild(favGroup);
+    }
+    
+    // Add other groups
+    const addGroup = (label, options) => {
+        if (options.length === 0) return;
+        const group = document.createElement('optgroup');
+        group.label = label;
+        options.forEach(opt => {
+            const option = document.createElement('option');
+            option.value = opt.value;
+            option.textContent = opt.text;
+            group.appendChild(option);
+        });
+        modelSelect.appendChild(group);
+    };
+    
+    openaiModel.forEach(opt => {
+        const option = document.createElement('option');
+        option.value = opt.value;
+        option.textContent = opt.text;
+        modelSelect.appendChild(option);
+    });
+    
+    claudeModel.forEach(opt => {
+        const option = document.createElement('option');
+        option.value = opt.value;
+        option.textContent = opt.text;
+        modelSelect.appendChild(option);
+    });
+    
+    addGroup('🔥 Gemini - Główne', geminiMain);
+    addGroup('⚡ Gemini 2.0', gemini20);
+    addGroup('📌 Latest', geminiLatest);
+    addGroup('🎨 Image & Specjalne', geminiSpecial);
+    addGroup('🤖 Gemma (Open Models)', gemmaModels);
+    
+    // Restore selected value
+    if (currentValue && MODEL_CONFIG[currentValue]) {
+        modelSelect.value = currentValue;
+    }
+    
+    // Update favorites UI
+    updateFavoritesList();
+}
+
+/**
+ * Update favorites list UI
+ */
+function updateFavoritesList() {
+    const favList = document.getElementById('favoritesList');
+    if (!favList) return;
+    
+    if (chatState.favoriteModels.length === 0) {
+        favList.innerHTML = '<div class="favorites-empty">Brak ulubionych. Kliknij ⭐ obok modelu aby dodać.</div>';
+        return;
+    }
+    
+    favList.innerHTML = '';
+    chatState.favoriteModels.forEach(modelKey => {
+        const config = MODEL_CONFIG[modelKey];
+        if (!config) return;
+        
+        const item = document.createElement('div');
+        item.className = 'favorite-item';
+        item.innerHTML = `
+            <span class="favorite-name">${config.name}</span>
+            <button class="favorite-remove" data-model="${modelKey}" title="Usuń z ulubionych">⭐</button>
+        `;
+        
+        const removeBtn = item.querySelector('.favorite-remove');
+        removeBtn.addEventListener('click', () => toggleFavorite(modelKey));
+        
+        favList.appendChild(item);
+    });
+}
+
+/**
+ * Toggle favorite status of a model
+ */
+function toggleFavorite(modelKey) {
+    const index = chatState.favoriteModels.indexOf(modelKey);
+    
+    if (index > -1) {
+        // Remove from favorites
+        chatState.favoriteModels.splice(index, 1);
+    } else {
+        // Add to favorites
+        chatState.favoriteModels.push(modelKey);
+    }
+    
+    saveChatPreferences();
+    rebuildModelSelect();
+    updateFavoritesList();
+}
+
+// Export for global access
+window.toggleFavorite = toggleFavorite;
 
 /**
  * Check available Gemini models for the API key
@@ -561,6 +847,7 @@ function formatMessage(content) {
 function saveChatPreferences() {
     localStorage.setItem('aiChat_model', chatState.selectedModel);
     localStorage.setItem('aiChat_apiKey', chatState.apiKey);
+    localStorage.setItem('aiChat_favorites', JSON.stringify(chatState.favoriteModels));
 }
 
 /**
@@ -569,6 +856,7 @@ function saveChatPreferences() {
 function loadChatPreferences() {
     const savedModel = localStorage.getItem('aiChat_model');
     const savedKey = localStorage.getItem('aiChat_apiKey');
+    const savedFavorites = localStorage.getItem('aiChat_favorites');
     
     if (savedModel && MODEL_CONFIG[savedModel]) {
         chatState.selectedModel = savedModel;
@@ -580,6 +868,14 @@ function loadChatPreferences() {
         chatState.apiKey = savedKey;
         const apiKeyInput = document.getElementById('aiApiKey');
         if (apiKeyInput) apiKeyInput.value = savedKey;
+    }
+    
+    if (savedFavorites) {
+        try {
+            chatState.favoriteModels = JSON.parse(savedFavorites) || [];
+        } catch (e) {
+            chatState.favoriteModels = [];
+        }
     }
     
     updateModelUI();
