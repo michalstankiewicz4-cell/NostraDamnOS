@@ -1,4 +1,4 @@
-# 🏛️ PIMP - Polityczny Informator Model Predykcyjny ©
+# 🏛️ PIMP - Polityczny Informator, Model Predykcyjny ©
 <sub>Oficjalna nazwa: PIMP© | Repo: NostraDamnOS | v4.0.0</sub>
 
 <sub>Autor: Michał Stankiewicz | Współtwórcy: Claude Sonnet 4.5 & GitHub Copilot</sub>
