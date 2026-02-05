@@ -10,7 +10,8 @@ const chatState = {
     apiKey: '',
     messages: [],
     isProcessing: false,
-    favoriteModels: [] // List of favorite model IDs
+    favoriteModels: [], // List of favorite model IDs
+    showAllModels: true // Filter: true = all models, false = favorites only
 };
 
 // Model configurations
@@ -243,6 +244,16 @@ function setupChatEventListeners() {
         });
     }
     
+    // Show all models checkbox
+    const showAllCheckbox = document.getElementById('showAllModels');
+    if (showAllCheckbox) {
+        showAllCheckbox.addEventListener('change', (e) => {
+            chatState.showAllModels = e.target.checked;
+            rebuildModelSelect();
+            saveChatPreferences();
+        });
+    }
+    
     // API Key input
     const apiKeyInput = document.getElementById('aiApiKey');
     if (apiKeyInput) {
@@ -330,6 +341,16 @@ function rebuildModelSelect() {
     const currentValue = modelSelect.value;
     modelSelect.innerHTML = '';
     
+    // If showing only favorites and no favorites exist, show helpful message
+    if (!chatState.showAllModels && chatState.favoriteModels.length === 0) {
+        const option = document.createElement('option');
+        option.value = '';
+        option.textContent = 'Brak ulubionych - zaznacz "Pokaż wszystkie"';
+        option.disabled = true;
+        modelSelect.appendChild(option);
+        return;
+    }
+    
     // Separate models into categories
     const favoriteModels = [];
     const openaiModel = [];
@@ -343,6 +364,11 @@ function rebuildModelSelect() {
     Object.keys(MODEL_CONFIG).forEach(key => {
         const config = MODEL_CONFIG[key];
         const isFavorite = chatState.favoriteModels.includes(key);
+        
+        // Skip non-favorites if filter is active
+        if (!chatState.showAllModels && !isFavorite) {
+            return;
+        }
         
         const option = { value: key, text: config.name, isFavorite };
         
@@ -848,6 +874,7 @@ function saveChatPreferences() {
     localStorage.setItem('aiChat_model', chatState.selectedModel);
     localStorage.setItem('aiChat_apiKey', chatState.apiKey);
     localStorage.setItem('aiChat_favorites', JSON.stringify(chatState.favoriteModels));
+    localStorage.setItem('aiChat_showAllModels', chatState.showAllModels.toString());
 }
 
 /**
@@ -857,6 +884,7 @@ function loadChatPreferences() {
     const savedModel = localStorage.getItem('aiChat_model');
     const savedKey = localStorage.getItem('aiChat_apiKey');
     const savedFavorites = localStorage.getItem('aiChat_favorites');
+    const savedShowAll = localStorage.getItem('aiChat_showAllModels');
     
     if (savedModel && MODEL_CONFIG[savedModel]) {
         chatState.selectedModel = savedModel;
@@ -868,6 +896,12 @@ function loadChatPreferences() {
         chatState.apiKey = savedKey;
         const apiKeyInput = document.getElementById('aiApiKey');
         if (apiKeyInput) apiKeyInput.value = savedKey;
+    }
+    
+    if (savedShowAll !== null) {
+        chatState.showAllModels = savedShowAll === 'true';
+        const showAllCheckbox = document.getElementById('showAllModels');
+        if (showAllCheckbox) showAllCheckbox.checked = chatState.showAllModels;
     }
     
     if (savedFavorites) {

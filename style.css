@@ -1354,6 +1354,34 @@ input:disabled {
     transform: translateY(0);
 }
 
+/* Filter checkbox row */
+.chat-filter-row {
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.chat-filter-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    user-select: none;
+    font-size: 14px;
+    color: #374151;
+}
+
+.chat-filter-checkbox input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: #3b82f6;
+}
+
+.chat-filter-checkbox:hover span {
+    color: #1f2937;
+}
+
 /* Model select wrapper with favorite button */
 .model-select-wrapper {
     display: flex;
