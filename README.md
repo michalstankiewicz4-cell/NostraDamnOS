@@ -1,5 +1,5 @@
-# 🏛️ Parlament "puppy"
-<sub>Oficjalna nazwa: Parlament "puppy" | Repo: NostraDamnOS | v2.1.1</sub>
+# 🏛️ PIMP - Polityczny Informator Model Predykcyjny (c)
+<sub>Oficjalna nazwa: PIMP(c) | Repo: NostraDamnOS | v4.0.0</sub>
 
 <sub>Autor: Michał Stankiewicz | Współtwórcy: Claude Sonnet 4.5 & GitHub Copilot</sub>
 
@@ -22,7 +22,7 @@ System do analizy wypowiedzi parlamentarnych z API Sejmu RP.
 
 ## 🐶 O Projekcie
 
-**Parlament "puppy"** to zaawansowany system monitorowania pracy parlamentu w czasie rzeczywistym, oparty na danych z oficjalnego API Sejmu.
+**PIMP** to zaawansowany system monitorowania pracy parlamentu w czasie rzeczywistym, oparty na danych z oficjalnego API Sejmu.
 
 **Kluczowe możliwości:**
 - 🗳️ **Analiza głosowań** - pełne dane o głosowaniach, dyscyplinie klubowej, nieobecnościach
