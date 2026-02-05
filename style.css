@@ -1332,6 +1332,28 @@ input:disabled {
     text-decoration: underline;
 }
 
+.chat-check-models-btn {
+    width: 100%;
+    padding: 8px 12px;
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.chat-check-models-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.chat-check-models-btn:active {
+    transform: translateY(0);
+}
+
 #chatMessages {
     flex: 1;
     overflow-y: auto;

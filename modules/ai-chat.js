@@ -6,7 +6,7 @@ import { db2 } from './database-v2.js';
 // State
 const chatState = {
     isOpen: false,
-    selectedModel: 'openai', // 'openai', 'claude', 'gemini'
+    selectedModel: 'openai', // default model
     apiKey: '',
     messages: [],
     isProcessing: false
@@ -28,12 +28,45 @@ const MODEL_CONFIG = {
         keyLink: 'https://console.anthropic.com/settings/keys',
         keyPlaceholder: 'sk-ant-...'
     },
-    gemini: {
-        name: 'Google Gemini',
-        apiUrl: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent',
-        model: 'gemini-pro',
-        keyLink: 'https://makersuite.google.com/app/apikey',
-        keyPlaceholder: 'AIza...'
+    'gemini-3-flash': {
+        name: 'Gemini 3 Flash Preview',
+        apiUrl: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent',
+        model: 'gemini-3-flash-preview',
+        keyLink: 'https://aistudio.google.com/app/apikey',
+        keyPlaceholder: 'AIza...',
+        provider: 'gemini'
+    },
+    'gemini-3-pro': {
+        name: 'Gemini 3 Pro Preview',
+        apiUrl: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-preview:generateContent',
+        model: 'gemini-3-pro-preview',
+        keyLink: 'https://aistudio.google.com/app/apikey',
+        keyPlaceholder: 'AIza...',
+        provider: 'gemini'
+    },
+    'gemini-2.5-flash': {
+        name: 'Gemini 2.5 Flash',
+        apiUrl: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
+        model: 'gemini-2.5-flash',
+        keyLink: 'https://aistudio.google.com/app/apikey',
+        keyPlaceholder: 'AIza...',
+        provider: 'gemini'
+    },
+    'gemini-2.5-flash-lite': {
+        name: 'Gemini 2.5 Flash Lite',
+        apiUrl: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent',
+        model: 'gemini-2.5-flash-lite',
+        keyLink: 'https://aistudio.google.com/app/apikey',
+        keyPlaceholder: 'AIza...',
+        provider: 'gemini'
+    },
+    'gemini-2.5-pro': {
+        name: 'Gemini 2.5 Pro',
+        apiUrl: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent',
+        model: 'gemini-2.5-pro',
+        keyLink: 'https://aistudio.google.com/app/apikey',
+        keyPlaceholder: 'AIza...',
+        provider: 'gemini'
     }
 };
 
@@ -110,6 +143,15 @@ function setupChatEventListeners() {
         sendBtn.addEventListener('click', sendMessage);
     }
     
+    // Check available models button
+    const checkModelsBtn = document.getElementById('checkModelsBtn');
+    if (checkModelsBtn) {
+        console.log('[AI Chat] Check models button found, attaching listener');
+        checkModelsBtn.addEventListener('click', checkAvailableModels);
+    } else {
+        console.warn('[AI Chat] Check models button NOT found');
+    }
+    
     // Enter key to send
     const chatInput = document.getElementById('chatInput');
     if (chatInput) {
@@ -143,6 +185,66 @@ function updateModelUI() {
     
     if (apiKeyInput) {
         apiKeyInput.placeholder = config.keyPlaceholder;
+    }
+}
+
+/**
+ * Check available Gemini models for the API key
+ */
+async function checkAvailableModels() {
+    console.log('[AI Chat] checkAvailableModels() called');
+    
+    const apiKey = chatState.apiKey;
+    
+    if (!apiKey) {
+        console.log('[AI Chat] No API key provided');
+        addMessageToChat('system', '⚠️ Proszę najpierw podać klucz API');
+        return;
+    }
+    
+    if (!chatState.selectedModel.startsWith('gemini')) {
+        console.log('[AI Chat] Selected model is not Gemini:', chatState.selectedModel);
+        addMessageToChat('system', 'ℹ️ Ta funkcja działa tylko dla modeli Google Gemini');
+        return;
+    }
+    
+    console.log('[AI Chat] Checking models with API key');
+    addMessageToChat('system', '🔍 Sprawdzam dostępne modele Gemini...');
+    
+    try {
+        const response = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`
+        );
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error?.message || 'API request failed');
+        }
+        
+        const data = await response.json();
+        
+        if (!data.models || data.models.length === 0) {
+            addMessageToChat('system', '❌ Brak dostępnych modeli');
+            return;
+        }
+        
+        // Filter only models that support generateContent
+        const availableModels = data.models
+            .filter(m => m.supportedGenerationMethods?.includes('generateContent'))
+            .map(m => m.name.replace('models/', ''));
+        
+        let message = `✅ **Dostępne modele Gemini (${availableModels.length}):**\n\n`;
+        availableModels.forEach(model => {
+            message += `• ${model}\n`;
+        });
+        
+        addMessageToChat('assistant', message);
+        
+        console.log('[AI Chat] Available Gemini models:', availableModels);
+        
+    } catch (error) {
+        console.error('[AI Chat] Error checking models:', error);
+        addMessageToChat('system', `❌ Błąd: ${error.message}`);
     }
 }
 
@@ -224,7 +326,7 @@ Odpowiadaj zawsze po polsku. Jeśli generujesz SQL, umieść go w bloku kodu.`;
         response = await callOpenAI(systemPrompt, userMessage, config);
     } else if (chatState.selectedModel === 'claude') {
         response = await callClaude(systemPrompt, userMessage, config);
-    } else if (chatState.selectedModel === 'gemini') {
+    } else if (config.provider === 'gemini') {
         response = await callGemini(systemPrompt, userMessage, config);
     }
     
