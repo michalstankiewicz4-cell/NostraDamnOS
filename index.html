@@ -455,6 +455,46 @@
     <button id="exportDbBtn" class="floating-btn btn-export" title="Export bazy danych">📤</button>
     <button id="cleanRodoBtn" class="floating-btn btn-rodo" title="Wyczyść dane wrażliwe (RODO)">🔐</button>
 
+    <!-- AI Chat Assistant Button -->
+    <button id="aiChatBtn" class="floating-btn btn-ai-chat" title="Chat z AI Asystentem">🤖</button>
+
+    <!-- AI Chat Window -->
+    <div id="aiChatWindow">
+        <div class="chat-header">
+            <h3>🤖 AI Asystent</h3>
+            <button id="closeChatBtn" class="chat-close-btn">×</button>
+        </div>
+        
+        <div class="chat-config">
+            <div class="chat-config-row">
+                <label for="aiModelSelect">Model AI:</label>
+                <select id="aiModelSelect">
+                    <option value="openai">OpenAI GPT-4</option>
+                    <option value="claude">Anthropic Claude 3.5</option>
+                    <option value="gemini">Google Gemini Pro</option>
+                </select>
+            </div>
+            
+            <div class="chat-config-row">
+                <a id="apiKeyLink" href="https://platform.openai.com/api-keys" target="_blank" class="chat-api-link">
+                    🔑 Wygeneruj klucz API
+                </a>
+            </div>
+            
+            <div class="chat-config-row">
+                <label for="aiApiKey">Klucz API:</label>
+                <input type="password" id="aiApiKey" placeholder="sk-..." />
+            </div>
+        </div>
+        
+        <div id="chatMessages"></div>
+        
+        <div class="chat-input-area">
+            <textarea id="chatInput" placeholder="Zadaj pytanie o dane parlamentarne..." rows="1"></textarea>
+            <button id="sendChatBtn" title="Wyślij wiadomość">📤</button>
+        </div>
+    </div>
+
     <!-- Floating Status Bar (Bottom) -->
     <div id="floatingStatusBar" style="position: fixed; bottom: 0; left: 0; right: 0; width: 100%; height: 25px; background: #2d3748; border-top: 2px solid #1a202c; display: flex; align-items: center; padding: 0 20px; gap: 16px; z-index: 2000; box-shadow: 0 -2px 12px rgba(0,0,0,0.3); font-size: 0.8rem; color: #e2e8f0; font-family: 'Courier New', 'Consolas', 'Monaco', monospace;">
         
@@ -715,6 +755,17 @@
     <script type="module">
         import { initDbButtons } from './modules/db-buttons.js';
         initDbButtons();
+    </script>
+
+    <script type="module">
+        import { initAIChat } from './modules/ai-chat.js';
+        
+        // Initialize AI Chat after DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initAIChat);
+        } else {
+            initAIChat();
+        }
     </script>
 </body>
 </html>

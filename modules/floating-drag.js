@@ -238,11 +238,12 @@ export function initUIMode() {
     const cleanRodoBtn = document.getElementById('cleanRodoBtn');
     const languageBtn = document.getElementById('languageBtn');
     const helpBtn = document.getElementById('helpBtn');
+    const aiChatBtn = document.getElementById('aiChatBtn');
     const sidebar = document.getElementById('sidebar');
     const sidebarLeft = document.getElementById('sidebarLeft');
     const sidebarContent = document.getElementById('sidebarContent');
 
-    const toolsButtons = [importDbBtn, exportDbBtn, cleanRodoBtn, languageBtn, helpBtn];
+    const toolsButtons = [importDbBtn, exportDbBtn, cleanRodoBtn, languageBtn, helpBtn, aiChatBtn];
 
     const updateUIMode = () => {
         if (uiMode === 1) {
