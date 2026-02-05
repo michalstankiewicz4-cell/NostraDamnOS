@@ -1,5 +1,5 @@
-# 🏛️ PIMP© - Polityczny Informator, Model Predykcyjny
-<sub>Oficjalna nazwa: PIMP© | Repo: NostraDamnOS | v4.0.0</sub>
+# 🏛️ Parlament PIMP© - Polityczny Informator, Model Predykcyjny
+<sub>Oficjalna nazwa: Parlament PIMP© | Repo: NostraDamnOS | v4.0.0</sub>
 
 <sub>Autor: Michał Stankiewicz | Współtwórcy: Claude Sonnet 4.5 & GitHub Copilot</sub>
 
@@ -22,7 +22,7 @@ System do analizy wypowiedzi parlamentarnych z API Sejmu RP.
 
 ## 🐶 O Projekcie
 
-**PIMP**© to zaawansowany system monitorowania pracy parlamentu w czasie rzeczywistym, oparty na danych z oficjalnego API Sejmu.
+**Parlament PIMP**© to zaawansowany system monitorowania pracy parlamentu w czasie rzeczywistym, oparty na danych z oficjalnego API Sejmu.
 
 **Kluczowe możliwości:**
 - 🗳️ **Analiza głosowań** - pełne dane o głosowaniach, dyscyplinie klubowej, nieobecnościach
