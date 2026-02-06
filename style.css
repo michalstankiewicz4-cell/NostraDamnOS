@@ -863,8 +863,8 @@ input:disabled {
 /* UI Hold Progress (10s reset) */
 #uiHoldProgress {
     position: fixed;
-    left: 20px;
-    top: 90px;
+    left: 90px;
+    top: 20px;
     width: 140px;
     height: 8px;
     background: rgba(15, 23, 42, 0.35);
@@ -888,7 +888,7 @@ input:disabled {
 .btn-language {
     display: none;
     top: 90px;
-    left: 90px;
+    left: 20px;
     background: linear-gradient(135deg, #667eea, #764ba2);
 }
 
@@ -896,7 +896,7 @@ input:disabled {
 .btn-help {
     display: none;
     top: 160px;
-    left: 90px;
+    left: 20px;
     background: linear-gradient(135deg, #667eea, #764ba2);
 }
 
@@ -904,7 +904,7 @@ input:disabled {
 .btn-import {
     display: none;
     top: 230px;
-    left: 90px;
+    left: 20px;
     background: linear-gradient(135deg, #10b981, #059669);
 }
 
@@ -912,7 +912,7 @@ input:disabled {
 .btn-export {
     display: none;
     top: 300px;
-    left: 90px;
+    left: 20px;
     background: linear-gradient(135deg, #3b82f6, #2563eb);
 }
 
@@ -920,7 +920,7 @@ input:disabled {
 .btn-rodo {
     display: none;
     top: 370px;
-    left: 90px;
+    left: 20px;
     background: linear-gradient(135deg, #ec4899, #db2777);
 }
 
@@ -1225,7 +1225,7 @@ input:disabled {
 /* AI Chat Assistant */
 .btn-ai-chat {
     top: 440px;
-    left: 90px;
+    left: 20px;
     background: linear-gradient(135deg, #10b981, #059669);
 }
 
