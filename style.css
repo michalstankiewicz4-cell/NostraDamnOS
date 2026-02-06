@@ -887,40 +887,40 @@ input:disabled {
 /* Language Button */
 .btn-language {
     display: none;
-    top: 20px;
-    right: 90px;
+    top: 90px;
+    left: 90px;
     background: linear-gradient(135deg, #667eea, #764ba2);
 }
 
 /* Help Button */
 .btn-help {
     display: none;
-    top: 20px;
-    right: 20px;
+    top: 160px;
+    left: 90px;
     background: linear-gradient(135deg, #667eea, #764ba2);
 }
 
 /* Import Button */
 .btn-import {
     display: none;
-    bottom: 160px;
-    right: 20px;
+    top: 230px;
+    left: 90px;
     background: linear-gradient(135deg, #10b981, #059669);
 }
 
 /* Export Button */
 .btn-export {
     display: none;
-    bottom: 90px;
-    right: 20px;
+    top: 300px;
+    left: 90px;
     background: linear-gradient(135deg, #3b82f6, #2563eb);
 }
 
 /* RODO Button */
 .btn-rodo {
     display: none;
-    bottom: 160px;
-    right: 90px;
+    top: 370px;
+    left: 90px;
     background: linear-gradient(135deg, #ec4899, #db2777);
 }
 
@@ -1224,8 +1224,8 @@ input:disabled {
 
 /* AI Chat Assistant */
 .btn-ai-chat {
-    bottom: 100px;
-    right: 20px;
+    top: 440px;
+    left: 90px;
     background: linear-gradient(135deg, #10b981, #059669);
 }
 
