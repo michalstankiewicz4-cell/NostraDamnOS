@@ -99,7 +99,7 @@ python -m http.server 8766
 | [README.md](README.md) | Ten plik - szybki start i przegląd projektu |
 | [CHANGELOG.md](CHANGELOG.md) | Historia zmian i wersji projektu |
 | [PROJECT-CONTEXT.md](PROJECT-CONTEXT.md) | Kontekst projektowy, założenia i cele |
-| [LICENSE](LICENSE) | Licencja MIT |
+| [LICENSE](LICENSE) | Licencja MIT do wersji 3.x.x |
 
 ### Architektura (/docs)
 | Plik | Opis |
