@@ -65,7 +65,7 @@
         document.addEventListener('DOMContentLoaded', loadProjectMetadata);
     </script>
     
-    <!-- Console Log Interceptor - catches ALL logs and redirects to UI -->
+    <!-- Console Log Interceptor - catches ALL logs and redirects to floating console -->
     <script>
         // Buffer for early logs (before UI console exists)
         window.logBuffer = [];
@@ -91,7 +91,7 @@
             const timestamp = new Date().toLocaleTimeString();
             const formattedLog = `[${timestamp}] ${message}`;
             
-            // Try to add to UI console
+            // Add to floating console (invisible apiLogs div)
             const apiLogs = document.getElementById('apiLogs');
             
             if (apiLogs) {
@@ -155,282 +155,439 @@
             </div>
         </div>
 
-        <main>
-            <!-- ETL PANEL -->
-            <h2 class="etl-heading">
-                📥 Import Danych z API Sejmu
-            </h2>
-            
-            <div class="etl-panel">
-                <div class="etl-sidebar">
-                    <h3>📊 Konfiguracja ETL</h3>
-                    
-                    <div class="summary-item">
-                        <strong>Instytucja:</strong>
-                        <span id="etlInstitution">Sejm</span>
-                    </div>
-                    
-                    <div class="summary-item">
-                        <strong>Kadencja:</strong>
-                        <span id="etlTerm">10</span>
-                    </div>
-                    
-                    <div class="summary-item">
-                        <strong>Zakres:</strong>
-                        <span id="etlRange">2 posiedzenia</span>
-                    </div>
-                    
-                    <div class="summary-item etl-summary-column">
-                        <strong>Dane:</strong>
-                        <div class="summary-data-list" id="etlData">wypowiedzi</div>
-                    </div>
-                    
-                    <div class="estimate-box">
-                        <div class="estimate-title">💡 Estymacja</div>
-                        <div class="estimate-grid">
-                            <div class="estimate-row">
-                                <span class="estimate-label">Rozmiar:</span>
-                                <span class="estimate-value" id="etlSize">~700 KB</span>
-                            </div>
-                            <div class="estimate-row">
-                                <span class="estimate-label">Czas:</span>
-                                <span class="estimate-value" id="etlTime">~10-15s</span>
-                            </div>
-                            <div class="estimate-row estimate-row-last">
-                                <span class="estimate-label">Requesty:</span>
-                                <span class="estimate-value" id="etlRequests">~25</span>
+        <!-- MAIN - 4 SEKCJE Z NAWIGACJĄ -->
+        <main class="app-sections-container">
+
+            <!-- SEKCJA 1: FORMULARZ ETL -->
+            <section class="app-section active" data-section="1">
+                <h2 class="etl-heading">📥 Import Danych z API Sejmu</h2>
+                
+                <div class="etl-panel">
+                    <div class="etl-sidebar">
+                        <h3>📊 Konfiguracja ETL</h3>
+                        
+                        <div class="summary-item">
+                            <strong>Instytucja:</strong>
+                            <span id="etlInstitution">Sejm</span>
+                        </div>
+                        
+                        <div class="summary-item">
+                            <strong>Kadencja:</strong>
+                            <span id="etlTerm">10</span>
+                        </div>
+                        
+                        <div class="summary-item">
+                            <strong>Zakres:</strong>
+                            <span id="etlRange">2 posiedzenia</span>
+                        </div>
+                        
+                        <div class="summary-item etl-summary-column">
+                            <strong>Dane:</strong>
+                            <div class="summary-data-list" id="etlData">wypowiedzi</div>
+                        </div>
+                        
+                        <div class="estimate-box">
+                            <div class="estimate-title">💡 Estymacja</div>
+                            <div class="estimate-grid">
+                                <div class="estimate-row">
+                                    <span class="estimate-label">Rozmiar:</span>
+                                    <span class="estimate-value" id="etlSize">~700 KB</span>
+                                </div>
+                                <div class="estimate-row">
+                                    <span class="estimate-label">Czas:</span>
+                                    <span class="estimate-value" id="etlTime">~10-15s</span>
+                                </div>
+                                <div class="estimate-row estimate-row-last">
+                                    <span class="estimate-label">Requesty:</span>
+                                    <span class="estimate-value" id="etlRequests">~25</span>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    
-                    <div class="etl-rodo-box">
-                        <label class="etl-rodo-label">
-                            <input type="checkbox" id="etlRodoFilter" checked disabled>
-                            <span class="etl-rodo-span">🔒 Filtr RODO (zawsze aktywny)</span>
-                        </label>
-                        <div class="etl-rodo-description">
-                            ✓ Usuwa dane wrażliwe: email, telefon, PESEL
+                        
+                        <div class="etl-rodo-box">
+                            <label class="etl-rodo-label">
+                                <input type="checkbox" id="etlRodoFilter" checked disabled>
+                                <span class="etl-rodo-span">🔒 Filtr RODO (zawsze aktywny)</span>
+                            </label>
+                            <div class="etl-rodo-description">
+                                ✓ Usuwa dane wrażliwe: email, telefon, PESEL
+                            </div>
                         </div>
-                    </div>
-                    
-                    <div class="etl-relative-container">
-                        <input type="checkbox" id="fullDatabaseCheckbox" class="btn-checkbox">
-                        <button class="etl-btn etl-btn-primary" id="etlFetchBtn">
-                            📥 Pobierz/Zaktualizuj dane
+                        
+                        <div class="etl-relative-container">
+                            <input type="checkbox" id="fullDatabaseCheckbox" class="btn-checkbox">
+                            <button class="etl-btn etl-btn-primary" id="etlFetchBtn">
+                                📥 Pobierz/Zaktualizuj dane
+                            </button>
+                        </div>
+                        
+                        <button class="etl-btn etl-btn-verify" id="etlVerifyBtn">
+                            🔍 Sprawdź niezgodności
+                        </button>
+                        <button class="etl-btn etl-btn-danger" id="etlClearBtn">
+                            🗑️ Wyczyść bazę
                         </button>
                     </div>
                     
-                    <button class="etl-btn etl-btn-verify" id="etlVerifyBtn">
-                        🔍 Sprawdź niezgodności
-                    </button>
-                    <button class="etl-btn etl-btn-danger" id="etlClearBtn">
-                        🗑️ Wyczyść bazę
-                    </button>
+                    <div class="etl-main">
+                        <!-- Instytucja -->
+                        <fieldset class="etl-fieldset">
+                            <legend>🏛️ Instytucja</legend>
+                            <div class="etl-radio-group">
+                                <label class="etl-radio-option">
+                                    <input type="radio" name="etlInst" value="sejm" checked> Sejm
+                                </label>
+                                <label class="etl-radio-option">
+                                    <input type="radio" name="etlInst" value="senat"> Senat
+                                </label>
+                            </div>
+                        </fieldset>
+                        
+                        <!-- Kadencja -->
+                        <fieldset class="etl-fieldset">
+                            <legend>📅 Kadencja</legend>
+                            <select id="etlTermSelect" class="form-control">
+                                <option value="10">10. kadencja (2023-obecnie)</option>
+                                <option value="9">9. kadencja (2019-2023)</option>
+                                <option value="8">8. kadencja (2015-2019)</option>
+                                <option value="7">7. kadencja (2011-2015)</option>
+                            </select>
+                        </fieldset>
+                        
+                        <!-- Zakres posiedzeń -->
+                        <fieldset class="etl-fieldset">
+                            <legend>🎯 Zakres posiedzeń</legend>
+                            
+                            <label class="etl-radio-label">
+                                <input type="radio" name="rangeMode" value="last" checked>
+                                Ostatnie X posiedzeń:
+                            </label>
+                            <select id="etlRangeSelect" class="form-control etl-select-margin">
+                                <option value="1">1 posiedzenie</option>
+                                <option value="2" selected>2 posiedzenia</option>
+                                <option value="5">5 posiedzeń</option>
+                                <option value="10">10 posiedzeń</option>
+                                <option value="20">20 posiedzeń</option>
+                            </select>
+                            
+                            <label class="etl-radio-label">
+                                <input type="radio" name="rangeMode" value="custom">
+                                Zakres:
+                            </label>
+                            <div class="etl-input-group">
+                                <span id="etlRangeFromLabel" class="etl-input-label">od</span>
+                                <input type="number" id="etlRangeFrom" value="1" min="1" class="etl-number-input">
+                                <span id="etlRangeToLabel" class="etl-input-label">do:</span>
+                                <input type="number" id="etlRangeTo" value="3" min="1" class="etl-number-input">
+                            </div>
+                        </fieldset>
+                        
+                        <!-- Dane podstawowe -->
+                        <fieldset class="etl-fieldset">
+                            <legend>📋 Dane podstawowe</legend>
+                            <div class="etl-section-hint">Zawsze pobierane</div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="etlDeputies" checked disabled>
+                                <label for="etlDeputies">Posłowie/Senatorowie</label>
+                                <span class="badge badge-size">50 KB</span>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="etlSittings" checked disabled>
+                                <label for="etlSittings">Posiedzenia (lista)</label>
+                                <span class="badge badge-size">20 KB</span>
+                            </div>
+                        </fieldset>
+                        
+                        <!-- Dane per posiedzenie -->
+                        <fieldset class="etl-fieldset">
+                            <legend>📝 Dane per posiedzenie</legend>
+                            <div class="etl-section-hint">Incremental (per posiedzenie)</div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="etlTranscripts" data-size="300" checked>
+                                <label for="etlTranscripts">Wypowiedzi</label>
+                                <span class="badge badge-size">300 KB</span>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="etlVotings" data-size="80">
+                                <label for="etlVotings">Głosowania</label>
+                                <span class="badge badge-size">80 KB</span>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="etlVotes" data-size="400">
+                                <label for="etlVotes">Głosy indywidualne</label>
+                                <span class="badge badge-size">400 KB</span>
+                            </div>
+                        </fieldset>
+                        
+                        <!-- Dane per kadencja -->
+                        <fieldset class="etl-fieldset">
+                            <legend>🗂️ Dane per kadencja</legend>
+                            <div class="etl-section-hint">Cała kadencja (duże!)</div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="etlInterpellations" data-size="200">
+                                <label for="etlInterpellations">Interpelacje</label>
+                                <span class="badge badge-size">200 KB</span>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="etlWrittenQuestions" data-size="150">
+                                <label for="etlWrittenQuestions">Zapytania pisemne</label>
+                                <span class="badge badge-size">150 KB</span>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="etlBills" data-size="250">
+                                <label for="etlBills">Projekty ustaw</label>
+                                <span class="badge badge-size">250 KB</span>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="etlLegalActs" data-size="200">
+                                <label for="etlLegalActs">Ustawy (akty prawne)</label>
+                                <span class="badge badge-size">200 KB</span>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="etlDisclosures" data-size="500">
+                                <label for="etlDisclosures">Oświadczenia majątkowe</label>
+                                <span class="badge badge-size">500 KB</span>
+                            </div>
+                        </fieldset>
+                        
+                        <!-- Komisje -->
+                        <fieldset class="etl-fieldset">
+                            <legend>🏢 Komisje</legend>
+                            <div class="etl-section-hint">Wybierz dane komisji</div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="etlCommitteeSittings" data-size="80">
+                                <label for="etlCommitteeSittings">Posiedzenia komisji</label>
+                                <span class="badge badge-size">80 KB</span>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="etlCommitteeStatements" data-size="200">
+                                <label for="etlCommitteeStatements">Wypowiedzi komisji</label>
+                                <span class="badge badge-size">200 KB</span>
+                            </div>
+                            
+                            <div class="etl-fieldset-margin">
+                                <label class="etl-checkbox-label">
+                                    📋 Wybierz komisje:
+                                </label>
+                                <select id="etlCommitteeSelect" class="form-control etl-committee-select" multiple size="6">
+                                    <option value="all" selected>✓ Wszystkie komisje (~30)</option>
+                                    <option value="FIN">Komisja Finansów Publicznych</option>
+                                    <option value="EDU">Komisja Edukacji, Nauki i Młodzieży</option>
+                                    <option value="OBR">Komisja Obrony Narodowej</option>
+                                    <option value="ZAG">Komisja Spraw Zagranicznych</option>
+                                    <option value="INF">Komisja Infrastruktury</option>
+                                </select>
+                            </div>
+                        </fieldset>
+                    </div>
+                </div>
+
+                <!-- Hidden Progress & Logs (for floating console) -->
+                <div id="apiProgress" style="display:none;">
+                    <div class="api-progress-bar-wrapper">
+                        <div id="apiProgressBar" class="api-progress-bar"></div>
+                    </div>
+                    <div id="apiProgressText" class="api-progress-text">Postęp: 0%</div>
+                    <div id="apiLogs" class="api-logs"></div>
                 </div>
                 
-                <div class="etl-main">
-                    <!-- Instytucja -->
-                    <fieldset class="etl-fieldset">
-                        <legend>🏛️ Instytucja</legend>
-                        <div class="etl-radio-group">
-                            <label class="etl-radio-option">
-                                <input type="radio" name="etlInst" value="sejm" checked> Sejm
-                            </label>
-                            <label class="etl-radio-option">
-                                <input type="radio" name="etlInst" value="senat"> Senat
-                            </label>
-                        </div>
-                    </fieldset>
-                    
-                    <!-- Kadencja -->
-                    <fieldset class="etl-fieldset">
-                        <legend>📅 Kadencja</legend>
-                        <select id="etlTermSelect" class="form-control">
-                            <option value="10">10. kadencja (2023-obecnie)</option>
-                            <option value="9">9. kadencja (2019-2023)</option>
-                            <option value="8">8. kadencja (2015-2019)</option>
-                            <option value="7">7. kadencja (2011-2015)</option>
-                        </select>
-                    </fieldset>
-                    
-                    <!-- Zakres posiedzeń -->
-                    <fieldset class="etl-fieldset">
-                        <legend>🎯 Zakres posiedzeń</legend>
-                        
-                        <label class="etl-radio-label">
-                            <input type="radio" name="rangeMode" value="last" checked>
-                            Ostatnie X posiedzeń:
-                        </label>
-                        <select id="etlRangeSelect" class="form-control etl-select-margin">
-                            <option value="1">1 posiedzenie</option>
-                            <option value="2" selected>2 posiedzenia</option>
-                            <option value="5">5 posiedzeń</option>
-                            <option value="10">10 posiedzeń</option>
-                            <option value="20">20 posiedzeń</option>
-                        </select>
-                        
-                        <label class="etl-radio-label">
-                            <input type="radio" name="rangeMode" value="custom">
-                            Zakres:
-                        </label>
-                        <div class="etl-input-group">
-                            <span id="etlRangeFromLabel" class="etl-input-label">od</span>
-                            <input type="number" id="etlRangeFrom" value="1" min="1" class="etl-number-input">
-                            <span id="etlRangeToLabel" class="etl-input-label">do:</span>
-                            <input type="number" id="etlRangeTo" value="3" min="1" class="etl-number-input">
-                        </div>
-                    </fieldset>
-                    
-                    <!-- Dane podstawowe -->
-                    <fieldset class="etl-fieldset">
-                        <legend>📋 Dane podstawowe</legend>
-                        <div class="etl-section-hint">Zawsze pobierane</div>
-                        <div class="checkbox-item">
-                            <input type="checkbox" id="etlDeputies" checked disabled>
-                            <label for="etlDeputies">Posłowie/Senatorowie</label>
-                            <span class="badge badge-size">50 KB</span>
-                        </div>
-                        <div class="checkbox-item">
-                            <input type="checkbox" id="etlSittings" checked disabled>
-                            <label for="etlSittings">Posiedzenia (lista)</label>
-                            <span class="badge badge-size">20 KB</span>
-                        </div>
-                    </fieldset>
-                    
-                    <!-- Dane per posiedzenie -->
-                    <fieldset class="etl-fieldset">
-                        <legend>📝 Dane per posiedzenie</legend>
-                        <div class="etl-section-hint">Incremental (per posiedzenie)</div>
-                        <div class="checkbox-item">
-                            <input type="checkbox" id="etlTranscripts" data-size="300" checked>
-                            <label for="etlTranscripts">Wypowiedzi</label>
-                            <span class="badge badge-size">300 KB</span>
-                        </div>
-                        <div class="checkbox-item">
-                            <input type="checkbox" id="etlVotings" data-size="80">
-                            <label for="etlVotings">Głosowania</label>
-                            <span class="badge badge-size">80 KB</span>
-                        </div>
-                        <div class="checkbox-item">
-                            <input type="checkbox" id="etlVotes" data-size="400">
-                            <label for="etlVotes">Głosy indywidualne</label>
-                            <span class="badge badge-size">400 KB</span>
-                        </div>
-                    </fieldset>
-                    
-                    <!-- Dane per kadencja -->
-                    <fieldset class="etl-fieldset">
-                        <legend>🗂️ Dane per kadencja</legend>
-                        <div class="etl-section-hint">Cała kadencja (duże!)</div>
-                        <div class="checkbox-item">
-                            <input type="checkbox" id="etlInterpellations" data-size="200">
-                            <label for="etlInterpellations">Interpelacje</label>
-                            <span class="badge badge-size">200 KB</span>
-                        </div>
-                        <div class="checkbox-item">
-                            <input type="checkbox" id="etlWrittenQuestions" data-size="150">
-                            <label for="etlWrittenQuestions">Zapytania pisemne</label>
-                            <span class="badge badge-size">150 KB</span>
-                        </div>
-                        <div class="checkbox-item">
-                            <input type="checkbox" id="etlBills" data-size="250">
-                            <label for="etlBills">Projekty ustaw</label>
-                            <span class="badge badge-size">250 KB</span>
-                        </div>
-                        <div class="checkbox-item">
-                            <input type="checkbox" id="etlLegalActs" data-size="200">
-                            <label for="etlLegalActs">Ustawy (akty prawne)</label>
-                            <span class="badge badge-size">200 KB</span>
-                        </div>
-                        <div class="checkbox-item">
-                            <input type="checkbox" id="etlDisclosures" data-size="500">
-                            <label for="etlDisclosures">Oświadczenia majątkowe</label>
-                            <span class="badge badge-size">500 KB</span>
-                        </div>
-                    </fieldset>
-                    
-                    <!-- Komisje -->
-                    <fieldset class="etl-fieldset">
-                        <legend>🏢 Komisje</legend>
-                        <div class="etl-section-hint">Wybierz dane komisji</div>
-                        <div class="checkbox-item">
-                            <input type="checkbox" id="etlCommitteeSittings" data-size="80">
-                            <label for="etlCommitteeSittings">Posiedzenia komisji</label>
-                            <span class="badge badge-size">80 KB</span>
-                        </div>
-                        <div class="checkbox-item">
-                            <input type="checkbox" id="etlCommitteeStatements" data-size="200">
-                            <label for="etlCommitteeStatements">Wypowiedzi komisji</label>
-                            <span class="badge badge-size">200 KB</span>
-                        </div>
-                        
-                        <div class="etl-fieldset-margin">
-                            <label class="etl-checkbox-label">
-                                📋 Wybierz komisje:
-                            </label>
-                            <select id="etlCommitteeSelect" class="form-control etl-committee-select" multiple size="6">
-                                <option value="all" selected>✓ Wszystkie komisje (~30)</option>
-                                <option value="FIN">Komisja Finansów Publicznych</option>
-                                <option value="EDU">Komisja Edukacji, Nauki i Młodzieży</option>
-                                <option value="OBR">Komisja Obrony Narodowej</option>
-                                <option value="ZAG">Komisja Spraw Zagranicznych</option>
-                                <option value="INF">Komisja Infrastruktury</option>
-                            </select>
-                        </div>
-                    </fieldset>
+                <!-- Status -->
+                <div id="apiStatus" class="api-status-box">
+                    <div class="api-status-title">✅ Status bazy:</div>
+                    <div id="apiStatusDetails" class="api-status-details">Baza pusta - pobierz dane</div>
                 </div>
-            </div>
+            </section>
 
-            <!-- Progress Bar & Logs -->
-            <div id="apiProgress" class="api-progress-container">
-                <div class="api-progress-bar-wrapper">
-                    <div id="apiProgressBar" class="api-progress-bar"></div>
-                </div>
-                <div id="apiProgressText" class="api-progress-text">Postęp: 0%</div>
-                <div id="apiLogs" class="api-logs"></div>
-            </div>
-            
-            <!-- Status -->
-            <div id="apiStatus" class="api-status-box">
-                <div class="api-status-title">✅ Pobrano dane:</div>
-                <div id="apiStatusDetails" class="api-status-details"></div>
-            </div>
-
-            <!-- Sekcja statusu modeli AI -->
-            <section class="models-section models-section-spacing">
-                <h2>🤖 Status modeli AI</h2>
-                <div class="model-status">
-                    <div class="model-item">
-                        <span class="model-name">WebLLM (4B)</span>
-                        <span id="webllmStatus" class="status">⏳ Nieaktywny</span>
+            <!-- SEKCJA 2: PODSUMOWANIE DANYCH -->
+            <section class="app-section" data-section="2" style="display:none;">
+                <h2>📊 Podsumowanie Danych</h2>
+                
+                <div class="summary-container">
+                    <div class="summary-card">
+                        <div class="summary-icon">👥</div>
+                        <div class="summary-content">
+                            <div class="summary-label">Posłowie</div>
+                            <div class="summary-value" id="summaryDeputies">0</div>
+                        </div>
                     </div>
-                    <div class="model-item">
-                        <span class="model-name">Transformers.js</span>
-                        <span id="transformersStatus" class="status">⏳ Nieaktywny</span>
+
+                    <div class="summary-card">
+                        <div class="summary-icon">🏛️</div>
+                        <div class="summary-content">
+                            <div class="summary-label">Posiedzenia</div>
+                            <div class="summary-value" id="summarySittings">0</div>
+                        </div>
+                    </div>
+
+                    <div class="summary-card">
+                        <div class="summary-icon">💬</div>
+                        <div class="summary-content">
+                            <div class="summary-label">Wypowiedzi</div>
+                            <div class="summary-value" id="summaryTranscripts">0</div>
+                        </div>
+                    </div>
+
+                    <div class="summary-card">
+                        <div class="summary-icon">🗳️</div>
+                        <div class="summary-content">
+                            <div class="summary-label">Głosowania</div>
+                            <div class="summary-value" id="summaryVotings">0</div>
+                        </div>
                     </div>
                 </div>
-                <button id="loadModels" class="btn btn-primary">Załaduj modele</button>
-            </section>
 
-            <!-- Sekcja analiz -->
-            <section class="analysis-section">
-                <h2>📊 Analizy</h2>
-                <div class="analysis-buttons">
-                    <button id="analyzeSentiment" class="btn" disabled>Analiza nastrojów</button>
-                    <button id="analyzeTopics" class="btn" disabled>Wykryj tematy</button>
-                    <button id="generateSummary" class="btn" disabled>Generuj streszczenia</button>
-                    <button id="compareSpeeches" class="btn" disabled>Porównaj wypowiedzi</button>
+                <div class="summary-info">
+                    <p><strong>Ostatnia aktualizacja:</strong> <span id="lastUpdate">Brak danych</span></p>
+                    <p><strong>Kadencja:</strong> <span id="summaryTerm">-</span></p>
+                    <p><strong>Instytucja:</strong> <span id="summaryInstitution">-</span></p>
+                </div>
+
+                <div class="summary-placeholder">
+                    <p>📥 Pobierz dane w sekcji ETL, aby zobaczyć szczegółowe statystyki</p>
                 </div>
             </section>
 
-            <!-- Sekcja wyników -->
-            <section class="results-section">
-                <h2>📈 Wyniki</h2>
-                <div id="results" class="results-container">
-                    <p class="placeholder">Pobierz dane i uruchom analizę, aby zobaczyć wyniki</p>
+            <!-- SEKCJA 3: AI ASYSTENT -->
+            <section class="app-section" data-section="3" style="display:none;">
+                <h2>🤖 Asystent AI & Zapytania</h2>
+                
+                <!-- Sekcja ładowania modeli lokalnych -->
+                <section class="models-section">
+                    <h3>🔧 Modele Lokalne</h3>
+                    <div class="model-status">
+                        <div class="model-item">
+                            <span class="model-name">WebLLM (4B)</span>
+                            <span id="webllmStatus" class="status">⏳ Nieaktywny</span>
+                        </div>
+                        <div class="model-item">
+                            <span class="model-name">Transformers.js</span>
+                            <span id="transformersStatus" class="status">⏳ Nieaktywny</span>
+                        </div>
+                    </div>
+                    <button id="loadModels" class="btn btn-primary">Załaduj modele lokalne</button>
+                </section>
+
+                <!-- AI Chat (Full Screen) -->
+                <div class="ai-chat-fullscreen">
+                    <div class="chat-config">
+                        <div class="chat-config-row chat-filter-row">
+                            <label class="chat-filter-checkbox">
+                                <input type="checkbox" id="showAllModels" checked>
+                                <span>Pokaż wszystkie modele</span>
+                            </label>
+                        </div>
+                        <div class="chat-config-row">
+                            <label for="aiModelSelect">Model AI:</label>
+                            <div class="model-select-wrapper">
+                                <select id="aiModelSelect">
+                                    <option value="openai">OpenAI GPT-4</option>
+                                    <option value="claude">Anthropic Claude 3.5</option>
+                                    <optgroup label="🔥 Gemini - Główne">
+                                        <option value="gemini-3-flash">Gemini 3 Flash Preview</option>
+                                        <option value="gemini-3-pro">Gemini 3 Pro Preview</option>
+                                        <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+                                        <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite</option>
+                                        <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
+                                    </optgroup>
+                                    <optgroup label="⚡ Gemini 2.0">
+                                        <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+                                        <option value="gemini-2.0-flash-lite">Gemini 2.0 Flash Lite</option>
+                                        <option value="gemini-exp-1206">Gemini Exp 1206</option>
+                                    </optgroup>
+                                    <optgroup label="📌 Latest">
+                                        <option value="gemini-flash-latest">Gemini Flash Latest</option>
+                                        <option value="gemini-pro-latest">Gemini Pro Latest</option>
+                                    </optgroup>
+                                    <optgroup label="🎨 Image & Specjalne">
+                                        <option value="gemini-2.5-flash-image">Gemini 2.5 Flash Image</option>
+                                        <option value="gemini-3-pro-image">Gemini 3 Pro Image</option>
+                                        <option value="gemini-computer-use">Computer Use Preview</option>
+                                        <option value="deep-research-pro">Deep Research Pro</option>
+                                        <option value="gemini-robotics">Robotics 1.5 Preview</option>
+                                    </optgroup>
+                                    <optgroup label="🤖 Gemma (Open Models)">
+                                        <option value="gemma-12b">Gemma 3 12B</option>
+                                        <option value="gemma-27b">Gemma 3 27B</option>
+                                    </optgroup>
+                                </select>
+                                <button id="toggleFavoriteBtn" class="toggle-favorite-btn" title="Dodaj/usuń z ulubionych">⭐</button>
+                            </div>
+                        </div>
+                        
+                        <div class="chat-config-row">
+                            <a id="apiKeyLink" href="https://platform.openai.com/api-keys" target="_blank" class="chat-api-link">
+                                🔑 Wygeneruj klucz API
+                            </a>
+                        </div>
+                        
+                        <div class="chat-config-row">
+                            <label for="aiApiKey">Klucz API:</label>
+                            <input type="password" id="aiApiKey" placeholder="sk-..." />
+                        </div>
+                        
+                        <div class="chat-config-row">
+                            <button id="checkModelsBtn" class="chat-check-models-btn">
+                                🔍 Sprawdź dostępne modele Gemini
+                            </button>
+                        </div>
+                        
+                        <div class="chat-config-row">
+                            <details class="chat-favorites-section">
+                                <summary class="chat-favorites-toggle">⭐ Zarządzaj ulubionymi</summary>
+                                <div id="favoritesList" class="favorites-list"></div>
+                                <div class="favorites-help">Kliknij ⭐ przy wybranym modelu w liście powyżej, aby dodać do ulubionych</div>
+                            </details>
+                        </div>
+                    </div>
+                    
+                    <div id="chatMessages" class="chat-messages-fullscreen"></div>
+                    
+                    <div class="chat-input-area">
+                        <textarea id="chatInput" placeholder="Zadaj pytanie o dane parlamentarne..." rows="1"></textarea>
+                        <button id="sendChatBtn" title="Wyślij wiadomość">📤</button>
+                    </div>
                 </div>
             </section>
+
+            <!-- SEKCJA 4: WYKRESY & ANALITYKA -->
+            <section class="app-section" data-section="4" style="display:none;">
+                <h2>📈 Statystyki i Wykresy</h2>
+                
+                <div class="charts-placeholder">
+                    <div class="placeholder-icon">📊</div>
+                    <h3>Wykresy i wizualizacje</h3>
+                    <p>Ta sekcja będzie zawierać interaktywne wykresy i dashboardy</p>
+                    <ul class="placeholder-features">
+                        <li>📈 Trendy wypowiedzi w czasie</li>
+                        <li>🗳️ Statystyki głosowań</li>
+                        <li>👥 Aktywność posłów</li>
+                        <li>🏛️ Porównania klubów parlamentarnych</li>
+                    </ul>
+                    <p class="placeholder-hint">💡 Pobierz dane w sekcji ETL, aby rozpocząć wizualizację</p>
+                </div>
+            </section>
+
         </main>
+
+        <!-- BOTTOM NAVIGATION BAR -->
+        <nav class="bottom-nav">
+            <div class="nav-item active" data-section="1">
+                <div class="nav-icon">📥</div>
+                <div class="nav-label">ETL</div>
+            </div>
+            <div class="nav-item" data-section="2">
+                <div class="nav-icon">📊</div>
+                <div class="nav-label">Podsumowanie</div>
+            </div>
+            <div class="nav-item" data-section="3">
+                <div class="nav-icon">🤖</div>
+                <div class="nav-label">AI Asystent</div>
+            </div>
+            <div class="nav-item" data-section="4">
+                <div class="nav-icon">📈</div>
+                <div class="nav-label">Wykresy</div>
+            </div>
+        </nav>
 
         <footer>
             <p>
@@ -440,7 +597,7 @@
         </footer>
     </div>
 
-    <!-- Floating UI Buttons -->
+    <!-- Floating UI Buttons (7 buttons total) -->
     <button id="toggleUIBtn" class="floating-btn btn-toggle" title="Przełącz UI: Status Bar / Tools">⚙️</button>
     <div id="uiHoldProgress" aria-hidden="true">
         <div id="uiHoldProgressBar"></div>
@@ -455,101 +612,15 @@
     <button id="exportDbBtn" class="floating-btn btn-export" title="Export bazy danych">📤</button>
     <button id="cleanRodoBtn" class="floating-btn btn-rodo" title="Wyczyść dane wrażliwe (RODO)">🔐</button>
 
-    <!-- AI Chat Assistant Button -->
+    <!-- AI Chat Assistant Button (removed popup, now goes to section 3) -->
     <button id="aiChatBtn" class="floating-btn btn-ai-chat" title="Chat z AI Asystentem">🤖</button>
-
-    <!-- AI Chat Window -->
-    <div id="aiChatWindow">
-        <div class="chat-header">
-            <h3>🤖 AI Asystent</h3>
-            <button id="closeChatBtn" class="chat-close-btn">×</button>
-        </div>
-        
-        <div class="chat-config">
-            <div class="chat-config-row chat-filter-row">
-                <label class="chat-filter-checkbox">
-                    <input type="checkbox" id="showAllModels" checked>
-                    <span>Pokaż wszystkie modele</span>
-                </label>
-            </div>
-            <div class="chat-config-row">
-                <label for="aiModelSelect">Model AI:</label>
-                <div class="model-select-wrapper">
-                    <select id="aiModelSelect">
-                        <option value="openai">OpenAI GPT-4</option>
-                        <option value="claude">Anthropic Claude 3.5</option>
-                        <optgroup label="🔥 Gemini - Główne">
-                            <option value="gemini-3-flash">Gemini 3 Flash Preview</option>
-                            <option value="gemini-3-pro">Gemini 3 Pro Preview</option>
-                            <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
-                            <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite</option>
-                            <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
-                        </optgroup>
-                        <optgroup label="⚡ Gemini 2.0">
-                            <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
-                            <option value="gemini-2.0-flash-lite">Gemini 2.0 Flash Lite</option>
-                            <option value="gemini-exp-1206">Gemini Exp 1206</option>
-                        </optgroup>
-                        <optgroup label="📌 Latest">
-                            <option value="gemini-flash-latest">Gemini Flash Latest</option>
-                            <option value="gemini-pro-latest">Gemini Pro Latest</option>
-                        </optgroup>
-                        <optgroup label="🎨 Image & Specjalne">
-                            <option value="gemini-2.5-flash-image">Gemini 2.5 Flash Image</option>
-                            <option value="gemini-3-pro-image">Gemini 3 Pro Image</option>
-                            <option value="gemini-computer-use">Computer Use Preview</option>
-                            <option value="deep-research-pro">Deep Research Pro</option>
-                            <option value="gemini-robotics">Robotics 1.5 Preview</option>
-                        </optgroup>
-                        <optgroup label="🤖 Gemma (Open Models)">
-                            <option value="gemma-12b">Gemma 3 12B</option>
-                            <option value="gemma-27b">Gemma 3 27B</option>
-                        </optgroup>
-                    </select>
-                    <button id="toggleFavoriteBtn" class="toggle-favorite-btn" title="Dodaj/usuń z ulubionych">⭐</button>
-                </div>
-            </div>
-            
-            <div class="chat-config-row">
-                <a id="apiKeyLink" href="https://platform.openai.com/api-keys" target="_blank" class="chat-api-link">
-                    🔑 Wygeneruj klucz API
-                </a>
-            </div>
-            
-            <div class="chat-config-row">
-                <label for="aiApiKey">Klucz API:</label>
-                <input type="password" id="aiApiKey" placeholder="sk-..." />
-            </div>
-            
-            <div class="chat-config-row">
-                <button id="checkModelsBtn" class="chat-check-models-btn">
-                    🔍 Sprawdź dostępne modele Gemini
-                </button>
-            </div>
-            
-            <div class="chat-config-row">
-                <details class="chat-favorites-section">
-                    <summary class="chat-favorites-toggle">⭐ Zarządzaj ulubionymi</summary>
-                    <div id="favoritesList" class="favorites-list"></div>
-                    <div class="favorites-help">Kliknij ⭐ przy wybranym modelu w liście powyżej, aby dodać do ulubionych</div>
-                </details>
-            </div>
-        </div>
-        
-        <div id="chatMessages"></div>
-        
-        <div class="chat-input-area">
-            <textarea id="chatInput" placeholder="Zadaj pytanie o dane parlamentarne..." rows="1"></textarea>
-            <button id="sendChatBtn" title="Wyślij wiadomość">📤</button>
-        </div>
-    </div>
 
     <!-- Floating Status Bar (Bottom) -->
     <div id="floatingStatusBar" class="floating-status-bar">
         
         <!-- Version Section -->
         <div id="versionSection" class="status-bar-version">
-            <span class="status-bar-version-text">v<span id="programVersion">3.5.3</span></span>
+            <span class="status-bar-version-text">v<span id="programVersion">4.0.0</span></span>
         </div>
         
         <!-- Status Indicators Section -->
@@ -670,6 +741,52 @@
     <script type="module" src="etl-bridge.js"></script>
     <script type="module" src="models.js"></script>
     
+    <!-- Bottom Navigation Logic -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const navItems = document.querySelectorAll('.nav-item');
+            const sections = document.querySelectorAll('.app-section');
+            
+            navItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    const sectionNum = item.dataset.section;
+                    
+                    // Update nav active state
+                    navItems.forEach(n => n.classList.remove('active'));
+                    item.classList.add('active');
+                    
+                    // Update sections
+                    sections.forEach(s => {
+                        s.style.display = 'none';
+                        s.classList.remove('active');
+                    });
+                    
+                    const targetSection = document.querySelector(`.app-section[data-section="${sectionNum}"]`);
+                    if (targetSection) {
+                        targetSection.style.display = 'block';
+                        targetSection.classList.add('active');
+                    }
+                });
+            });
+        });
+    </script>
+    
+    <!-- AI Chat Button - Navigate to Section 3 -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const aiChatBtn = document.getElementById('aiChatBtn');
+            if (aiChatBtn) {
+                aiChatBtn.addEventListener('click', () => {
+                    // Trigger section 3
+                    const section3Nav = document.querySelector('.nav-item[data-section="3"]');
+                    if (section3Nav) {
+                        section3Nav.click();
+                    }
+                });
+            }
+        });
+    </script>
+    
     <!-- Floating Console Logic -->
     <script>
         const floatingPanel = document.getElementById('floatingConsolePanel');
@@ -780,30 +897,17 @@
             // Attach button listeners with animation
             addButtonAnimation(cleanRodoBtn, async () => {
                 console.log('🔐 RODO Data Cleanup - Starting sensitive data scan...');
-                
-                const sensitivePatterns = {
-                    email: /[^\s@]+@[^\s@]+\.[^\s@]+/gi,
-                    phone: /\d{3}[-.]?\d{3}[-.]?\d{4}/g,
-                    pesel: /\d{11}/g,
-                    ipAddress: /\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/g
-                };
-                
-                console.log('📊 Sensitive data patterns to scan:', Object.keys(sensitivePatterns));
-                console.log('⏳ Placeholder: Scan all database fields for sensitive data');
-                console.log('🗑️ Placeholder: Remove or mask sensitive data according to RODO');
-                console.log('📝 Placeholder: Log cleanup report with records modified');
-                
-                alert('🔐 RODO Data Cleanup\n\nFunkcja w przygotowaniu (TODO v2.2)\n\nBędzie:\n- Skanować wszystkie pola bazy\n- Szukać danych wrażliwych (email, telefon, PESEL)\n- Usuwać/maskować dane niezgodne z RODO');
+                alert('🔐 RODO Data Cleanup\n\nFunkcja w przygotowaniu (TODO v5.0)');
             });
             
             addButtonAnimation(languageBtn, () => {
-                console.log('🇵🇱 TODO: Zmiana języka - Language selector not implemented yet');
-                alert('🇵🇱 Zmiana języka\n\nFunkcja w przygotowaniu (TODO v2.2)');
+                console.log('🇵🇱 TODO: Zmiana języka');
+                alert('🇵🇱 Zmiana języka\n\nFunkcja w przygotowaniu (TODO v5.0)');
             });
             
             addButtonAnimation(helpBtn, () => {
-                console.log('❓ TODO: Podpowiedzi - Help tooltips not implemented yet');
-                alert('❓ Podpowiedzi\n\nSystem podpowiedzi w przygotowaniu (TODO v2.2)');
+                console.log('❓ TODO: Podpowiedzi');
+                alert('❓ Podpowiedzi\n\nSystem podpowiedzi w przygotowaniu (TODO v5.0)');
             });
             
             console.log('[DOMContentLoaded] Initialization complete');
