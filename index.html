@@ -124,26 +124,53 @@
                 document.addEventListener('DOMContentLoaded', () => {
                     const sidebar = document.getElementById('sidebar');
                     const sidebarContent = document.getElementById('sidebarContent');
-                    sidebar.addEventListener('click', (e) => {
-                        const card = e.target.closest('.tab-card');
-                        if (card) {
-                            const tabName = card.getAttribute('data-tab');
-                            console.log(`[Zakładki] Kliknięto zakładkę '${tabName}'`);
-                            const panel = document.getElementById(`panel-${tabName}`);
-                            if (panel && panel.classList.contains('active')) {
-                                console.log(`[Zakładki] sidebar-content: panel '${tabName}' jest aktywny`);
-                            } else {
-                                console.log(`[Zakładki] sidebar-content: panel '${tabName}' jest zamknięty`);
-                            }
-                            // Jeśli kliknięto 'settings', otwórz konsolę
-                            if (tabName === 'settings') {
-                                if (typeof toggleConsole === 'function') {
-                                    toggleConsole();
-                                    console.log('[Zakładki] Konsola została otwarta przez zakładkę "settings"');
+                        // Sidebar jest zawsze widoczny
+                        sidebar.addEventListener('click', (e) => {
+                            const card = e.target.closest('.tab-card');
+                            if (card) {
+                                const tabName = card.getAttribute('data-tab');
+                                console.log(`[Zakładki] Kliknięto zakładkę '${tabName}'`);
+                                const panel = document.getElementById(`panel-${tabName}`);
+                                if (panel && panel.classList.contains('active')) {
+                                    console.log(`[Zakładki] sidebar-content: panel '${tabName}' jest aktywny`);
+                                } else {
+                                    console.log(`[Zakładki] sidebar-content: panel '${tabName}' jest zamknięty`);
                                 }
                             }
-                        }
-                    });
+                        });
+
+                        // Pokazuj panel po najechaniu myszką na zakładkę
+                        const tabCards = sidebar.querySelectorAll('.tab-card');
+                        tabCards.forEach(card => {
+                            card.addEventListener('mouseenter', () => {
+                                const tabName = card.getAttribute('data-tab');
+                                const panel = document.getElementById(`panel-${tabName}`);
+                                if (panel) {
+                                    panel.classList.add('active');
+                                    panel.style.display = 'block';
+                                    console.log(`[Zakładki] Panel '${tabName}' pokazany po najechaniu myszką`);
+                                }
+                            });
+                            card.addEventListener('mouseleave', () => {
+                                const tabName = card.getAttribute('data-tab');
+                                const panel = document.getElementById(`panel-${tabName}`);
+                                if (panel) {
+                                    panel.classList.remove('active');
+                                    panel.style.display = 'none';
+                                    console.log(`[Zakładki] Panel '${tabName}' ukryty po opuszczeniu myszką`);
+                                }
+                            });
+                        });
+                    // Dodaj obsługę hover dla settings
+                    const settingsCard = sidebar.querySelector('.tab-card[data-tab="settings"]');
+                    if (settingsCard) {
+                        settingsCard.addEventListener('click', () => {
+                            if (typeof toggleConsole === 'function') {
+                                toggleConsole();
+                                console.log('[Zakładki] Konsola została otwarta przez zakładkę "settings" (kliknięcie)');
+                            }
+                        });
+                    }
                 });
             </script>
             <div class="tab-card" data-tab="settings">
