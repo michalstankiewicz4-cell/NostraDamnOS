@@ -1772,6 +1772,39 @@ input:disabled {
     letter-spacing: 0.5px;
     color: #e2e8f0;
 }
+/* ETL Progress Bar in Status Bar */
+.status-bar-etl-progress {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    max-width: 200px;
+}
+
+.etl-progress-track {
+    flex: 1;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    overflow: hidden;
+    min-width: 60px;
+}
+
+.etl-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #667eea, #48bb78);
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+.etl-progress-percent {
+    font-size: 0.7rem;
+    color: #90cdf4;
+    font-weight: 600;
+    min-width: 28px;
+    text-align: right;
+}
+
 #sendChatBtn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
@@ -1883,8 +1916,90 @@ input:disabled {
     transition: transform 0.3s;
 }
 
+.summary-card {
+    cursor: pointer;
+}
+
 .summary-card:hover {
     transform: translateY(-5px);
+}
+
+.summary-card.active {
+    outline: 3px solid #fff;
+    outline-offset: -3px;
+    transform: translateY(-5px);
+}
+
+/* Summary Data Table */
+.summary-table-section {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    margin: 20px 0;
+    overflow: hidden;
+}
+
+.summary-table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.summary-table-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+.summary-table-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #6c757d;
+    padding: 0 5px;
+    line-height: 1;
+}
+
+.summary-table-close:hover {
+    color: #dc3545;
+}
+
+.summary-table-wrap {
+    max-height: 500px;
+    overflow: auto;
+}
+
+.summary-table-wrap table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+
+.summary-table-wrap th {
+    position: sticky;
+    top: 0;
+    background: #667eea;
+    color: #fff;
+    padding: 10px 12px;
+    text-align: left;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.summary-table-wrap td {
+    padding: 8px 12px;
+    border-bottom: 1px solid #eee;
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.summary-table-wrap tr:hover {
+    background: #f0f4ff;
 }
 
 .summary-icon {

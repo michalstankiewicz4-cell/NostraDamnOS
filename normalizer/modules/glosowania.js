@@ -2,12 +2,12 @@
 
 export function normalizeGlosowania(raw) {
     return raw.map(g => ({
-        id_glosowania: g.id || g.id_glosowania,
-        id_posiedzenia: g.id_posiedzenia,
-        numer: g.numer,
-        data: g.data,
-        wynik: g.wynik,
-        tytul: g.tytul,
+        id_glosowania: g.id || g.id_glosowania || null,
+        id_posiedzenia: g.id_posiedzenia || null,
+        numer: g.numer || null,
+        data: g.data || null,
+        wynik: g.wynik || null,
+        tytul: g.tytul || null,
         za: g.za || 0,
         przeciw: g.przeciw || 0,
         wstrzymalo: g.wstrzymalo || 0

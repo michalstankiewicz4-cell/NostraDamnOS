@@ -2,10 +2,10 @@
 
 export function normalizeWypowiedzi(raw) {
     return raw.map(w => ({
-        id_wypowiedzi: w.id || w.id_wypowiedzi,
-        id_posiedzenia: w.id_posiedzenia || w.posiedzenie,
-        id_osoby: w.id_osoby || w.posel,
-        data: w.data,
+        id_wypowiedzi: w.id || w.id_wypowiedzi || null,
+        id_posiedzenia: w.id_posiedzenia || w.posiedzenie || null,
+        id_osoby: w.id_osoby || w.posel || null,
+        data: w.data || null,
         tekst: w.tekst || w.tresc || '',
         typ: w.typ || 'wystąpienie'
     }));

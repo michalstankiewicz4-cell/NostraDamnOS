@@ -2,11 +2,11 @@
 
 export function normalizeKomisje(raw) {
     return raw.map(k => ({
-        id_komisji: k.id || k.kod || k.id_komisji,
-        nazwa: k.nazwa || k.nazwaSkrocona,
-        skrot: k.skrot || k.kod,
+        id_komisji: k.id || k.kod || k.id_komisji || null,
+        nazwa: k.nazwa || k.nazwaSkrocona || null,
+        skrot: k.skrot || k.kod || null,
         typ: k.typ || 'stała',
-        kadencja: k.kadencja
+        kadencja: k.kadencja || null
     }));
 }
 

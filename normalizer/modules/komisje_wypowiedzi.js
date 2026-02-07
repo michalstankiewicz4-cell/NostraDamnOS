@@ -2,11 +2,11 @@
 
 export function normalizeKomisjeWypowiedzi(raw) {
     return raw.map(w => ({
-        id_wypowiedzi_komisji: w.id || w.id_wypowiedzi,
-        id_posiedzenia_komisji: w.id_posiedzenia_komisji || w.id_posiedzenia,
-        id_osoby: w.id_osoby || w.posel,
+        id_wypowiedzi_komisji: w.id || w.id_wypowiedzi || null,
+        id_posiedzenia_komisji: w.id_posiedzenia_komisji || w.id_posiedzenia || null,
+        id_osoby: w.id_osoby || w.posel || null,
         tekst: w.tekst || w.tresc || '',
-        data: w.data,
+        data: w.data || null,
         typ: w.typ || 'wystąpienie'
     }));
 }

@@ -1,19 +1,19 @@
 // Normalizer: posiedzenia
 
-export function normalizePosiedzenia(raw) {
+export function normalizePosiedzenia(raw, config = {}) {
     // Odfiltruj nieprawidłowe rekordy (number=0, brak dat, planowane posiedzenia)
-    const valid = raw.filter(p => 
+    const valid = raw.filter(p =>
         (p.number > 0 || p.num > 0 || p.id > 0) &&
         Array.isArray(p.dates) && p.dates.length > 0
     );
-    
+
     return valid.map(p => ({
         id_posiedzenia: p.number || p.num || p.id,
-        numer: p.number || p.num || p.numer,
+        numer: p.number || p.num || p.numer || null,
         data_start: p.dates[0] || null,
         data_koniec: p.dates[p.dates.length - 1] || null,
-        kadencja: 10,
-        typ: 'sejm'
+        kadencja: p.kadencja || config.kadencja || null,
+        typ: p.typ || config.typ || null
     }));
 }
 

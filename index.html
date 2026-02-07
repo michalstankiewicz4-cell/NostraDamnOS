@@ -385,48 +385,26 @@
             <!-- SEKCJA 2: PODSUMOWANIE DANYCH -->
             <section class="app-section" data-section="2" style="display:none;">
                 <h2>📊 Podsumowanie Danych</h2>
-                
-                <div class="summary-container">
-                    <div class="summary-card">
-                        <div class="summary-icon">👥</div>
-                        <div class="summary-content">
-                            <div class="summary-label">Posłowie</div>
-                            <div class="summary-value" id="summaryDeputies">0</div>
-                        </div>
-                    </div>
 
-                    <div class="summary-card">
-                        <div class="summary-icon">🏛️</div>
-                        <div class="summary-content">
-                            <div class="summary-label">Posiedzenia</div>
-                            <div class="summary-value" id="summarySittings">0</div>
-                        </div>
-                    </div>
+                <div class="summary-container" id="summaryContainer"></div>
 
-                    <div class="summary-card">
-                        <div class="summary-icon">💬</div>
-                        <div class="summary-content">
-                            <div class="summary-label">Wypowiedzi</div>
-                            <div class="summary-value" id="summaryTranscripts">0</div>
-                        </div>
-                    </div>
-
-                    <div class="summary-card">
-                        <div class="summary-icon">🗳️</div>
-                        <div class="summary-content">
-                            <div class="summary-label">Głosowania</div>
-                            <div class="summary-value" id="summaryVotings">0</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="summary-info">
+                <div class="summary-info" id="summaryInfo" style="display:none;">
                     <p><strong>Ostatnia aktualizacja:</strong> <span id="lastUpdate">Brak danych</span></p>
                     <p><strong>Kadencja:</strong> <span id="summaryTerm">-</span></p>
                     <p><strong>Instytucja:</strong> <span id="summaryInstitution">-</span></p>
+                    <p><strong>Łącznie rekordów:</strong> <span id="summaryTotal">0</span></p>
+                    <p id="lastFetchInfo" style="display:none;"><strong>Ostatnie pobieranie:</strong> <span id="lastFetchDetails">-</span></p>
                 </div>
 
-                <div class="summary-placeholder">
+                <div id="summaryTableSection" class="summary-table-section" style="display:none;">
+                    <div class="summary-table-header">
+                        <h3 id="summaryTableTitle"></h3>
+                        <button id="summaryTableClose" class="summary-table-close" title="Zamknij">&times;</button>
+                    </div>
+                    <div id="summaryTableWrap" class="summary-table-wrap"></div>
+                </div>
+
+                <div class="summary-placeholder" id="summaryPlaceholder">
                     <p>📥 Pobierz dane w sekcji ETL, aby zobaczyć szczegółowe statystyki</p>
                 </div>
             </section>
@@ -643,9 +621,19 @@
             <div id="aiStatusLamps" class="status-bar-ai-lamps"></div>
         </div>
         
+        <!-- ETL Progress Section -->
+        <div id="etlProgressSection" class="status-bar-etl-progress">
+            <div class="status-bar-separator"></div>
+            <div id="etlLamp" class="floating-lamp floating-lamp-ok"></div>
+            <div class="etl-progress-track">
+                <div id="etlProgressBar" class="etl-progress-bar" style="width:0%"></div>
+            </div>
+            <span id="etlProgressPercent" class="etl-progress-percent" style="display:none;">0%</span>
+        </div>
+
         <!-- Spacer -->
         <div class="status-bar-spacer"></div>
-        
+
         <!-- Console Section -->
         <div id="consoleSection" class="status-bar-console" title="Otwórz konsolę (Shift+C)">
             <div class="status-bar-console-separator"></div>

@@ -2,10 +2,10 @@
 
 export function normalizeKomisjePosiedzenia(raw) {
     return raw.map(p => ({
-        id_posiedzenia_komisji: p.id || p.id_posiedzenia,
-        id_komisji: p.id_komisji || p.komisja,
-        numer: p.numer || p.num,
-        data: p.data,
+        id_posiedzenia_komisji: p.id || p.id_posiedzenia || null,
+        id_komisji: p.id_komisji || p.komisja || null,
+        numer: p.numer || p.num || null,
+        data: p.data || null,
         opis: p.opis || p.temat || ''
     }));
 }

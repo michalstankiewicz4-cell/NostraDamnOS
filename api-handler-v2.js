@@ -126,6 +126,223 @@ function setValidityStatus(hasErrors) {
   }
 }
 
+// === SUMMARY TAB ===
+
+const summaryLabels = {
+    poslowie:              { icon: '👥', label: 'Posłowie' },
+    posiedzenia:           { icon: '🏛️', label: 'Posiedzenia' },
+    wypowiedzi:            { icon: '💬', label: 'Wypowiedzi' },
+    glosowania:            { icon: '🗳️', label: 'Głosowania' },
+    glosy:                 { icon: '📋', label: 'Głosy indywidualne' },
+    interpelacje:          { icon: '📝', label: 'Interpelacje' },
+    zapytania:             { icon: '❓', label: 'Zapytania pisemne' },
+    projekty_ustaw:        { icon: '📜', label: 'Projekty ustaw' },
+    komisje:               { icon: '🏢', label: 'Komisje' },
+    komisje_posiedzenia:   { icon: '📅', label: 'Posiedzenia komisji' },
+    komisje_wypowiedzi:    { icon: '🗣️', label: 'Wypowiedzi komisji' },
+    oswiadczenia_majatkowe:{ icon: '💰', label: 'Oświadczenia majątkowe' }
+};
+
+// Kolumny do wyświetlenia per tabela (nie pokazujemy długich tekstów)
+const tableColumns = {
+    poslowie:              ['id_osoby', 'imie', 'nazwisko', 'klub', 'okreg', 'rola', 'kadencja'],
+    posiedzenia:           ['numer', 'data_start', 'data_koniec', 'kadencja', 'typ'],
+    wypowiedzi:            ['id_wypowiedzi', 'id_posiedzenia', 'id_osoby', 'data', 'typ'],
+    glosowania:            ['id_glosowania', 'id_posiedzenia', 'numer', 'data', 'tytul', 'wynik', 'za', 'przeciw', 'wstrzymalo'],
+    glosy:                 ['id_glosowania', 'id_osoby', 'glos'],
+    interpelacje:          ['id_interpelacji', 'id_osoby', 'data', 'tytul', 'status'],
+    zapytania:             ['term', 'num', 'title', 'receiptDate', 'sentDate', 'answerDelayedDays'],
+    projekty_ustaw:        ['id_projektu', 'kadencja', 'data', 'tytul', 'status'],
+    komisje:               ['id_komisji', 'nazwa', 'skrot', 'typ', 'kadencja'],
+    komisje_posiedzenia:   ['id_posiedzenia_komisji', 'id_komisji', 'numer', 'data', 'opis'],
+    komisje_wypowiedzi:    ['id_posiedzenia_komisji', 'id_osoby', 'data', 'typ'],
+    oswiadczenia_majatkowe:['id_oswiadczenia', 'id_osoby', 'rok', 'data_zlozenia']
+};
+
+function showSummaryTable(tableName) {
+    if (!db2.database) return;
+    const section = document.getElementById('summaryTableSection');
+    const titleEl = document.getElementById('summaryTableTitle');
+    const wrap = document.getElementById('summaryTableWrap');
+    if (!section || !wrap) return;
+
+    const meta = summaryLabels[tableName] || { icon: '📊', label: tableName };
+    const cols = tableColumns[tableName];
+    if (!cols) return;
+
+    const colList = cols.join(', ');
+    const result = db2.database.exec(`SELECT ${colList} FROM ${tableName} LIMIT 500`);
+
+    if (!result.length || !result[0].values.length) {
+        wrap.innerHTML = '<p style="padding:20px;color:#6c757d;">Brak danych</p>';
+        titleEl.textContent = `${meta.icon} ${meta.label}`;
+        section.style.display = '';
+        return;
+    }
+
+    const rows = result[0].values;
+    let html = '<table><thead><tr>';
+    for (const col of cols) {
+        html += `<th>${col}</th>`;
+    }
+    html += '</tr></thead><tbody>';
+    for (const row of rows) {
+        html += '<tr>';
+        for (const val of row) {
+            const display = val === null ? '-' : String(val);
+            html += `<td title="${display.replace(/"/g, '&quot;')}">${display}</td>`;
+        }
+        html += '</tr>';
+    }
+    html += '</tbody></table>';
+
+    titleEl.textContent = `${meta.icon} ${meta.label} (${rows.length}${rows.length === 500 ? '+' : ''})`;
+    wrap.innerHTML = html;
+    section.style.display = '';
+    section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function hideSummaryTable() {
+    const section = document.getElementById('summaryTableSection');
+    if (section) section.style.display = 'none';
+    document.querySelectorAll('.summary-card.active').forEach(c => c.classList.remove('active'));
+}
+
+// Zamknij tabelę
+document.getElementById('summaryTableClose')?.addEventListener('click', hideSummaryTable);
+
+function updateSummaryTab() {
+    try {
+        const stats = db2.getStats();
+        const cacheStatus = getCacheStatus(db2);
+        const totalRecords = Object.values(stats).reduce((sum, c) => sum + c, 0);
+
+        const container = document.getElementById('summaryContainer');
+        const info = document.getElementById('summaryInfo');
+        const placeholder = document.getElementById('summaryPlaceholder');
+
+        if (!container) return;
+
+        // Generuj karty dynamicznie — tylko typy z danymi
+        container.innerHTML = '';
+        hideSummaryTable();
+        for (const [table, count] of Object.entries(stats)) {
+            if (count === 0) continue;
+            const meta = summaryLabels[table] || { icon: '📊', label: table };
+            const card = document.createElement('div');
+            card.className = 'summary-card';
+            card.setAttribute('data-table', table);
+            card.innerHTML = `
+                <div class="summary-icon">${meta.icon}</div>
+                <div class="summary-content">
+                    <div class="summary-label">${meta.label}</div>
+                    <div class="summary-value">${count.toLocaleString('pl-PL')}</div>
+                </div>`;
+            card.addEventListener('click', () => {
+                const isActive = card.classList.contains('active');
+                document.querySelectorAll('.summary-card.active').forEach(c => c.classList.remove('active'));
+                if (isActive) {
+                    hideSummaryTable();
+                } else {
+                    card.classList.add('active');
+                    showSummaryTable(table);
+                }
+            });
+            container.appendChild(card);
+        }
+
+        // Info section
+        if (totalRecords > 0 && info) {
+            info.style.display = '';
+            const lastUpdateEl = document.getElementById('lastUpdate');
+            const termEl = document.getElementById('summaryTerm');
+            const instEl = document.getElementById('summaryInstitution');
+            const totalEl = document.getElementById('summaryTotal');
+
+            if (lastUpdateEl && cacheStatus.lastUpdate) {
+                lastUpdateEl.textContent = new Date(cacheStatus.lastUpdate).toLocaleString('pl-PL');
+            }
+
+            // Kadencje i instytucje z rzeczywistych danych w bazie
+            if (db2.database) {
+                const typResult = db2.database.exec("SELECT DISTINCT typ FROM posiedzenia WHERE typ IS NOT NULL");
+                if (typResult.length > 0 && instEl) {
+                    const typy = typResult[0].values.map(r => r[0] === 'sejm' ? 'Sejm RP' : 'Senat RP');
+                    instEl.textContent = typy.join(', ');
+                }
+
+                const kadResult = db2.database.exec("SELECT DISTINCT kadencja FROM posiedzenia WHERE kadencja IS NOT NULL ORDER BY kadencja");
+                if (kadResult.length > 0 && termEl) {
+                    const kadencje = kadResult[0].values.map(r => r[0]);
+                    termEl.textContent = kadencje.join(', ');
+                }
+            }
+
+            if (totalEl) totalEl.textContent = totalRecords.toLocaleString('pl-PL');
+
+            // Info o ostatnim pobraniu
+            const lastFetchRaw = localStorage.getItem('nostradamnos_lastFetch');
+            const lastFetchInfoEl = document.getElementById('lastFetchInfo');
+            const lastFetchDetailsEl = document.getElementById('lastFetchDetails');
+            if (lastFetchRaw && lastFetchInfoEl && lastFetchDetailsEl) {
+                try {
+                    const lf = JSON.parse(lastFetchRaw);
+                    const parts = [];
+                    if (lf.newSittings > 0) parts.push(`${lf.newSittings} posiedzeń`);
+                    // Pokaż zapisane rekordy per typ
+                    const lfStats = lf.stats || {};
+                    for (const [table, count] of Object.entries(lfStats)) {
+                        if (count > 0) {
+                            const meta = summaryLabels[table];
+                            parts.push(`${count} ${meta ? meta.label.toLowerCase() : table}`);
+                        }
+                    }
+                    if (parts.length > 0) {
+                        lastFetchInfoEl.style.display = '';
+                        lastFetchDetailsEl.textContent = parts.join(', ');
+                    }
+                } catch (e) { /* ignore */ }
+            }
+        } else if (info) {
+            info.style.display = 'none';
+        }
+
+        // Placeholder
+        if (placeholder) {
+            placeholder.style.display = totalRecords > 0 ? 'none' : '';
+        }
+    } catch (e) {
+        console.error('[updateSummaryTab] Error:', e);
+    }
+}
+
+// === ETL PROGRESS BAR ===
+
+function showEtlProgress() {
+    const lamp = document.getElementById('etlLamp');
+    const pctEl = document.getElementById('etlProgressPercent');
+    const bar = document.getElementById('etlProgressBar');
+    if (lamp) lamp.className = 'floating-lamp floating-lamp-error';
+    if (pctEl) pctEl.style.display = '';
+    if (bar) bar.style.width = '0%';
+}
+
+function hideEtlProgress() {
+    const lamp = document.getElementById('etlLamp');
+    const pctEl = document.getElementById('etlProgressPercent');
+    const bar = document.getElementById('etlProgressBar');
+    if (lamp) lamp.className = 'floating-lamp floating-lamp-ok';
+    if (pctEl) pctEl.style.display = 'none';
+    if (bar) bar.style.width = '0%';
+}
+
+function updateEtlProgress(percent) {
+    const bar = document.getElementById('etlProgressBar');
+    const pctEl = document.getElementById('etlProgressPercent');
+    if (bar) bar.style.width = percent + '%';
+    if (pctEl) pctEl.textContent = Math.round(percent) + '%';
+}
+
 // Export db2 globally for debugging
 window.db2 = db2;
 
@@ -138,6 +355,7 @@ window.setValidityStatus = setValidityStatus;
 db2.init().then(() => {
     console.log('[API Handler] Database initialized');
     updateStatusIndicators();
+    updateSummaryTab();
 }).catch(err => {
     console.error('[API Handler] Failed to initialize database:', err);
 });
@@ -178,15 +396,19 @@ async function smartFetch() {
         btn.disabled = true;
         btn.textContent = '⏳ Sprawdzam nowe dane...';
     }
+    showEtlProgress();
 
     try {
         const verifyConfig = { ...currentConfig, fetchMode: 'verify' };
         const result = await runPipeline(verifyConfig, {
             onLog: (msg) => console.log('[Verify]', msg),
-            onProgress: () => {},
+            onProgress: (percent) => {
+                updateEtlProgress(percent);
+            },
             onComplete: () => {}
         });
 
+        hideEtlProgress();
         if (btn) {
             btn.disabled = false;
             btn.textContent = '📥 Pobierz/Zaktualizuj dane';
@@ -205,6 +427,7 @@ async function smartFetch() {
         }
     } catch (error) {
         console.error('[Smart Fetch] Verify error:', error);
+        hideEtlProgress();
         if (btn) {
             btn.disabled = false;
             btn.textContent = '📥 Pobierz/Zaktualizuj dane';
@@ -219,19 +442,22 @@ async function startPipelineETL() {
     
     const btn = document.getElementById('etlFetchBtn');
     
-    // UI setup - tylko przycisk
+    // UI setup
     if (btn) {
         btn.disabled = true;
         btn.textContent = '⏳ Pobieranie...';
     }
-    
+    showEtlProgress();
+
     try {
         // Build config from ETL Panel UI
         const config = buildConfigFromUI();
-        
+
         // Run pipeline with callbacks
         const result = await runPipeline(config, {
-            onProgress: (percent, text) => {},
+            onProgress: (percent) => {
+                updateEtlProgress(percent);
+            },
             onLog: (message) => {},
             onError: (error) => {
                 console.error('[Pipeline Error]', error);
@@ -274,11 +500,21 @@ async function startPipelineETL() {
             // Auto-save to localStorage
             db2.saveToLocalStorage();
             saveLastFetchConfig(config);
-            
-            // Update status indicators
+
+            // Zapisz info o ostatnim pobraniu
+            const lastFetch = {
+                newSittings: result.newSittings || 0,
+                savedRecords: result.savedRecords || 0,
+                stats: result.stats || {},
+                timestamp: result.timestamp
+            };
+            localStorage.setItem('nostradamnos_lastFetch', JSON.stringify(lastFetch));
+
+            // Update status indicators + summary tab
             updateStatusIndicators();
             setRecordsStatus(false);
-            
+            updateSummaryTab();
+
             alert(`✅ Pobrano dane:\n\n${details || 'Brak danych w bazie'}`);
             console.log('✅ [Zadanie] Pobierz/Zaktualizuj dane zakończony');
         }
@@ -290,6 +526,7 @@ async function startPipelineETL() {
         
     } finally {
         isFetching = false;
+        hideEtlProgress();
         if (btn) {
             btn.disabled = false;
             btn.textContent = '📥 Pobierz/Zaktualizuj dane';
@@ -306,11 +543,12 @@ document.getElementById('etlClearBtn')?.addEventListener('click', async () => {
             db2.clearAll();
             console.log('[API Handler] Database cleared');
             
-            // Update status indicators after clearing
+            // Update status indicators + summary tab after clearing
             updateStatusIndicators();
             setRecordsStatus(false);
             setValidityStatus(false);
-            
+            updateSummaryTab();
+
             alert('✅ Baza wyczyszczona');
             console.log('✅ [Zadanie] Wyczyść bazę zakończony');
         } catch (error) {

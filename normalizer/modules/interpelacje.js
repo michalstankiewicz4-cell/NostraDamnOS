@@ -2,10 +2,10 @@
 
 export function normalizeInterpelacje(raw) {
     return raw.map(i => ({
-        id_interpelacji: i.id || i.id_interpelacji,
-        id_osoby: i.id_osoby || i.posel,
-        data: i.data,
-        tytul: i.tytul,
+        id_interpelacji: i.id || i.id_interpelacji || null,
+        id_osoby: i.id_osoby || i.posel || null,
+        data: i.data || null,
+        tytul: i.tytul || null,
         tresc: i.tresc || i.tekst || '',
         status: i.status || 'złożona'
     }));

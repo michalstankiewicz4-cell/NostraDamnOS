@@ -8,9 +8,9 @@ export function normalizeGlosy(raw, glosowania) {
         for (const v of votes) {
             results.push({
                 id_glosu: `${g.id}_${v.id_osoby}`,
-                id_glosowania: g.id,
-                id_osoby: v.id_osoby,
-                glos: v.glos
+                id_glosowania: g.id || null,
+                id_osoby: v.id_osoby || null,
+                glos: v.glos || null
             });
         }
     }

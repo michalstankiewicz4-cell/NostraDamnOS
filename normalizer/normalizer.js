@@ -34,17 +34,17 @@ export async function runNormalizer(db, raw, config = {}) {
     
     // 1. Poslowie (foundation - always first)
     if (raw.poslowie && raw.poslowie.length > 0) {
-        let normalized = normalizePoslowie(raw.poslowie);
+        let normalized = normalizePoslowie(raw.poslowie, config);
         if (config.rodoFilter) {
             normalized = normalized.map(r => ({ ...r, email: null }));
         }
         savePoslowie(db, normalized);
         stats.poslowie = normalized.length;
     }
-    
+
     // 2. Posiedzenia (needed for per-sitting data)
     if (raw.posiedzenia && raw.posiedzenia.length > 0) {
-        const normalized = normalizePosiedzenia(raw.posiedzenia);
+        const normalized = normalizePosiedzenia(raw.posiedzenia, config);
         savePosiedzenia(db, normalized);
         stats.posiedzenia = normalized.length;
     }
