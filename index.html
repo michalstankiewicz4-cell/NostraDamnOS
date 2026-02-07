@@ -120,41 +120,6 @@
 
         <!-- Sidebar z karteczkami na prawo -->
         <aside class="sidebar" id="sidebar">
-            <script>
-                document.addEventListener('DOMContentLoaded', () => {
-                    const sidebar = document.getElementById('sidebar');
-                    const panels = document.querySelectorAll('.sidebar-panel');
-
-                    // Delegacja zdarzeń: hover i click na .tab-card
-                    sidebar.addEventListener('mouseover', (e) => {
-                        const card = e.target.closest('.tab-card');
-                        if (card) {
-                            const tabName = card.getAttribute('data-tab');
-                            panels.forEach(panel => {
-                                panel.classList.remove('active');
-                            });
-                            const panel = document.getElementById(`panel-${tabName}`);
-                            if (panel) panel.classList.add('active');
-                        }
-                    });
-                    sidebar.addEventListener('mouseout', (e) => {
-                        const card = e.target.closest('.tab-card');
-                        if (card) {
-                            const tabName = card.getAttribute('data-tab');
-                            const panel = document.getElementById(`panel-${tabName}`);
-                            if (panel) panel.classList.remove('active');
-                        }
-                    });
-                    sidebar.addEventListener('click', (e) => {
-                        const card = e.target.closest('.tab-card');
-                        if (card && card.getAttribute('data-tab') === 'settings') {
-                            if (typeof toggleConsole === 'function') {
-                                toggleConsole();
-                            }
-                        }
-                    });
-                });
-            </script>
             <div class="tab-card" data-tab="settings">
                 <span class="tab-label">⚙️</span>
                 <span class="tab-text">Ustawienia</span>
@@ -173,22 +138,6 @@
         <aside class="sidebar sidebar-left" id="sidebarLeft">
         </aside>
 
-        <!-- Panel zawartości sidebar -->
-        <div class="sidebar-content" id="sidebarContent">
-            <div class="sidebar-panel" id="panel-settings">
-                <h3>⚙️ Ustawienia</h3>
-                <p>Tutaj będą ustawienia aplikacji</p>
-            </div>
-            <div class="sidebar-panel" id="panel-info">
-                <h3>ℹ️ Informacje</h3>
-                <p>Parlament P.I.M.P. v<span id="infoVersion">4.0.0</span></p>
-                <p>System lokalnej analizy wypowiedzi parlamentarnych</p>
-            </div>
-            <div class="sidebar-panel" id="panel-help">
-                <h3>❓ Pomoc</h3>
-                <p>Załaduj dane z API, skonfiguruj filtry i analizuj wypowiedzi parlamentarne</p>
-            </div>
-        </div>
 
         <!-- MAIN - 4 SEKCJE Z NAWIGACJĄ -->
         <main class="app-sections-container">

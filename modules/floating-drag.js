@@ -36,16 +36,17 @@ export function initTabCardsDragDrop() {
             }
 
             const isActive = card.classList.contains('active');
-            
+
             if (isActive) {
                 card.classList.remove('active');
-                document.getElementById(`panel-${tabName}`)?.classList.remove('active');
             } else {
                 tabCards.forEach(c => c.classList.remove('active'));
                 card.classList.add('active');
-                
-                document.querySelectorAll('.sidebar-panel').forEach(p => p.classList.remove('active'));
-                document.getElementById(`panel-${tabName}`)?.classList.add('active');
+            }
+
+            // Toggle konsoli dla zakładki settings
+            if (tabName === 'settings' && typeof toggleConsole === 'function') {
+                toggleConsole();
             }
         });
         
@@ -180,7 +181,13 @@ export function initTabCardsDragDrop() {
         
         const savedOrder = localStorage.getItem('tabOrder');
         if (savedOrder) {
-            const order = JSON.parse(savedOrder);
+            let order;
+            try {
+                order = JSON.parse(savedOrder);
+            } catch (e) {
+                localStorage.removeItem('tabOrder');
+                return;
+            }
             const rightCards = Array.from(sidebar.querySelectorAll('.tab-card'));
             const leftCards = Array.from(sidebarLeft.querySelectorAll('.tab-card'));
             
