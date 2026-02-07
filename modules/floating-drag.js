@@ -9,25 +9,27 @@
 
 // ===== TAB CARD DRAG & DROP + MEMORY =====
 
+// Oryginalna kolejność zakładek z HTML (przed jakimkolwiek ładowaniem layoutu)
+const originalTabOrder = [];
+
 export function initTabCardsDragDrop() {
     const tabCards = document.querySelectorAll('.tab-card');
     const sidebar = document.getElementById('sidebar');
     const sidebarLeft = document.getElementById('sidebarLeft');
-    const sidebarContent = document.getElementById('sidebarContent');
 
-    // Wczytaj pozycje karteczek z localStorage
-    loadTabPositions();
+    // Zapisz oryginalną kolejność przed loadLayout
+    if (originalTabOrder.length === 0) {
+        tabCards.forEach(c => originalTabOrder.push(c.getAttribute('data-tab')));
+    }
 
-    tabCards.forEach((card) => {
-        // Drag to reorder
-        card.addEventListener('mousedown', startTabDrag);
-        card.addEventListener('touchstart', startTabDrag);
-    });
+    loadLayout();
 
-    // Single-click otwiera/zamyka, double-click zmienia stronę
     tabCards.forEach(card => {
         const tabName = card.getAttribute('data-tab');
         let clickTimer = null;
+
+        card.addEventListener('mousedown', startTabDrag);
+        card.addEventListener('touchstart', startTabDrag);
 
         card.addEventListener('click', (e) => {
             if (card.classList.contains('dragging')) {
@@ -35,7 +37,6 @@ export function initTabCardsDragDrop() {
                 return;
             }
 
-            // Opóźnij click, żeby dblclick mógł go anulować
             if (clickTimer) clearTimeout(clickTimer);
             clickTimer = setTimeout(() => {
                 clickTimer = null;
@@ -70,32 +71,31 @@ export function initTabCardsDragDrop() {
         let isDragging = false;
         let holdTimer = null;
         const holdDuration = 500;
-        
+
         let draggedCard = card;
         let dragContainer = card.parentNode;
-        
+
         function onMove(moveEvent) {
             if (!isDragging) return;
-            
+
             moveEvent.preventDefault();
-            const clientX = moveEvent.touches ? moveEvent.touches[0].clientX : moveEvent.clientX;
             const clientY = moveEvent.touches ? moveEvent.touches[0].clientY : moveEvent.clientY;
-            
+
             if (draggedCard.parentNode !== dragContainer) {
                 dragContainer = draggedCard.parentNode;
             }
 
-            const currentCards = Array.from(dragContainer.querySelectorAll('.tab-card'));
-            const currentIndex = currentCards.indexOf(draggedCard);
+            const children = Array.from(dragContainer.querySelectorAll('.tab-card, .tab-placeholder'));
+            const currentIndex = children.indexOf(draggedCard);
 
-            for (let i = 0; i < currentCards.length; i++) {
+            for (let i = 0; i < children.length; i++) {
                 if (i === currentIndex) continue;
-                const rect = currentCards[i].getBoundingClientRect();
+                const rect = children[i].getBoundingClientRect();
                 if (clientY > rect.top && clientY < rect.bottom) {
                     if (i < currentIndex) {
-                        dragContainer.insertBefore(draggedCard, currentCards[i]);
+                        dragContainer.insertBefore(draggedCard, children[i]);
                     } else {
-                        dragContainer.insertBefore(draggedCard, currentCards[i].nextSibling);
+                        dragContainer.insertBefore(draggedCard, children[i].nextSibling);
                     }
                     break;
                 }
@@ -107,15 +107,15 @@ export function initTabCardsDragDrop() {
                 clearTimeout(holdTimer);
                 holdTimer = null;
             }
-            
+
             card.classList.remove('dragging');
             document.removeEventListener('mousemove', onMove);
             document.removeEventListener('touchmove', onMove);
             document.removeEventListener('mouseup', onEnd);
             document.removeEventListener('touchend', onEnd);
-            
+
             if (isDragging) {
-                saveTabOrder();
+                saveLayout();
             }
         }
 
@@ -132,117 +132,139 @@ export function initTabCardsDragDrop() {
 
     function toggleTabSide(card) {
         const tabName = card.getAttribute('data-tab');
-        const currentSide = localStorage.getItem(`tabSide-${tabName}`) || 'right';
-        const newSide = currentSide === 'right' ? 'left' : 'right';
+        const isOnRight = card.parentNode === sidebar;
 
-        localStorage.setItem(`tabSide-${tabName}`, newSide);
+        // Zapamiętaj indeks karty w źródłowym sidebarze
+        const sourceChildren = Array.from(card.parentNode.querySelectorAll('.tab-card, .tab-placeholder'));
+        const sourceIndex = sourceChildren.indexOf(card);
 
-        // Wstaw placeholder w miejsce przenoszonej zakładki
+        // Placeholder w miejsce przenoszonej zakładki
         const placeholder = document.createElement('div');
         placeholder.className = 'tab-placeholder';
         placeholder.setAttribute('data-for', tabName);
         placeholder.style.height = card.offsetHeight + 'px';
         card.parentNode.insertBefore(placeholder, card);
 
-        // Sprawdź czy na docelowej stronie jest placeholder do zastąpienia
-        const targetSidebar = newSide === 'left' ? sidebarLeft : sidebar;
-        const existingPlaceholder = targetSidebar.querySelector(`.tab-placeholder[data-for="${tabName}"]`);
+        // Wyłącz transition na czas przenoszenia
+        card.style.transition = 'none';
+        card.classList.remove('active');
 
-        if (existingPlaceholder) {
-            existingPlaceholder.replaceWith(card);
+        // Przenieś na drugą stronę — prosta logika 6 slotów
+        const targetSidebar = isOnRight ? sidebarLeft : sidebar;
+        const targetChildren = Array.from(targetSidebar.querySelectorAll('.tab-card, .tab-placeholder'));
+
+        // Sprawdź czy przeciwny slot (ten sam indeks) jest wolny (placeholder)
+        const oppositeSlot = targetChildren[sourceIndex];
+        if (oppositeSlot && oppositeSlot.classList.contains('tab-placeholder')) {
+            // Przeciwny slot wolny — wstaw tam
+            oppositeSlot.replaceWith(card);
         } else {
-            targetSidebar.appendChild(card);
+            // Przeciwny slot zajęty — znajdź pierwszy wolny (placeholder)
+            const freeSlot = targetChildren.find(el => el.classList.contains('tab-placeholder'));
+            if (freeSlot) {
+                freeSlot.replaceWith(card);
+            } else {
+                // Brak wolnych slotów — dopisz na końcu
+                targetSidebar.appendChild(card);
+            }
         }
 
-        if (newSide === 'left') {
+        if (isOnRight) {
             card.classList.add('tab-left');
         } else {
             card.classList.remove('tab-left');
         }
-    }
 
-    function updateSidebarContentPosition() {
-        const activeCard = document.querySelector('.tab-card.active');
-        if (!activeCard) return;
-        
-        const tabName = activeCard.getAttribute('data-tab');
-        const side = localStorage.getItem(`tabSide-${tabName}`) || 'right';
-        
-        if (side === 'left') {
-            sidebarContent.classList.add('sidebar-left');
-        } else {
-            sidebarContent.classList.remove('sidebar-left');
-        }
-    }
-
-    function saveTabOrder() {
-        const cards = Array.from(document.querySelectorAll('.tab-card'));
-        const order = cards.map(card => card.getAttribute('data-tab'));
-        localStorage.setItem('tabOrder', JSON.stringify(order));
-    }
-
-    function loadTabPositions() {
-        const cards = document.querySelectorAll('.tab-card');
-        
-        cards.forEach(card => {
-            const tabName = card.getAttribute('data-tab');
-            const side = localStorage.getItem(`tabSide-${tabName}`) || 'right';
-            
-            if (side === 'left') {
-                sidebarLeft.appendChild(card);
-                card.classList.add('tab-left');
-            } else {
-                sidebar.appendChild(card);
-                card.classList.remove('tab-left');
-            }
+        // Przywróć transition po renderze
+        requestAnimationFrame(() => {
+            card.style.transition = '';
         });
-        
-        const savedOrder = localStorage.getItem('tabOrder');
-        if (savedOrder) {
-            let order;
-            try {
-                order = JSON.parse(savedOrder);
-            } catch (e) {
-                localStorage.removeItem('tabOrder');
-                return;
-            }
-            const rightCards = Array.from(sidebar.querySelectorAll('.tab-card'));
-            const leftCards = Array.from(sidebarLeft.querySelectorAll('.tab-card'));
-            
-            order.forEach(tabName => {
-                const card = rightCards.find(c => c.getAttribute('data-tab') === tabName) ||
-                            leftCards.find(c => c.getAttribute('data-tab') === tabName);
-                if (card) {
-                    const parent = card.parentNode;
-                    parent.appendChild(card);
+
+        saveLayout();
+    }
+
+    function saveLayout() {
+        function getItems(container) {
+            return Array.from(container.children)
+                .filter(el => el.classList.contains('tab-card') || el.classList.contains('tab-placeholder'))
+                .map(el => {
+                    if (el.classList.contains('tab-card')) return el.getAttribute('data-tab');
+                    return 'ph:' + el.getAttribute('data-for');
+                });
+        }
+        localStorage.setItem('sidebarLayout', JSON.stringify({
+            right: getItems(sidebar),
+            left: getItems(sidebarLeft)
+        }));
+    }
+
+    function loadLayout() {
+        const saved = localStorage.getItem('sidebarLayout');
+        if (!saved) return;
+
+        let layout;
+        try {
+            layout = JSON.parse(saved);
+        } catch (e) {
+            localStorage.removeItem('sidebarLayout');
+            return;
+        }
+
+        const allCards = {};
+        document.querySelectorAll('.tab-card').forEach(c => {
+            allCards[c.getAttribute('data-tab')] = c;
+        });
+
+        function buildSidebar(container, items, isLeft) {
+            items.forEach(item => {
+                if (item.startsWith('ph:')) {
+                    const ph = document.createElement('div');
+                    ph.className = 'tab-placeholder';
+                    ph.setAttribute('data-for', item.slice(3));
+                    ph.style.height = '62px';
+                    container.appendChild(ph);
+                } else if (allCards[item]) {
+                    container.appendChild(allCards[item]);
+                    if (isLeft) {
+                        allCards[item].classList.add('tab-left');
+                    } else {
+                        allCards[item].classList.remove('tab-left');
+                    }
                 }
             });
+        }
+
+        buildSidebar(sidebar, layout.right || [], false);
+        buildSidebar(sidebarLeft, layout.left || [], true);
+
+        // Dopasuj wysokość placeholderów do prawdziwej wysokości karty
+        const anyCard = document.querySelector('.tab-card');
+        if (anyCard) {
+            const h = anyCard.offsetHeight + 'px';
+            document.querySelectorAll('.tab-placeholder').forEach(ph => ph.style.height = h);
         }
     }
 }
 
 export function resetTabsLayout() {
     const sidebar = document.getElementById('sidebar');
-    const sidebarLeft = document.getElementById('sidebarLeft');
-    const sidebarContent = document.getElementById('sidebarContent');
-    const cards = document.querySelectorAll('.tab-card');
 
+    localStorage.removeItem('sidebarLayout');
     localStorage.removeItem('tabOrder');
     Object.keys(localStorage).forEach(key => {
-        if (key.startsWith('tabSide-')) {
-            localStorage.removeItem(key);
-        }
+        if (key.startsWith('tabSide-')) localStorage.removeItem(key);
     });
 
-    // Usuń wszystkie placeholdery
     document.querySelectorAll('.tab-placeholder').forEach(p => p.remove());
 
-    cards.forEach(card => {
-        sidebar.appendChild(card);
-        card.classList.remove('tab-left');
+    // Przywróć oryginalną kolejność z HTML
+    originalTabOrder.forEach(tabName => {
+        const card = document.querySelector(`.tab-card[data-tab="${tabName}"]`);
+        if (card) {
+            sidebar.appendChild(card);
+            card.classList.remove('tab-left', 'active');
+        }
     });
-
-    sidebarContent.classList.remove('sidebar-left');
 }
 
 // ===== UI MODE MANAGEMENT =====
@@ -269,7 +291,6 @@ export function initUIMode() {
     const aiChatBtn = document.getElementById('aiChatBtn');
     const sidebar = document.getElementById('sidebar');
     const sidebarLeft = document.getElementById('sidebarLeft');
-    const sidebarContent = document.getElementById('sidebarContent');
 
     const toolsButtons = [importDbBtn, exportDbBtn, cleanRodoBtn, languageBtn, helpBtn, aiChatBtn];
 
@@ -280,7 +301,6 @@ export function initUIMode() {
             });
             if (sidebar) sidebar.style.display = 'flex';
             if (sidebarLeft) sidebarLeft.style.display = 'flex';
-            if (sidebarContent) sidebarContent.style.display = 'block';
             toggleUIBtn.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
             toggleUIBtn.title = 'Stan 1: Przyciski + Zakładki';
         } else if (uiMode === 2) {
@@ -289,7 +309,6 @@ export function initUIMode() {
             });
             if (sidebar) sidebar.style.display = 'none';
             if (sidebarLeft) sidebarLeft.style.display = 'none';
-            if (sidebarContent) sidebarContent.style.display = 'none';
             toggleUIBtn.style.background = 'linear-gradient(135deg, #f59e0b, #d97706)';
             toggleUIBtn.title = 'Stan 2: Tylko Przyciski';
         } else if (uiMode === 3) {
@@ -298,7 +317,6 @@ export function initUIMode() {
             });
             if (sidebar) sidebar.style.display = 'flex';
             if (sidebarLeft) sidebarLeft.style.display = 'flex';
-            if (sidebarContent) sidebarContent.style.display = 'block';
             toggleUIBtn.style.background = 'linear-gradient(135deg, #22c55e, #16a34a)';
             toggleUIBtn.title = 'Stan 3: Tylko Zakładki';
         } else {
@@ -307,7 +325,6 @@ export function initUIMode() {
             });
             if (sidebar) sidebar.style.display = 'none';
             if (sidebarLeft) sidebarLeft.style.display = 'none';
-            if (sidebarContent) sidebarContent.style.display = 'none';
             toggleUIBtn.style.background = 'linear-gradient(135deg, #8b5cf6, #6d28d9)';
             toggleUIBtn.title = 'Stan 0: Tylko Status Bar';
         }
