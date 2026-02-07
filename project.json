@@ -1,7 +1,7 @@
 {
-  "name": "Parlament \"puppy\"",
-  "version": "3.5.3",
-  "description": "System lokalnej analizy wypowiedzi parlamentarnych",
+  "name": "Parlament P.I.M.P.",
+  "version": "4.0.0",
+  "description": "System inteligentnej analizy wypowiedzi parlamentarnych",
   "author": {
     "name": "Michał Stankiewicz",
     "email": "dostępny w profilu GitHub",
@@ -13,7 +13,7 @@
     "url": "https://github.com/michalstankiewicz4-cell/NostraDamnOS.git",
     "name": "NostraDamnOS"
   },
-  "license": "MIT",
+  "license": "MIT do v3.x.x",
   "created": "2026-01-24",
   "updated": "2026-02-03",
   "status": "production",
