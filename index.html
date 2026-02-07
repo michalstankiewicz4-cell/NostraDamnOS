@@ -795,11 +795,8 @@
         
         // Function to toggle console
         const toggleConsole = () => {
-            const isVisible = floatingPanel.style.display !== 'none';
+            const isVisible = getComputedStyle(floatingPanel).display !== 'none';
             floatingPanel.style.display = isVisible ? 'none' : 'block';
-            if (isVisible) {
-                window.setDbButtonsVisible && window.setDbButtonsVisible(false);
-            }
         };
         
         // Console section click (from floating bar)
@@ -815,7 +812,7 @@
         
         closeBtn?.addEventListener('click', () => {
             floatingPanel.style.display = 'none';
-            window.setDbButtonsVisible && window.setDbButtonsVisible(false);
+            // window.setDbButtonsVisible && window.setDbButtonsVisible(false);
         });
         
         // Simple sync function for logs (called by console interceptor)
