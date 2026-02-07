@@ -138,6 +138,10 @@ header p {
     box-shadow: 4px 4px 12px rgba(0,0,0,0.15);
 }
 
+.tab-placeholder {
+    pointer-events: none;
+}
+
 .tab-card.dragging {
     opacity: 0.7;
     cursor: grabbing;

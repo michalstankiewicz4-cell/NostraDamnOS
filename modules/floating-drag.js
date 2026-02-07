@@ -27,32 +27,40 @@ export function initTabCardsDragDrop() {
     // Single-click otwiera/zamyka, double-click zmienia stronę
     tabCards.forEach(card => {
         const tabName = card.getAttribute('data-tab');
-        
+        let clickTimer = null;
+
         card.addEventListener('click', (e) => {
-            // Jeśli to było przeciąganie, nie otwieraj
             if (card.classList.contains('dragging')) {
                 card.classList.remove('dragging');
                 return;
             }
 
-            const isActive = card.classList.contains('active');
+            // Opóźnij click, żeby dblclick mógł go anulować
+            if (clickTimer) clearTimeout(clickTimer);
+            clickTimer = setTimeout(() => {
+                clickTimer = null;
 
-            if (isActive) {
-                card.classList.remove('active');
-            } else {
-                tabCards.forEach(c => c.classList.remove('active'));
-                card.classList.add('active');
-            }
+                const isActive = card.classList.contains('active');
 
-            // Toggle konsoli dla zakładki settings
-            if (tabName === 'settings' && typeof toggleConsole === 'function') {
-                toggleConsole();
-            }
+                if (isActive) {
+                    card.classList.remove('active');
+                } else {
+                    tabCards.forEach(c => c.classList.remove('active'));
+                    card.classList.add('active');
+                }
+
+                if (tabName === 'settings' && typeof toggleConsole === 'function') {
+                    toggleConsole();
+                }
+            }, 250);
         });
-        
-        // Double-click zmienia stronę karteczki
+
         card.addEventListener('dblclick', (e) => {
             e.preventDefault();
+            if (clickTimer) {
+                clearTimeout(clickTimer);
+                clickTimer = null;
+            }
             toggleTabSide(card);
         });
     });
@@ -126,20 +134,30 @@ export function initTabCardsDragDrop() {
         const tabName = card.getAttribute('data-tab');
         const currentSide = localStorage.getItem(`tabSide-${tabName}`) || 'right';
         const newSide = currentSide === 'right' ? 'left' : 'right';
-        
+
         localStorage.setItem(`tabSide-${tabName}`, newSide);
-        
+
+        // Wstaw placeholder w miejsce przenoszonej zakładki
+        const placeholder = document.createElement('div');
+        placeholder.className = 'tab-placeholder';
+        placeholder.setAttribute('data-for', tabName);
+        placeholder.style.height = card.offsetHeight + 'px';
+        card.parentNode.insertBefore(placeholder, card);
+
+        // Sprawdź czy na docelowej stronie jest placeholder do zastąpienia
+        const targetSidebar = newSide === 'left' ? sidebarLeft : sidebar;
+        const existingPlaceholder = targetSidebar.querySelector(`.tab-placeholder[data-for="${tabName}"]`);
+
+        if (existingPlaceholder) {
+            existingPlaceholder.replaceWith(card);
+        } else {
+            targetSidebar.appendChild(card);
+        }
+
         if (newSide === 'left') {
-            sidebarLeft.appendChild(card);
             card.classList.add('tab-left');
         } else {
-            sidebar.appendChild(card);
             card.classList.remove('tab-left');
-        }
-        
-        const panel = document.getElementById(`panel-${tabName}`);
-        if (panel && panel.classList.contains('active')) {
-            updateSidebarContentPosition();
         }
     }
 
@@ -215,6 +233,9 @@ export function resetTabsLayout() {
             localStorage.removeItem(key);
         }
     });
+
+    // Usuń wszystkie placeholdery
+    document.querySelectorAll('.tab-placeholder').forEach(p => p.remove());
 
     cards.forEach(card => {
         sidebar.appendChild(card);
