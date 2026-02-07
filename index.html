@@ -120,6 +120,32 @@
 
         <!-- Sidebar z karteczkami na prawo -->
         <aside class="sidebar" id="sidebar">
+            <script>
+                document.addEventListener('DOMContentLoaded', () => {
+                    const sidebar = document.getElementById('sidebar');
+                    const sidebarContent = document.getElementById('sidebarContent');
+                    sidebar.addEventListener('click', (e) => {
+                        const card = e.target.closest('.tab-card');
+                        if (card) {
+                            const tabName = card.getAttribute('data-tab');
+                            console.log(`[Zakładki] Kliknięto zakładkę '${tabName}'`);
+                            const panel = document.getElementById(`panel-${tabName}`);
+                            if (panel && panel.classList.contains('active')) {
+                                console.log(`[Zakładki] sidebar-content: panel '${tabName}' jest aktywny`);
+                            } else {
+                                console.log(`[Zakładki] sidebar-content: panel '${tabName}' jest zamknięty`);
+                            }
+                            // Jeśli kliknięto 'settings', otwórz konsolę
+                            if (tabName === 'settings') {
+                                if (typeof toggleConsole === 'function') {
+                                    toggleConsole();
+                                    console.log('[Zakładki] Konsola została otwarta przez zakładkę "settings"');
+                                }
+                            }
+                        }
+                    });
+                });
+            </script>
             <div class="tab-card" data-tab="settings">
                 <span class="tab-label">⚙️</span>
                 <span class="tab-text">Ustawienia</span>
