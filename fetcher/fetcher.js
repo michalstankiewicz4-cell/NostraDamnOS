@@ -29,6 +29,21 @@ export async function safeFetch(url) {
     }
 }
 
+// Safe fetch returning text/HTML (for transcripts)
+export async function safeFetchText(url) {
+    for (let i = 0; i < 3; i++) {
+        try {
+            const res = await fetch(url);
+            if (res.status === 404) return null;
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return await res.text();
+        } catch (e) {
+            if (i === 2) return null;
+            await new Promise(r => setTimeout(r, 500 * (i + 1)));
+        }
+    }
+}
+
 // Main fetcher orchestrator
 export async function runFetcher(config) {
     console.log('[Fetcher] Starting with config:', config);

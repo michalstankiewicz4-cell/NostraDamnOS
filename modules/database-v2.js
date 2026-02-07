@@ -435,15 +435,33 @@ export const db2 = {
                 console.warn('[DB v2] Cannot save - database not initialized');
                 return;
             }
-            
+
             const data = this.database.export();
             const dataArray = Array.from(data);
-            localStorage.setItem('nostradamnos_db', JSON.stringify(dataArray));
-            
-            const sizeKB = (data.length / 1024).toFixed(2);
-            console.log(`[DB v2] 💾 Auto-saved to localStorage (${sizeKB} KB)`);
+            const json = JSON.stringify(dataArray);
+
+            const sizeMB = (json.length / (1024 * 1024)).toFixed(2);
+
+            // localStorage limit ~5MB — sprawdź przed zapisem
+            if (json.length > 4.5 * 1024 * 1024) {
+                console.warn(`[DB v2] Database too large for localStorage (${sizeMB} MB). Data is available in memory but won't persist after refresh.`);
+                this._persistFailed = true;
+                return;
+            }
+
+            localStorage.setItem('nostradamnos_db', json);
+            this._persistFailed = false;
+
+            console.log(`[DB v2] 💾 Auto-saved to localStorage (${sizeMB} MB)`);
         } catch (err) {
-            console.error('[DB v2] Failed to save to localStorage:', err);
+            if (err.name === 'QuotaExceededError' || err.code === 22) {
+                const data = this.database.export();
+                const sizeMB = (data.length / (1024 * 1024)).toFixed(2);
+                console.warn(`[DB v2] localStorage quota exceeded (${sizeMB} MB). Data is available in memory but won't persist after refresh.`);
+                this._persistFailed = true;
+            } else {
+                console.error('[DB v2] Failed to save to localStorage:', err);
+            }
         }
     },
     

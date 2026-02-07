@@ -515,7 +515,10 @@ async function startPipelineETL() {
             setRecordsStatus(false);
             updateSummaryTab();
 
-            alert(`✅ Pobrano dane:\n\n${details || 'Brak danych w bazie'}`);
+            const persistWarning = db2._persistFailed
+                ? '\n\n⚠️ Baza danych jest za duża na localStorage — dane są dostępne w pamięci, ale nie przetrwają odświeżenia strony.'
+                : '';
+            alert(`✅ Pobrano dane:\n\n${details || 'Brak danych w bazie'}${persistWarning}`);
             console.log('✅ [Zadanie] Pobierz/Zaktualizuj dane zakończony');
         }
         
