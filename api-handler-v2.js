@@ -301,6 +301,35 @@ function updateSummaryTab() {
                         lastFetchInfoEl.style.display = '';
                         lastFetchDetailsEl.textContent = parts.join(', ');
                     }
+
+                    // Ostrzeżenia: zaznaczone moduły bez danych
+                    // Mapowanie: nazwa modułu w config → klucz w stats
+                    const moduleToStat = { oswiadczenia: 'oswiadczenia_majatkowe' };
+                    const selectedModules = lf.modules || [];
+                    const missing = selectedModules.filter(mod => {
+                        if (mod === 'poslowie' || mod === 'posiedzenia') return false;
+                        const statKey = moduleToStat[mod] || mod;
+                        return !lfStats[statKey] || lfStats[statKey] === 0;
+                    });
+
+                    let warningsEl = document.getElementById('summaryWarnings');
+                    if (missing.length > 0) {
+                        if (!warningsEl) {
+                            warningsEl = document.createElement('div');
+                            warningsEl.id = 'summaryWarnings';
+                            warningsEl.style.cssText = 'margin-top:8px;padding:8px 12px;background:rgba(255,193,7,0.15);border-left:3px solid #ffc107;border-radius:4px;font-size:0.85em;color:#ccc;';
+                            info.appendChild(warningsEl);
+                        }
+                        const names = missing.map(m => {
+                            const statKey = moduleToStat[m] || m;
+                            const meta = summaryLabels[statKey] || summaryLabels[m];
+                            return meta ? meta.label : m;
+                        });
+                        warningsEl.innerHTML = `⚠️ Zaznaczone, ale bez danych: <strong>${names.join(', ')}</strong>`;
+                        warningsEl.style.display = '';
+                    } else if (warningsEl) {
+                        warningsEl.style.display = 'none';
+                    }
                 } catch (e) { /* ignore */ }
             }
         } else if (info) {
@@ -506,6 +535,7 @@ async function startPipelineETL() {
                 newSittings: result.newSittings || 0,
                 savedRecords: result.savedRecords || 0,
                 stats: result.stats || {},
+                modules: config.modules || [],
                 timestamp: result.timestamp
             };
             localStorage.setItem('nostradamnos_lastFetch', JSON.stringify(lastFetch));
