@@ -90,11 +90,10 @@ header p {
 }
 
 /* Karteczka na lewej stronie */
-.tab-card.tab-left {
-    border-radius: 0 8px 8px 0;
-    border-right: 2px solid var(--border-color);
-    border-left: none;
-    box-shadow: 2px 2px 8px rgba(0,0,0,0.1);
+ .tab-card.tab-left {
+     border-radius: 0 8px 8px 0;
+     border-left: none;
+     box-shadow: 2px 2px 8px rgba(0,0,0,0.1);
 }
 
 /* Kolory karteczek przypisane do konkretnych zakładek */
@@ -153,7 +152,7 @@ header p {
     max-height: calc(100vh - 140px);
     background: white;
     border-radius: 8px 0 0 8px;
-    border: 1px solid var(--border-color);
+    border: none;
     box-shadow: -3px 0 15px rgba(0,0,0,0.1);
     z-index: 998;
     overflow-y: auto;
@@ -165,6 +164,7 @@ header p {
     left: 120px;
     border-radius: 0 8px 8px 0;
     box-shadow: 3px 0 15px rgba(0,0,0,0.1);
+    border-left: none;
 }
 
 .sidebar-panel {
@@ -450,10 +450,9 @@ footer a:hover {
     overflow: hidden;
 }
 
-.etl-sidebar {
-    background: #f8f9fa;
-    border-right: 2px solid #e2e8f0;
-    padding: 25px;
+ .etl-sidebar {
+     background: #f8f9fa;
+     padding: 25px;
 }
 
 .etl-sidebar h3 {
