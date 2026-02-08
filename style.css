@@ -2053,6 +2053,36 @@ input:disabled {
    SEKCJA 3: AI ASYSTENT (FULL SCREEN)
    ============================================ */
 
+.ai-two-columns {
+    display: flex;
+    gap: 20px;
+}
+
+.ai-column {
+    flex: 1;
+    min-width: 0;
+}
+
+.ai-column h3 {
+    margin-top: 0;
+    margin-bottom: 12px;
+    color: #667eea;
+}
+
+.ai-column-chat {
+    flex: 1;
+}
+
+.ai-column-models {
+    flex: 1;
+}
+
+@media (max-width: 768px) {
+    .ai-two-columns {
+        flex-direction: column;
+    }
+}
+
 .ai-chat-fullscreen {
     display: flex;
     flex-direction: column;

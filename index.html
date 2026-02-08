@@ -409,24 +409,11 @@
 
             <!-- SEKCJA 3: AI ASYSTENT -->
             <section class="app-section" data-section="3" style="display:none;">
-                
-                <!-- Sekcja ładowania modeli lokalnych -->
-                <section class="models-section">
-                    <h3>🔧 Modele Lokalne</h3>
-                    <div class="model-status">
-                        <div class="model-item">
-                            <span class="model-name">WebLLM (4B)</span>
-                            <span id="webllmStatus" class="status">⏳ Nieaktywny</span>
-                        </div>
-                        <div class="model-item">
-                            <span class="model-name">Transformers.js</span>
-                            <span id="transformersStatus" class="status">⏳ Nieaktywny</span>
-                        </div>
-                    </div>
-                    <button id="loadModels" class="btn btn-primary">Załaduj modele lokalne</button>
-                </section>
+                <div class="ai-two-columns">
 
-                <!-- AI Chat (Full Screen) -->
+                <!-- KOLUMNA 1: Asystent AI -->
+                <div class="ai-column ai-column-chat">
+                <h3>🤖 Asystent AI</h3>
                 <div class="ai-chat-fullscreen">
                     <div class="chat-config">
                         <div class="chat-config-row chat-filter-row">
@@ -506,6 +493,27 @@
                         <button id="sendChatBtn" title="Wyślij wiadomość">📤</button>
                     </div>
                 </div>
+                </div><!-- /ai-column-chat -->
+
+                <!-- KOLUMNA 2: Modele Lokalne -->
+                <div class="ai-column ai-column-models">
+                <h3>🔧 Modele Lokalne</h3>
+                <section class="models-section">
+                    <div class="model-status">
+                        <div class="model-item">
+                            <span class="model-name">WebLLM (4B)</span>
+                            <span id="webllmStatus" class="status">⏳ Nieaktywny</span>
+                        </div>
+                        <div class="model-item">
+                            <span class="model-name">Transformers.js</span>
+                            <span id="transformersStatus" class="status">⏳ Nieaktywny</span>
+                        </div>
+                    </div>
+                    <button id="loadModels" class="btn btn-primary">Załaduj modele lokalne</button>
+                </section>
+                </div><!-- /ai-column-models -->
+
+                </div><!-- /ai-two-columns -->
             </section>
 
             <!-- SEKCJA 4: WYKRESY & ANALITYKA -->
