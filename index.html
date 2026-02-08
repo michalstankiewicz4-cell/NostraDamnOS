@@ -416,15 +416,12 @@
                 <h3>🤖 Asystent AI</h3>
                 <div class="ai-chat-fullscreen">
                     <div class="chat-config">
-                        <div class="chat-config-row chat-filter-row">
-                            <label class="chat-filter-checkbox">
-                                <input type="checkbox" id="showAllModels" checked>
-                                <span>Pokaż wszystkie modele</span>
-                            </label>
-                        </div>
                         <div class="chat-config-row">
                             <label for="aiModelSelect">Model AI:</label>
                             <div class="model-select-wrapper">
+                                <label class="chat-filter-checkbox" title="Pokaż wszystkie modele">
+                                    <input type="checkbox" id="showAllModels" checked>
+                                </label>
                                 <select id="aiModelSelect">
                                     <option value="openai">OpenAI GPT-4</option>
                                     <option value="claude">Anthropic Claude 3.5</option>

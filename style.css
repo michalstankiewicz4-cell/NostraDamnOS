@@ -1391,18 +1391,18 @@ input:disabled {
 .chat-filter-checkbox {
     display: flex;
     align-items: center;
-    gap: 8px;
+    justify-content: center;
     cursor: pointer;
     user-select: none;
-    font-size: 14px;
-    color: #374151;
+    margin-bottom: 0;
 }
 
 .chat-filter-checkbox input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
+    width: 24px;
+    height: 24px;
     cursor: pointer;
     accent-color: #3b82f6;
+    margin: 0;
 }
 
 .chat-filter-checkbox:hover span {
