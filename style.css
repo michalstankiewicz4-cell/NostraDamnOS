@@ -1,3 +1,75 @@
+/* MODERN (obecny) styl konsoli */
+.console-modern .floating-console-panel {
+    background: #c0c0c0;
+    border-radius: 0;
+    box-shadow: 2px 2px 0 #fff, 4px 4px 0 #808080;
+    border: 2px solid #808080;
+    outline: 2px solid #fff;
+}
+.console-modern .floating-console-header {
+    background: linear-gradient(180deg, #e4e4e4 0%, #bdbdbd 100%);
+    color: #000;
+    font-family: 'MS Sans Serif', 'Consolas', 'Courier New', monospace;
+}
+.console-modern .floating-console-logs {
+    background: #fff;
+    color: #000;
+    font-family: 'MS Sans Serif', 'Consolas', 'Courier New', monospace;
+}
+
+/* RETRO styl konsoli */
+.console-retro .floating-console-panel {
+    background: #000;
+    border-radius: 4px 4px 4px 4px;
+    box-shadow: 0 0 0 2px #3399ff, 0 0 12px #222;
+    border: 2px solid #3399ff;
+    outline: 2px solid #fff;
+}
+.console-retro .floating-console-header {
+    background: linear-gradient(90deg, #ffe066 0%, #3399ff 100%);
+    color: #fff;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-weight: bold;
+    border-bottom: 2px solid #3399ff;
+    letter-spacing: 0.5px;
+    font-size: 1.05rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.console-retro .floating-console-title {
+    color: #fff;
+    text-shadow: 1px 1px 0 #000, 0 0 2px #ffe066;
+    font-weight: bold;
+    font-size: 1.05rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.console-retro .floating-console-close {
+    background: #ffe066;
+    color: #222;
+    border: 1.5px solid #3399ff;
+    border-radius: 2px;
+    font-weight: bold;
+    font-size: 1.1rem;
+    box-shadow: 1px 1px 0 #fff, 2px 2px 0 #3399ff;
+    margin-left: 8px;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+}
+.console-retro .floating-console-close:hover {
+    background: #ffd700;
+    color: #000;
+}
+.console-retro .floating-console-logs {
+    background: #000;
+    color: #fff;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 1.01rem;
+    box-shadow: none;
+    border-top: 2px solid #3399ff;
+}
 /* Reset i podstawowe style */
 * {
     margin: 0;

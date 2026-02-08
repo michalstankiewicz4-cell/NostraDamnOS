@@ -569,8 +569,8 @@
                         <div class="console-style-options">
                             <button id="styleWin95" class="console-style-btn">Windows 95<br></button>
                             <button id="styleCmd" class="console-style-btn">Windows CMD<br></button>
-                            <button id="styleModern" class="console-style-btn">Modern<br>Test 1</button>
-                            <button id="styleRetro" class="console-style-btn">Retro<br>Test 2</button>
+                            <button id="styleModern" class="console-style-btn">Modern<br></button>
+                            <button id="styleRetro" class="console-style-btn">Retro<br></button>
                         </div>
                     </div>
                 </div>
@@ -763,6 +763,28 @@
     </script>
     <script type="module" src="etl-bridge.js"></script>
     <script type="module" src="models.js"></script>
+
+        <!-- Konsola: obsługa stylów -->
+        <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const modernBtn = document.getElementById('styleModern');
+            const retroBtn = document.getElementById('styleRetro');
+            const body = document.body;
+
+            // Ustaw domyślny styl na modern
+            body.classList.add('console-modern');
+            body.classList.remove('console-retro');
+
+            modernBtn?.addEventListener('click', () => {
+                body.classList.add('console-modern');
+                body.classList.remove('console-retro');
+            });
+            retroBtn?.addEventListener('click', () => {
+                body.classList.add('console-retro');
+                body.classList.remove('console-modern');
+            });
+        });
+        </script>
     
     <!-- Bottom Navigation Logic -->
     <script>
