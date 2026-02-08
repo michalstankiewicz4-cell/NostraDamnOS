@@ -19,56 +19,57 @@
 
 /* RETRO styl konsoli */
 .console-retro .floating-console-panel {
-    background: #000;
-    border-radius: 4px 4px 4px 4px;
-    box-shadow: 0 0 0 2px #3399ff, 0 0 12px #222;
-    border: 2px solid #3399ff;
-    outline: 2px solid #fff;
+    background: #c0c0c0;
+    border-radius: 0;
+    border: 2px solid #000;
+    box-shadow:
+        inset -1px -1px 0 #fff,
+        inset 1px 1px 0 #808080,
+        2px 2px 0 #808080,
+        4px 4px 0 #fff;
+    font-family: 'MS Sans Serif', 'Consolas', 'Courier New', monospace;
 }
 .console-retro .floating-console-header {
-    background: linear-gradient(90deg, #ffe066 0%, #3399ff 100%);
+    background: #000080;
     color: #fff;
-    font-family: 'Consolas', 'Courier New', monospace;
-    font-weight: bold;
-    border-bottom: 2px solid #3399ff;
-    letter-spacing: 0.5px;
-    font-size: 1.05rem;
+    padding: 3px 6px;
+    font-family: 'MS Sans Serif', 'Consolas', 'Courier New', monospace;
+    font-size: 0.9rem;
     display: flex;
     align-items: center;
-    gap: 8px;
+    justify-content: space-between;
+    border-bottom: 2px solid #000;
 }
 .console-retro .floating-console-title {
     color: #fff;
-    text-shadow: 1px 1px 0 #000, 0 0 2px #ffe066;
     font-weight: bold;
-    font-size: 1.05rem;
-    display: flex;
-    align-items: center;
-    gap: 6px;
+    letter-spacing: 0.2px;
 }
 .console-retro .floating-console-close {
-    background: #ffe066;
-    color: #222;
-    border: 1.5px solid #3399ff;
-    border-radius: 2px;
+    width: 18px;
+    height: 18px;
+    background: #c0c0c0;
+    color: #000;
+    border: 2px solid #fff;
+    border-right-color: #808080;
+    border-bottom-color: #808080;
     font-weight: bold;
-    font-size: 1.1rem;
-    box-shadow: 1px 1px 0 #fff, 2px 2px 0 #3399ff;
-    margin-left: 8px;
+    font-size: 0.9rem;
+    line-height: 14px;
+    text-align: center;
     cursor: pointer;
-    transition: background 0.2s, color 0.2s;
+    padding: 0;
 }
 .console-retro .floating-console-close:hover {
-    background: #ffd700;
-    color: #000;
+    background: #d8d8d8;
 }
 .console-retro .floating-console-logs {
     background: #000;
     color: #fff;
+    padding: 8px;
     font-family: 'Consolas', 'Courier New', monospace;
-    font-size: 1.01rem;
-    box-shadow: none;
-    border-top: 2px solid #3399ff;
+    font-size: 0.95rem;
+    border-top: 2px solid #000;
 }
 /* Reset i podstawowe style */
 /* WINDOWS 10 CMD */
