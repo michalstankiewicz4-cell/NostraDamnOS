@@ -515,18 +515,48 @@
 
             <!-- SEKCJA 4: WYKRESY & ANALITYKA -->
             <section class="app-section" data-section="4" style="display:none;">
-                
-                <div class="charts-placeholder">
-                    <div class="placeholder-icon">📊</div>
-                    <h3>Wykresy i wizualizacje</h3>
-                    <p>Ta sekcja będzie zawierać interaktywne wykresy i dashboardy</p>
-                    <ul class="placeholder-features">
-                        <li>📈 Trendy wypowiedzi w czasie</li>
-                        <li>🗳️ Statystyki głosowań</li>
-                        <li>👥 Aktywność posłów</li>
-                        <li>🏛️ Porównania klubów parlamentarnych</li>
-                    </ul>
-                    <p class="placeholder-hint">💡 Pobierz dane w sekcji ETL, aby rozpocząć wizualizację</p>
+
+                <div id="chartsGrid" class="charts-grid">
+                    <div class="chart-card" id="chartKluby">
+                        <div class="chart-card-header">
+                            <h4>Rozkład klubów parlamentarnych</h4>
+                            <button class="chart-refresh-btn" data-chart="kluby" title="Aktualizuj">🔄</button>
+                        </div>
+                        <canvas id="canvasKluby"></canvas>
+                        <div class="chart-no-data">Brak danych — pobierz posłów w ETL</div>
+                    </div>
+                    <div class="chart-card" id="chartTopPoslowie">
+                        <div class="chart-card-header">
+                            <h4>Top 10 najaktywniejszych posłów</h4>
+                            <button class="chart-refresh-btn" data-chart="topPoslowie" title="Aktualizuj">🔄</button>
+                        </div>
+                        <canvas id="canvasTopPoslowie"></canvas>
+                        <div class="chart-no-data">Brak danych — pobierz wypowiedzi w ETL</div>
+                    </div>
+                    <div class="chart-card" id="chartGlosowania">
+                        <div class="chart-card-header">
+                            <h4>Wyniki głosowań</h4>
+                            <button class="chart-refresh-btn" data-chart="glosowania" title="Aktualizuj">🔄</button>
+                        </div>
+                        <canvas id="canvasGlosowania"></canvas>
+                        <div class="chart-no-data">Brak danych — pobierz głosowania w ETL</div>
+                    </div>
+                    <div class="chart-card" id="chartGlosowaniaTime">
+                        <div class="chart-card-header">
+                            <h4>Głosowania w czasie</h4>
+                            <button class="chart-refresh-btn" data-chart="glosowaniaTime" title="Aktualizuj">🔄</button>
+                        </div>
+                        <canvas id="canvasGlosowaniaTime"></canvas>
+                        <div class="chart-no-data">Brak danych — pobierz głosowania w ETL</div>
+                    </div>
+                    <div class="chart-card" id="chartKomisje">
+                        <div class="chart-card-header">
+                            <h4>Aktywność komisji</h4>
+                            <button class="chart-refresh-btn" data-chart="komisje" title="Aktualizuj">🔄</button>
+                        </div>
+                        <canvas id="canvasKomisje"></canvas>
+                        <div class="chart-no-data">Brak danych — pobierz komisje w ETL</div>
+                    </div>
                 </div>
             </section>
 
@@ -654,6 +684,7 @@
 
     <!-- Moduły -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
     <script type="module" src="api-handler-v2.js"></script>
     <script type="module">
         // Import needed functions
@@ -738,6 +769,11 @@
                     if (targetSection) {
                         targetSection.style.display = 'block';
                         targetSection.classList.add('active');
+                    }
+
+                    // Renderuj wykresy przy wejściu na zakładkę 4
+                    if (sectionNum === '4' && window._renderCharts) {
+                        window._renderCharts();
                     }
                 });
             });
@@ -891,6 +927,10 @@
     <script type="module">
         import { initDbButtons } from './modules/db-buttons.js';
         initDbButtons();
+    </script>
+    <script type="module">
+        import { renderAllCharts } from './modules/charts.js';
+        window._renderCharts = renderAllCharts;
     </script>
 
     <script type="module">
