@@ -285,14 +285,14 @@ export function initUIMode() {
 
     const importDbBtn = document.getElementById('importDbBtn');
     const exportDbBtn = document.getElementById('exportDbBtn');
-    const cleanRodoBtn = document.getElementById('cleanRodoBtn');
+    const aboutBtn = document.getElementById('aboutBtn');
     const languageBtn = document.getElementById('languageBtn');
     const helpBtn = document.getElementById('helpBtn');
     const aiChatBtn = document.getElementById('aiChatBtn');
     const sidebar = document.getElementById('sidebar');
     const sidebarLeft = document.getElementById('sidebarLeft');
 
-    const toolsButtons = [importDbBtn, exportDbBtn, cleanRodoBtn, languageBtn, helpBtn, aiChatBtn];
+    const toolsButtons = [importDbBtn, exportDbBtn, aboutBtn, languageBtn, helpBtn, aiChatBtn];
 
     const updateUIMode = () => {
         if (uiMode === 1) {

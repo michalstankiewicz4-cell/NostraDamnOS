@@ -572,7 +572,7 @@
     <!-- Database Buttons -->
     <button id="importDbBtn" class="floating-btn btn-import" title="Import bazy danych">📥</button>
     <button id="exportDbBtn" class="floating-btn btn-export" title="Export bazy danych">📤</button>
-    <button id="cleanRodoBtn" class="floating-btn btn-rodo" title="Wyczyść dane wrażliwe (RODO)">🔐</button>
+    <button id="aboutBtn" class="floating-btn btn-rodo" title="O projekcie">ℹ️</button>
 
     <!-- AI Chat Assistant Button (removed popup, now goes to section 3) -->
     <button id="aiChatBtn" class="floating-btn btn-ai-chat" title="Chat z AI Asystentem">🤖</button>
@@ -823,21 +823,21 @@
             // Get all button elements
             const importDbBtn = document.getElementById('importDbBtn');
             const exportDbBtn = document.getElementById('exportDbBtn');
-            const cleanRodoBtn = document.getElementById('cleanRodoBtn');
+            const aboutBtn = document.getElementById('aboutBtn');
             const languageBtn = document.getElementById('languageBtn');
             const helpBtn = document.getElementById('helpBtn');
             
             console.log('[DOMContentLoaded] Elements found:',
                 'importDbBtn:', !!importDbBtn,
                 'exportDbBtn:', !!exportDbBtn,
-                'cleanRodoBtn:', !!cleanRodoBtn,
+                'aboutBtn:', !!aboutBtn,
                 'languageBtn:', !!languageBtn,
                 'helpBtn:', !!helpBtn
             );
             
             // Define setDbButtonsVisible function (used by floating console)
             const setDbButtonsVisible = (visible) => {
-                const toolsButtons = [importDbBtn, exportDbBtn, cleanRodoBtn, languageBtn, helpBtn];
+                const toolsButtons = [importDbBtn, exportDbBtn, aboutBtn, languageBtn, helpBtn];
                 toolsButtons.forEach(btn => {
                     if (btn) btn.style.display = visible ? 'flex' : 'none';
                 });
@@ -864,9 +864,14 @@
             };
             
             // Attach button listeners with animation
-            addButtonAnimation(cleanRodoBtn, async () => {
-                console.log('🔐 RODO Data Cleanup - Starting sensitive data scan...');
-                alert('🔐 RODO Data Cleanup\n\nFunkcja w przygotowaniu (TODO v5.0)');
+            addButtonAnimation(aboutBtn, () => {
+                alert(
+                    'Parlament P.I.M.P.\n' +
+                    'Parliamentary Intelligence & Monitoring Platform\n\n' +
+                    'Autor: Micha\u0142 Stankiewicz\n\n' +
+                    'Osoby kt\u00f3re wspieraj\u0105: Robin070\n\n' +
+                    'Pomoc w realizacji: Tomasz Gierczak, xBigle22x, szauw_iks'
+                );
             });
             
             addButtonAnimation(languageBtn, () => {

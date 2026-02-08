@@ -57,23 +57,10 @@ export async function runPipeline(config, callbacks = {}) {
         let sittingsToFetch = [];
         
         if (fetchMode === 'auto') {
-            if (lastPosiedzenie === 0) {
-                onLog('🆕 First run - using user-selected range');
-                fetchMode = 'range'; // Use user's range selection
-                sittingsToFetch = filterNewSittings(allSittings, 0, config);
-            } else {
-                const maxSitting = Math.max(...allSittings);
-                if (maxSitting > lastPosiedzenie) {
-                    onLog(`📥 Smart Auto: Incremental mode - new sittings detected (${lastPosiedzenie + 1}-${maxSitting})`);
-                    fetchMode = 'incremental';
-                    sittingsToFetch = allSittings.filter(num => num > lastPosiedzenie);
-                } else {
-                    onLog('✅ All data up to date!');
-                    onProgress(100, 'Up to date');
-                    onComplete({ success: true, stats: {}, upToDate: true });
-                    return { success: true, upToDate: true };
-                }
-            }
+            // Zawsze używaj zakresu wybranego przez użytkownika (rangeMode/rangeCount)
+            // Ignorujemy lastPosiedzenie — użytkownik decyduje co chce pobrać
+            onLog('📌 Fetching user-selected range');
+            sittingsToFetch = filterNewSittings(allSittings, 0, config);
         } else if (fetchMode === 'full') {
             onLog('🔄 Force Full mode - ignoring cache, fetching all');
             sittingsToFetch = filterNewSittings(allSittings, 0, config);
