@@ -1922,6 +1922,8 @@ input:disabled {
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    text-align: center;
+    display: block;
 }
 
 /* ============================================
@@ -2247,6 +2249,8 @@ input:disabled {
     
     .nav-label {
         font-size: 0.65rem;
+        text-align: center;
+        display: block;
     }
     
     .summary-container {
