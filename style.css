@@ -1087,46 +1087,66 @@ input:disabled {
     right: 20px;
     width: 400px;
     max-height: 500px;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    background: #c0c0c0;
+    border-radius: 0;
+    box-shadow: 2px 2px 0 #fff, 4px 4px 0 #808080;
     display: none;
     z-index: 998;
     overflow: hidden;
+    border: 2px solid #808080;
+    outline: 2px solid #fff;
 }
 
 .floating-console-header {
-    background: linear-gradient(135deg, #667eea, #764ba2);
-    color: white;
-    padding: 12px;
+    background: linear-gradient(180deg, #e4e4e4 0%, #bdbdbd 100%);
+    color: #000;
+    padding: 6px 10px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    font-family: 'MS Sans Serif', 'Consolas', 'Courier New', monospace;
+    font-size: 1rem;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid #808080;
+    box-shadow: inset 1px 1px 0 #fff, inset -1px -1px 0 #808080;
 }
 
 .floating-console-title {
-    font-weight: 600;
+    font-weight: bold;
+    font-size: 1rem;
+    color: #000;
+    letter-spacing: 1px;
+    text-shadow: 1px 1px 0 #fff;
 }
 
 .floating-console-close {
-    background: transparent;
-    border: none;
-    color: white;
-    font-size: 20px;
+    background: #e4e4e4;
+    color: #000;
+    border: 2px solid #808080;
+    border-radius: 0;
+    font-size: 1.1rem;
     cursor: pointer;
-    padding: 0;
-    width: 24px;
-    height: 24px;
+    padding: 0 8px;
+    margin-left: 8px;
+    box-shadow: 1px 1px 0 #fff, 2px 2px 0 #808080;
+    transition: background 0.2s;
+}
+.floating-console-close:hover {
+    background: #bdbdbd;
+    color: #000;
 }
 
 .floating-console-logs {
-    padding: 12px;
+    padding: 10px;
     max-height: 440px;
     overflow-y: auto;
-    background: #f7fafc;
-    font-family: monospace;
-    font-size: 0.85rem;
+    background: #fff;
+    font-family: 'MS Sans Serif', 'Consolas', 'Courier New', monospace;
+    font-size: 0.95rem;
     line-height: 1.6;
+    color: #000;
+    border-top: 2px solid #808080;
+    box-shadow: inset 1px 1px 0 #fff, inset -1px -1px 0 #808080;
 }
 
 /* Progress & Logs Section */
@@ -1159,12 +1179,15 @@ input:disabled {
 .api-logs {
     max-height: 300px;
     overflow-y: auto;
-    background: #f7fafc;
+    background: #fff;
     padding: 0.75rem;
-    border-radius: 5px;
-    font-family: monospace;
-    font-size: 0.85rem;
+    border-radius: 0;
+    font-family: 'MS Sans Serif', 'Consolas', 'Courier New', monospace;
+    font-size: 0.95rem;
     line-height: 1.6;
+    color: #000;
+    box-shadow: inset 1px 1px 0 #fff, inset -1px -1px 0 #808080;
+    border: 2px solid #808080;
 }
 
 .api-status-box {
