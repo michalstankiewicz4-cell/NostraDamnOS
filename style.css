@@ -2133,8 +2133,9 @@ input:disabled {
 
 .chart-card-header {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
+    gap: 12px;
     margin-bottom: 12px;
 }
 
@@ -2148,10 +2149,10 @@ input:disabled {
 .chart-refresh-btn {
     background: none;
     border: 1px solid rgba(255,255,255,0.12);
-    border-radius: 6px;
-    padding: 2px 8px;
+    border-radius: 8px;
+    padding: 6px 18px;
     cursor: pointer;
-    font-size: 0.75rem;
+    font-size: 1.2rem;
     color: #aaa;
     transition: all 0.2s;
 }
