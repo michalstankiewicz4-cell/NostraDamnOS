@@ -2,15 +2,15 @@
 
 export function normalizeGlosowania(raw) {
     return raw.map(g => ({
-        id_glosowania: g.id || g.id_glosowania || null,
-        id_posiedzenia: g.id_posiedzenia || null,
-        numer: g.numer || null,
-        data: g.data || null,
+        id_glosowania: g.id_glosowania || g.id || `${g.sitting}_${g.votingNumber}` || null,
+        id_posiedzenia: g.id_posiedzenia || g.sitting || null,
+        numer: g.numer || g.votingNumber || null,
+        data: g.data || g.date || null,
         wynik: g.wynik || null,
-        tytul: g.tytul || null,
-        za: g.za || 0,
-        przeciw: g.przeciw || 0,
-        wstrzymalo: g.wstrzymalo || 0
+        tytul: g.tytul || g.topic || g.description || null,
+        za: g.za ?? g.yes ?? 0,
+        przeciw: g.przeciw ?? g.no ?? 0,
+        wstrzymalo: g.wstrzymalo ?? g.abstain ?? 0
     }));
 }
 

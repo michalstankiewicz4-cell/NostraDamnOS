@@ -22,6 +22,7 @@ export const db2 = {
             try {
                 const uint8Array = new Uint8Array(JSON.parse(savedDb));
                 this.database = new this.sql.Database(uint8Array);
+                this.migrateSchema();
                 console.log('[DB v2] ✅ Loaded from localStorage');
                 return this;
             } catch (err) {
@@ -74,6 +75,7 @@ export const db2 = {
                 data TEXT,
                 tekst TEXT,
                 typ TEXT,           -- wystąpienie, pytanie, etc.
+                mowca TEXT,
                 FOREIGN KEY(id_posiedzenia) REFERENCES posiedzenia(id_posiedzenia),
                 FOREIGN KEY(id_osoby) REFERENCES poslowie(id_osoby)
             );
@@ -233,6 +235,22 @@ export const db2 = {
         console.log('[DB v2] Schema created - 13 tables + metadata + indexes');
     },
     
+    migrateSchema() {
+        try {
+            // Sprawdź czy kolumna mowca istnieje w wypowiedzi
+            const tableInfo = this.database.exec("PRAGMA table_info(wypowiedzi)");
+            if (tableInfo.length) {
+                const columns = tableInfo[0].values.map(row => row[1]);
+                if (!columns.includes('mowca')) {
+                    this.database.run("ALTER TABLE wypowiedzi ADD COLUMN mowca TEXT");
+                    console.log('[DB v2] Migration: added mowca column to wypowiedzi');
+                }
+            }
+        } catch (err) {
+            console.warn('[DB v2] Migration error:', err);
+        }
+    },
+
     // ===== UPSERT METHODS =====
     
     upsertPoslowie(data) {
@@ -295,16 +313,17 @@ export const db2 = {
     
     upsertWypowiedzi(data) {
         const stmt = this.database.prepare(`
-            INSERT INTO wypowiedzi (id_wypowiedzi, id_posiedzenia, id_osoby, data, tekst, typ)
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO wypowiedzi (id_wypowiedzi, id_posiedzenia, id_osoby, data, tekst, typ, mowca)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(id_wypowiedzi) DO UPDATE SET
                 id_posiedzenia = excluded.id_posiedzenia,
                 id_osoby = excluded.id_osoby,
                 data = excluded.data,
                 tekst = excluded.tekst,
-                typ = excluded.typ
+                typ = excluded.typ,
+                mowca = excluded.mowca
         `);
-        
+
         data.forEach(row => {
             stmt.run([
                 row.id_wypowiedzi,
@@ -312,7 +331,8 @@ export const db2 = {
                 row.id_osoby,
                 row.data,
                 row.tekst,
-                row.typ
+                row.typ,
+                row.mowca || null
             ]);
         });
         
