@@ -734,29 +734,30 @@ input:disabled {
 }
 
 .floating-lamp {
-    width: 10px;
-    height: 10px;
+    width: 15px;
+    height: 15px;
     border-radius: 50%;
     transition: all 0.3s ease;
     box-shadow: 0 0 6px rgba(0, 0, 0, 0.3);
+    background-image: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0.1) 30%, transparent 60%);
 }
 
 .floating-lamp.status-ok,
 .floating-lamp-ok {
     background-color: #10b981;
-    box-shadow: 0 0 8px rgba(16, 185, 129, 0.8);
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.8), inset 0 -2px 3px rgba(0,0,0,0.25);
 }
 
 .floating-lamp.status-warning,
 .floating-lamp-warning {
     background-color: #f59e0b;
-    box-shadow: 0 0 8px rgba(245, 158, 11, 0.8);
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.8), inset 0 -2px 3px rgba(0,0,0,0.25);
 }
 
 .floating-lamp.status-error,
 .floating-lamp-error {
     background-color: #ef4444;
-    box-shadow: 0 0 8px rgba(239, 68, 68, 0.8);
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.8), inset 0 -2px 3px rgba(0,0,0,0.25);
 }
 
 #consoleSection {
@@ -1044,14 +1045,17 @@ input:disabled {
 
 .floating-lamp-ok {
     background-color: #10b981;
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.8), inset 0 -2px 3px rgba(0,0,0,0.25);
 }
 
 .floating-lamp-error {
     background-color: #ef4444;
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.8), inset 0 -2px 3px rgba(0,0,0,0.25);
 }
 
 .floating-lamp-warning {
     background-color: #f59e0b;
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.8), inset 0 -2px 3px rgba(0,0,0,0.25);
 }
 
 .status-bar-console {
@@ -1724,17 +1728,17 @@ input:disabled {
 
 .floating-lamp-ok {
     background: #48bb78;
-    box-shadow: 0 0 6px rgba(72, 187, 120, 0.6);
+    box-shadow: 0 0 8px rgba(72, 187, 120, 0.6), inset 0 -2px 3px rgba(0,0,0,0.25);
 }
 
 .floating-lamp-warning {
     background: #f6ad55;
-    box-shadow: 0 0 6px rgba(246, 173, 85, 0.6);
+    box-shadow: 0 0 8px rgba(246, 173, 85, 0.6), inset 0 -2px 3px rgba(0,0,0,0.25);
 }
 
 .floating-lamp-error {
     background: #f56565;
-    box-shadow: 0 0 6px rgba(245, 101, 101, 0.6);
+    box-shadow: 0 0 8px rgba(245, 101, 101, 0.6), inset 0 -2px 3px rgba(0,0,0,0.25);
 }
 
 .status-bar-separator {
@@ -2175,6 +2179,20 @@ input:disabled {
     padding: 40px 16px;
     color: #666;
     font-size: 0.85rem;
+}
+
+.chart-select {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 6px;
+    color: #ccc;
+    font-size: 0.85rem;
+    padding: 4px 8px;
+    cursor: pointer;
+}
+.chart-select:focus {
+    outline: none;
+    border-color: #667eea;
 }
 
 @media (max-width: 768px) {

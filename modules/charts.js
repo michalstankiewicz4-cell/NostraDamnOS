@@ -120,15 +120,19 @@ function renderGlosowania() {
     });
 }
 
-// 4. Głosowania w czasie (line)
+// === CUSTOM CHART RENDERERS ===
+
+const canvasId = 'canvasCustom';
+const cardId = 'chartCustom';
+
 function renderGlosowaniaTime() {
     const data = query("SELECT id_posiedzenia as pos, COUNT(*) as cnt FROM glosowania GROUP BY id_posiedzenia ORDER BY id_posiedzenia");
-    if (data.length < 2) { setCardState('chartGlosowaniaTime', false); return; }
+    if (data.length < 2) { setCardState(cardId, false); return; }
 
-    setCardState('chartGlosowaniaTime', true);
-    destroyChart('glosowaniaTime');
+    setCardState(cardId, true);
+    destroyChart('custom');
 
-    chartInstances['glosowaniaTime'] = new Chart(document.getElementById('canvasGlosowaniaTime'), {
+    chartInstances['custom'] = new Chart(document.getElementById(canvasId), {
         type: 'line',
         data: {
             labels: data.map(d => 'Pos. ' + d.pos),
@@ -153,7 +157,6 @@ function renderGlosowaniaTime() {
     });
 }
 
-// 5. Aktywność komisji (bar)
 function renderKomisje() {
     const data = query(`
         SELECT k.skrot as nazwa, COUNT(kp.id_posiedzenia_komisji) as cnt
@@ -163,12 +166,12 @@ function renderKomisje() {
         ORDER BY cnt DESC
         LIMIT 15
     `);
-    if (!data.length) { setCardState('chartKomisje', false); return; }
+    if (!data.length) { setCardState(cardId, false); return; }
 
-    setCardState('chartKomisje', true);
-    destroyChart('komisje');
+    setCardState(cardId, true);
+    destroyChart('custom');
 
-    chartInstances['komisje'] = new Chart(document.getElementById('canvasKomisje'), {
+    chartInstances['custom'] = new Chart(document.getElementById(canvasId), {
         type: 'bar',
         data: {
             labels: data.map(d => d.nazwa || '?'),
@@ -189,12 +192,93 @@ function renderKomisje() {
     });
 }
 
+function renderInterpelacje() {
+    const data = query(`
+        SELECT p.nazwisko || ' ' || SUBSTR(p.imie, 1, 1) || '.' as nazwa, COUNT(*) as cnt
+        FROM interpelacje i
+        JOIN poslowie p ON i.id_osoby = p.id_osoby
+        GROUP BY i.id_osoby
+        ORDER BY cnt DESC
+        LIMIT 10
+    `);
+    if (!data.length) { setCardState(cardId, false); return; }
+
+    setCardState(cardId, true);
+    destroyChart('custom');
+
+    chartInstances['custom'] = new Chart(document.getElementById(canvasId), {
+        type: 'bar',
+        data: {
+            labels: data.map(d => d.nazwa),
+            datasets: [{
+                label: 'Interpelacje',
+                data: data.map(d => d.cnt),
+                backgroundColor: '#f093fb'
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { ticks: { color: '#aaa' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                y: { ticks: { color: '#ccc', font: { size: 11 } }, grid: { display: false } }
+            }
+        }
+    });
+}
+
+function renderFrekwencja() {
+    const data = query("SELECT id_posiedzenia as pos, AVG(za + przeciw + wstrzymalo) as avg_total FROM glosowania GROUP BY id_posiedzenia ORDER BY id_posiedzenia");
+    if (data.length < 2) { setCardState(cardId, false); return; }
+
+    setCardState(cardId, true);
+    destroyChart('custom');
+
+    chartInstances['custom'] = new Chart(document.getElementById(canvasId), {
+        type: 'line',
+        data: {
+            labels: data.map(d => 'Pos. ' + d.pos),
+            datasets: [{
+                label: 'Śr. głosujących',
+                data: data.map(d => Math.round(d.avg_total)),
+                borderColor: '#43e97b',
+                backgroundColor: 'rgba(67,233,123,0.1)',
+                fill: true,
+                tension: 0.3,
+                pointRadius: 3
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { ticks: { color: '#aaa', maxRotation: 45 }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                y: { ticks: { color: '#aaa' }, grid: { color: 'rgba(255,255,255,0.05)' }, beginAtZero: true }
+            }
+        }
+    });
+}
+
+const customRenderers = {
+    glosowaniaTime: renderGlosowaniaTime,
+    komisje: renderKomisje,
+    interpelacje: renderInterpelacje,
+    frekwencja: renderFrekwencja
+};
+
+function renderCustomChart() {
+    const select = document.getElementById('customChartSelect');
+    if (!select) return;
+    const fn = customRenderers[select.value];
+    if (fn) fn();
+}
+
 const renderers = {
     kluby: renderKluby,
     topPoslowie: renderTopPoslowie,
     glosowania: renderGlosowania,
-    glosowaniaTime: renderGlosowaniaTime,
-    komisje: renderKomisje
+    custom: renderCustomChart
 };
 
 // Główna funkcja — renderuje wszystkie wykresy
@@ -203,8 +287,7 @@ export function renderAllCharts() {
     renderKluby();
     renderTopPoslowie();
     renderGlosowania();
-    renderGlosowaniaTime();
-    renderKomisje();
+    renderCustomChart();
 }
 
 // Pojedynczy wykres (dla przycisku aktualizuj)
@@ -220,4 +303,9 @@ document.addEventListener('click', (e) => {
     if (!btn) return;
     const chartName = btn.dataset.chart;
     if (chartName) renderSingleChart(chartName);
+});
+
+// Obsługa zmiany wykresu w selekcie
+document.getElementById('customChartSelect')?.addEventListener('change', () => {
+    if (db2.database) renderCustomChart();
 });
