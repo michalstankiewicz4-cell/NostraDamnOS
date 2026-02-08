@@ -1805,6 +1805,10 @@ input:disabled {
     text-align: right;
 }
 
+#etlLamp.etl-blink {
+    transition: none;
+}
+
 #sendChatBtn:disabled {
     opacity: 0.5;
     cursor: not-allowed;

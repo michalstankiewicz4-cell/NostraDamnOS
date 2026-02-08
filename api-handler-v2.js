@@ -347,19 +347,44 @@ function updateSummaryTab() {
 
 // === ETL PROGRESS BAR ===
 
-function showEtlProgress() {
+let etlBlinkInterval = null;
+
+function startEtlBlink() {
+    stopEtlBlink();
     const lamp = document.getElementById('etlLamp');
+    if (!lamp) return;
+    lamp.classList.add('etl-blink');
+    function blink() {
+        if (!etlBlinkInterval) return;
+        const isGreen = Math.random() > 0.35;
+        lamp.className = 'floating-lamp etl-blink ' + (isGreen ? 'floating-lamp-ok' : 'floating-lamp-error');
+        etlBlinkInterval = setTimeout(blink, 50 + Math.floor(Math.random() * 120));
+    }
+    etlBlinkInterval = setTimeout(blink, 50);
+}
+
+function stopEtlBlink() {
+    if (etlBlinkInterval) {
+        clearTimeout(etlBlinkInterval);
+        etlBlinkInterval = null;
+    }
+    const lamp = document.getElementById('etlLamp');
+    if (lamp) lamp.classList.remove('etl-blink');
+}
+
+function showEtlProgress() {
     const pctEl = document.getElementById('etlProgressPercent');
     const bar = document.getElementById('etlProgressBar');
-    if (lamp) lamp.className = 'floating-lamp floating-lamp-error';
     if (pctEl) pctEl.style.display = '';
     if (bar) bar.style.width = '0%';
+    startEtlBlink();
 }
 
 function hideEtlProgress() {
     const lamp = document.getElementById('etlLamp');
     const pctEl = document.getElementById('etlProgressPercent');
     const bar = document.getElementById('etlProgressBar');
+    stopEtlBlink();
     if (lamp) lamp.className = 'floating-lamp floating-lamp-ok';
     if (pctEl) pctEl.style.display = 'none';
     if (bar) bar.style.width = '0%';
