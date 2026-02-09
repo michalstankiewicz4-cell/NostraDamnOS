@@ -598,6 +598,32 @@
                         </div>
                     </div>
                 </div>
+                <!-- Sekcja 3: Widoczność elementów UI -->
+                <div class="console-style-panel">
+                    <div class="console-style-header">
+                        <h3>Widoczność elementów</h3>
+                    </div>
+                    <div class="console-style-body">
+                        <div class="settings-checkboxes">
+                            <label class="settings-checkbox-label">
+                                <input type="checkbox" id="toggleSidebar" checked>
+                                <span>Zakładki po prawej stronie</span>
+                            </label>
+                            <label class="settings-checkbox-label">
+                                <input type="checkbox" id="toggleFloatingBtns" checked>
+                                <span>Przyciski po lewej stronie</span>
+                            </label>
+                            <label class="settings-checkbox-label">
+                                <input type="checkbox" id="toggleTopBar" checked>
+                                <span>Pasek informacyjny (góra)</span>
+                            </label>
+                            <label class="settings-checkbox-label">
+                                <input type="checkbox" id="toggleBottomBar" checked>
+                                <span>Pasek statusu (dół)</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
             </section>
         </main>
 
@@ -621,7 +647,7 @@
             </div>
             <div class="nav-item" data-section="5">
                 <div class="nav-icon">🖥️</div>
-                <div class="nav-label">Konsola Style</div>
+                <div class="nav-label">Ustawienia</div>
             </div>
         </nav>
 
@@ -634,7 +660,7 @@
     </div>
 
     <!-- Floating UI Buttons (7 buttons total) -->
-    <button id="toggleUIBtn" class="floating-btn btn-toggle" title="Przełącz UI: Status Bar / Tools">⚙️</button>
+    <button id="toggleUIBtn" class="floating-btn btn-toggle" title="Ustawienia">⚙️</button>
     <div id="uiHoldProgress" aria-hidden="true">
         <div id="uiHoldProgressBar"></div>
     </div>
@@ -1068,14 +1094,87 @@
         function showNext() {
             textEl.classList.add('reset');
             textEl.textContent = messages[idx];
-            // Force reflow to restart animation
             void textEl.offsetWidth;
             textEl.classList.remove('reset');
             idx = (idx + 1) % messages.length;
         }
 
+        textEl.addEventListener('animationend', function() {
+            setTimeout(showNext, 3000);
+        });
+
         showNext();
-        setInterval(showNext, 5000);
+    })();
+    </script>
+
+    <!-- Settings: UI visibility toggles -->
+    <script>
+    (function() {
+        const STORAGE_KEY = 'uiVisibility';
+
+        const defaults = {
+            sidebar: true,
+            floatingBtns: true,
+            topBar: true,
+            bottomBar: true
+        };
+
+        function load() {
+            try {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                return saved ? { ...defaults, ...JSON.parse(saved) } : { ...defaults };
+            } catch { return { ...defaults }; }
+        }
+
+        function save(state) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        }
+
+        function apply(state) {
+            // Sidebar + floating buttons — delegate to UI mode manager
+            // which reads uiVisibility from localStorage
+            if (typeof window._updateUIMode === 'function') {
+                window._updateUIMode();
+            }
+
+            // Top info bar
+            const topBar = document.getElementById('topInfoBar');
+            if (topBar) topBar.style.display = state.topBar ? '' : 'none';
+            document.body.style.paddingTop = state.topBar ? '27px' : '0';
+
+            // Bottom floating status bar
+            const bottomBar = document.getElementById('floatingStatusBar');
+            if (bottomBar) bottomBar.style.display = state.bottomBar ? '' : 'none';
+            document.body.style.paddingBottom = state.bottomBar ? '25px' : '0';
+        }
+
+        const state = load();
+
+        const chkSidebar = document.getElementById('toggleSidebar');
+        const chkBtns = document.getElementById('toggleFloatingBtns');
+        const chkTop = document.getElementById('toggleTopBar');
+        const chkBottom = document.getElementById('toggleBottomBar');
+
+        if (chkSidebar) chkSidebar.checked = state.sidebar;
+        if (chkBtns) chkBtns.checked = state.floatingBtns;
+        if (chkTop) chkTop.checked = state.topBar;
+        if (chkBottom) chkBottom.checked = state.bottomBar;
+
+        apply(state);
+
+        function onToggle(key, checkbox) {
+            if (!checkbox) return;
+            checkbox.addEventListener('change', function() {
+                state[key] = this.checked;
+                save(state);
+                apply(state);
+            });
+        }
+
+        onToggle('sidebar', chkSidebar);
+        onToggle('floatingBtns', chkBtns);
+        onToggle('topBar', chkTop);
+        onToggle('bottomBar', chkBottom);
     })();
     </script>
 </body>

@@ -273,65 +273,39 @@ export function initUIMode() {
     const toggleUIBtn = document.getElementById('toggleUIBtn');
     const uiHoldProgress = document.getElementById('uiHoldProgress');
     const uiHoldProgressBar = document.getElementById('uiHoldProgressBar');
-    
+
     if (!toggleUIBtn) return;
 
-    let uiMode = parseInt(localStorage.getItem('uiMode') || '0');
     const holdDurationMs = 10000;
     let holdInterval = null;
     let holdProgress = 0;
     let holdActive = false;
     let holdTriggered = false;
 
-    const importDbBtn = document.getElementById('importDbBtn');
-    const exportDbBtn = document.getElementById('exportDbBtn');
-    const aboutBtn = document.getElementById('aboutBtn');
-    const languageBtn = document.getElementById('languageBtn');
-    const helpBtn = document.getElementById('helpBtn');
-    const aiChatBtn = document.getElementById('aiChatBtn');
-    const sidebar = document.getElementById('sidebar');
-    const sidebarLeft = document.getElementById('sidebarLeft');
+    // Apply visibility from settings checkboxes
+    const applyVisibility = () => {
+        let vis = {};
+        try {
+            const saved = localStorage.getItem('uiVisibility');
+            if (saved) vis = JSON.parse(saved);
+        } catch { /* defaults */ }
 
-    const toolsButtons = [importDbBtn, exportDbBtn, aboutBtn, languageBtn, helpBtn, aiChatBtn];
+        const sidebar = document.getElementById('sidebar');
+        const sidebarLeft = document.getElementById('sidebarLeft');
+        const btnIds = ['languageBtn', 'helpBtn', 'importDbBtn', 'exportDbBtn', 'aboutBtn', 'aiChatBtn'];
 
-    const updateUIMode = () => {
-        if (uiMode === 1) {
-            toolsButtons.forEach(btn => {
-                if (btn) btn.style.display = 'flex';
-            });
-            if (sidebar) sidebar.style.display = 'flex';
-            if (sidebarLeft) sidebarLeft.style.display = 'flex';
-            toggleUIBtn.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
-            toggleUIBtn.title = 'Stan 1: Przyciski + Zakładki';
-        } else if (uiMode === 2) {
-            toolsButtons.forEach(btn => {
-                if (btn) btn.style.display = 'flex';
-            });
-            if (sidebar) sidebar.style.display = 'none';
-            if (sidebarLeft) sidebarLeft.style.display = 'none';
-            toggleUIBtn.style.background = 'linear-gradient(135deg, #f59e0b, #d97706)';
-            toggleUIBtn.title = 'Stan 2: Tylko Przyciski';
-        } else if (uiMode === 3) {
-            toolsButtons.forEach(btn => {
-                if (btn) btn.style.display = 'none';
-            });
-            if (sidebar) sidebar.style.display = 'flex';
-            if (sidebarLeft) sidebarLeft.style.display = 'flex';
-            toggleUIBtn.style.background = 'linear-gradient(135deg, #22c55e, #16a34a)';
-            toggleUIBtn.title = 'Stan 3: Tylko Zakładki';
-        } else {
-            toolsButtons.forEach(btn => {
-                if (btn) btn.style.display = 'none';
-            });
-            if (sidebar) sidebar.style.display = 'none';
-            if (sidebarLeft) sidebarLeft.style.display = 'none';
-            toggleUIBtn.style.background = 'linear-gradient(135deg, #8b5cf6, #6d28d9)';
-            toggleUIBtn.title = 'Stan 0: Tylko Status Bar';
-        }
+        if (sidebar) sidebar.style.display = vis.sidebar !== false ? 'flex' : 'none';
+        if (sidebarLeft) sidebarLeft.style.display = vis.sidebar !== false ? 'flex' : 'none';
+        btnIds.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = vis.floatingBtns !== false ? 'flex' : 'none';
+        });
     };
 
-    updateUIMode();
+    applyVisibility();
+    window._updateUIMode = applyVisibility;
 
+    // Click → navigate to Settings (section 5)
     toggleUIBtn.addEventListener('click', (e) => {
         if (holdTriggered) {
             holdTriggered = false;
@@ -341,11 +315,12 @@ export function initUIMode() {
         }
         toggleUIBtn.style.transform = 'scale(0.9)';
         setTimeout(() => toggleUIBtn.style.transform = 'scale(1)', 200);
-        uiMode = (uiMode + 1) % 4;
-        localStorage.setItem('uiMode', uiMode);
-        updateUIMode();
+
+        const settingsNav = document.querySelector('.nav-item[data-section="5"]');
+        if (settingsNav) settingsNav.click();
     });
 
+    // Hold 10s → reset positions
     const showHoldProgress = () => {
         if (!uiHoldProgress || !uiHoldProgressBar) return;
         uiHoldProgress.style.display = 'block';
@@ -364,24 +339,21 @@ export function initUIMode() {
         holdActive = true;
         holdProgress = 0;
         showHoldProgress();
-        
+
         holdInterval = setInterval(() => {
-            holdProgress += 100; // +100ms co tick
+            holdProgress += 100;
             const progress = Math.min(holdProgress / holdDurationMs, 1);
             if (uiHoldProgressBar) {
                 uiHoldProgressBar.style.width = `${Math.round(progress * 100)}%`;
             }
-
             if (progress >= 1) {
                 cancelHold();
                 holdTriggered = true;
                 resetFloatingButtonPositions();
                 resetTabsLayout();
-                uiMode = 1;
-                localStorage.setItem('uiMode', uiMode);
-                updateUIMode();
+                applyVisibility();
             }
-        }, 100); // Update co 100ms (10 razy na sekundę)
+        }, 100);
     };
 
     const cancelHold = () => {

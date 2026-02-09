@@ -1707,6 +1707,60 @@ input:disabled {
     font-family: 'Courier New', 'Consolas', 'Monaco', monospace;
 }
 
+/* === SETTINGS — panele ustawień === */
+.console-style-panel {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    margin-bottom: 12px;
+}
+
+.console-style-header {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.console-style-header h3 {
+    margin: 0;
+    font-size: 0.95rem;
+}
+
+.console-style-body {
+    padding: 12px 14px;
+}
+
+.console-style-description {
+    margin-bottom: 10px;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.console-style-description p {
+    margin: 0;
+}
+
+.settings-checkboxes {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.settings-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+}
+
+.settings-checkbox-label input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: #4299e1;
+}
+
 /* === TOP INFO BAR — pasek informacyjny na górze === */
 .top-info-bar {
     position: fixed;
@@ -1729,9 +1783,10 @@ input:disabled {
 .top-info-text {
     white-space: nowrap;
     position: absolute;
-    color: #90cdf4;
+    color: #e2e8f0;
     letter-spacing: 0.5px;
-    animation: scrollLeft 10s linear forwards;
+    font-weight: bold;
+    animation: scrollLeft 16s linear forwards;
 }
 
 .top-info-text.reset {
