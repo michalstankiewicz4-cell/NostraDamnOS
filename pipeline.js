@@ -84,18 +84,21 @@ export async function runPipeline(config, callbacks = {}) {
         onLog(`📌 Found ${sittingsToFetch.length} new sittings to fetch`);
         onLog(`📌 Range: ${Math.min(...sittingsToFetch)} - ${Math.max(...sittingsToFetch)}`);
         
-        // Step 4: Fetch all data using runFetcher (15-70%)
+        // Step 4: Fetch all data using runFetcher (20-70%)
         onLog('⬇️ Fetching data from API...');
         onProgress(20, 'Fetching data from API');
-        
+
         // Pass sittings range to config
         const fetchConfig = {
             ...config,
             sittingsToFetch: sittingsToFetch
         };
-        
-        // Call real fetcher - returns all raw data
-        const raw = await runFetcher(fetchConfig);
+
+        // Call fetcher with progress callback mapped to 20-70% range
+        const raw = await runFetcher(fetchConfig, (fetchPct, label) => {
+            const mapped = 20 + Math.round(fetchPct * 0.5); // 20% + (0-100% → 0-50%) = 20-70%
+            onProgress(Math.min(mapped, 70), `Pobieranie: ${label}`);
+        });
         
         // Apply RODO filter if enabled
         let processedRaw = raw;

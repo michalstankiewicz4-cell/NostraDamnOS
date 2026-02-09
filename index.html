@@ -68,45 +68,59 @@
         // Buffer for early logs (before UI console exists)
         window.logBuffer = [];
         window.originalConsoleLog = console.log;
-        
-        // Override console.log globally
-        console.log = function(...args) {
-            // Still log to browser console
-            window.originalConsoleLog.apply(console, args);
-            
-            // Format message
-            const message = args.map(arg => {
-                if (typeof arg === 'object') {
-                    try {
-                        return JSON.stringify(arg, null, 2);
-                    } catch {
-                        return String(arg);
-                    }
-                }
-                return String(arg);
-            }).join(' ');
-            
+
+        // Log level colors
+        const LOG_COLORS = {
+            white:  '#e2e8f0',
+            red:    '#f56565',
+            green:  '#48bb78',
+            yellow: '#ecc94b',
+            blue:   '#63b3ed'
+        };
+
+        // Core logging function with color support
+        function addLogLine(message, color) {
             const timestamp = new Date().toLocaleTimeString();
             const formattedLog = `[${timestamp}] ${message}`;
-            
-            // Add to floating console (invisible apiLogs div)
             const apiLogs = document.getElementById('apiLogs');
-            
+
             if (apiLogs) {
                 const line = document.createElement('div');
                 line.textContent = formattedLog;
                 line.style.fontSize = '0.85rem';
                 line.style.fontFamily = 'monospace';
                 line.style.lineHeight = '1.6';
+                line.style.color = color || LOG_COLORS.white;
                 apiLogs.appendChild(line);
                 apiLogs.scrollTop = apiLogs.scrollHeight;
-                
-                // Sync to floating console
                 window.syncFloatingConsoleLogs && window.syncFloatingConsoleLogs();
             } else {
-                // Buffer for later (console doesn't exist yet)
-                window.logBuffer.push(formattedLog);
+                window.logBuffer.push({ text: formattedLog, color: color || LOG_COLORS.white });
             }
+        }
+
+        // Format args to string
+        function formatArgs(args) {
+            return args.map(arg => {
+                if (typeof arg === 'object') {
+                    try { return JSON.stringify(arg, null, 2); } catch { return String(arg); }
+                }
+                return String(arg);
+            }).join(' ');
+        }
+
+        // Override console.log → white (default)
+        console.log = function(...args) {
+            window.originalConsoleLog.apply(console, args);
+            addLogLine(formatArgs(args), LOG_COLORS.white);
+        };
+
+        // clog(level, ...args) — colored console log
+        // Levels: 'red' (error), 'green' (ok), 'yellow' (info), 'blue' (sql), 'white' (default)
+        window.clog = function(level, ...args) {
+            const color = LOG_COLORS[level] || LOG_COLORS.white;
+            window.originalConsoleLog.apply(console, [`[${level.toUpperCase()}]`, ...args]);
+            addLogLine(formatArgs(args), color);
         };
     </script>
     
@@ -121,25 +135,6 @@
             <span id="topInfoText" class="top-info-text"></span>
         </div>
 
-        <!-- Sidebar z karteczkami na prawo -->
-        <aside class="sidebar" id="sidebar">
-            <div class="tab-card" data-tab="settings">
-                <span class="tab-label">⚙️</span>
-                <span class="tab-text">Ustawienia</span>
-            </div>
-            <div class="tab-card" data-tab="info">
-                <span class="tab-label">ℹ️</span>
-                <span class="tab-text">Informacje</span>
-            </div>
-            <div class="tab-card" data-tab="help">
-                <span class="tab-label">❓</span>
-                <span class="tab-text">Pomoc</span>
-            </div>
-        </aside>
-
-        <!-- Sidebar z karteczkami na lewą (dla zakładek przeniesionych na lewą stronę) -->
-        <aside class="sidebar sidebar-left" id="sidebarLeft">
-        </aside>
 
 
         <!-- MAIN - 4 SEKCJE Z NAWIGACJĄ -->
@@ -405,6 +400,11 @@
                     <div id="summaryTableWrap" class="summary-table-wrap"></div>
                 </div>
 
+                <div class="summary-actions" id="summaryActions" style="margin-top:12px; display:flex; gap:10px;">
+                    <button id="summaryImportDb" class="console-style-btn">📥 Import bazy</button>
+                    <button id="summaryExportDb" class="console-style-btn">📤 Export bazy</button>
+                </div>
+
                 <div class="summary-placeholder" id="summaryPlaceholder">
                     <p>📥 Pobierz dane w sekcji ETL, aby zobaczyć szczegółowe statystyki</p>
                 </div>
@@ -564,6 +564,46 @@
                         <canvas id="canvasCustom"></canvas>
                         <div class="chart-no-data">Brak danych — pobierz odpowiednie dane w ETL</div>
                     </div>
+                    <div class="chart-card" id="chartNajmniejAktywni">
+                        <div class="chart-card-header">
+                            <h4>Top 20 najmniej aktywnych posłów</h4>
+                            <button class="chart-refresh-btn" data-chart="najmniejAktywni" title="Aktualizuj">🔄</button>
+                        </div>
+                        <canvas id="canvasNajmniejAktywni"></canvas>
+                        <div class="chart-no-data">Brak danych — pobierz wypowiedzi w ETL</div>
+                    </div>
+                    <div class="chart-card" id="chartNajmniejAktywneKluby">
+                        <div class="chart-card-header">
+                            <h4>Top 20 najmniej aktywnych klubów</h4>
+                            <button class="chart-refresh-btn" data-chart="najmniejAktywneKluby" title="Aktualizuj">🔄</button>
+                        </div>
+                        <canvas id="canvasNajmniejAktywneKluby"></canvas>
+                        <div class="chart-no-data">Brak danych — pobierz wypowiedzi i posłów w ETL</div>
+                    </div>
+                    <div class="chart-card chart-card-wide" id="chartHeatmap">
+                        <div class="chart-card-header">
+                            <h4>Heatmapa frekwencji</h4>
+                            <div class="heatmap-controls">
+                                <select id="heatmapXAxis" class="chart-select">
+                                    <option value="posiedzenia">Oś X: Posiedzenia</option>
+                                    <option value="glosowania">Oś X: Głosowania</option>
+                                </select>
+                                <select id="heatmapYAxis" class="chart-select">
+                                    <option value="poslowie">Oś Y: Posłowie</option>
+                                    <option value="kluby">Oś Y: Kluby</option>
+                                </select>
+                                <select id="heatmapColor" class="chart-select">
+                                    <option value="obecnosc">Kolor: Obecność</option>
+                                    <option value="za">Kolor: Głosy Za</option>
+                                    <option value="przeciw">Kolor: Głosy Przeciw</option>
+                                    <option value="wstrzymal">Kolor: Wstrzymał się</option>
+                                </select>
+                            </div>
+                            <button class="chart-refresh-btn" data-chart="heatmap" title="Aktualizuj">🔄</button>
+                        </div>
+                        <canvas id="canvasHeatmap"></canvas>
+                        <div class="chart-no-data">Brak danych — pobierz głosy i posłów w ETL</div>
+                    </div>
                 </div>
             </section>
             <!-- SEKCJA 5: Ustawienia programu -->
@@ -584,14 +624,27 @@
                         </div>
                     </div>
                 </div>
-                <!-- Sekcja 2: Zarządzanie pamięcią przeglądarki -->
+                <!-- Sekcja 2: Zmiana języka -->
+                <div class="console-style-panel">
+                    <div class="console-style-header">
+                        <h3>Język / Language</h3>
+                    </div>
+                    <div class="console-style-body">
+                        <div class="console-style-options">
+                               <button id="langPL" class="console-style-btn active" title="Polski">🇵🇱 Polski</button>
+                               <button id="langEN" class="console-style-btn" title="English">🇬🇧 English</button>
+                               <button id="langUA" class="console-style-btn" title="Українська">🇺🇦 Українська</button>
+                        </div>
+                    </div>
+                </div>
+                <!-- Sekcja 3: Zarządzanie pamięcią przeglądarki -->
                 <div class="console-style-panel">
                     <div class="console-style-header">
                         <h3>Pamięć przeglądarki</h3>
                     </div>
                     <div class="console-style-body">
                         <div class="console-style-description">
-                            <p>Resetuj zapisane pozycje przycisków, układ zakładek oraz tryb interfejsu do ustawień domyślnych.</p>
+                            <p>Resetuj zapisane pozycje przycisków oraz ustawienia interfejsu do wartości domyślnych.</p>
                         </div>
                         <div class="console-style-options">
                                <button id="btnResetMemory" class="console-style-btn console-style-btn-danger">Reset pamięci</button>
@@ -605,10 +658,6 @@
                     </div>
                     <div class="console-style-body">
                         <div class="settings-checkboxes">
-                            <label class="settings-checkbox-label">
-                                <input type="checkbox" id="toggleSidebar" checked>
-                                <span>Zakładki po prawej stronie</span>
-                            </label>
                             <label class="settings-checkbox-label">
                                 <input type="checkbox" id="toggleFloatingBtns" checked>
                                 <span>Przyciski po lewej stronie</span>
@@ -646,7 +695,7 @@
                 <div class="nav-label">Wykresy</div>
             </div>
             <div class="nav-item" data-section="5">
-                <div class="nav-icon">🖥️</div>
+                <div class="nav-icon">⚙️</div>
                 <div class="nav-label">Ustawienia</div>
             </div>
         </nav>
@@ -659,23 +708,17 @@
         </footer>
     </div>
 
-    <!-- Floating UI Buttons (7 buttons total) -->
+    <!-- Floating UI Buttons -->
     <button id="toggleUIBtn" class="floating-btn btn-toggle" title="Ustawienia">⚙️</button>
     <div id="uiHoldProgress" aria-hidden="true">
         <div id="uiHoldProgressBar"></div>
     </div>
-
-    <!-- Tools Mode Buttons (hidden by default) -->
-    <button id="languageBtn" class="floating-btn btn-language" title="Zmień język (TODO)">🇵🇱</button>
-    <button id="helpBtn" class="floating-btn btn-help" title="Podpowiedzi (TODO)">❓</button>
-
-    <!-- Database Buttons -->
-    <button id="importDbBtn" class="floating-btn btn-import" title="Import bazy danych">📥</button>
+    <button id="aiChatBtn" class="floating-btn btn-ai-chat" title="AI Asystent">🤖</button>
     <button id="exportDbBtn" class="floating-btn btn-export" title="Export bazy danych">📤</button>
+    <button id="importDbBtn" class="floating-btn btn-import" title="Import bazy danych">📥</button>
+    <button id="helpBtn" class="floating-btn btn-help" title="Podpowiedzi (TODO)">❓</button>
     <button id="aboutBtn" class="floating-btn btn-rodo" title="O projekcie">ℹ️</button>
-
-    <!-- AI Chat Assistant Button (removed popup, now goes to section 3) -->
-    <button id="aiChatBtn" class="floating-btn btn-ai-chat" title="Chat z AI Asystentem">🤖</button>
+    <button id="languageBtn" class="floating-btn btn-language" title="Zmień język (TODO)">🇵🇱</button>
 
     <!-- Floating Status Bar (Bottom) -->
     <div id="floatingStatusBar" class="floating-status-bar">
@@ -846,7 +889,8 @@
                 resetBtn?.addEventListener('click', () => {
                     resetFloatingButtonPositions();
                     resetTabsLayout();
-                    localStorage.setItem('uiMode', '1');
+                    localStorage.removeItem('uiMode');
+                    localStorage.removeItem('uiVisibility');
                     location.reload();
                 });
             });
@@ -974,12 +1018,13 @@
             if (window.logBuffer.length > 0 && apiLogs) {
                 apiLogs.innerHTML = '';
                 
-                window.logBuffer.forEach(formattedLog => {
+                window.logBuffer.forEach(entry => {
                     const line = document.createElement('div');
-                    line.textContent = formattedLog;
+                    line.textContent = typeof entry === 'string' ? entry : entry.text;
                     line.style.fontSize = '0.85rem';
                     line.style.fontFamily = 'monospace';
                     line.style.lineHeight = '1.6';
+                    line.style.color = (typeof entry === 'object' && entry.color) ? entry.color : '#e2e8f0';
                     apiLogs.appendChild(line);
                 });
                 
@@ -1052,6 +1097,21 @@
                 alert('❓ Podpowiedzi\n\nSystem podpowiedzi w przygotowaniu (TODO v5.0)');
             });
             
+            // Summary import/export buttons → proxy to floating buttons
+            document.getElementById('summaryImportDb')?.addEventListener('click', () => {
+                document.getElementById('importDbBtn')?.click();
+            });
+            document.getElementById('summaryExportDb')?.addEventListener('click', () => {
+                document.getElementById('exportDbBtn')?.click();
+            });
+
+            // Language buttons (TODO)
+            ['langPL', 'langEN', 'langUA'].forEach(id => {
+                document.getElementById(id)?.addEventListener('click', () => {
+                    alert('🇵🇱 Zmiana języka\n\nFunkcja w przygotowaniu (TODO v5.0)');
+                });
+            });
+
             console.log('[DOMContentLoaded] Initialization complete');
         });
     </script>
@@ -1113,7 +1173,6 @@
         const STORAGE_KEY = 'uiVisibility';
 
         const defaults = {
-            sidebar: true,
             floatingBtns: true,
             topBar: true,
             bottomBar: true
@@ -1131,8 +1190,7 @@
         }
 
         function apply(state) {
-            // Sidebar + floating buttons — delegate to UI mode manager
-            // which reads uiVisibility from localStorage
+            // Floating buttons — delegate to UI mode manager
             if (typeof window._updateUIMode === 'function') {
                 window._updateUIMode();
             }
@@ -1150,12 +1208,10 @@
 
         const state = load();
 
-        const chkSidebar = document.getElementById('toggleSidebar');
         const chkBtns = document.getElementById('toggleFloatingBtns');
         const chkTop = document.getElementById('toggleTopBar');
         const chkBottom = document.getElementById('toggleBottomBar');
 
-        if (chkSidebar) chkSidebar.checked = state.sidebar;
         if (chkBtns) chkBtns.checked = state.floatingBtns;
         if (chkTop) chkTop.checked = state.topBar;
         if (chkBottom) chkBottom.checked = state.bottomBar;
@@ -1171,7 +1227,6 @@
             });
         }
 
-        onToggle('sidebar', chkSidebar);
         onToggle('floatingBtns', chkBtns);
         onToggle('topBar', chkTop);
         onToggle('bottomBar', chkBottom);

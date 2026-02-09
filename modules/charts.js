@@ -260,6 +260,201 @@ function renderFrekwencja() {
     });
 }
 
+// 5. Top 20 najmniej aktywnych posłów (bar)
+function renderNajmniejAktywni() {
+    const data = query(`
+        SELECT p.nazwisko || ' ' || SUBSTR(p.imie, 1, 1) || '.' as nazwa, COUNT(w.id_wypowiedzi) as cnt
+        FROM poslowie p
+        LEFT JOIN wypowiedzi w ON p.id_osoby = w.id_osoby
+        WHERE p.aktywny = 1 OR p.aktywny IS NULL
+        GROUP BY p.id_osoby
+        ORDER BY cnt ASC
+        LIMIT 20
+    `);
+    if (!data.length) { setCardState('chartNajmniejAktywni', false); return; }
+
+    setCardState('chartNajmniejAktywni', true);
+    destroyChart('najmniejAktywni');
+
+    chartInstances['najmniejAktywni'] = new Chart(document.getElementById('canvasNajmniejAktywni'), {
+        type: 'bar',
+        data: {
+            labels: data.map(d => d.nazwa),
+            datasets: [{
+                label: 'Wypowiedzi',
+                data: data.map(d => d.cnt),
+                backgroundColor: '#f56565'
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { ticks: { color: '#aaa' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                y: { ticks: { color: '#ccc', font: { size: 10 } }, grid: { display: false } }
+            }
+        }
+    });
+}
+
+// 6. Top 20 najmniej aktywnych klubów (bar)
+function renderNajmniejAktywneKluby() {
+    const data = query(`
+        SELECT p.klub, COUNT(w.id_wypowiedzi) as cnt
+        FROM poslowie p
+        LEFT JOIN wypowiedzi w ON p.id_osoby = w.id_osoby
+        WHERE p.klub IS NOT NULL
+        GROUP BY p.klub
+        ORDER BY cnt ASC
+        LIMIT 20
+    `);
+    if (!data.length) { setCardState('chartNajmniejAktywneKluby', false); return; }
+
+    setCardState('chartNajmniejAktywneKluby', true);
+    destroyChart('najmniejAktywneKluby');
+
+    chartInstances['najmniejAktywneKluby'] = new Chart(document.getElementById('canvasNajmniejAktywneKluby'), {
+        type: 'bar',
+        data: {
+            labels: data.map(d => d.klub || 'Brak'),
+            datasets: [{
+                label: 'Wypowiedzi',
+                data: data.map(d => d.cnt),
+                backgroundColor: '#f6ad55'
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { ticks: { color: '#aaa' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                y: { ticks: { color: '#ccc', font: { size: 11 } }, grid: { display: false } }
+            }
+        }
+    });
+}
+
+// 7. Heatmapa frekwencji (matrix chart via scatter)
+function renderHeatmap() {
+    const xSel = document.getElementById('heatmapXAxis')?.value || 'posiedzenia';
+    const ySel = document.getElementById('heatmapYAxis')?.value || 'poslowie';
+    const colorSel = document.getElementById('heatmapColor')?.value || 'obecnosc';
+
+    // Build query based on selections
+    const xCol = xSel === 'glosowania' ? 'g.id_glosowania' : 'g.id_posiedzenia';
+    const xLabel = xSel === 'glosowania' ? 'gl.numer' : 'g.id_posiedzenia';
+    const yCol = ySel === 'kluby' ? 'p.klub' : "p.nazwisko || ' ' || SUBSTR(p.imie,1,1) || '.'";
+
+    let valueSql;
+    if (colorSel === 'za') valueSql = "SUM(CASE WHEN g.glos = 'Za' THEN 1 ELSE 0 END)";
+    else if (colorSel === 'przeciw') valueSql = "SUM(CASE WHEN g.glos = 'Przeciw' THEN 1 ELSE 0 END)";
+    else if (colorSel === 'wstrzymal') valueSql = "SUM(CASE WHEN g.glos LIKE 'Wstrzyma%' THEN 1 ELSE 0 END)";
+    else valueSql = "COUNT(g.id_glosu)";
+
+    let sql;
+    if (xSel === 'glosowania') {
+        sql = `
+            SELECT gl.numer as x_label, ${yCol} as y_label, ${valueSql} as val
+            FROM glosy g
+            JOIN glosowania gl ON g.id_glosowania = gl.id_glosowania
+            JOIN poslowie p ON g.id_osoby = p.id_osoby
+            GROUP BY gl.numer, ${yCol}
+            ORDER BY gl.numer, ${yCol}
+            LIMIT 2000
+        `;
+    } else {
+        sql = `
+            SELECT g.id_posiedzenia as x_label, ${yCol} as y_label, ${valueSql} as val
+            FROM glosy g
+            JOIN glosowania gl ON g.id_glosowania = gl.id_glosowania
+            JOIN poslowie p ON g.id_osoby = p.id_osoby
+            GROUP BY g.id_posiedzenia, ${yCol}
+            ORDER BY g.id_posiedzenia, ${yCol}
+            LIMIT 2000
+        `;
+    }
+
+    const data = query(sql);
+    if (!data.length) { setCardState('chartHeatmap', false); return; }
+
+    setCardState('chartHeatmap', true);
+    destroyChart('heatmap');
+
+    // Build unique labels
+    const xLabels = [...new Set(data.map(d => String(d.x_label)))];
+    const yLabels = [...new Set(data.map(d => String(d.y_label)))];
+
+    // Build matrix
+    const points = data.map(d => ({
+        x: xLabels.indexOf(String(d.x_label)),
+        y: yLabels.indexOf(String(d.y_label)),
+        v: d.val
+    }));
+
+    const maxVal = Math.max(...points.map(p => p.v), 1);
+
+    chartInstances['heatmap'] = new Chart(document.getElementById('canvasHeatmap'), {
+        type: 'scatter',
+        data: {
+            datasets: [{
+                data: points.map(p => ({ x: p.x, y: p.y })),
+                pointRadius: Math.max(4, Math.min(12, 300 / Math.max(xLabels.length, yLabels.length))),
+                pointBackgroundColor: points.map(p => {
+                    const intensity = Math.min(p.v / maxVal, 1);
+                    const r = Math.round(30 + intensity * 195);
+                    const g = Math.round(60 + (1 - intensity) * 180);
+                    const b = Math.round(40);
+                    return `rgba(${r},${g},${b},0.85)`;
+                })
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: (ctx) => {
+                            const pt = points[ctx.dataIndex];
+                            return `${yLabels[pt.y]} | ${xLabels[pt.x]}: ${pt.v}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    type: 'linear',
+                    min: -0.5,
+                    max: xLabels.length - 0.5,
+                    ticks: {
+                        color: '#aaa',
+                        font: { size: 9 },
+                        callback: (v) => xLabels[Math.round(v)] || '',
+                        maxRotation: 60
+                    },
+                    grid: { color: 'rgba(255,255,255,0.03)' }
+                },
+                y: {
+                    type: 'linear',
+                    min: -0.5,
+                    max: yLabels.length - 0.5,
+                    ticks: {
+                        color: '#ccc',
+                        font: { size: 9 },
+                        callback: (v) => {
+                            const label = yLabels[Math.round(v)];
+                            return label && label.length > 15 ? label.slice(0, 15) + '...' : label || '';
+                        }
+                    },
+                    grid: { color: 'rgba(255,255,255,0.03)' }
+                }
+            }
+        }
+    });
+}
+
 const customRenderers = {
     glosowaniaTime: renderGlosowaniaTime,
     komisje: renderKomisje,
@@ -278,7 +473,10 @@ const renderers = {
     kluby: renderKluby,
     topPoslowie: renderTopPoslowie,
     glosowania: renderGlosowania,
-    custom: renderCustomChart
+    custom: renderCustomChart,
+    najmniejAktywni: renderNajmniejAktywni,
+    najmniejAktywneKluby: renderNajmniejAktywneKluby,
+    heatmap: renderHeatmap
 };
 
 // Główna funkcja — renderuje wszystkie wykresy
@@ -288,6 +486,28 @@ export function renderAllCharts() {
     renderTopPoslowie();
     renderGlosowania();
     renderCustomChart();
+    renderNajmniejAktywni();
+    renderNajmniejAktywneKluby();
+    renderHeatmap();
+    sortChartsByData();
+}
+
+// Sortuj karty — te bez danych na koniec
+function sortChartsByData() {
+    const grid = document.getElementById('chartsGrid');
+    if (!grid) return;
+    const cards = Array.from(grid.querySelectorAll('.chart-card'));
+    const withData = [];
+    const noData = [];
+    cards.forEach(card => {
+        const nd = card.querySelector('.chart-no-data');
+        if (nd && nd.style.display !== 'none') {
+            noData.push(card);
+        } else {
+            withData.push(card);
+        }
+    });
+    withData.concat(noData).forEach(card => grid.appendChild(card));
 }
 
 // Pojedynczy wykres (dla przycisku aktualizuj)
@@ -308,4 +528,11 @@ document.addEventListener('click', (e) => {
 // Obsługa zmiany wykresu w selekcie
 document.getElementById('customChartSelect')?.addEventListener('change', () => {
     if (db2.database) renderCustomChart();
+});
+
+// Heatmap combobox handlers
+['heatmapXAxis', 'heatmapYAxis', 'heatmapColor'].forEach(id => {
+    document.getElementById(id)?.addEventListener('change', () => {
+        if (db2.database) renderHeatmap();
+    });
 });

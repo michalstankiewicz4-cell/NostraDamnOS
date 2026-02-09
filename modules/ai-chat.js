@@ -973,11 +973,12 @@ async function pingModelAPI(modelKey) {
     
     // Set checking state
     lamp.className = 'status-lamp checking';
-    
+    if (window.clog) window.clog('yellow', `[AI Ping] → ${config.name} (${config.provider})...`);
+
     try {
         // Test with a minimal request
         let response;
-        
+
         if (config.provider === 'openai') {
             response = await fetch(config.apiUrl, {
                 method: 'POST',
@@ -1020,24 +1021,23 @@ async function pingModelAPI(modelKey) {
                 })
             });
         }
-        
+
         // Check response
         if (response && response.ok) {
             lamp.className = 'status-lamp success';
-            console.log(`[AI Status] ${config.name}: ✅ OK`);
+            if (window.clog) window.clog('yellow', `[AI Ping] ← ${config.name}: OK`);
         } else {
-            // API keys might be invalid, but endpoint exists
             if (response && (response.status === 401 || response.status === 403)) {
                 lamp.className = 'status-lamp success';
-                console.log(`[AI Status] ${config.name}: ✅ OK (endpoint reachable)`);
+                if (window.clog) window.clog('yellow', `[AI Ping] ← ${config.name}: OK (endpoint reachable, ${response.status})`);
             } else {
                 lamp.className = 'status-lamp error';
-                console.log(`[AI Status] ${config.name}: ❌ Error`);
+                if (window.clog) window.clog('yellow', `[AI Ping] ← ${config.name}: Error (${response?.status || 'unknown'})`);
             }
         }
     } catch (error) {
         lamp.className = 'status-lamp error';
-        console.log(`[AI Status] ${config.name}: ❌ ${error.message}`);
+        if (window.clog) window.clog('yellow', `[AI Ping] ← ${config.name}: ${error.message}`);
     }
 }
 

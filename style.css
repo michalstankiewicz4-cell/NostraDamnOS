@@ -226,100 +226,6 @@ header p {
     font-size: 1.8rem;
 }
 /* Sidebar avec tab cards */
-.sidebar {
-    position: fixed;
-    right: 0;
-    top: 100px;
-    width: 120px;
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    z-index: 999;
-    padding: 15px 0;
-    transition: all 0.3s ease;
-}
-
-.sidebar.sidebar-left {
-    right: auto;
-    left: 0;
-}
-
-.tab-card {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-    padding: 12px 15px;
-    background: white;
-    border-radius: 8px 0 0 8px;
-    border: 2px solid var(--border-color);
-    border-right: none;
-    cursor: grab;
-    transition: all 0.3s ease;
-    box-shadow: -2px 2px 8px rgba(0,0,0,0.1);
-    font-weight: 600;
-    user-select: none;
-    -webkit-user-select: none;
-    transform: translateX(55px);
-}
-
-/* Karteczka na lewej stronie */
- .tab-card.tab-left {
-     border-radius: 0 8px 8px 0;
-     border-left: none;
-     border-right: 2px solid var(--border-color);
-     box-shadow: 2px 2px 8px rgba(0,0,0,0.1);
-     transform: translateX(-55px);
-}
-
-/* Kolory karteczek przypisane do konkretnych zakładek */
-.tab-card[data-tab="settings"] {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border-color: #667eea;
-}
-
-.tab-card[data-tab="info"] {
-    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-    color: white;
-    border-color: #f5576c;
-}
-
-.tab-card[data-tab="help"] {
-    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-    color: white;
-    border-color: #00f2fe;
-}
-
-.tab-card:hover {
-    transform: translateX(20px);
-    box-shadow: -3px 3px 10px rgba(0,0,0,0.12);
-}
-
-.tab-card.active {
-    transform: translateX(0);
-    box-shadow: -4px 4px 12px rgba(0,0,0,0.15);
-}
-
-.tab-card.tab-left:hover {
-    transform: translateX(-20px);
-    box-shadow: 3px 3px 10px rgba(0,0,0,0.12);
-}
-
-.tab-card.tab-left.active {
-    transform: translateX(0);
-    box-shadow: 4px 4px 12px rgba(0,0,0,0.15);
-}
-
-.tab-placeholder {
-    pointer-events: none;
-}
-
-.tab-card.dragging {
-    opacity: 0.7;
-    cursor: grabbing;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-}
 
 .tab-label {
     font-size: 24px;
@@ -963,20 +869,20 @@ input:disabled {
     transition: width 0.05s linear;
 }
 
-/* Language Button */
-.btn-language {
+/* AI Chat Button */
+.btn-ai-chat {
     display: none;
     top: 90px;
     left: 20px;
-    background: linear-gradient(135deg, #667eea, #764ba2);
+    background: linear-gradient(135deg, #10b981, #059669);
 }
 
-/* Help Button */
-.btn-help {
+/* Export Button */
+.btn-export {
     display: none;
     top: 160px;
     left: 20px;
-    background: linear-gradient(135deg, #667eea, #764ba2);
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
 }
 
 /* Import Button */
@@ -987,20 +893,28 @@ input:disabled {
     background: linear-gradient(135deg, #10b981, #059669);
 }
 
-/* Export Button */
-.btn-export {
+/* Help Button */
+.btn-help {
     display: none;
     top: 300px;
     left: 20px;
-    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    background: linear-gradient(135deg, #667eea, #764ba2);
 }
 
-/* RODO Button */
+/* About Button */
 .btn-rodo {
     display: none;
     top: 370px;
     left: 20px;
     background: linear-gradient(135deg, #ec4899, #db2777);
+}
+
+/* Language Button */
+.btn-language {
+    display: none;
+    top: 440px;
+    left: 20px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
 }
 
 /* ETL Utility Classes */
@@ -1257,13 +1171,6 @@ input:disabled {
 .api-status-details {
     font-size: 0.9rem;
     color: #666;
-}
-
-/* AI Chat Assistant */
-.btn-ai-chat {
-    top: 440px;
-    left: 20px;
-    background: linear-gradient(135deg, #10b981, #059669);
 }
 
 /* AI Status Lamp — zunifikowana z .floating-lamp (12x12, diodowe cieniowanie) */
@@ -2282,9 +2189,26 @@ input:disabled {
     border-color: #667eea;
 }
 
+.chart-card-wide {
+    grid-column: 1 / -1;
+}
+
+.chart-card-wide canvas {
+    max-height: 500px;
+}
+
+.heatmap-controls {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
 @media (max-width: 768px) {
     .charts-grid {
         grid-template-columns: 1fr;
+    }
+    .chart-card-wide {
+        grid-column: auto;
     }
 }
 

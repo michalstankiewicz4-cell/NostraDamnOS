@@ -45,101 +45,129 @@ export async function safeFetchText(url) {
 }
 
 // Main fetcher orchestrator
-export async function runFetcher(config) {
+export async function runFetcher(config, onProgress) {
     console.log('[Fetcher] Starting with config:', config);
     const results = {};
-    
-    // Poslowie (always needed as foundation)
-    if (config.modules.includes('poslowie')) {
+    const report = onProgress || (() => {});
+
+    // Build task list to calculate progress
+    const tasks = [];
+    const m = config.modules;
+    if (m.includes('poslowie')) tasks.push({ key: 'poslowie', label: 'posłowie' });
+    if (m.includes('posiedzenia')) tasks.push({ key: 'posiedzenia', label: 'posiedzenia' });
+    if (m.includes('wypowiedzi')) tasks.push({ key: 'wypowiedzi', label: 'wypowiedzi' });
+    if (m.includes('glosowania')) tasks.push({ key: 'glosowania', label: 'głosowania' });
+    if (m.includes('glosy')) tasks.push({ key: 'glosy', label: 'głosy' });
+    if (m.includes('interpelacje')) tasks.push({ key: 'interpelacje', label: 'interpelacje' });
+    if (m.includes('zapytania')) tasks.push({ key: 'zapytania', label: 'zapytania' });
+    if (m.includes('projekty_ustaw')) tasks.push({ key: 'projekty_ustaw', label: 'projekty ustaw' });
+    if (m.includes('ustawy')) tasks.push({ key: 'ustawy', label: 'ustawy' });
+    if (m.includes('komisje')) tasks.push({ key: 'komisje', label: 'komisje' });
+    if (m.includes('komisje_posiedzenia')) tasks.push({ key: 'komisje_posiedzenia', label: 'posiedzenia komisji' });
+    if (m.includes('komisje_wypowiedzi')) tasks.push({ key: 'komisje_wypowiedzi', label: 'wypowiedzi komisji' });
+    if (m.includes('oswiadczenia')) tasks.push({ key: 'oswiadczenia', label: 'oświadczenia' });
+
+    const total = tasks.length || 1;
+    let done = 0;
+
+    function tick(label) {
+        done++;
+        const pct = Math.round((done / total) * 100);
+        report(pct, label);
+    }
+
+    // Execute in order
+    if (m.includes('poslowie')) {
         console.log('[Fetcher] Fetching poslowie...');
         results.poslowie = await fetchPoslowie(config);
+        tick('posłowie');
     }
-    
-    // Posiedzenia (always needed for per-sitting data)
-    if (config.modules.includes('posiedzenia')) {
+
+    if (m.includes('posiedzenia')) {
         console.log('[Fetcher] Fetching posiedzenia...');
         results.posiedzenia = await fetchPosiedzenia(config);
+        tick('posiedzenia');
     }
-    
-    // Wypowiedzi (per sitting)
-    if (config.modules.includes('wypowiedzi')) {
+
+    if (m.includes('wypowiedzi')) {
         console.log('[Fetcher] Fetching wypowiedzi...');
         results.wypowiedzi = await fetchWypowiedzi(config);
+        tick('wypowiedzi');
     }
-    
-    // Glosowania (per sitting)
-    if (config.modules.includes('glosowania')) {
+
+    if (m.includes('glosowania')) {
         console.log('[Fetcher] Fetching glosowania...');
         results.glosowania = await fetchGlosowania(config);
+        tick('głosowania');
     }
-    
-    // Glosy (individual votes - requires glosowania)
-    if (config.modules.includes('glosy') && results.glosowania) {
+
+    if (m.includes('glosy') && results.glosowania) {
         console.log('[Fetcher] Fetching glosy...');
         results.glosy = await fetchGlosy({ ...config, glosowania: results.glosowania });
+        tick('głosy');
     }
-    
-    // Interpelacje (per term)
-    if (config.modules.includes('interpelacje')) {
+
+    if (m.includes('interpelacje')) {
         console.log('[Fetcher] Fetching interpelacje...');
         results.interpelacje = await fetchInterpelacje(config);
+        tick('interpelacje');
     }
-    
-    // Zapytania pisemne (per term)
-    if (config.modules.includes('zapytania')) {
+
+    if (m.includes('zapytania')) {
         console.log('[Fetcher] Fetching zapytania...');
         results.zapytania = await fetchZapytania(config);
+        tick('zapytania');
     }
-    
-    // Projekty ustaw (per term)
-    if (config.modules.includes('projekty_ustaw')) {
+
+    if (m.includes('projekty_ustaw')) {
         console.log('[Fetcher] Fetching projekty_ustaw...');
         results.projekty_ustaw = await fetchProjektyUstaw(config);
+        tick('projekty ustaw');
     }
-    
-    // Ustawy (legal acts from ELI API)
-    if (config.modules.includes('ustawy')) {
+
+    if (m.includes('ustawy')) {
         console.log('[Fetcher] Fetching ustawy...');
         results.ustawy = await fetchUstawy({
             publisher: config.ustawyPublisher || 'DU',
             year: config.ustawyYear || new Date().getFullYear(),
             limit: config.ustawyLimit || 500
         });
+        tick('ustawy');
     }
-    
-    // Komisje
-    if (config.modules.includes('komisje')) {
+
+    if (m.includes('komisje')) {
         console.log('[Fetcher] Fetching komisje...');
         results.komisje = await fetchKomisje(config);
+        tick('komisje');
     }
-    
-    // Komisje posiedzenia
-    if (config.modules.includes('komisje_posiedzenia') && results.komisje) {
+
+    if (m.includes('komisje_posiedzenia') && results.komisje) {
         console.log('[Fetcher] Fetching komisje_posiedzenia...');
         results.komisje_posiedzenia = await fetchKomisjePosiedzenia({
             ...config,
             komisje: results.komisje
         });
+        tick('posiedzenia komisji');
     }
-    
-    // Komisje wypowiedzi
-    if (config.modules.includes('komisje_wypowiedzi') && results.komisje_posiedzenia) {
+
+    if (m.includes('komisje_wypowiedzi') && results.komisje_posiedzenia) {
         console.log('[Fetcher] Fetching komisje_wypowiedzi...');
         results.komisje_wypowiedzi = await fetchKomisjeWypowiedzi({
             ...config,
             posiedzenia_komisji: results.komisje_posiedzenia
         });
+        tick('wypowiedzi komisji');
     }
-    
-    // Oświadczenia majątkowe
-    if (config.modules.includes('oswiadczenia') && results.poslowie) {
+
+    if (m.includes('oswiadczenia') && results.poslowie) {
         console.log('[Fetcher] Fetching oswiadczenia...');
         results.oswiadczenia = await fetchOswiadczenia({
             ...config,
             poslowie: results.poslowie
         });
+        tick('oświadczenia');
     }
-    
+
     console.log('[Fetcher] ✅ Complete');
     return results;
 }

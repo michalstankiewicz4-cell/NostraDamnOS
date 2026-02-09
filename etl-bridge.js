@@ -1,7 +1,6 @@
 // ETL Panel Bridge - obsługa nowego panelu ETL
-import { 
-    initFloatingButtonsDragDrop, 
-    initTabCardsDragDrop,
+import {
+    initFloatingButtonsDragDrop,
     initUIMode
 } from './modules/floating-drag.js';
 
@@ -247,25 +246,17 @@ function showVerificationResults(differences) {
     }
 }
 
-// Sidebar Menu Handler
-function initSidebar() {
-    // Wczytaj i init drag&drop dla zakładek
-    initTabCardsDragDrop();
-}
-
 // Init when DOM ready (with deduplication check)
 if (!window.__etlBridgeInitialized) {
     window.__etlBridgeInitialized = true;
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => {
             initETLPanel();
-            initSidebar();
             initFloatingButtonsDragDrop();
             initUIMode();
         });
     } else {
         initETLPanel();
-        initSidebar();
         initFloatingButtonsDragDrop();
         initUIMode();
     }
