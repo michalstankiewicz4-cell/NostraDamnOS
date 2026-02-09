@@ -1991,8 +1991,8 @@ input:disabled {
     border-top: 2px solid #1a202c;
     display: flex;
     align-items: center;
-    padding: 0 20px;
-    gap: 16px;
+    padding: 0 10px;
+    gap: 10px;
     z-index: 2000;
     box-shadow: 0 -2px 12px rgba(0,0,0,0.3);
     font-size: 0.8rem;
@@ -2014,7 +2014,7 @@ input:disabled {
 .status-bar-indicators {
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 1px;
 }
 
 .floating-status-item {
@@ -2050,7 +2050,7 @@ input:disabled {
 .status-bar-separator {
     width: 1px;
     height: 12px;
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.4);
 }
 
 .status-bar-spacer {
@@ -2088,22 +2088,23 @@ input:disabled {
     align-items: center;
     gap: 8px;
     flex: 1;
-    max-width: 200px;
+    max-width: 140px;
 }
 
 .etl-progress-track {
     flex: 1;
-    height: 6px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 3px;
+    height: 10px;
+    background: #808080;
+    border-radius: 0;
     overflow: hidden;
     min-width: 60px;
+    border: 1px solid #404040;
 }
 
 .etl-progress-bar {
     height: 100%;
-    background: linear-gradient(90deg, #667eea, #48bb78);
-    border-radius: 3px;
+    background: #48bb78;
+    border-radius: 0;
     transition: width 0.3s ease;
 }
 
@@ -2117,6 +2118,40 @@ input:disabled {
 
 #etlLamp.etl-blink {
     transition: none;
+}
+
+/* Memory Usage Bar */
+.status-bar-memory {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    max-width: 140px;
+}
+
+.memory-progress-track {
+    flex: 1;
+    height: 10px;
+    background: #808080;
+    border-radius: 0;
+    overflow: hidden;
+    min-width: 60px;
+    border: 1px solid #404040;
+}
+
+.memory-progress-bar {
+    height: 100%;
+    background: #48bb78;
+    border-radius: 0;
+    transition: width 1s ease;
+}
+
+.memory-percent {
+    font-size: 0.7rem;
+    color: #90cdf4;
+    font-weight: 600;
+    min-width: 28px;
+    text-align: right;
 }
 
 #sendChatBtn:disabled {

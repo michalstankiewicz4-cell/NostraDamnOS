@@ -558,9 +558,10 @@
             </section>
             <!-- SEKCJA 5: Ustawienia programu -->
             <section class="app-section" data-section="5" style="display:none;">
+                <!-- Sekcja 1: Zmiana stylu -->
                 <div class="console-style-panel">
                     <div class="console-style-header">
-                        <h3>🖥️ Ustawienia programu</h3>
+                        <h3>Zmiana stylu</h3>
                     </div>
                     <div class="console-style-body">
                         <div class="console-style-description">
@@ -570,6 +571,20 @@
                                <button id="styleLight" class="console-style-btn active">Jasny</button>
                                <button id="styleDark" class="console-style-btn">Ciemny</button>
                                <button id="styleRetro" class="console-style-btn">Retro</button>
+                        </div>
+                    </div>
+                </div>
+                <!-- Sekcja 2: Zarządzanie pamięcią przeglądarki -->
+                <div class="console-style-panel">
+                    <div class="console-style-header">
+                        <h3>Pamięć przeglądarki</h3>
+                    </div>
+                    <div class="console-style-body">
+                        <div class="console-style-description">
+                            <p>Resetuj zapisane pozycje przycisków, układ zakładek oraz tryb interfejsu do ustawień domyślnych.</p>
+                        </div>
+                        <div class="console-style-options">
+                               <button id="btnResetMemory" class="console-style-btn console-style-btn-danger">Reset pamięci</button>
                         </div>
                     </div>
                 </div>
@@ -636,28 +651,18 @@
         
         <!-- Status Indicators Section -->
         <div id="statusIndicators" class="status-bar-indicators">
+            <span>Baza:</span>
             <!-- Baza Indicator -->
             <div class="floating-status-item" id="floatingStatusDbState" title="Stan bazy danych">
                 <div class="floating-lamp floating-lamp-error"></div>
-                <span>Baza</span>
             </div>
-            
-            <!-- Separator -->
-            <div class="status-bar-separator"></div>
-            
             <!-- Rekordy Indicator -->
             <div class="floating-status-item" id="floatingStatusRecords" title="Stan rekordów w API">
                 <div class="floating-lamp floating-lamp-ok"></div>
-                <span>Rekordy</span>
             </div>
-            
-            <!-- Separator -->
-            <div class="status-bar-separator"></div>
-            
             <!-- Poprawność Indicator -->
             <div class="floating-status-item" id="floatingStatusValidity" title="Stan poprawności danych">
                 <div class="floating-lamp floating-lamp-ok"></div>
-                <span>Poprawność</span>
             </div>
         </div>
         
@@ -673,11 +678,22 @@
         <!-- ETL Progress Section -->
         <div id="etlProgressSection" class="status-bar-etl-progress" title="Pasek ładowania danych z API">
             <div class="status-bar-separator"></div>
+            <span>Load:</span>
             <div id="etlLamp" class="floating-lamp floating-lamp-ok" title="Pasek ładowania danych z API"></div>
             <div class="etl-progress-track" title="Pasek ładowania danych z API">
                 <div id="etlProgressBar" class="etl-progress-bar" style="width:0%"></div>
             </div>
             <span id="etlProgressPercent" class="etl-progress-percent" style="display:none;">0%</span>
+        </div>
+
+        <!-- Memory Usage Section -->
+        <div id="memorySection" class="status-bar-memory" title="Zajętość pamięci przeglądarki">
+            <div class="status-bar-separator"></div>
+            <span>Memory:</span>
+            <div class="memory-progress-track">
+                <div id="memoryProgressBar" class="memory-progress-bar" style="width:0%"></div>
+            </div>
+            <span id="memoryPercent" class="memory-percent">0%</span>
         </div>
 
         <!-- Spacer -->
@@ -788,7 +804,46 @@
                 retroBtn?.addEventListener('click', () => setStyle('console-retro', retroBtn));
             });
         </script>
+
+        <!-- Reset pamięci przeglądarki -->
+        <script type="module">
+            import { resetFloatingButtonPositions, resetTabsLayout } from './modules/floating-drag.js';
+
+            document.addEventListener('DOMContentLoaded', () => {
+                const resetBtn = document.getElementById('btnResetMemory');
+                resetBtn?.addEventListener('click', () => {
+                    resetFloatingButtonPositions();
+                    resetTabsLayout();
+                    localStorage.setItem('uiMode', '1');
+                    location.reload();
+                });
+            });
+        </script>
     
+    <!-- Memory Usage Monitor -->
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                const memBar = document.getElementById('memoryProgressBar');
+                const memPct = document.getElementById('memoryPercent');
+
+                function updateMemory() {
+                    if (performance && performance.memory) {
+                        const used = performance.memory.usedJSHeapSize;
+                        const total = performance.memory.jsHeapSizeLimit;
+                        const pct = Math.round((used / total) * 100);
+                        memBar.style.width = pct + '%';
+                        memPct.textContent = pct + '%';
+                        memBar.style.background = pct > 80 ? '#f56565' : pct > 50 ? '#f6ad55' : '#48bb78';
+                    } else {
+                        memPct.textContent = 'N/A';
+                    }
+                }
+
+                updateMemory();
+                setInterval(updateMemory, 3000);
+            });
+        </script>
+
     <!-- Bottom Navigation Logic -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
