@@ -564,14 +564,12 @@
                     </div>
                     <div class="console-style-body">
                         <div class="console-style-description">
-                            <p>Wybierz wygląd konsoli, aby dopasować ją do swojego gustu. Dostępne style: Windows 95, Windows CMD, Modern, Retro.</p>
+                            <p>Wybierz wygląd konsoli, aby dopasować ją do swojego gustu. Dostępne style: Jasny, Ciemny, Retro.</p>
                         </div>
                         <div class="console-style-options">
-                               <button id="styleWin95" class="console-style-btn">Windows 95<br></button>
-                               <button id="styleCmd" class="console-style-btn">Windows CMD<br></button>
-                               <button id="styleWin10" class="console-style-btn">Windows 10 CMD<br></button>
-                               <button id="styleModern" class="console-style-btn">Modern<br></button>
-                               <button id="styleRetro" class="console-style-btn">Retro<br></button>
+                               <button id="styleLight" class="console-style-btn active">Jasny</button>
+                               <button id="styleDark" class="console-style-btn">Ciemny</button>
+                               <button id="styleRetro" class="console-style-btn">Retro</button>
                         </div>
                     </div>
                 </div>
@@ -768,49 +766,26 @@
         <!-- Konsola: obsługa stylów -->
         <script>
             document.addEventListener('DOMContentLoaded', () => {
-                const modernBtn = document.getElementById('styleModern');
+                const lightBtn = document.getElementById('styleLight');
+                const darkBtn = document.getElementById('styleDark');
                 const retroBtn = document.getElementById('styleRetro');
-                const win10Btn = document.getElementById('styleWin10');
-                const win95Btn = document.getElementById('styleWin95');
-                const cmdBtn = document.getElementById('styleCmd');
                 const body = document.body;
+                const allBtns = [lightBtn, darkBtn, retroBtn];
+                const allStyles = ['console-modern', 'console-win10', 'console-retro'];
 
-                // Ustaw domyślny styl na modern
-                body.classList.add('console-modern');
-                body.classList.remove('console-retro');
-                body.classList.remove('console-win10');
-                body.classList.remove('console-classic');
+                function setStyle(addClass, activeBtn) {
+                    allStyles.forEach(s => body.classList.remove(s));
+                    body.classList.add(addClass);
+                    allBtns.forEach(b => b?.classList.remove('active'));
+                    activeBtn?.classList.add('active');
+                }
 
-                modernBtn?.addEventListener('click', () => {
-                    body.classList.add('console-modern');
-                    body.classList.remove('console-retro');
-                    body.classList.remove('console-win10');
-                    body.classList.remove('console-classic');
-                });
-                retroBtn?.addEventListener('click', () => {
-                    body.classList.add('console-retro');
-                    body.classList.remove('console-modern');
-                    body.classList.remove('console-win10');
-                    body.classList.remove('console-classic');
-                });
-                win10Btn?.addEventListener('click', () => {
-                    body.classList.add('console-win10');
-                    body.classList.remove('console-modern');
-                    body.classList.remove('console-retro');
-                    body.classList.remove('console-classic');
-                });
-                win95Btn?.addEventListener('click', () => {
-                    body.classList.add('console-classic');
-                    body.classList.remove('console-modern');
-                    body.classList.remove('console-retro');
-                    body.classList.remove('console-win10');
-                });
-                cmdBtn?.addEventListener('click', () => {
-                    body.classList.add('console-classic');
-                    body.classList.remove('console-modern');
-                    body.classList.remove('console-retro');
-                    body.classList.remove('console-win10');
-                });
+                // Domyślny styl: Jasny
+                setStyle('console-modern', lightBtn);
+
+                lightBtn?.addEventListener('click', () => setStyle('console-modern', lightBtn));
+                darkBtn?.addEventListener('click', () => setStyle('console-win10', darkBtn));
+                retroBtn?.addEventListener('click', () => setStyle('console-retro', retroBtn));
             });
         </script>
     
