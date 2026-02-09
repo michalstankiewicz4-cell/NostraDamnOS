@@ -1173,17 +1173,6 @@ input:disabled {
     user-select: none;
 }
 
-.status-bar-console-separator {
-    width: 1px;
-    height: 24px;
-    background: #475569;
-    margin-right: 8px;
-}
-
-.status-bar-console-text {
-    font-weight: 500;
-}
-
 /* Floating Console Panel */
 .floating-console-panel {
     position: fixed;
@@ -1320,24 +1309,13 @@ input:disabled {
     background: linear-gradient(135deg, #10b981, #059669);
 }
 
-/* AI Status Lamps Bar - now in floating status bar */
-.status-bar-ai {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.status-bar-ai-lamps {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
+/* AI Status Lamp — zunifikowana z .floating-lamp (12x12, diodowe cieniowanie) */
 .status-lamp {
-    width: 8px;
-    height: 8px;
+    width: 12px;
+    height: 12px;
     border-radius: 50%;
     background: #64748b;
+    background-image: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0.1) 30%, transparent 60%);
     box-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
     transition: all 0.3s ease;
     cursor: pointer;
@@ -1345,25 +1323,25 @@ input:disabled {
 }
 
 .status-lamp.checking {
-    background: #f59e0b;
-    box-shadow: 0 0 6px rgba(245, 158, 11, 0.6);
+    background-color: #f6ad55;
+    box-shadow: 0 0 8px rgba(246, 173, 85, 0.6), inset 0 -2px 3px rgba(0,0,0,0.25);
     animation: pulse 1.5s ease-in-out infinite;
 }
 
 .status-lamp.success {
-    background: #10b981;
-    box-shadow: 0 0 6px rgba(16, 185, 129, 0.8);
+    background-color: #48bb78;
+    box-shadow: 0 0 8px rgba(72, 187, 120, 0.6), inset 0 -2px 3px rgba(0,0,0,0.25);
 }
 
 .status-lamp.error {
-    background: #ef4444;
-    box-shadow: 0 0 6px rgba(239, 68, 68, 0.8);
+    background-color: #f56565;
+    box-shadow: 0 0 8px rgba(245, 101, 101, 0.6), inset 0 -2px 3px rgba(0,0,0,0.25);
 }
 
 .status-lamp:hover::after {
     content: attr(data-model);
     position: absolute;
-    bottom: 16px;
+    bottom: 20px;
     left: 50%;
     transform: translateX(-50%);
     background: rgba(15, 23, 42, 0.95);
@@ -1821,153 +1799,99 @@ input:disabled {
     font-family: 'Courier New', 'Consolas', 'Monaco', monospace;
 }
 
-.status-bar-version {
-    display: flex;
-    align-items: center;
-}
+/* === FLOATING STATUS BAR — zunifikowane komponenty === */
 
-.status-bar-version-text {
-    font-weight: 600;
-    color: #cbd5e0;
-    letter-spacing: 0.5px;
-}
-
-.status-bar-indicators {
-    display: flex;
-    align-items: center;
-    gap: 1px;
-}
-
-.floating-status-item {
+/* Sekcja — kontener inline */
+.status-bar-section {
     display: flex;
     align-items: center;
     gap: 6px;
     user-select: none;
 }
 
+/* Label tekstowy (Baza:, AI:, Load:, Memory:, wersja) */
+.status-bar-label {
+    font-weight: 600;
+    color: #cbd5e0;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+
+/* Kontener na lampki */
+.status-bar-lamps {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Lampka diodowa — zunifikowany styl 12x12 z cieniowaniem */
 .floating-lamp {
-    width: 8px;
-    height: 8px;
+    width: 12px;
+    height: 12px;
     border-radius: 50%;
-    box-shadow: 0 0 4px rgba(0,0,0,0.5);
     transition: all 0.3s ease;
+    background-image: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0.1) 30%, transparent 60%);
 }
 
 .floating-lamp-ok {
-    background: #48bb78;
+    background-color: #48bb78;
     box-shadow: 0 0 8px rgba(72, 187, 120, 0.6), inset 0 -2px 3px rgba(0,0,0,0.25);
 }
 
 .floating-lamp-warning {
-    background: #f6ad55;
+    background-color: #f6ad55;
     box-shadow: 0 0 8px rgba(246, 173, 85, 0.6), inset 0 -2px 3px rgba(0,0,0,0.25);
 }
 
 .floating-lamp-error {
-    background: #f56565;
+    background-color: #f56565;
     box-shadow: 0 0 8px rgba(245, 101, 101, 0.6), inset 0 -2px 3px rgba(0,0,0,0.25);
 }
 
+/* Separator pionowy między sekcjami */
 .status-bar-separator {
     width: 1px;
-    height: 12px;
+    height: 14px;
     background: rgba(255, 255, 255, 0.4);
 }
 
+/* Spacer (flex grow) */
 .status-bar-spacer {
     flex: 1;
 }
 
+/* Konsola — klikalny element */
 .status-bar-console {
-    display: flex;
-    align-items: center;
-    gap: 8px;
     cursor: pointer;
     padding: 0 8px;
     border-radius: 3px;
-    transition: all 0.2s;
+    transition: background 0.2s;
 }
 
 .status-bar-console:hover {
     background: rgba(255, 255, 255, 0.1);
 }
 
-.status-bar-console-separator {
-    width: 1px;
-    height: 12px;
-    background: rgba(255, 255, 255, 0.2);
-}
-
-.status-bar-console-text {
-    font-weight: 500;
-    letter-spacing: 0.5px;
-    color: #e2e8f0;
-}
-/* ETL Progress Bar in Status Bar */
-.status-bar-etl-progress {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex: 1;
-    max-width: 140px;
-}
-
-.etl-progress-track {
+/* Pasek progresu — zunifikowany (Load + Memory) */
+.progress-track {
     flex: 1;
     height: 10px;
     background: #808080;
     border-radius: 0;
     overflow: hidden;
     min-width: 60px;
+    max-width: 100px;
     border: 1px solid #404040;
 }
 
-.etl-progress-bar {
+.progress-bar {
     height: 100%;
     background: #48bb78;
     border-radius: 0;
     transition: width 0.3s ease;
 }
 
-.etl-progress-percent {
-    font-size: 0.7rem;
-    color: #90cdf4;
-    font-weight: 600;
-    min-width: 28px;
-    text-align: right;
-}
-
-#etlLamp.etl-blink {
-    transition: none;
-}
-
-/* Memory Usage Bar */
-.status-bar-memory {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex: 1;
-    max-width: 140px;
-}
-
-.memory-progress-track {
-    flex: 1;
-    height: 10px;
-    background: #808080;
-    border-radius: 0;
-    overflow: hidden;
-    min-width: 60px;
-    border: 1px solid #404040;
-}
-
-.memory-progress-bar {
-    height: 100%;
-    background: #48bb78;
-    border-radius: 0;
-    transition: width 1s ease;
-}
-
-.memory-percent {
+.progress-percent {
     font-size: 0.7rem;
     color: #90cdf4;
     font-weight: 600;

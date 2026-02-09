@@ -650,66 +650,62 @@
 
     <!-- Floating Status Bar (Bottom) -->
     <div id="floatingStatusBar" class="floating-status-bar">
-        
-        <!-- Version Section -->
-        <div id="versionSection" class="status-bar-version">
-            <span class="status-bar-version-text">v<span id="programVersion">4.0.0</span></span>
-        </div>
-        
-        <!-- Status Indicators Section -->
-        <div id="statusIndicators" class="status-bar-indicators">
-            <span>Baza:</span>
-            <!-- Baza Indicator -->
-            <div class="floating-status-item" id="floatingStatusDbState" title="Stan bazy danych">
-                <div class="floating-lamp floating-lamp-error"></div>
-            </div>
-            <!-- Rekordy Indicator -->
-            <div class="floating-status-item" id="floatingStatusRecords" title="Stan rekordów w API">
-                <div class="floating-lamp floating-lamp-ok"></div>
-            </div>
-            <!-- Poprawność Indicator -->
-            <div class="floating-status-item" id="floatingStatusValidity" title="Stan poprawności danych">
-                <div class="floating-lamp floating-lamp-ok"></div>
-            </div>
-        </div>
-        
-        <!-- Separator -->
-        <div class="status-bar-separator"></div>
-        
-        <!-- AI Models Status Section -->
-        <div id="aiStatusSection" class="status-bar-ai">
-            <span>AI:</span>
-            <div id="aiStatusLamps" class="status-bar-ai-lamps"></div>
-        </div>
-        
-        <!-- ETL Progress Section -->
-        <div id="etlProgressSection" class="status-bar-etl-progress" title="Pasek ładowania danych z API">
-            <div class="status-bar-separator"></div>
-            <span>Load:</span>
-            <div id="etlLamp" class="floating-lamp floating-lamp-ok" title="Pasek ładowania danych z API"></div>
-            <div class="etl-progress-track" title="Pasek ładowania danych z API">
-                <div id="etlProgressBar" class="etl-progress-bar" style="width:0%"></div>
-            </div>
-            <span id="etlProgressPercent" class="etl-progress-percent" style="display:none;">0%</span>
+
+        <!-- [Wersja] -->
+        <div id="versionSection" class="status-bar-section">
+            <span class="status-bar-label">v<span id="programVersion">4.0.0</span></span>
         </div>
 
-        <!-- Memory Usage Section -->
-        <div id="memorySection" class="status-bar-memory" title="Zajętość pamięci przeglądarki">
-            <div class="status-bar-separator"></div>
-            <span>Memory:</span>
-            <div class="memory-progress-track">
-                <div id="memoryProgressBar" class="memory-progress-bar" style="width:0%"></div>
+        <div class="status-bar-separator"></div>
+
+        <!-- [Baza] -->
+        <div id="statusIndicators" class="status-bar-section">
+            <span class="status-bar-label">Baza:</span>
+            <div class="status-bar-lamps">
+                <div class="floating-lamp floating-lamp-error" id="floatingStatusDbState" title="Stan bazy danych"></div>
+                <div class="floating-lamp floating-lamp-ok" id="floatingStatusRecords" title="Stan rekordów w API"></div>
+                <div class="floating-lamp floating-lamp-ok" id="floatingStatusValidity" title="Stan poprawności danych"></div>
             </div>
-            <span id="memoryPercent" class="memory-percent">0%</span>
+        </div>
+
+        <div class="status-bar-separator"></div>
+
+        <!-- [AI] -->
+        <div id="aiStatusSection" class="status-bar-section">
+            <span class="status-bar-label">AI:</span>
+            <div id="aiStatusLamps" class="status-bar-lamps"></div>
+        </div>
+
+        <div class="status-bar-separator"></div>
+
+        <!-- [Load] -->
+        <div id="etlProgressSection" class="status-bar-section" title="Pasek ładowania danych z API">
+            <span class="status-bar-label">Load:</span>
+            <div class="progress-track">
+                <div id="etlProgressBar" class="progress-bar" style="width:0%"></div>
+            </div>
+            <span id="etlProgressPercent" class="progress-percent" style="display:none;">0%</span>
+        </div>
+
+        <div class="status-bar-separator"></div>
+
+        <!-- [Memory] -->
+        <div id="memorySection" class="status-bar-section" title="Zajętość pamięci przeglądarki">
+            <span class="status-bar-label">Memory:</span>
+            <div class="progress-track">
+                <div id="memoryProgressBar" class="progress-bar" style="width:0%"></div>
+            </div>
+            <span id="memoryPercent" class="progress-percent">0%</span>
         </div>
 
         <!-- Spacer -->
         <div class="status-bar-spacer"></div>
 
-        <!-- Console Section -->
-        <div id="consoleSection" class="status-bar-console" title="Otwórz konsolę (Shift+C)">
-            <div class="status-bar-console-separator"></div>
-            <span class="status-bar-console-text">📋 KONSOLA</span>
+        <div class="status-bar-separator"></div>
+
+        <!-- [Konsola] -->
+        <div id="consoleSection" class="status-bar-section status-bar-console" title="Otwórz konsolę (Ctrl+`)">
+            <span class="status-bar-label">📋 KONSOLA</span>
         </div>
     </div>
 
@@ -917,11 +913,9 @@
         // Console section click (from floating bar)
         consoleSection?.addEventListener('click', toggleConsole);
         
-        // Console section keyboard shortcut (Shift+C) - ignore when typing in inputs
+        // Console keyboard shortcut: Ctrl+`
         document.addEventListener('keydown', (e) => {
-            const tag = e.target.tagName;
-            if (tag === 'INPUT' || tag === 'TEXTAREA' || e.target.isContentEditable) return;
-            if (e.shiftKey && (e.key === 'C' || e.key === 'c')) {
+            if (e.ctrlKey && e.key === '`') {
                 e.preventDefault();
                 toggleConsole();
             }

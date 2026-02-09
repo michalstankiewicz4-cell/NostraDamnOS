@@ -75,54 +75,48 @@ function updateStatusIndicators() {
     const statusValidity = document.getElementById('floatingStatusValidity');
     
     if (!statusDbState || !statusRecords || !statusValidity) return;
-    
+
     // Stan bazy: czerwony=pusty, zielony=ma dane
-    const dbLamp = statusDbState.querySelector('.floating-lamp');
     if (dbEmpty) {
-        dbLamp.className = 'floating-lamp floating-lamp-error';
+        statusDbState.className = 'floating-lamp floating-lamp-error';
         statusDbState.title = `Brak danych (0 rekordów)`;
     } else {
         const totalRecords = Object.values(stats).reduce((sum, count) => sum + count, 0);
-        dbLamp.className = 'floating-lamp floating-lamp-ok';
+        statusDbState.className = 'floating-lamp floating-lamp-ok';
         statusDbState.title = `Baza zawiera dane (${totalRecords} rekordów)`;
     }
-    
+
     // Stan rekordów i poprawności - domyślnie OK, zmienia się przy sprawdzeniu
-    const recordsLamp = statusRecords.querySelector('.floating-lamp');
-    const validityLamp = statusValidity.querySelector('.floating-lamp');
-    
-    recordsLamp.className = 'floating-lamp floating-lamp-ok';
-    validityLamp.className = 'floating-lamp floating-lamp-ok';
+    statusRecords.className = 'floating-lamp floating-lamp-ok';
+    statusValidity.className = 'floating-lamp floating-lamp-ok';
   } catch (error) {
     console.error('[updateStatusIndicators] Error:', error);
   }
 }
 
 function setRecordsStatus(hasNewRecords) {
-  const statusRecords = document.getElementById('floatingStatusRecords');
-  if (!statusRecords) return;
-  
-  const lamp = statusRecords.querySelector('.floating-lamp');
+  const lamp = document.getElementById('floatingStatusRecords');
+  if (!lamp) return;
+
   if (hasNewRecords) {
     lamp.className = 'floating-lamp floating-lamp-error';
-    statusRecords.title = 'Znaleziono nowe rekordy';
+    lamp.title = 'Znaleziono nowe rekordy';
   } else {
     lamp.className = 'floating-lamp floating-lamp-ok';
-    statusRecords.title = 'Brak nowych rekordów';
+    lamp.title = 'Brak nowych rekordów';
   }
 }
 
 function setValidityStatus(hasErrors) {
-  const statusValidity = document.getElementById('floatingStatusValidity');
-  if (!statusValidity) return;
-  
-  const lamp = statusValidity.querySelector('.floating-lamp');
+  const lamp = document.getElementById('floatingStatusValidity');
+  if (!lamp) return;
+
   if (hasErrors) {
     lamp.className = 'floating-lamp floating-lamp-error';
-    statusValidity.title = 'Znaleziono błędy';
+    lamp.title = 'Znaleziono błędy';
   } else {
     lamp.className = 'floating-lamp floating-lamp-ok';
-    statusValidity.title = 'Dane są poprawne';
+    lamp.title = 'Dane są poprawne';
   }
 }
 
@@ -347,45 +341,16 @@ function updateSummaryTab() {
 
 // === ETL PROGRESS BAR ===
 
-let etlBlinkInterval = null;
-
-function startEtlBlink() {
-    stopEtlBlink();
-    const lamp = document.getElementById('etlLamp');
-    if (!lamp) return;
-    lamp.classList.add('etl-blink');
-    function blink() {
-        if (!etlBlinkInterval) return;
-        const isGreen = Math.random() > 0.35;
-        lamp.className = 'floating-lamp etl-blink ' + (isGreen ? 'floating-lamp-ok' : 'floating-lamp-error');
-        etlBlinkInterval = setTimeout(blink, 50 + Math.floor(Math.random() * 120));
-    }
-    etlBlinkInterval = setTimeout(blink, 50);
-}
-
-function stopEtlBlink() {
-    if (etlBlinkInterval) {
-        clearTimeout(etlBlinkInterval);
-        etlBlinkInterval = null;
-    }
-    const lamp = document.getElementById('etlLamp');
-    if (lamp) lamp.classList.remove('etl-blink');
-}
-
 function showEtlProgress() {
     const pctEl = document.getElementById('etlProgressPercent');
     const bar = document.getElementById('etlProgressBar');
     if (pctEl) pctEl.style.display = '';
     if (bar) bar.style.width = '0%';
-    startEtlBlink();
 }
 
 function hideEtlProgress() {
-    const lamp = document.getElementById('etlLamp');
     const pctEl = document.getElementById('etlProgressPercent');
     const bar = document.getElementById('etlProgressBar');
-    stopEtlBlink();
-    if (lamp) lamp.className = 'floating-lamp floating-lamp-ok';
     if (pctEl) pctEl.style.display = 'none';
     if (bar) bar.style.width = '0%';
 }
