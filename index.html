@@ -116,6 +116,11 @@
             <p>System lokalnej analizy wypowiedzi parlamentarnych | <span id="projectVersion">v4.0.0</span></p>
         </header>
 
+        <!-- Top Info Bar -->
+        <div id="topInfoBar" class="top-info-bar">
+            <span id="topInfoText" class="top-info-text"></span>
+        </div>
+
         <!-- Sidebar z karteczkami na prawo -->
         <aside class="sidebar" id="sidebar">
             <div class="tab-card" data-tab="settings">
@@ -1035,13 +1040,43 @@
 
     <script type="module">
         import { initAIChat } from './modules/ai-chat.js';
-        
+
         // Initialize AI Chat after DOM is ready
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', initAIChat);
         } else {
             initAIChat();
         }
+    </script>
+
+    <!-- Top Info Bar — scrolling help messages -->
+    <script>
+    (function() {
+        const messages = [
+            'Ściągnij dane do analizy w zakładce ETL — zaznacz interesujące Cię dane oraz kliknij przycisk "Pobierz dane"',
+            'Porozmawiaj z asystentem AI, aby uzyskać analizę pobranych danych parlamentarnych',
+            'Sprawdź statystyki głosowań i frekwencję posłów w zakładce Analiza',
+            'Porównaj wypowiedzi posłów na wybrany temat za pomocą narzędzia porównania',
+            'Dostosuj wygląd aplikacji w zakładce Ustawienia — wybierz styl Jasny, Ciemny lub Retro'
+        ];
+
+        const textEl = document.getElementById('topInfoText');
+        if (!textEl) return;
+
+        let idx = 0;
+
+        function showNext() {
+            textEl.classList.add('reset');
+            textEl.textContent = messages[idx];
+            // Force reflow to restart animation
+            void textEl.offsetWidth;
+            textEl.classList.remove('reset');
+            idx = (idx + 1) % messages.length;
+        }
+
+        showNext();
+        setInterval(showNext, 5000);
+    })();
     </script>
 </body>
 </html>
