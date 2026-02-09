@@ -145,7 +145,8 @@ function initETLPanel() {
             { id: 'etlInterpellations', name: 'interpelacje', size: 200, reqs: 10 },
             { id: 'etlWrittenQuestions', name: 'zapytania pisemne', size: 150, reqs: 8 },
             { id: 'etlBills', name: 'projekty ustaw', size: 250, reqs: 15 },
-            { id: 'etlDisclosures', name: 'oświadczenia majątkowe', size: 500, reqs: 5 }
+            { id: 'etlDisclosures', name: 'oświadczenia majątkowe', size: 500, reqs: 5 },
+            { id: 'etlLegalActs', name: 'ustawy (akty prawne)', size: 200, reqs: 5 }
         ];
         
         perTermData.forEach(item => {

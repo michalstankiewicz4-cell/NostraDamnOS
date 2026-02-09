@@ -134,7 +134,8 @@ const summaryLabels = {
     komisje:               { icon: '🏢', label: 'Komisje' },
     komisje_posiedzenia:   { icon: '📅', label: 'Posiedzenia komisji' },
     komisje_wypowiedzi:    { icon: '🗣️', label: 'Wypowiedzi komisji' },
-    oswiadczenia_majatkowe:{ icon: '💰', label: 'Oświadczenia majątkowe' }
+    oswiadczenia_majatkowe:{ icon: '💰', label: 'Oświadczenia majątkowe' },
+    ustawy:                { icon: '⚖️', label: 'Ustawy (akty prawne)' }
 };
 
 // Kolumny do wyświetlenia per tabela (nie pokazujemy długich tekstów)
@@ -150,7 +151,8 @@ const tableColumns = {
     komisje:               ['id_komisji', 'nazwa', 'skrot', 'typ', 'kadencja'],
     komisje_posiedzenia:   ['id_posiedzenia_komisji', 'id_komisji', 'numer', 'data', 'opis'],
     komisje_wypowiedzi:    ['id_posiedzenia_komisji', 'id_osoby', 'data', 'typ'],
-    oswiadczenia_majatkowe:['id_oswiadczenia', 'id_osoby', 'rok', 'data_zlozenia']
+    oswiadczenia_majatkowe:['id_oswiadczenia', 'id_osoby', 'rok', 'data_zlozenia'],
+    ustawy:                ['id_ustawy', 'publisher', 'year', 'pos', 'title', 'type', 'status']
 };
 
 function showSummaryTable(tableName) {

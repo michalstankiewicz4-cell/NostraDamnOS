@@ -53,8 +53,6 @@
                 const programVersionEl = document.getElementById('programVersion');
                 if (programVersionEl) programVersionEl.textContent = window.PROJECT.version;
                 
-                const infoVersionEl = document.getElementById('infoVersion');
-                if (infoVersionEl) infoVersionEl.textContent = window.PROJECT.version;
             } catch (error) {
                 console.warn('Nie udało się wczytać project.json:', error);
             } finally {

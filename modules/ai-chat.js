@@ -197,38 +197,9 @@ export function initAIChat() {
 }
 
 /**
- * Toggle chat window
- */
-export function toggleChatWindow() {
-    const chatWindow = document.getElementById('aiChatWindow');
-    if (!chatWindow) return;
-    
-    chatState.isOpen = !chatState.isOpen;
-    chatWindow.style.display = chatState.isOpen ? 'flex' : 'none';
-    
-    if (chatState.isOpen) {
-        // Focus on input
-        const input = document.getElementById('chatInput');
-        if (input) input.focus();
-    }
-}
-
-/**
  * Setup event listeners
  */
 function setupChatEventListeners() {
-    // Toggle button
-    const toggleBtn = document.getElementById('aiChatBtn');
-    if (toggleBtn) {
-        toggleBtn.addEventListener('click', toggleChatWindow);
-    }
-    
-    // Close button
-    const closeBtn = document.getElementById('closeChatBtn');
-    if (closeBtn) {
-        closeBtn.addEventListener('click', toggleChatWindow);
-    }
-    
     // Model selector
     const modelSelect = document.getElementById('aiModelSelect');
     if (modelSelect) {
@@ -1073,5 +1044,3 @@ async function pingModelAPI(modelKey) {
 // Export for external access
 window.recheckAIStatus = checkAllFavoriteModels;
 
-// Export for global access
-window.toggleAIChat = toggleChatWindow;
