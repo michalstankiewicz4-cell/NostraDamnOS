@@ -22,7 +22,7 @@
     background: #ece9d8;
     border-radius: 0;
     border: 1px solid #0054e3;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    box-shadow: none;
     font-family: 'Lucida Console', 'Consolas', 'Courier New', monospace;
     overflow: hidden;
 }
