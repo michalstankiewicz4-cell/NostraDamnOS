@@ -212,10 +212,10 @@ function initETLPanel() {
                     onProgress: () => {},
                     onComplete: (res) => {
                         if (res.differences && res.differences.length > 0) {
-                            setValidityStatus(true);
+                            window.setValidityStatus(true);
                             showVerificationResults(res.differences);
                         } else {
-                            setValidityStatus(false);
+                            window.setValidityStatus(false);
                             alert('✅ Niema żadnych zmian - baza i API się zgadzają!');
                         }
                     }

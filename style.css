@@ -1,3 +1,35 @@
+/* Reset i zmienne globalne */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+:root {
+    --primary-color: #2563eb;
+    --secondary-color: #64748b;
+    --success-color: #10b981;
+    --warning-color: #f59e0b;
+    --danger-color: #ef4444;
+    --bg-color: #f8fafc;
+    --card-bg: #ffffff;
+    --text-primary: #1e293b;
+    --text-secondary: #64748b;
+    --border-color: #e2e8f0;
+    --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-primary);
+    line-height: 1.6;
+    padding-bottom: 25px;
+}
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0.1rem 1rem 0.1rem 1rem;
+}
+
 /* MODERN (obecny) styl konsoli */
 .console-modern .floating-console-panel {
     background: #c0c0c0;
@@ -168,149 +200,6 @@
     font-size: 0.95rem;
     border-top: 1px solid #3c3c3c;
     overflow-y: auto;
-}
-/* CLASSIC CMD (Win95/98/2000) */
-.console-classic .floating-console-panel {
-    background: #c0c0c0;
-    border-radius: 0;
-    border: 2px solid #000;
-    box-shadow:
-        inset -1px -1px 0 #fff,
-        inset 1px 1px 0 #808080,
-        2px 2px 0 #808080,
-        4px 4px 0 #fff;
-    font-family: 'MS Sans Serif', 'Consolas', 'Courier New', monospace;
-}
-
-/* Pasek tytułu */
-.console-classic .floating-console-header {
-    background: #000080; /* klasyczny granat */
-    color: #fff;
-    padding: 3px 6px;
-    font-family: 'MS Sans Serif', 'Consolas', 'Courier New', monospace;
-    font-size: 0.9rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    border-bottom: 2px solid #000;
-}
-
-/* Tytuł okna */
-.console-classic .floating-console-title {
-    color: #fff;
-    font-weight: bold;
-    letter-spacing: 0.2px;
-}
-
-/* Przycisk zamykania (Win95 style) */
-.console-classic .floating-console-close {
-    width: 18px;
-    height: 18px;
-    background: #c0c0c0;
-    color: #000;
-    border: 2px solid #fff;
-    border-right-color: #808080;
-    border-bottom-color: #808080;
-    font-weight: bold;
-    font-size: 0.9rem;
-    line-height: 14px;
-    text-align: center;
-    cursor: pointer;
-    padding: 0;
-}
-
-.console-classic .floating-console-close:hover {
-    background: #d8d8d8;
-}
-
-/* Wnętrze konsoli */
-.console-classic .floating-console-logs {
-    background: #000;
-    color: #fff; /* klasyczne białe CMD */
-    padding: 8px;
-    font-family: 'Consolas', 'Courier New', monospace;
-    font-size: 0.95rem;
-    border-top: 2px solid #000;
-}
-/* CLASSIC CMD (jak na screenie) */
-.console-classic .floating-console-panel {
-    background: #c0c0c0;
-    border-radius: 0;
-    border: 2px solid #000;
-    box-shadow: inset -1px -1px 0 #fff, inset 1px 1px 0 #808080, 2px 2px 0 #808080, 4px 4px 0 #fff;
-    font-family: 'MS Sans Serif', 'Consolas', 'Courier New', monospace;
-}
-.console-classic .floating-console-header {
-    background: #000080;
-    color: #fff;
-    padding: 4px 6px;
-    font-family: 'MS Sans Serif', 'Consolas', 'Courier New', monospace;
-    font-size: 0.9rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    border-bottom: 2px solid #000;
-}
-.console-classic .floating-console-title {
-    color: #fff;
-    font-weight: bold;
-    letter-spacing: 0.3px;
-}
-.console-classic .floating-console-close {
-    width: 18px;
-    height: 18px;
-    background: #c0c0c0;
-    color: #000;
-    border: 2px solid #fff;
-    border-right-color: #808080;
-    border-bottom-color: #808080;
-    font-weight: bold;
-    font-size: 0.9rem;
-    line-height: 14px;
-    text-align: center;
-    cursor: pointer;
-    padding: 0;
-}
-.console-classic .floating-console-close:hover {
-    background: #e0e0e0;
-}
-.console-classic .floating-console-logs {
-    background: #000;
-    color: #00ff00;
-    padding: 8px;
-    font-family: 'Consolas', 'Courier New', monospace;
-    font-size: 0.95rem;
-    border-top: 2px solid #000;
-}
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-:root {
-    --primary-color: #2563eb;
-    --secondary-color: #64748b;
-    --success-color: #10b981;
-    --warning-color: #f59e0b;
-    --danger-color: #ef4444;
-    --bg-color: #f8fafc;
-    --card-bg: #ffffff;
-    --text-primary: #1e293b;
-    --text-secondary: #64748b;
-    --border-color: #e2e8f0;
-    --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-}
-body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-    background-color: var(--bg-color);
-    color: var(--text-primary);
-    line-height: 1.6;
-    padding-bottom: 25px;
-}
- .container {
-     max-width: 1200px;
-     margin: 0 auto;
-     padding: 0.1rem 1rem 0.1.rem 1rem;
 }
 /* Header */
 header {
@@ -1002,47 +891,6 @@ input:disabled {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
-.floating-status-item {
-    transition: all 0.2s ease;
-    padding: 4px 8px;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    cursor: help;
-}
-
-.floating-status-item:hover {
-    background: rgba(255, 255, 255, 0.1);
-}
-
-.floating-lamp {
-    width: 15px;
-    height: 15px;
-    border-radius: 50%;
-    transition: all 0.3s ease;
-    box-shadow: 0 0 6px rgba(0, 0, 0, 0.3);
-    background-image: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0.1) 30%, transparent 60%);
-}
-
-.floating-lamp.status-ok,
-.floating-lamp-ok {
-    background-color: #10b981;
-    box-shadow: 0 0 8px rgba(16, 185, 129, 0.8), inset 0 -2px 3px rgba(0,0,0,0.25);
-}
-
-.floating-lamp.status-warning,
-.floating-lamp-warning {
-    background-color: #f59e0b;
-    box-shadow: 0 0 8px rgba(245, 158, 11, 0.8), inset 0 -2px 3px rgba(0,0,0,0.25);
-}
-
-.floating-lamp.status-error,
-.floating-lamp-error {
-    background-color: #ef4444;
-    box-shadow: 0 0 8px rgba(239, 68, 68, 0.8), inset 0 -2px 3px rgba(0,0,0,0.25);
-}
-
 #consoleSection {
     transition: background 0.2s ease;
 }
@@ -1290,11 +1138,6 @@ input:disabled {
 }
 
 /* Floating Status Bar Components */
-.status-bar-separator {
-    width: 1px;
-    height: 24px;
-    background: #475569;
-}
 
 .status-bar-spacer {
     flex: 1;
@@ -1317,28 +1160,6 @@ input:disabled {
     display: flex;
     gap: 20px;
     align-items: center;
-}
-
-.floating-status-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    cursor: help;
-}
-
-.floating-lamp-ok {
-    background-color: #10b981;
-    box-shadow: 0 0 8px rgba(16, 185, 129, 0.8), inset 0 -2px 3px rgba(0,0,0,0.25);
-}
-
-.floating-lamp-error {
-    background-color: #ef4444;
-    box-shadow: 0 0 8px rgba(239, 68, 68, 0.8), inset 0 -2px 3px rgba(0,0,0,0.25);
-}
-
-.floating-lamp-warning {
-    background-color: #f59e0b;
-    box-shadow: 0 0 8px rgba(245, 158, 11, 0.8), inset 0 -2px 3px rgba(0,0,0,0.25);
 }
 
 .status-bar-console {

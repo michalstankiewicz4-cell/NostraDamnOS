@@ -507,6 +507,13 @@
                         </div>
                     </div>
                     <button id="loadModels" class="btn btn-primary">Załaduj modele lokalne</button>
+                    <div class="analysis-buttons" style="margin-top: 10px;">
+                        <button id="analyzeSentiment" class="btn" disabled>Analiza sentymentu</button>
+                        <button id="analyzeTopics" class="btn" disabled>Analiza tematów</button>
+                        <button id="generateSummary" class="btn" disabled>Generuj podsumowanie</button>
+                        <button id="compareSpeeches" class="btn" disabled>Porównaj wypowiedzi</button>
+                    </div>
+                    <div id="results" style="margin-top: 10px;"></div>
                 </section>
                 </div><!-- /ai-column-models -->
 
@@ -910,8 +917,10 @@
         // Console section click (from floating bar)
         consoleSection?.addEventListener('click', toggleConsole);
         
-        // Console section keyboard shortcut (Shift+C)
+        // Console section keyboard shortcut (Shift+C) - ignore when typing in inputs
         document.addEventListener('keydown', (e) => {
+            const tag = e.target.tagName;
+            if (tag === 'INPUT' || tag === 'TEXTAREA' || e.target.isContentEditable) return;
             if (e.shiftKey && (e.key === 'C' || e.key === 'c')) {
                 e.preventDefault();
                 toggleConsole();

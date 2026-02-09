@@ -70,58 +70,58 @@ function updateStatusIndicators() {
   try {
     const dbEmpty = isDatabaseEmpty();
     const stats = db2.getStats();
-    const statusDbState = document.getElementById('statusDbState');
-    const statusRecords = document.getElementById('statusRecords');
-    const statusValidity = document.getElementById('statusValidity');
+    const statusDbState = document.getElementById('floatingStatusDbState');
+    const statusRecords = document.getElementById('floatingStatusRecords');
+    const statusValidity = document.getElementById('floatingStatusValidity');
     
     if (!statusDbState || !statusRecords || !statusValidity) return;
     
     // Stan bazy: czerwony=pusty, zielony=ma dane
-    const dbLamp = statusDbState.querySelector('.etl-lamp');
+    const dbLamp = statusDbState.querySelector('.floating-lamp');
     if (dbEmpty) {
-        dbLamp.className = 'etl-lamp status-error';
+        dbLamp.className = 'floating-lamp floating-lamp-error';
         statusDbState.title = `Brak danych (0 rekordów)`;
     } else {
         const totalRecords = Object.values(stats).reduce((sum, count) => sum + count, 0);
-        dbLamp.className = 'etl-lamp status-ok';
+        dbLamp.className = 'floating-lamp floating-lamp-ok';
         statusDbState.title = `Baza zawiera dane (${totalRecords} rekordów)`;
     }
     
     // Stan rekordów i poprawności - domyślnie OK, zmienia się przy sprawdzeniu
-    const recordsLamp = statusRecords.querySelector('.etl-lamp');
-    const validityLamp = statusValidity.querySelector('.etl-lamp');
+    const recordsLamp = statusRecords.querySelector('.floating-lamp');
+    const validityLamp = statusValidity.querySelector('.floating-lamp');
     
-    recordsLamp.className = 'etl-lamp status-ok';
-    validityLamp.className = 'etl-lamp status-ok';
+    recordsLamp.className = 'floating-lamp floating-lamp-ok';
+    validityLamp.className = 'floating-lamp floating-lamp-ok';
   } catch (error) {
     console.error('[updateStatusIndicators] Error:', error);
   }
 }
 
 function setRecordsStatus(hasNewRecords) {
-  const statusRecords = document.getElementById('statusRecords');
+  const statusRecords = document.getElementById('floatingStatusRecords');
   if (!statusRecords) return;
   
-  const lamp = statusRecords.querySelector('.etl-lamp');
+  const lamp = statusRecords.querySelector('.floating-lamp');
   if (hasNewRecords) {
-    lamp.className = 'etl-lamp status-error';
+    lamp.className = 'floating-lamp floating-lamp-error';
     statusRecords.title = 'Znaleziono nowe rekordy';
   } else {
-    lamp.className = 'etl-lamp status-ok';
+    lamp.className = 'floating-lamp floating-lamp-ok';
     statusRecords.title = 'Brak nowych rekordów';
   }
 }
 
 function setValidityStatus(hasErrors) {
-  const statusValidity = document.getElementById('statusValidity');
+  const statusValidity = document.getElementById('floatingStatusValidity');
   if (!statusValidity) return;
   
-  const lamp = statusValidity.querySelector('.etl-lamp');
+  const lamp = statusValidity.querySelector('.floating-lamp');
   if (hasErrors) {
-    lamp.className = 'etl-lamp status-error';
+    lamp.className = 'floating-lamp floating-lamp-error';
     statusValidity.title = 'Znaleziono błędy';
   } else {
-    lamp.className = 'etl-lamp status-ok';
+    lamp.className = 'floating-lamp floating-lamp-ok';
     statusValidity.title = 'Dane są poprawne';
   }
 }

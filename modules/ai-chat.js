@@ -21,14 +21,16 @@ const MODEL_CONFIG = {
         apiUrl: 'https://api.openai.com/v1/chat/completions',
         model: 'gpt-4-turbo-preview',
         keyLink: 'https://platform.openai.com/api-keys',
-        keyPlaceholder: 'sk-...'
+        keyPlaceholder: 'sk-...',
+        provider: 'openai'
     },
     claude: {
         name: 'Anthropic Claude',
         apiUrl: 'https://api.anthropic.com/v1/messages',
         model: 'claude-3-5-sonnet-20241022',
         keyLink: 'https://console.anthropic.com/settings/keys',
-        keyPlaceholder: 'sk-ant-...'
+        keyPlaceholder: 'sk-ant-...',
+        provider: 'claude'
     },
     'gemini-3-flash': {
         name: 'Gemini 3 Flash Preview',

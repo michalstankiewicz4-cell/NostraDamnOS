@@ -218,7 +218,23 @@ export const db2 = {
             );
             CREATE INDEX IF NOT EXISTS idx_zapytania_odpowiedzi_zapytanie ON zapytania_odpowiedzi(zapytanie_term, zapytanie_num);
             
-            -- 14. Metadata (cache, wersje, logi)
+            -- 14. Ustawy (akty prawne ELI)
+            CREATE TABLE IF NOT EXISTS ustawy (
+                id_ustawy TEXT PRIMARY KEY,
+                publisher TEXT,
+                year INTEGER,
+                pos INTEGER,
+                title TEXT,
+                type TEXT,
+                status TEXT,
+                promulgation TEXT,
+                entry_into_force TEXT
+            );
+            CREATE INDEX IF NOT EXISTS idx_ustawy_year ON ustawy(year);
+            CREATE INDEX IF NOT EXISTS idx_ustawy_type ON ustawy(type);
+            CREATE INDEX IF NOT EXISTS idx_ustawy_status ON ustawy(status);
+
+            -- 15. Metadata (cache, wersje, logi)
             CREATE TABLE IF NOT EXISTS metadata (
                 klucz TEXT PRIMARY KEY,
                 wartosc TEXT,
@@ -691,6 +707,28 @@ export const db2 = {
             ]);
         });
         
+        stmt.free();
+    },
+
+    upsertUstawy(data) {
+        const stmt = this.database.prepare(`
+            INSERT INTO ustawy (id_ustawy, publisher, year, pos, title, type, status, promulgation, entry_into_force)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(id_ustawy) DO UPDATE SET
+                title = excluded.title,
+                type = excluded.type,
+                status = excluded.status,
+                promulgation = excluded.promulgation,
+                entry_into_force = excluded.entry_into_force
+        `);
+
+        data.forEach(row => {
+            stmt.run([
+                row.id_ustawy, row.publisher, row.year, row.pos,
+                row.title, row.type, row.status, row.promulgation, row.entry_into_force
+            ]);
+        });
+
         stmt.free();
     }
 };

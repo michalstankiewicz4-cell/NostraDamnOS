@@ -13,6 +13,7 @@ import { normalizeKomisje, saveKomisje } from './modules/komisje.js';
 import { normalizeKomisjePosiedzenia, saveKomisjePosiedzenia } from './modules/komisje_posiedzenia.js';
 import { normalizeKomisjeWypowiedzi, saveKomisjeWypowiedzi } from './modules/komisje_wypowiedzi.js';
 import { normalizeOswiadczeniaMajatkowe, saveOswiadczeniaMajatkowe } from './modules/oswiadczenia_majatkowe.js';
+import { normalizeUstawy, saveUstawy } from './modules/ustawy.js';
 
 export async function runNormalizer(db, raw, config = {}) {
     console.log('[Normalizer] Starting...');
@@ -29,7 +30,8 @@ export async function runNormalizer(db, raw, config = {}) {
         komisje: 0,
         komisje_posiedzenia: 0,
         komisje_wypowiedzi: 0,
-        oswiadczenia_majatkowe: 0
+        oswiadczenia_majatkowe: 0,
+        ustawy: 0
     };
     
     // 1. Poslowie (foundation - always first)
@@ -119,6 +121,13 @@ export async function runNormalizer(db, raw, config = {}) {
         stats.oswiadczenia_majatkowe = normalized.length;
     }
     
+    // 12. Ustawy (akty prawne)
+    if (raw.ustawy && raw.ustawy.length > 0) {
+        const normalized = normalizeUstawy(raw.ustawy);
+        saveUstawy(db, normalized);
+        stats.ustawy = normalized.length;
+    }
+
     console.log('[Normalizer] ✅ Complete - Stats:', stats);
     return stats;
 }
