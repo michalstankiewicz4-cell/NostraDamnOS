@@ -17,28 +17,27 @@
     font-family: 'MS Sans Serif', 'Consolas', 'Courier New', monospace;
 }
 
-/* RETRO styl konsoli */
+/* RETRO styl konsoli — Windows XP Command Prompt (Luna) */
 .console-retro .floating-console-panel {
-    background: #c0c0c0;
+    background: #ece9d8;
     border-radius: 0;
-    border: 2px solid #000;
-    box-shadow:
-        inset -1px -1px 0 #fff,
-        inset 1px 1px 0 #808080,
-        2px 2px 0 #808080,
-        4px 4px 0 #fff;
-    font-family: 'MS Sans Serif', 'Consolas', 'Courier New', monospace;
+    border: 1px solid #0054e3;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    font-family: 'Lucida Console', 'Consolas', 'Courier New', monospace;
+    overflow: hidden;
 }
 .console-retro .floating-console-header {
-    background: #000080;
+    background: linear-gradient(180deg, #0997ff 0%, #0053ee 8%, #0050ea 20%, #0046d5 50%, #0039be 80%, #003ccc 100%);
     color: #fff;
-    padding: 3px 6px;
-    font-family: 'MS Sans Serif', 'Consolas', 'Courier New', monospace;
-    font-size: 0.9rem;
+    padding: 5px 8px;
+    font-family: 'Lucida Console', 'Consolas', 'Courier New', monospace;
+    font-size: 0.85rem;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    border-bottom: 2px solid #000;
+    border-bottom: none;
+    border-radius: 0;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.4);
 }
 .console-retro .floating-console-title {
     color: #fff;
@@ -50,26 +49,66 @@
     height: 18px;
     background: #c0c0c0;
     color: #000;
-    border: 2px solid #fff;
+    border: 1px solid #fff;
     border-right-color: #808080;
     border-bottom-color: #808080;
+    border-radius: 0;
     font-weight: bold;
-    font-size: 0.9rem;
-    line-height: 14px;
+    font-size: 0.8rem;
+    line-height: 16px;
     text-align: center;
     cursor: pointer;
     padding: 0;
+    text-shadow: none;
 }
 .console-retro .floating-console-close:hover {
-    background: #d8d8d8;
+    background: #d4d0c8;
 }
 .console-retro .floating-console-logs {
     background: #000;
-    color: #fff;
+    color: #c0c0c0;
     padding: 8px;
-    font-family: 'Consolas', 'Courier New', monospace;
-    font-size: 0.95rem;
-    border-top: 2px solid #000;
+    font-family: 'Lucida Console', 'Consolas', 'Courier New', monospace;
+    font-size: 0.9rem;
+    border-top: none;
+    overflow-y: auto;
+}
+/* Scrollbar XP style */
+.console-retro .floating-console-logs::-webkit-scrollbar {
+    width: 16px;
+}
+.console-retro .floating-console-logs::-webkit-scrollbar-track {
+    background: #c0c0c0;
+    border-left: 1px solid #808080;
+}
+.console-retro .floating-console-logs::-webkit-scrollbar-thumb {
+    background: #c0c0c0;
+    border: 1px solid #fff;
+    border-right-color: #808080;
+    border-bottom-color: #808080;
+}
+.console-retro .floating-console-logs::-webkit-scrollbar-thumb:hover {
+    background: #d4d0c8;
+}
+.console-retro .floating-console-logs::-webkit-scrollbar-button:vertical:decrement {
+    background: #c0c0c0;
+    border: 1px solid #fff;
+    border-right-color: #808080;
+    border-bottom-color: #808080;
+    height: 16px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cpolygon points='4,1 7,6 1,6' fill='%23000'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: center;
+}
+.console-retro .floating-console-logs::-webkit-scrollbar-button:vertical:increment {
+    background: #c0c0c0;
+    border: 1px solid #fff;
+    border-right-color: #808080;
+    border-bottom-color: #808080;
+    height: 16px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cpolygon points='4,7 7,2 1,2' fill='%23000'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: center;
 }
 /* Reset i podstawowe style */
 /* WINDOWS 10 CMD */
