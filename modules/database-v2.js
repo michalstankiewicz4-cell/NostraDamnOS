@@ -368,78 +368,14 @@ export const db2 = {
     },
     
     // ===== QUERY METHODS =====
-    
-    getPoslowie(filters = {}) {
-        let sql = 'SELECT * FROM poslowie WHERE 1=1';
-        const params = [];
-        
-        if (filters.kadencja) {
-            sql += ' AND kadencja = ?';
-            params.push(filters.kadencja);
-        }
-        
-        if (filters.klub) {
-            sql += ' AND klub = ?';
-            params.push(filters.klub);
-        }
-        
-        const stmt = this.database.prepare(sql);
-        stmt.bind(params);
-        
-        const results = [];
-        while (stmt.step()) {
-            results.push(stmt.getAsObject());
-        }
-        stmt.free();
-        
-        return results;
-    },
-    
-    getWypowiedzi(filters = {}) {
-        let sql = `
-            SELECT w.*, p.imie, p.nazwisko, p.klub
-            FROM wypowiedzi w
-            LEFT JOIN poslowie p ON w.id_osoby = p.id_osoby
-            WHERE 1=1
-        `;
-        const params = [];
-        
-        if (filters.id_posiedzenia) {
-            sql += ' AND w.id_posiedzenia = ?';
-            params.push(filters.id_posiedzenia);
-        }
-        
-        if (filters.id_osoby) {
-            sql += ' AND w.id_osoby = ?';
-            params.push(filters.id_osoby);
-        }
-        
-        sql += ' ORDER BY w.data DESC';
-        
-        if (filters.limit) {
-            sql += ' LIMIT ?';
-            params.push(filters.limit);
-        }
-        
-        const stmt = this.database.prepare(sql);
-        stmt.bind(params);
-        
-        const results = [];
-        while (stmt.step()) {
-            results.push(stmt.getAsObject());
-        }
-        stmt.free();
-        
-        return results;
-    },
-    
+
     getStats() {
         const stats = {};
         
         const tables = [
             'poslowie', 'posiedzenia', 'wypowiedzi', 'glosowania', 'glosy',
             'interpelacje', 'projekty_ustaw', 'komisje', 'komisje_posiedzenia',
-            'komisje_wypowiedzi', 'oswiadczenia_majatkowe', 'zapytania'
+            'komisje_wypowiedzi', 'oswiadczenia_majatkowe', 'zapytania', 'ustawy'
         ];
         
         tables.forEach(table => {
@@ -499,15 +435,6 @@ export const db2 = {
                 console.error('[DB v2] Failed to save to localStorage:', err);
             }
         }
-    },
-    
-    export() {
-        return this.database.export();
-    },
-    
-    import(data) {
-        this.database = new this.sql.Database(data);
-        console.log('[DB v2] Database imported');
     },
     
     upsertGlosowania(data) {

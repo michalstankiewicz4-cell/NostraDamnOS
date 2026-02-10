@@ -5,7 +5,6 @@ import { db2 } from './database-v2.js';
 
 // State
 const chatState = {
-    isOpen: false,
     selectedModel: 'openai', // default model
     apiKey: '',
     messages: [],
@@ -473,9 +472,6 @@ function toggleFavorite(modelKey) {
     updateFavoritesList();
     initStatusLamps(); // Refresh status lamps
 }
-
-// Export for global access
-window.toggleFavorite = toggleFavorite;
 
 /**
  * Check available Gemini models for the API key
@@ -1041,6 +1037,4 @@ async function pingModelAPI(modelKey) {
     }
 }
 
-// Export for external access
-window.recheckAIStatus = checkAllFavoriteModels;
 

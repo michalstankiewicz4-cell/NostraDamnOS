@@ -343,8 +343,6 @@ function renderHeatmap() {
     const colorSel = document.getElementById('heatmapColor')?.value || 'obecnosc';
 
     // Build query based on selections
-    const xCol = xSel === 'glosowania' ? 'g.id_glosowania' : 'g.id_posiedzenia';
-    const xLabel = xSel === 'glosowania' ? 'gl.numer' : 'g.id_posiedzenia';
     const yCol = ySel === 'kluby' ? 'p.klub' : "p.nazwisko || ' ' || SUBSTR(p.imie,1,1) || '.'";
 
     let valueSql;
@@ -511,7 +509,7 @@ function sortChartsByData() {
 }
 
 // Pojedynczy wykres (dla przycisku aktualizuj)
-export function renderSingleChart(name) {
+function renderSingleChart(name) {
     if (!db2.database) return;
     const fn = renderers[name];
     if (fn) fn();
