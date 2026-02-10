@@ -1,5 +1,6 @@
 // Moduł geolokalizacji - ograniczenie dostępu do Europy
-// Status: AKTYWNY (importowany w index.html)
+// Status: NIEAKTYWNY - gotowy do włączenia
+// Aby włączyć: odkomentuj import w index.html
 
 // Lista krajów europejskich wg ISO 3166-1 alpha-2
 const EUROPE = [
