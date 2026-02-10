@@ -206,6 +206,18 @@ async function enrichTermOptions(institution) {
     }
 }
 
+function countAgendaItems(proceedings) {
+    let items = 0;
+    for (const p of proceedings) {
+        if (p.agenda) {
+            // Policz punkty porządku obrad z HTML (<li> w agenda)
+            const matches = p.agenda.match(/<li/g);
+            items += matches ? matches.length : 0;
+        }
+    }
+    return items;
+}
+
 function updateTranscriptsCount() {
     const span = document.getElementById('etlTranscriptsCount');
     if (!span) return;
@@ -223,12 +235,15 @@ function updateTranscriptsCount() {
         const terms = termsCache[inst] || [];
         const MIN_KADENCJA = 7;
         let totalDays = 0;
+        let totalAgenda = 0;
         for (const t of terms.filter(t => t.num >= MIN_KADENCJA)) {
             const proceedings = proceedingsDataCache[`${inst}_${t.num}`] || [];
             totalDays += proceedings.reduce((sum, p) =>
                 sum + (Array.isArray(p.dates) ? p.dates.length : 0), 0);
+            totalAgenda += countAgendaItems(proceedings);
         }
-        span.textContent = totalDays > 0 ? `(${totalDays} dni obrad)` : '';
+        const estWyp = totalAgenda > 0 ? totalAgenda * 10 : totalDays * 120;
+        span.textContent = totalDays > 0 ? `(${totalDays} dni obrad, ~${estWyp} wyp.)` : '';
         return;
     }
 
@@ -245,8 +260,10 @@ function updateTranscriptsCount() {
     const inRange = proceedings.filter(p => p.number >= from && p.number <= to);
     const sittingDays = inRange.reduce((sum, p) =>
         sum + (Array.isArray(p.dates) ? p.dates.length : 0), 0);
+    const agendaItems = countAgendaItems(inRange);
+    const estWyp = agendaItems > 0 ? agendaItems * 10 : sittingDays * 120;
 
-    span.textContent = sittingDays > 0 ? `(${sittingDays} dni obrad)` : '';
+    span.textContent = sittingDays > 0 ? `(${sittingDays} dni obrad, ~${estWyp} wyp.)` : '';
 }
 
 function updateRangeMax(maxSittings) {
