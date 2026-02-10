@@ -10,6 +10,10 @@ const termsCache = {};
 const sittingsCountCache = {};
 // Cache dla pełnych danych posiedzeń (potrzebne do zliczania dni obrad / wypowiedzi)
 const proceedingsDataCache = {};
+// Cache dla dokładnej liczby wypowiedzi per dzień obrad (klucz: "inst_kadencja_sitting_date")
+const transcriptsCountCache = {};
+// Token anulowania: inkrementowany przy każdym wywołaniu updateTranscriptsCount
+let transcriptsCountToken = 0;
 
 async function fetchAvailableTerms(institution) {
     const countSpanSejm = document.getElementById('etlTermCountSejm');
@@ -206,19 +210,61 @@ async function enrichTermOptions(institution) {
     }
 }
 
-function countAgendaItems(proceedings) {
-    let items = 0;
-    for (const p of proceedings) {
-        if (p.agenda) {
-            // Policz punkty porządku obrad z HTML (<li> w agenda)
-            const matches = p.agenda.match(/<li/g);
-            items += matches ? matches.length : 0;
+async function fetchTranscriptsForSittingDays(inst, kadencja, sittingDays) {
+    // sittingDays: [{ sitting, date }, ...]
+    // Zwraca sumę wypowiedzi (dokładna liczba z API)
+    let total = 0;
+    const toFetch = [];
+
+    for (const { sitting, date } of sittingDays) {
+        const key = `${inst}_${kadencja}_${sitting}_${date}`;
+        if (transcriptsCountCache[key] !== undefined) {
+            total += transcriptsCountCache[key];
+        } else {
+            toFetch.push({ sitting, date, key });
         }
     }
-    return items;
+
+    // Pobierz brakujące w batchach po 10
+    const batchSize = 10;
+    for (let i = 0; i < toFetch.length; i += batchSize) {
+        const batch = toFetch.slice(i, i + batchSize);
+        const results = await Promise.all(batch.map(async ({ sitting, date, key }) => {
+            try {
+                const url = `https://api.sejm.gov.pl/${inst}/term${kadencja}/proceedings/${sitting}/${date}/transcripts`;
+                const res = await fetch(url);
+                if (!res.ok) return { key, count: 0 };
+                const data = await res.json();
+                const count = Array.isArray(data.statements) ? data.statements.length : 0;
+                return { key, count };
+            } catch {
+                return { key, count: 0 };
+            }
+        }));
+
+        for (const { key, count } of results) {
+            transcriptsCountCache[key] = count;
+            total += count;
+        }
+    }
+
+    return total;
 }
 
-function updateTranscriptsCount() {
+function collectSittingDays(proceedings, from, to) {
+    const days = [];
+    const inRange = proceedings.filter(p => p.number >= from && p.number <= to);
+    for (const p of inRange) {
+        if (Array.isArray(p.dates)) {
+            for (const date of p.dates) {
+                days.push({ sitting: p.number, date });
+            }
+        }
+    }
+    return days;
+}
+
+async function updateTranscriptsCount() {
     const span = document.getElementById('etlTranscriptsCount');
     if (!span) return;
 
@@ -230,20 +276,35 @@ function updateTranscriptsCount() {
         return;
     }
 
+    const myToken = ++transcriptsCountToken;
+
     // Dla "all" — zsumuj ze wszystkich kadencji
     if (kadencja === 'all') {
         const terms = termsCache[inst] || [];
         const MIN_KADENCJA = 7;
-        let totalDays = 0;
-        let totalAgenda = 0;
+        let allDays = [];
+        const termNums = [];
+
         for (const t of terms.filter(t => t.num >= MIN_KADENCJA)) {
             const proceedings = proceedingsDataCache[`${inst}_${t.num}`] || [];
-            totalDays += proceedings.reduce((sum, p) =>
-                sum + (Array.isArray(p.dates) ? p.dates.length : 0), 0);
-            totalAgenda += countAgendaItems(proceedings);
+            const days = collectSittingDays(proceedings, 1, 999);
+            allDays.push({ kadencja: t.num, days });
+            termNums.push(t.num);
         }
-        const estWyp = totalAgenda > 0 ? totalAgenda * 10 : totalDays * 120;
-        span.textContent = totalDays > 0 ? `(${totalDays} dni obrad, ~${estWyp} wyp.)` : '';
+
+        const totalSittingDays = allDays.reduce((sum, td) => sum + td.days.length, 0);
+        if (totalSittingDays === 0) { span.textContent = ''; return; }
+
+        span.textContent = `(${totalSittingDays} dni obrad, ...)`;
+
+        let totalWyp = 0;
+        for (const { kadencja: k, days } of allDays) {
+            if (myToken !== transcriptsCountToken) return; // anulowano
+            totalWyp += await fetchTranscriptsForSittingDays(inst, k, days);
+        }
+
+        if (myToken !== transcriptsCountToken) return;
+        span.textContent = `(${totalSittingDays} dni obrad, ${totalWyp} wyp.)`;
         return;
     }
 
@@ -257,13 +318,15 @@ function updateTranscriptsCount() {
     const from = parseInt(document.getElementById('etlRangeFrom')?.value) || 1;
     const to = parseInt(document.getElementById('etlRangeTo')?.value) || 999;
 
-    const inRange = proceedings.filter(p => p.number >= from && p.number <= to);
-    const sittingDays = inRange.reduce((sum, p) =>
-        sum + (Array.isArray(p.dates) ? p.dates.length : 0), 0);
-    const agendaItems = countAgendaItems(inRange);
-    const estWyp = agendaItems > 0 ? agendaItems * 10 : sittingDays * 120;
+    const days = collectSittingDays(proceedings, from, to);
+    if (days.length === 0) { span.textContent = ''; return; }
 
-    span.textContent = sittingDays > 0 ? `(${sittingDays} dni obrad, ~${estWyp} wyp.)` : '';
+    span.textContent = `(${days.length} dni obrad, ...)`;
+
+    const totalWyp = await fetchTranscriptsForSittingDays(inst, kadencja, days);
+
+    if (myToken !== transcriptsCountToken) return;
+    span.textContent = `(${days.length} dni obrad, ${totalWyp} wyp.)`;
 }
 
 function updateRangeMax(maxSittings) {
