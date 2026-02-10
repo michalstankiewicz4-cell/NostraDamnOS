@@ -310,20 +310,22 @@
                             <legend>📝 Dane per posiedzenie</legend>
                             <div class="etl-section-hint">Incremental (per posiedzenie)</div>
                             <div class="checkbox-item">
-                                <input type="checkbox" id="etlTranscripts" data-size="300" checked>
+                                <input type="checkbox" id="etlTranscripts" data-size="400" checked>
                                 <label for="etlTranscripts">Wypowiedzi</label>
                                 <span id="etlTranscriptsCount" class="term-count"></span>
-                                <span class="badge badge-size">300 KB</span>
+                                <span class="badge badge-size">400 KB/pos.</span>
                             </div>
                             <div class="checkbox-item">
-                                <input type="checkbox" id="etlVotings" data-size="80">
+                                <input type="checkbox" id="etlVotings" data-size="15">
                                 <label for="etlVotings">Głosowania</label>
-                                <span class="badge badge-size">80 KB</span>
+                                <span id="etlVotingsCount" class="term-count"></span>
+                                <span class="badge badge-size">15 KB/pos.</span>
                             </div>
                             <div class="checkbox-item">
-                                <input type="checkbox" id="etlVotes" data-size="400">
+                                <input type="checkbox" id="etlVotes" data-size="1200">
                                 <label for="etlVotes">Głosy indywidualne</label>
-                                <span class="badge badge-size">400 KB</span>
+                                <span id="etlVotesCount" class="term-count"></span>
+                                <span class="badge badge-size">1.2 MB/pos.</span>
                             </div>
                         </fieldset>
                         
@@ -332,29 +334,29 @@
                             <legend>🗂️ Dane per kadencja</legend>
                             <div class="etl-section-hint">Cała kadencja (duże!)</div>
                             <div class="checkbox-item">
-                                <input type="checkbox" id="etlInterpellations" data-size="200">
+                                <input type="checkbox" id="etlInterpellations" data-size="4000">
                                 <label for="etlInterpellations">Interpelacje</label>
-                                <span class="badge badge-size">200 KB</span>
+                                <span class="badge badge-size">~4 MB</span>
                             </div>
                             <div class="checkbox-item">
-                                <input type="checkbox" id="etlWrittenQuestions" data-size="150">
+                                <input type="checkbox" id="etlWrittenQuestions" data-size="800">
                                 <label for="etlWrittenQuestions">Zapytania pisemne</label>
-                                <span class="badge badge-size">150 KB</span>
+                                <span class="badge badge-size">~800 KB</span>
                             </div>
                             <div class="checkbox-item">
-                                <input type="checkbox" id="etlBills" data-size="250">
+                                <input type="checkbox" id="etlBills" data-size="700">
                                 <label for="etlBills">Projekty ustaw</label>
-                                <span class="badge badge-size">250 KB</span>
+                                <span class="badge badge-size">~700 KB</span>
                             </div>
                             <div class="checkbox-item">
-                                <input type="checkbox" id="etlLegalActs" data-size="200">
+                                <input type="checkbox" id="etlLegalActs" data-size="500">
                                 <label for="etlLegalActs">Ustawy (akty prawne)</label>
-                                <span class="badge badge-size">200 KB</span>
+                                <span class="badge badge-size">~500 KB</span>
                             </div>
                             <div class="checkbox-item">
                                 <input type="checkbox" id="etlDisclosures" data-size="500">
                                 <label for="etlDisclosures">Oświadczenia majątkowe</label>
-                                <span class="badge badge-size">500 KB</span>
+                                <span class="badge badge-size">~500 KB</span>
                             </div>
                         </fieldset>
                         

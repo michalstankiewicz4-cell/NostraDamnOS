@@ -12,8 +12,11 @@ const sittingsCountCache = {};
 const proceedingsDataCache = {};
 // Cache dla dokładnej liczby wypowiedzi per dzień obrad (klucz: "inst_kadencja_sitting_date")
 const transcriptsCountCache = {};
-// Token anulowania: inkrementowany przy każdym wywołaniu updateTranscriptsCount
+// Cache dla liczby głosowań/głosów per posiedzenie (klucz: "inst_kadencja_sitting")
+const votingsCountCache = {};
+// Tokeny anulowania
 let transcriptsCountToken = 0;
+let votingsCountToken = 0;
 
 async function fetchAvailableTerms(institution) {
     const countSpanSejm = document.getElementById('etlTermCountSejm');
@@ -136,6 +139,7 @@ async function fetchSittingsCount(institution, kadencja) {
             updateRangeMax(sittingsCountCache[`${institution}_${newest}`]);
         }
         updateTranscriptsCount();
+        updateVotingsCount();
         return;
     }
 
@@ -144,6 +148,7 @@ async function fetchSittingsCount(institution, kadencja) {
         span.textContent = `(${sittingsCountCache[cacheKey]} posiedzeń)`;
         updateRangeMax(sittingsCountCache[cacheKey]);
         updateTranscriptsCount();
+        updateVotingsCount();
         return;
     }
 
@@ -157,6 +162,7 @@ async function fetchSittingsCount(institution, kadencja) {
         span.textContent = '(?)';
     }
     updateTranscriptsCount();
+    updateVotingsCount();
 }
 
 async function fetchSingleTermSittingsCount(institution, kadencja) {
@@ -208,6 +214,130 @@ async function enrichTermOptions(institution) {
     if (allOpt && totalSittings > 0) {
         allOpt.textContent = `Wszystkie kadencje — ${totalSittings} pos.`;
     }
+}
+
+async function fetchVotingsForSittings(inst, kadencja, sittings) {
+    // sittings: [number, ...]
+    // Zwraca { votings, votes } — dokładna liczba z API
+    let totalVotings = 0;
+    let totalVotes = 0;
+    const toFetch = [];
+
+    for (const sitting of sittings) {
+        const key = `${inst}_${kadencja}_${sitting}`;
+        if (votingsCountCache[key] !== undefined) {
+            totalVotings += votingsCountCache[key].votings;
+            totalVotes += votingsCountCache[key].votes;
+        } else {
+            toFetch.push({ sitting, key });
+        }
+    }
+
+    const batchSize = 10;
+    for (let i = 0; i < toFetch.length; i += batchSize) {
+        const batch = toFetch.slice(i, i + batchSize);
+        const results = await Promise.all(batch.map(async ({ sitting, key }) => {
+            try {
+                const url = `https://api.sejm.gov.pl/${inst}/term${kadencja}/votings/${sitting}`;
+                const res = await fetch(url);
+                if (!res.ok) return { key, votings: 0, votes: 0 };
+                const data = await res.json();
+                const votings = Array.isArray(data) ? data.length : 0;
+                const votes = Array.isArray(data)
+                    ? data.reduce((sum, v) => sum + (v.totalVoted || 0), 0)
+                    : 0;
+                return { key, votings, votes };
+            } catch {
+                return { key, votings: 0, votes: 0 };
+            }
+        }));
+
+        for (const { key, votings, votes } of results) {
+            votingsCountCache[key] = { votings, votes };
+            totalVotings += votings;
+            totalVotes += votes;
+        }
+    }
+
+    return { votings: totalVotings, votes: totalVotes };
+}
+
+async function updateVotingsCount() {
+    const votingsSpan = document.getElementById('etlVotingsCount');
+    const votesSpan = document.getElementById('etlVotesCount');
+
+    const inst = document.querySelector('input[name="etlInst"]:checked')?.value || 'sejm';
+    const kadencja = document.getElementById('etlTermSelect')?.value;
+
+    if (inst === 'senat') {
+        if (votingsSpan) votingsSpan.textContent = '';
+        if (votesSpan) votesSpan.textContent = '';
+        return;
+    }
+
+    const myToken = ++votingsCountToken;
+
+    if (kadencja === 'all') {
+        const terms = termsCache[inst] || [];
+        const MIN_KADENCJA = 7;
+        let allSittings = [];
+
+        for (const t of terms.filter(t => t.num >= MIN_KADENCJA)) {
+            const proceedings = proceedingsDataCache[`${inst}_${t.num}`] || [];
+            const nums = proceedings.map(p => p.number).filter(n => n > 0);
+            allSittings.push({ kadencja: t.num, sittings: nums });
+        }
+
+        const totalSittings = allSittings.reduce((sum, s) => sum + s.sittings.length, 0);
+        if (totalSittings === 0) {
+            if (votingsSpan) votingsSpan.textContent = '';
+            if (votesSpan) votesSpan.textContent = '';
+            return;
+        }
+
+        if (votingsSpan) votingsSpan.textContent = '(...)';
+        if (votesSpan) votesSpan.textContent = '(...)';
+
+        let totalV = 0, totalG = 0;
+        for (const { kadencja: k, sittings } of allSittings) {
+            if (myToken !== votingsCountToken) return;
+            const { votings, votes } = await fetchVotingsForSittings(inst, k, sittings);
+            totalV += votings;
+            totalG += votes;
+        }
+
+        if (myToken !== votingsCountToken) return;
+        if (votingsSpan) votingsSpan.textContent = `(${totalV})`;
+        if (votesSpan) votesSpan.textContent = `(${totalG})`;
+        return;
+    }
+
+    const cacheKey = `${inst}_${kadencja}`;
+    const proceedings = proceedingsDataCache[cacheKey];
+    if (!proceedings) {
+        if (votingsSpan) votingsSpan.textContent = '';
+        if (votesSpan) votesSpan.textContent = '';
+        return;
+    }
+
+    const from = parseInt(document.getElementById('etlRangeFrom')?.value) || 1;
+    const to = parseInt(document.getElementById('etlRangeTo')?.value) || 999;
+    const sittings = proceedings.filter(p => p.number >= from && p.number <= to).map(p => p.number);
+
+    if (sittings.length === 0) {
+        if (votingsSpan) votingsSpan.textContent = '';
+        if (votesSpan) votesSpan.textContent = '';
+        return;
+    }
+
+    if (votingsSpan) votingsSpan.textContent = '(...)';
+    if (votesSpan) votesSpan.textContent = '(...)';
+
+    const { votings, votes } = await fetchVotingsForSittings(inst, kadencja, sittings);
+
+    if (myToken !== votingsCountToken) return;
+    if (votingsSpan) votingsSpan.textContent = `(${votings})`;
+    if (votesSpan) votesSpan.textContent = `(${votes})`;
 }
 
 async function fetchTranscriptsForSittingDays(inst, kadencja, sittingDays) {
@@ -378,6 +508,7 @@ function initETLPanel() {
             updateRangeSummary();
             updateETLEstimate();
             updateTranscriptsCount();
+            updateVotingsCount();
         });
     });
 
@@ -575,13 +706,13 @@ function initETLPanel() {
         let data = [];
         let requests = 2 * termCount; // base requests per kadencja
         
-        // Per sitting data
+        // Per sitting data (zweryfikowane z API: rozmiary = znormalizowane dane w SQLite)
         const perSittingData = [
-            { id: 'etlTranscripts', name: 'wypowiedzi', sizePerSitting: 300, reqsPerSitting: 10 },
-            { id: 'etlVotings', name: 'głosowania', sizePerSitting: 80, reqsPerSitting: 2 },
-            { id: 'etlVotes', name: 'głosy indywidualne', sizePerSitting: 400, reqsPerSitting: 5 }
+            { id: 'etlTranscripts', name: 'wypowiedzi', sizePerSitting: 400, reqsPerSitting: 15 },
+            { id: 'etlVotings', name: 'głosowania', sizePerSitting: 15, reqsPerSitting: 1 },
+            { id: 'etlVotes', name: 'głosy indywidualne', sizePerSitting: 1200, reqsPerSitting: 65 }
         ];
-        
+
         perSittingData.forEach(item => {
             const checkbox = document.getElementById(item.id);
             if (checkbox && checkbox.checked) {
@@ -590,14 +721,14 @@ function initETLPanel() {
                 data.push(item.name);
             }
         });
-        
-        // Per term data
+
+        // Per term data (zweryfikowane z API: interpelacje ~15k rekordów, zapytania ~3k)
         const perTermData = [
-            { id: 'etlInterpellations', name: 'interpelacje', size: 200, reqs: 10 },
-            { id: 'etlWrittenQuestions', name: 'zapytania pisemne', size: 150, reqs: 8 },
-            { id: 'etlBills', name: 'projekty ustaw', size: 250, reqs: 15 },
+            { id: 'etlInterpellations', name: 'interpelacje', size: 4000, reqs: 1 },
+            { id: 'etlWrittenQuestions', name: 'zapytania pisemne', size: 800, reqs: 2 },
+            { id: 'etlBills', name: 'projekty ustaw', size: 700, reqs: 1 },
             { id: 'etlDisclosures', name: 'oświadczenia majątkowe', size: 500, reqs: 5 },
-            { id: 'etlLegalActs', name: 'ustawy (akty prawne)', size: 200, reqs: 5 }
+            { id: 'etlLegalActs', name: 'ustawy (akty prawne)', size: 500, reqs: 3 }
         ];
         
         perTermData.forEach(item => {
@@ -632,12 +763,13 @@ function initETLPanel() {
             }
         }
         
-        // Calculate time
-        const estimatedTime = Math.max(5, Math.round(size / 50));
-        
+        // Calculate time (wąskie gardło = requesty; ~10 req/s z batchowaniem)
+        const estimatedTime = Math.max(5, Math.round(requests / 10));
+
         // Update UI
-        document.getElementById('etlSize').textContent = `~${size} KB`;
-        document.getElementById('etlTime').textContent = `~${estimatedTime-2}-${estimatedTime+3}s`;
+        const sizeMB = size >= 1000 ? `~${(size / 1024).toFixed(1)} MB` : `~${size} KB`;
+        document.getElementById('etlSize').textContent = sizeMB;
+        document.getElementById('etlTime').textContent = `~${estimatedTime}-${estimatedTime + Math.round(estimatedTime * 0.3)}s`;
         document.getElementById('etlRequests').textContent = `~${requests}`;
         document.getElementById('etlData').textContent = data.length > 0 ? data.join(', ') : '—';
     }
