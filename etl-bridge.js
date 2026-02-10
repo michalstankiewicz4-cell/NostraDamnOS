@@ -476,6 +476,90 @@ async function updateTranscriptsCount() {
 // Cache dla per-kadencja counts (klucz: "inst_kadencja_module")
 const perTermCountCache = {};
 
+// Cache dla listy komisji i ich posiedzeń (klucz: "inst_kadencja")
+const committeeListCache = {};
+let committeeLoadToken = 0;
+
+async function loadCommitteeOptions() {
+    const select = document.getElementById('etlCommitteeSelect');
+    if (!select) return;
+
+    const committeeSittings = document.getElementById('etlCommitteeSittings');
+    if (!committeeSittings?.checked) return;
+
+    const inst = document.querySelector('input[name="etlInst"]:checked')?.value || 'sejm';
+    const kadencja = document.getElementById('etlTermSelect')?.value;
+    if (!kadencja || kadencja === 'all') {
+        // Dla "all" — wyczyść i zostaw domyślne
+        select.innerHTML = '<option value="all" selected>✓ Wszystkie komisje</option>';
+        return;
+    }
+
+    const cacheKey = `${inst}_${kadencja}`;
+    const myToken = ++committeeLoadToken;
+
+    // 1. Fetch committee list
+    let committees = committeeListCache[cacheKey];
+    if (!committees) {
+        select.innerHTML = '<option value="all" selected>✓ Wszystkie komisje (...)</option>';
+        try {
+            const res = await fetch(`https://api.sejm.gov.pl/${inst}/term${kadencja}/committees`);
+            if (!res.ok) return;
+            committees = await res.json();
+            if (!Array.isArray(committees)) return;
+            committeeListCache[cacheKey] = committees;
+        } catch { return; }
+    }
+
+    if (myToken !== committeeLoadToken) return;
+
+    // 2. Populate dropdown (without counts yet)
+    select.innerHTML = '';
+    const allOpt = document.createElement('option');
+    allOpt.value = 'all';
+    allOpt.selected = true;
+    allOpt.textContent = `✓ Wszystkie komisje (${committees.length})`;
+    select.appendChild(allOpt);
+
+    for (const c of committees) {
+        const opt = document.createElement('option');
+        opt.value = c.code;
+        opt.textContent = `${c.name}`;
+        select.appendChild(opt);
+    }
+
+    // 3. Fetch sittings count per committee progressively
+    let totalSittings = 0;
+    const BATCH_SIZE = 6;
+    for (let i = 0; i < committees.length; i += BATCH_SIZE) {
+        if (myToken !== committeeLoadToken) return;
+        const batch = committees.slice(i, i + BATCH_SIZE);
+        const results = await Promise.all(batch.map(async (c) => {
+            const sKey = `${cacheKey}_${c.code}_sittings`;
+            if (perTermCountCache[sKey] !== undefined) return { code: c.code, count: perTermCountCache[sKey] };
+            try {
+                const res = await fetch(`https://api.sejm.gov.pl/${inst}/term${kadencja}/committees/${c.code}/sittings`);
+                if (!res.ok) return { code: c.code, count: 0 };
+                const data = await res.json();
+                const count = Array.isArray(data) ? data.length : 0;
+                perTermCountCache[sKey] = count;
+                return { code: c.code, count };
+            } catch { return { code: c.code, count: 0 }; }
+        }));
+
+        for (const { code, count } of results) {
+            totalSittings += count;
+            const opt = select.querySelector(`option[value="${code}"]`);
+            if (opt) opt.textContent = `${opt.textContent} (${count} pos.)`;
+        }
+
+        if (myToken !== committeeLoadToken) return;
+        allOpt.textContent = i + BATCH_SIZE >= committees.length
+            ? `✓ Wszystkie komisje (${committees.length}) — ${totalSittings} pos. łącznie`
+            : `✓ Wszystkie komisje (${committees.length}) — ładowanie...`;
+    }
+}
+
 async function updatePerTermCounts() {
     const inst = document.querySelector('input[name="etlInst"]:checked')?.value || 'sejm';
     const kadencja = document.getElementById('etlTermSelect')?.value;
@@ -599,6 +683,7 @@ function initETLPanel() {
             updateETLEstimate();
             const kadencja = document.getElementById('etlTermSelect')?.value;
             if (kadencja) fetchSittingsCount(radio.value, kadencja);
+            loadCommitteeOptions();
         });
     });
 
@@ -622,6 +707,7 @@ function initETLPanel() {
         updateETLEstimate();
         const inst = document.querySelector('input[name="etlInst"]:checked')?.value || 'sejm';
         fetchSittingsCount(inst, val);
+        loadCommitteeOptions();
     });
     
     // Zakres posiedzeń (od/do) — walidacja + estimate
@@ -647,6 +733,7 @@ function initETLPanel() {
             updateTranscriptsCount();
             updateVotingsCount();
             updatePerTermCounts();
+            loadCommitteeOptions();
         });
     });
 
