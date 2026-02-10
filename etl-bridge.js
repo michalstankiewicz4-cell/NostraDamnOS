@@ -262,6 +262,15 @@ async function updateVotingsCount() {
     const votingsSpan = document.getElementById('etlVotingsCount');
     const votesSpan = document.getElementById('etlVotesCount');
 
+    // Nie odpytuj API jeśli oba checkboxy odznaczone
+    const votingsChecked = document.getElementById('etlVotings')?.checked;
+    const votesChecked = document.getElementById('etlVotes')?.checked;
+    if (!votingsChecked && !votesChecked) {
+        if (votingsSpan) votingsSpan.textContent = '';
+        if (votesSpan) votesSpan.textContent = '';
+        return;
+    }
+
     const inst = document.querySelector('input[name="etlInst"]:checked')?.value || 'sejm';
     const kadencja = document.getElementById('etlTermSelect')?.value;
 
@@ -303,8 +312,8 @@ async function updateVotingsCount() {
         }
 
         if (myToken !== votingsCountToken) return;
-        if (votingsSpan) votingsSpan.textContent = `(${totalV})`;
-        if (votesSpan) votesSpan.textContent = `(${totalG})`;
+        if (votingsSpan) votingsSpan.textContent = votingsChecked ? `(${totalV})` : '';
+        if (votesSpan) votesSpan.textContent = votesChecked ? `(${totalG})` : '';
         return;
     }
 
@@ -332,8 +341,8 @@ async function updateVotingsCount() {
     const { votings, votes } = await fetchVotingsForSittings(inst, kadencja, sittings);
 
     if (myToken !== votingsCountToken) return;
-    if (votingsSpan) votingsSpan.textContent = `(${votings})`;
-    if (votesSpan) votesSpan.textContent = `(${votes})`;
+    if (votingsSpan) votingsSpan.textContent = votingsChecked ? `(${votings})` : '';
+    if (votesSpan) votesSpan.textContent = votesChecked ? `(${votes})` : '';
 }
 
 async function fetchTranscriptsForSittingDays(inst, kadencja, sittingDays) {
@@ -393,6 +402,12 @@ function collectSittingDays(proceedings, from, to) {
 async function updateTranscriptsCount() {
     const span = document.getElementById('etlTranscriptsCount');
     if (!span) return;
+
+    // Nie odpytuj API jeśli checkbox odznaczony
+    if (!document.getElementById('etlTranscripts')?.checked) {
+        span.textContent = '';
+        return;
+    }
 
     const inst = document.querySelector('input[name="etlInst"]:checked')?.value || 'sejm';
     const kadencja = document.getElementById('etlTermSelect')?.value;
@@ -520,12 +535,14 @@ function initETLPanel() {
         });
     });
 
-    // Checkboxy - wywołaj zależności + updateETLEstimate przy zmianie
+    // Checkboxy - wywołaj zależności + estimate + counting przy zmianie
     const checkboxSelector = '#etlTranscripts, #etlVotings, #etlVotes, #etlInterpellations, #etlWrittenQuestions, #etlBills, #etlDisclosures, #etlCommitteeSittings, #etlCommitteeStatements';
     document.querySelectorAll(checkboxSelector).forEach(cb => {
         cb?.addEventListener('change', () => {
             applyDependencies();
             updateETLEstimate();
+            updateTranscriptsCount();
+            updateVotingsCount();
         });
     });
 
