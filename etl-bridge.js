@@ -32,7 +32,6 @@ async function fetchAvailableTerms(institution) {
         populateTermSelect(termsCache[institution], termSelect);
         if (activeSpan) activeSpan.textContent = `(${termsCache[institution].length})`;
         if (termSelect?.value) fetchSittingsCount(institution, termSelect.value);
-        enrichTermOptions(institution);
         return;
     }
 
@@ -64,9 +63,6 @@ async function fetchAvailableTerms(institution) {
 
         // Pobierz liczbę posiedzeń dla wybranej kadencji
         if (termSelect?.value) fetchSittingsCount(institution, termSelect.value);
-
-        // Wzbogać etykiety opcji o liczbę posiedzeń
-        enrichTermOptions(institution);
 
         console.log(`[ETL] Pobrano ${terms.length} kadencji dla ${institution}`);
     } catch (err) {
@@ -473,9 +469,13 @@ function updateRangeMax(maxSittings) {
 }
 
 function initETLPanel() {
+    // Flaga lazy-loading etykiet posiedzeń w dropdownie kadencji
+    let termOptionsEnriched = false;
+
     // Instytucja — po zmianie pobierz kadencje z API + toggle modułów
     document.querySelectorAll('input[name="etlInst"]').forEach(radio => {
         radio.addEventListener('change', () => {
+            termOptionsEnriched = false;
             fetchAvailableTerms(radio.value);
             updateModuleAvailability(radio.value);
             updateETLEstimate();
@@ -488,7 +488,15 @@ function initETLPanel() {
     // (fetchSittingsCount wywoła się automatycznie po załadowaniu kadencji)
     fetchAvailableTerms('sejm');
 
-    // Kadencja
+    // Kadencja — lazy enrich: pobierz "X pos." dla wszystkich kadencji dopiero po otwarciu dropdownu
+    document.getElementById('etlTermSelect')?.addEventListener('focus', () => {
+        if (!termOptionsEnriched) {
+            termOptionsEnriched = true;
+            const inst = document.querySelector('input[name="etlInst"]:checked')?.value || 'sejm';
+            enrichTermOptions(inst);
+        }
+    });
+
     document.getElementById('etlTermSelect')?.addEventListener('change', (e) => {
         const val = e.target.value;
         document.getElementById('etlTerm').textContent = val === 'all' ? 'wszystkie' : val;
