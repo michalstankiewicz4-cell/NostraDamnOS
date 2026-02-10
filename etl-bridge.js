@@ -483,11 +483,13 @@ let committeeLoadToken = 0;
 async function loadCommitteeOptions() {
     const select = document.getElementById('etlCommitteeSelect');
     const countSpan = document.getElementById('etlCommitteeSittingsCount');
+    const statementsSpan = document.getElementById('etlCommitteeStatementsCount');
     if (!select) return;
 
     const committeeSittings = document.getElementById('etlCommitteeSittings');
     if (!committeeSittings?.checked) {
         if (countSpan) countSpan.textContent = '';
+        if (statementsSpan) statementsSpan.textContent = '';
         return;
     }
 
@@ -563,7 +565,11 @@ async function loadCommitteeOptions() {
         allOpt.textContent = done
             ? `✓ Wszystkie komisje (${committees.length}) — ${totalSittings} pos. łącznie`
             : `✓ Wszystkie komisje (${committees.length}) — ładowanie...`;
-        if (done && countSpan) countSpan.textContent = `(${totalSittings})`;
+        if (done) {
+            if (countSpan) countSpan.textContent = `(${totalSittings})`;
+            const committeeStatementsChecked = document.getElementById('etlCommitteeStatements')?.checked;
+            if (statementsSpan) statementsSpan.textContent = committeeStatementsChecked ? `(${totalSittings})` : '';
+        }
     }
 }
 
