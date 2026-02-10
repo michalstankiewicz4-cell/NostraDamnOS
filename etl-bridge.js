@@ -8,6 +8,8 @@ import {
 const termsCache = {};
 // Cache dla liczby posiedzeń per kadencja
 const sittingsCountCache = {};
+// Cache dla pełnych danych posiedzeń (potrzebne do zliczania dni obrad / wypowiedzi)
+const proceedingsDataCache = {};
 
 async function fetchAvailableTerms(institution) {
     const countSpanSejm = document.getElementById('etlTermCountSejm');
@@ -129,6 +131,7 @@ async function fetchSittingsCount(institution, kadencja) {
         if (newest && sittingsCountCache[`${institution}_${newest}`] !== undefined) {
             updateRangeMax(sittingsCountCache[`${institution}_${newest}`]);
         }
+        updateTranscriptsCount();
         return;
     }
 
@@ -136,6 +139,7 @@ async function fetchSittingsCount(institution, kadencja) {
     if (sittingsCountCache[cacheKey] !== undefined) {
         span.textContent = `(${sittingsCountCache[cacheKey]} posiedzeń)`;
         updateRangeMax(sittingsCountCache[cacheKey]);
+        updateTranscriptsCount();
         return;
     }
 
@@ -148,6 +152,7 @@ async function fetchSittingsCount(institution, kadencja) {
     } else {
         span.textContent = '(?)';
     }
+    updateTranscriptsCount();
 }
 
 async function fetchSingleTermSittingsCount(institution, kadencja) {
@@ -161,9 +166,10 @@ async function fetchSingleTermSittingsCount(institution, kadencja) {
         const res = await fetch(url);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
-        const count = Array.isArray(data) ? data.filter(p => p.number > 0).length : 0;
-        sittingsCountCache[cacheKey] = count;
-        return count;
+        const proceedings = Array.isArray(data) ? data.filter(p => p.number > 0) : [];
+        sittingsCountCache[cacheKey] = proceedings.length;
+        proceedingsDataCache[cacheKey] = proceedings;
+        return proceedings.length;
     } catch {
         return -1;
     }
@@ -198,6 +204,49 @@ async function enrichTermOptions(institution) {
     if (allOpt && totalSittings > 0) {
         allOpt.textContent = `Wszystkie kadencje — ${totalSittings} pos.`;
     }
+}
+
+function updateTranscriptsCount() {
+    const span = document.getElementById('etlTranscriptsCount');
+    if (!span) return;
+
+    const inst = document.querySelector('input[name="etlInst"]:checked')?.value || 'sejm';
+    const kadencja = document.getElementById('etlTermSelect')?.value;
+
+    if (inst === 'senat') {
+        span.textContent = '';
+        return;
+    }
+
+    // Dla "all" — zsumuj ze wszystkich kadencji
+    if (kadencja === 'all') {
+        const terms = termsCache[inst] || [];
+        const MIN_KADENCJA = 7;
+        let totalDays = 0;
+        for (const t of terms.filter(t => t.num >= MIN_KADENCJA)) {
+            const proceedings = proceedingsDataCache[`${inst}_${t.num}`] || [];
+            totalDays += proceedings.reduce((sum, p) =>
+                sum + (Array.isArray(p.dates) ? p.dates.length : 0), 0);
+        }
+        span.textContent = totalDays > 0 ? `(${totalDays} dni obrad)` : '';
+        return;
+    }
+
+    const cacheKey = `${inst}_${kadencja}`;
+    const proceedings = proceedingsDataCache[cacheKey];
+    if (!proceedings) {
+        span.textContent = '';
+        return;
+    }
+
+    const from = parseInt(document.getElementById('etlRangeFrom')?.value) || 1;
+    const to = parseInt(document.getElementById('etlRangeTo')?.value) || 999;
+
+    const inRange = proceedings.filter(p => p.number >= from && p.number <= to);
+    const sittingDays = inRange.reduce((sum, p) =>
+        sum + (Array.isArray(p.dates) ? p.dates.length : 0), 0);
+
+    span.textContent = sittingDays > 0 ? `(${sittingDays} dni obrad)` : '';
 }
 
 function updateRangeMax(maxSittings) {
@@ -248,6 +297,7 @@ function initETLPanel() {
             clampRangeInputs();
             updateRangeSummary();
             updateETLEstimate();
+            updateTranscriptsCount();
         });
     });
 
