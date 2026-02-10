@@ -678,6 +678,10 @@ input:disabled {
 .etl-committee-select {
     font-size: 13px;
     line-height: 4;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+    text-overflow: ellipsis;
 }
 
 .etl-btn-verify {
