@@ -136,6 +136,7 @@ async function fetchSittingsCount(institution, kadencja) {
         }
         updateTranscriptsCount();
         updateVotingsCount();
+        updatePerTermCounts();
         return;
     }
 
@@ -145,6 +146,7 @@ async function fetchSittingsCount(institution, kadencja) {
         updateRangeMax(sittingsCountCache[cacheKey]);
         updateTranscriptsCount();
         updateVotingsCount();
+        updatePerTermCounts();
         return;
     }
 
@@ -159,6 +161,7 @@ async function fetchSittingsCount(institution, kadencja) {
     }
     updateTranscriptsCount();
     updateVotingsCount();
+    updatePerTermCounts();
 }
 
 async function fetchSingleTermSittingsCount(institution, kadencja) {
@@ -470,6 +473,106 @@ async function updateTranscriptsCount() {
     span.textContent = `(${days.length} dni obrad, ${totalWyp} wyp.)`;
 }
 
+// Cache dla per-kadencja counts (klucz: "inst_kadencja_module")
+const perTermCountCache = {};
+
+async function updatePerTermCounts() {
+    const inst = document.querySelector('input[name="etlInst"]:checked')?.value || 'sejm';
+    const kadencja = document.getElementById('etlTermSelect')?.value;
+
+    // Per-kadencja module definitions
+    const modules = [
+        { checkbox: 'etlInterpellations', span: 'etlInterpellationsCount', key: 'interpelacje',
+          url: (i, k) => `https://api.sejm.gov.pl/${i}/term${k}/interpellations`, countFn: data => Array.isArray(data) ? data.length : 0 },
+        { checkbox: 'etlWrittenQuestions', span: 'etlWrittenQuestionsCount', key: 'zapytania',
+          url: (i, k) => `https://api.sejm.gov.pl/${i}/term${k}/writtenQuestions`, countFn: data => Array.isArray(data) ? data.length : 0 },
+        { checkbox: 'etlBills', span: 'etlBillsCount', key: 'projekty_ustaw',
+          url: (i, k) => `https://api.sejm.gov.pl/${i}/term${k}/prints`, countFn: data => Array.isArray(data) ? data.length : 0 },
+        { checkbox: 'etlLegalActs', span: 'etlLegalActsCount', key: 'ustawy',
+          url: () => `https://api.sejm.gov.pl/eli/acts/DU/${new Date().getFullYear()}?limit=1`, countFn: data => data?.count || (Array.isArray(data?.items) ? data.items.length : 0) }
+    ];
+
+    if (inst === 'senat') {
+        for (const m of modules) {
+            const span = document.getElementById(m.span);
+            if (span) span.textContent = '';
+        }
+        return;
+    }
+
+    for (const m of modules) {
+        const span = document.getElementById(m.span);
+        if (!span) continue;
+
+        const checked = document.getElementById(m.checkbox)?.checked;
+        if (!checked) { span.textContent = ''; continue; }
+
+        // Handle "all" kadencje
+        if (kadencja === 'all') {
+            const terms = termsCache[inst] || [];
+            const MIN_KADENCJA = 7;
+            const validTerms = terms.filter(t => t.num >= MIN_KADENCJA);
+
+            // Ustawy nie zależą od kadencji — fetch raz
+            if (m.key === 'ustawy') {
+                const cacheKey = `${inst}_ustawy`;
+                if (perTermCountCache[cacheKey] !== undefined) {
+                    span.textContent = `(${perTermCountCache[cacheKey]})`;
+                    continue;
+                }
+                span.textContent = '(...)';
+                try {
+                    const res = await fetch(m.url(inst, null));
+                    if (!res.ok) { span.textContent = '(?)'; continue; }
+                    const data = await res.json();
+                    const count = m.countFn(data);
+                    perTermCountCache[cacheKey] = count;
+                    span.textContent = `(${count})`;
+                } catch { span.textContent = '(?)'; }
+                continue;
+            }
+
+            span.textContent = '(...)';
+            let total = 0;
+            for (const t of validTerms) {
+                const cacheKey = `${inst}_${t.num}_${m.key}`;
+                if (perTermCountCache[cacheKey] !== undefined) {
+                    total += perTermCountCache[cacheKey];
+                    continue;
+                }
+                try {
+                    const res = await fetch(m.url(inst, t.num));
+                    if (!res.ok) continue;
+                    const data = await res.json();
+                    const count = m.countFn(data);
+                    perTermCountCache[cacheKey] = count;
+                    total += count;
+                } catch { /* skip */ }
+            }
+            span.textContent = `(${total})`;
+            continue;
+        }
+
+        // Single kadencja
+        const cacheKey = m.key === 'ustawy' ? `${inst}_ustawy` : `${inst}_${kadencja}_${m.key}`;
+        if (perTermCountCache[cacheKey] !== undefined) {
+            span.textContent = `(${perTermCountCache[cacheKey]})`;
+            continue;
+        }
+
+        span.textContent = '(...)';
+        try {
+            const url = m.url(inst, kadencja);
+            const res = await fetch(url);
+            if (!res.ok) { span.textContent = '(?)'; continue; }
+            const data = await res.json();
+            const count = m.countFn(data);
+            perTermCountCache[cacheKey] = count;
+            span.textContent = `(${count})`;
+        } catch { span.textContent = '(?)'; }
+    }
+}
+
 function updateRangeMax(maxSittings) {
     const fromEl = document.getElementById('etlRangeFrom');
     const toEl = document.getElementById('etlRangeTo');
@@ -543,6 +646,7 @@ function initETLPanel() {
             updateETLEstimate();
             updateTranscriptsCount();
             updateVotingsCount();
+            updatePerTermCounts();
         });
     });
 

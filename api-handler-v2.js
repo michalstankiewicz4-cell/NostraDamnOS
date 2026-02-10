@@ -435,10 +435,10 @@ function updateFetchOverview() {
     setReq('fovReqTranscripts', 'wypowiedzi', reqCounts.transcripts);
     setReq('fovReqVotings', 'glosowania', reqCounts.votings);
     setReq('fovReqVotes', 'glosy', reqCounts.votes);
-    setReq('fovReqInterpellations', 'interpelacje');
-    setReq('fovReqQuestions', 'zapytania');
-    setReq('fovReqBills', 'projekty_ustaw');
-    setReq('fovReqActs', 'ustawy');
+    setReq('fovReqInterpellations', 'interpelacje', reqCounts.interpelacje);
+    setReq('fovReqQuestions', 'zapytania', reqCounts.zapytania);
+    setReq('fovReqBills', 'projekty_ustaw', reqCounts.projekty_ustaw);
+    setReq('fovReqActs', 'ustawy', reqCounts.ustawy);
     setReq('fovReqDisclosures', 'oswiadczenia');
 
     // Prawa kolumna: Pobrane
@@ -679,6 +679,19 @@ async function startPipelineETL() {
 
             const gMatch = votesSpanText.match(/(\d[\d\s]*)/);
             if (gMatch) requestedCounts.votes = parseInt(gMatch[1].replace(/\s/g, ''));
+
+            // Per-kadencja module counts
+            const perTermSpans = [
+                { span: 'etlInterpellationsCount', key: 'interpelacje' },
+                { span: 'etlWrittenQuestionsCount', key: 'zapytania' },
+                { span: 'etlBillsCount', key: 'projekty_ustaw' },
+                { span: 'etlLegalActsCount', key: 'ustawy' }
+            ];
+            for (const { span, key } of perTermSpans) {
+                const text = document.getElementById(span)?.textContent || '';
+                const m = text.match(/(\d[\d\s]*)/);
+                if (m) requestedCounts[key] = parseInt(m[1].replace(/\s/g, ''));
+            }
 
             // Zapisz info o ostatnim pobraniu
             const lastFetch = {
