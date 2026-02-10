@@ -14,6 +14,7 @@ import { fetchKomisje } from './modules/komisje.js';
 import { fetchKomisjePosiedzenia } from './modules/komisje_posiedzenia.js';
 import { fetchKomisjeWypowiedzi } from './modules/komisje_wypowiedzi.js';
 import { fetchOswiadczenia } from './modules/oswiadczenia.js';
+import { fetchSenatGlosowania } from './modules/senat_glosowania.js';
 
 // Safe fetch with retry + exponential backoff
 export async function safeFetch(url) {
@@ -74,6 +75,20 @@ export async function runFetcher(config, onProgress) {
         done++;
         const pct = Math.round((done / total) * 100);
         report(pct, label);
+    }
+
+    // Senat: osobna ścieżka — XML+CSV zamiast REST API
+    if (config.typ === 'senat') {
+        console.log('[Fetcher] Senat mode — pobieranie z XML/CSV');
+        const senatData = await fetchSenatGlosowania(config, (pct, label) => {
+            report(pct, label);
+        });
+        results.poslowie = senatData.poslowie_senat;
+        results.posiedzenia = senatData.posiedzenia;
+        results.glosowania = senatData.glosowania;
+        results.glosy = senatData.glosy;
+        console.log('[Fetcher] ✅ Senat complete');
+        return results;
     }
 
     // Execute in order

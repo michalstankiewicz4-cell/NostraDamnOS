@@ -2,7 +2,21 @@
 
 export function normalizeGlosy(raw, glosowania) {
     const results = [];
-    
+
+    // Senat: raw to płaska tablica z gotowymi polami
+    if (Array.isArray(raw)) {
+        for (const v of raw) {
+            results.push({
+                id_glosu: v.id_glosu || `${v.id_glosowania}_${v.id_osoby}`,
+                id_glosowania: v.id_glosowania || null,
+                id_osoby: v.id_osoby || null,
+                glos: v.glos || null
+            });
+        }
+        return results;
+    }
+
+    // Sejm: raw to dict {glosowanieId: [votes]}
     for (const g of glosowania) {
         const votes = raw[g.id] || [];
         for (const v of votes) {
@@ -14,7 +28,7 @@ export function normalizeGlosy(raw, glosowania) {
             });
         }
     }
-    
+
     return results;
 }
 

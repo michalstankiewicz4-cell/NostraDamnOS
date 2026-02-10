@@ -4,37 +4,177 @@ import {
     initUIMode
 } from './modules/floating-drag.js';
 
+// Cache dla pobranych kadencji (żeby nie odpytywać API przy każdym kliknięciu)
+const termsCache = {};
+// Cache dla liczby posiedzeń per kadencja
+const sittingsCountCache = {};
+
+async function fetchAvailableTerms(institution) {
+    const countSpanSejm = document.getElementById('etlTermCountSejm');
+    const countSpanSenat = document.getElementById('etlTermCountSenat');
+    const termSelect = document.getElementById('etlTermSelect');
+    const activeSpan = institution === 'sejm' ? countSpanSejm : countSpanSenat;
+
+    // Pokaż ładowanie
+    if (activeSpan) activeSpan.textContent = '(...)';
+
+    // Sprawdź cache
+    if (termsCache[institution]) {
+        populateTermSelect(termsCache[institution], termSelect);
+        if (activeSpan) activeSpan.textContent = `(${termsCache[institution].length})`;
+        if (termSelect?.value) fetchSittingsCount(institution, termSelect.value);
+        return;
+    }
+
+    // Senat: brak REST API — hardcoded kadencje
+    if (institution === 'senat') {
+        const senatTerms = [
+            { num: 11, from: '2023-11-13', to: null, current: true }
+        ];
+        termsCache['senat'] = senatTerms;
+        populateTermSelect(senatTerms, termSelect);
+        if (activeSpan) activeSpan.textContent = `(${senatTerms.length})`;
+        fetchSittingsCount('senat', 11); // czyści span
+        console.log('[ETL] Senat: hardcoded kadencje (brak REST API)');
+        return;
+    }
+
+    try {
+        const url = `https://api.sejm.gov.pl/${institution}/term`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const terms = await res.json();
+
+        // Sortuj malejąco wg numeru kadencji
+        terms.sort((a, b) => b.num - a.num);
+        termsCache[institution] = terms;
+
+        populateTermSelect(terms, termSelect);
+        if (activeSpan) activeSpan.textContent = `(${terms.length})`;
+
+        // Pobierz liczbę posiedzeń dla wybranej kadencji
+        if (termSelect?.value) fetchSittingsCount(institution, termSelect.value);
+
+        console.log(`[ETL] Pobrano ${terms.length} kadencji dla ${institution}`);
+    } catch (err) {
+        console.warn(`[ETL] Nie udało się pobrać kadencji dla ${institution}:`, err.message);
+        if (activeSpan) activeSpan.textContent = '(?)';
+    }
+}
+
+function populateTermSelect(terms, selectEl) {
+    if (!selectEl) return;
+    const prevValue = selectEl.value;
+    selectEl.innerHTML = '';
+
+    const MIN_KADENCJA = 7; // Kadencje <7 nie mają danych w API
+
+    for (const t of terms) {
+        if (t.num < MIN_KADENCJA) continue;
+        const from = t.from ? t.from.slice(0, 4) : '?';
+        const to = t.current ? 'obecnie' : (t.to ? t.to.slice(0, 4) : '?');
+        const opt = document.createElement('option');
+        opt.value = t.num;
+        opt.textContent = `${t.num}. kadencja (${from}-${to})`;
+        selectEl.appendChild(opt);
+    }
+
+    // Przywróć poprzednią wartość jeśli istnieje
+    if ([...selectEl.options].some(o => o.value === prevValue)) {
+        selectEl.value = prevValue;
+    }
+
+    // Zaktualizuj wyświetlanie kadencji
+    const termDisplay = document.getElementById('etlTerm');
+    if (termDisplay) termDisplay.textContent = selectEl.value;
+}
+
+async function fetchSittingsCount(institution, kadencja) {
+    const span = document.getElementById('etlSittingsCount');
+    if (!span) return;
+
+    // Senat: brak API posiedzeń
+    if (institution === 'senat') {
+        span.textContent = '';
+        return;
+    }
+
+    const cacheKey = `${institution}_${kadencja}`;
+    if (sittingsCountCache[cacheKey] !== undefined) {
+        span.textContent = `(${sittingsCountCache[cacheKey]} posiedzeń)`;
+        updateRangeMax(sittingsCountCache[cacheKey]);
+        return;
+    }
+
+    span.textContent = '(...)';
+
+    try {
+        const url = `https://api.sejm.gov.pl/${institution}/term${kadencja}/proceedings`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        const count = Array.isArray(data) ? data.filter(p => p.number > 0).length : 0;
+        sittingsCountCache[cacheKey] = count;
+        span.textContent = `(${count} posiedzeń)`;
+        updateRangeMax(count);
+    } catch {
+        span.textContent = '(?)';
+    }
+}
+
+function updateRangeMax(maxSittings) {
+    const fromEl = document.getElementById('etlRangeFrom');
+    const toEl = document.getElementById('etlRangeTo');
+    if (!fromEl || !toEl) return;
+
+    fromEl.max = maxSittings;
+    toEl.max = maxSittings;
+
+    // Clamp current values
+    if (parseInt(fromEl.value) > maxSittings) fromEl.value = maxSittings;
+    if (parseInt(toEl.value) > maxSittings) toEl.value = maxSittings;
+}
+
 function initETLPanel() {
-    // Instytucja
+    // Instytucja — po zmianie pobierz kadencje z API + toggle modułów
     document.querySelectorAll('input[name="etlInst"]').forEach(radio => {
-        radio.addEventListener('change', updateETLEstimate);
+        radio.addEventListener('change', () => {
+            fetchAvailableTerms(radio.value);
+            updateModuleAvailability(radio.value);
+            updateETLEstimate();
+            const kadencja = document.getElementById('etlTermSelect')?.value;
+            if (kadencja) fetchSittingsCount(radio.value, kadencja);
+        });
     });
-    
+
+    // Pobierz kadencje dla domyślnej instytucji na starcie
+    // (fetchSittingsCount wywoła się automatycznie po załadowaniu kadencji)
+    fetchAvailableTerms('sejm');
+
     // Kadencja
     document.getElementById('etlTermSelect')?.addEventListener('change', (e) => {
         document.getElementById('etlTerm').textContent = e.target.value;
         updateETLEstimate();
+        const inst = document.querySelector('input[name="etlInst"]:checked')?.value || 'sejm';
+        fetchSittingsCount(inst, e.target.value);
     });
     
-    // Zakres
-    document.getElementById('etlRangeSelect')?.addEventListener('change', (e) => {
-        const range = e.target.value;
-        document.getElementById('etlRange').textContent = `${range} ${range == 1 ? 'posiedzenie' : range < 5 ? 'posiedzenia' : 'posiedzeń'}`;
-        updateETLEstimate();
-    });
-    
-    // Checkboxy - wywołaj zależności + updateETLEstimate przy zmianie
-    const checkboxSelector = '#etlTranscripts, #etlVotings, #etlVotes, #etlInterpellations, #etlWrittenQuestions, #etlBills, #etlDisclosures, #etlCommitteeSittings, #etlCommitteeStatements';
-    document.querySelectorAll(checkboxSelector).forEach(cb => {
-        cb?.addEventListener('change', () => {
-            applyDependencies();
+    // Zakres posiedzeń (od/do) — walidacja + estimate
+    const rangeFrom = document.getElementById('etlRangeFrom');
+    const rangeTo = document.getElementById('etlRangeTo');
+
+    [rangeFrom, rangeTo].forEach(input => {
+        input?.addEventListener('change', () => {
+            clampRangeInputs();
+            updateRangeSummary();
             updateETLEstimate();
         });
     });
 
-    // Range mode - wywołaj zależności + updateETLEstimate przy zmianie
-    document.querySelectorAll('input[name="rangeMode"]').forEach(radio => {
-        radio?.addEventListener('change', () => {
+    // Checkboxy - wywołaj zależności + updateETLEstimate przy zmianie
+    const checkboxSelector = '#etlTranscripts, #etlVotings, #etlVotes, #etlInterpellations, #etlWrittenQuestions, #etlBills, #etlDisclosures, #etlCommitteeSittings, #etlCommitteeStatements';
+    document.querySelectorAll(checkboxSelector).forEach(cb => {
+        cb?.addEventListener('change', () => {
             applyDependencies();
             updateETLEstimate();
         });
@@ -52,6 +192,35 @@ function initETLPanel() {
         });
     }
 
+    // ===== MODULE AVAILABILITY (Sejm vs Senat) =====
+    function updateModuleAvailability(institution) {
+        const sejmOnlyModules = [
+            'etlTranscripts', 'etlInterpellations', 'etlWrittenQuestions',
+            'etlBills', 'etlLegalActs', 'etlDisclosures',
+            'etlCommitteeSittings', 'etlCommitteeStatements'
+        ];
+        const isSenat = institution === 'senat';
+
+        for (const id of sejmOnlyModules) {
+            const el = document.getElementById(id);
+            if (!el) continue;
+            el.disabled = isSenat;
+            if (isSenat) el.checked = false;
+            const label = el.closest('label') || el.parentElement;
+            if (label) label.style.opacity = isSenat ? '0.4' : '1';
+        }
+
+        // Senat: auto-check głosowania (jedyne dostępne dane)
+        if (isSenat) {
+            const votings = document.getElementById('etlVotings');
+            const votes = document.getElementById('etlVotes');
+            if (votings) { votings.checked = true; votings.disabled = false; }
+            if (votes) { votes.checked = true; votes.disabled = false; }
+        }
+
+        applyDependencies();
+    }
+
     // ===== DEPENDENCIES =====
     function applyDependencies() {
         const votings = document.getElementById('etlVotings');
@@ -59,12 +228,6 @@ function initETLPanel() {
         const committeeSittings = document.getElementById('etlCommitteeSittings');
         const committeeStatements = document.getElementById('etlCommitteeStatements');
         const committeeSelect = document.getElementById('etlCommitteeSelect');
-        const rangeMode = document.querySelector('input[name="rangeMode"]:checked')?.value || 'last';
-        const rangeSelect = document.getElementById('etlRangeSelect');
-        const rangeFrom = document.getElementById('etlRangeFrom');
-        const rangeTo = document.getElementById('etlRangeTo');
-        const rangeFromLabel = document.getElementById('etlRangeFromLabel');
-        const rangeToLabel = document.getElementById('etlRangeToLabel');
 
         // Głosy indywidualne wymagają głosowań
         if (votings && votes) {
@@ -91,17 +254,39 @@ function initETLPanel() {
             const committeesEnabled = !!(committeeSittings?.checked || committeeStatements?.checked);
             committeeSelect.disabled = !committeesEnabled;
         }
+    }
 
-        // Zakres posiedzeń: last -> blokuje od/do; custom -> blokuje select
-        if (rangeSelect && rangeFrom && rangeTo) {
-            const isLast = rangeMode === 'last';
-            rangeSelect.disabled = !isLast;
-            rangeFrom.disabled = isLast;
-            rangeTo.disabled = isLast;
+    // ===== RANGE VALIDATION =====
+    function clampRangeInputs() {
+        const fromEl = document.getElementById('etlRangeFrom');
+        const toEl = document.getElementById('etlRangeTo');
+        if (!fromEl || !toEl) return;
 
-            const labelColor = isLast ? '#a0aec0' : '#000000';
-            if (rangeFromLabel) rangeFromLabel.style.color = labelColor;
-            if (rangeToLabel) rangeToLabel.style.color = labelColor;
+        const inst = document.querySelector('input[name="etlInst"]:checked')?.value || 'sejm';
+        const kadencja = document.getElementById('etlTermSelect')?.value;
+        const cacheKey = `${inst}_${kadencja}`;
+        const maxSittings = sittingsCountCache[cacheKey] || 999;
+
+        // Clamp values
+        let from = parseInt(fromEl.value) || 1;
+        let to = parseInt(toEl.value) || 1;
+
+        from = Math.max(1, Math.min(from, maxSittings));
+        to = Math.max(from, Math.min(to, maxSittings));
+
+        fromEl.value = from;
+        toEl.value = to;
+        fromEl.max = maxSittings;
+        toEl.max = maxSittings;
+    }
+
+    function updateRangeSummary() {
+        const from = parseInt(document.getElementById('etlRangeFrom')?.value) || 1;
+        const to = parseInt(document.getElementById('etlRangeTo')?.value) || 1;
+        const count = to - from + 1;
+        const rangeSpan = document.getElementById('etlRange');
+        if (rangeSpan) {
+            rangeSpan.textContent = `${count} ${count === 1 ? 'posiedzenie' : count < 5 ? 'posiedzenia' : 'posiedzeń'} (${from}-${to})`;
         }
     }
     
@@ -110,14 +295,30 @@ function initETLPanel() {
         // Institution
         const inst = document.querySelector('input[name="etlInst"]:checked')?.value || 'sejm';
         document.getElementById('etlInstitution').textContent = inst === 'sejm' ? 'Sejm' : 'Senat';
-        
+
         // Term
         const term = document.getElementById('etlTermSelect').value;
         document.getElementById('etlTerm').textContent = term;
-        
+
         // Range
-        const range = parseInt(document.getElementById('etlRangeSelect').value);
-        
+        const from = parseInt(document.getElementById('etlRangeFrom')?.value) || 1;
+        const to = parseInt(document.getElementById('etlRangeTo')?.value) || 1;
+        const range = Math.max(1, to - from + 1);
+
+        // Senat: osobna estymata (XML + CSV)
+        if (inst === 'senat') {
+            const csvPerSitting = 20;
+            const csvCount = range * csvPerSitting;
+            const size = 50 + (csvCount * 5);
+            const requests = 1 + csvCount;
+            const estimatedTime = Math.max(5, Math.round(requests / 5));
+            document.getElementById('etlSize').textContent = `~${size} KB`;
+            document.getElementById('etlTime').textContent = `~${estimatedTime}s`;
+            document.getElementById('etlRequests').textContent = `~${requests}`;
+            document.getElementById('etlData').textContent = 'głosowania, głosy indywidualne';
+            return;
+        }
+
         // Collect selected data
         let size = 70; // base (deputies + proceedings)
         let data = [];
@@ -192,6 +393,7 @@ function initETLPanel() {
     
     // Initial update
     applyDependencies();
+    updateRangeSummary();
     updateETLEstimate();
     
     

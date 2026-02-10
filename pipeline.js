@@ -209,8 +209,15 @@ function setLastUpdate(db, timestamp) {
 
 async function fetchSittingsList(config) {
     const { typ = 'sejm', kadencja } = config;
-    const base = typ === 'sejm' ? 'sejm' : 'senat';
-    
+
+    // Senat: brak REST API — zwróć syntetyczny zakres
+    // Faktyczne filtrowanie odbywa się w senat fetcherze
+    if (typ === 'senat') {
+        return Array.from({ length: 100 }, (_, i) => i + 1);
+    }
+
+    const base = 'sejm';
+
     // API endpoint z term
     const url = `https://api.sejm.gov.pl/${base}/term${kadencja}/proceedings`;
     
@@ -244,19 +251,15 @@ function filterNewSittings(allSittings, lastFetched, config) {
 // ===== CONFIG BUILDER =====
 
 export function buildConfigFromUI() {
-    // Get range mode
-    const rangeMode = document.querySelector('input[name="rangeMode"]:checked')?.value || 'last';
-    
     const config = {
         typ: document.querySelector('input[name="etlInst"]:checked')?.value || 'sejm',
         kadencja: parseInt(document.getElementById('etlTermSelect')?.value) || 10,
         rodoFilter: document.getElementById('etlRodoFilter')?.checked ?? true,
-        fetchMode: 'auto',  // Always auto mode from UI
-        rangeMode: rangeMode,
-        rangeCount: parseInt(document.getElementById('etlRangeSelect')?.value) || 2,
+        fetchMode: 'auto',
+        rangeMode: 'custom',
         rangeFrom: parseInt(document.getElementById('etlRangeFrom')?.value) || 1,
         rangeTo: parseInt(document.getElementById('etlRangeTo')?.value) || 3,
-        modules: ['poslowie', 'posiedzenia'] // Always include base modules
+        modules: ['poslowie', 'posiedzenia']
     };
     
     // Collect selected data modules

@@ -814,6 +814,11 @@ input:disabled {
     gap: 8px;
 }
 
+.term-count {
+    font-size: 0.8em;
+    opacity: 0.6;
+}
+
 .etl-select-margin {
     margin-bottom: 15px;
 }
