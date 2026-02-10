@@ -1746,6 +1746,63 @@ input:disabled {
    SEKCJA 2: PODSUMOWANIE
    ============================================ */
 
+/* Fetch Overview — Zlecone vs Pobrane */
+.fetch-overview {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.fetch-overview-col h4 {
+    margin: 0 0 8px;
+    font-size: 0.95rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #6c757d;
+}
+
+.fetch-overview-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+
+.fetch-overview-table td {
+    padding: 4px 8px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.fetch-overview-table td:first-child {
+    color: #6c757d;
+    white-space: nowrap;
+}
+
+.fetch-overview-table td:last-child {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.fetch-overview-separator td {
+    font-weight: 600;
+    font-size: 0.8rem;
+    color: #495057;
+    padding-top: 10px;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.fetch-overview-table .fov-checked {
+    color: #198754;
+}
+
+.fetch-overview-table .fov-unchecked {
+    color: #adb5bd;
+}
+
+.fetch-overview-table .fov-value {
+    font-weight: 600;
+}
+
 .summary-container {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));

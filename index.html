@@ -411,6 +411,68 @@
             <!-- SEKCJA 2: PODSUMOWANIE DANYCH -->
             <section class="app-section" data-section="2" style="display:none;">
 
+                <!-- Panel: Zlecone vs Pobrane -->
+                <div id="fetchOverview" class="fetch-overview" style="display:none;">
+                    <div class="fetch-overview-col">
+                        <h4>Zlecone</h4>
+                        <table class="fetch-overview-table">
+                            <tbody>
+                                <tr><td>Instytucja</td><td id="fovInst">—</td></tr>
+                                <tr><td>Kadencja</td><td id="fovKadencja">—</td></tr>
+                                <tr><td>Zakres posiedzeń</td><td id="fovRange">—</td></tr>
+                            </tbody>
+                            <tbody>
+                                <tr class="fetch-overview-separator"><td colspan="2">Dane podstawowe</td></tr>
+                                <tr><td>Posłowie</td><td id="fovReqDeputies">—</td></tr>
+                                <tr><td>Posiedzenia</td><td id="fovReqSittings">—</td></tr>
+                            </tbody>
+                            <tbody>
+                                <tr class="fetch-overview-separator"><td colspan="2">Dane per posiedzenie</td></tr>
+                                <tr><td>Wypowiedzi</td><td id="fovReqTranscripts">—</td></tr>
+                                <tr><td>Głosowania</td><td id="fovReqVotings">—</td></tr>
+                                <tr><td>Głosy indywidualne</td><td id="fovReqVotes">—</td></tr>
+                            </tbody>
+                            <tbody>
+                                <tr class="fetch-overview-separator"><td colspan="2">Dane per kadencja</td></tr>
+                                <tr><td>Interpelacje</td><td id="fovReqInterpellations">—</td></tr>
+                                <tr><td>Zapytania pisemne</td><td id="fovReqQuestions">—</td></tr>
+                                <tr><td>Projekty ustaw</td><td id="fovReqBills">—</td></tr>
+                                <tr><td>Ustawy</td><td id="fovReqActs">—</td></tr>
+                                <tr><td>Oświadczenia</td><td id="fovReqDisclosures">—</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="fetch-overview-col">
+                        <h4>Pobrane</h4>
+                        <table class="fetch-overview-table">
+                            <tbody>
+                                <tr><td>Instytucja</td><td id="fovGotInst">—</td></tr>
+                                <tr><td>Kadencja</td><td id="fovGotKadencja">—</td></tr>
+                                <tr><td>Posiedzenia w zakresie</td><td id="fovGotRange">—</td></tr>
+                            </tbody>
+                            <tbody>
+                                <tr class="fetch-overview-separator"><td colspan="2">Dane podstawowe</td></tr>
+                                <tr><td>Posłowie</td><td id="fovGotDeputies">—</td></tr>
+                                <tr><td>Posiedzenia</td><td id="fovGotSittings">—</td></tr>
+                            </tbody>
+                            <tbody>
+                                <tr class="fetch-overview-separator"><td colspan="2">Dane per posiedzenie</td></tr>
+                                <tr><td>Wypowiedzi</td><td id="fovGotTranscripts">—</td></tr>
+                                <tr><td>Głosowania</td><td id="fovGotVotings">—</td></tr>
+                                <tr><td>Głosy indywidualne</td><td id="fovGotVotes">—</td></tr>
+                            </tbody>
+                            <tbody>
+                                <tr class="fetch-overview-separator"><td colspan="2">Dane per kadencja</td></tr>
+                                <tr><td>Interpelacje</td><td id="fovGotInterpellations">—</td></tr>
+                                <tr><td>Zapytania pisemne</td><td id="fovGotQuestions">—</td></tr>
+                                <tr><td>Projekty ustaw</td><td id="fovGotBills">—</td></tr>
+                                <tr><td>Ustawy</td><td id="fovGotActs">—</td></tr>
+                                <tr><td>Oświadczenia</td><td id="fovGotDisclosures">—</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
                 <div class="summary-container" id="summaryContainer"></div>
 
                 <div class="summary-info" id="summaryInfo" style="display:none;">

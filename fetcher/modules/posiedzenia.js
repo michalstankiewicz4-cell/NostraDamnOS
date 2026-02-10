@@ -3,20 +3,12 @@
 
 import { safeFetch } from '../fetcher.js';
 
-export async function fetchPosiedzenia({ kadencja, typ = 'sejm', sittingsToFetch }) {
+export async function fetchPosiedzenia({ kadencja, typ = 'sejm' }) {
     const base = typ === 'sejm' ? 'sejm' : 'senat';
 
-    // API endpoint z term
+    // API endpoint z term — zwraca pełną listę posiedzeń jako metadane referencyjne
     const url = `https://api.sejm.gov.pl/${base}/term${kadencja}/proceedings`;
 
     const allData = await safeFetch(url);
-    const result = Array.isArray(allData) ? allData : [];
-
-    // Filtruj wg zakresu posiedzeń jeśli podano
-    if (sittingsToFetch && sittingsToFetch.length > 0) {
-        const set = new Set(sittingsToFetch);
-        return result.filter(p => set.has(p.number));
-    }
-
-    return result;
+    return Array.isArray(allData) ? allData : [];
 }

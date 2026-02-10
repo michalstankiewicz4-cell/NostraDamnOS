@@ -336,9 +336,113 @@ function updateSummaryTab() {
         if (placeholder) {
             placeholder.style.display = totalRecords > 0 ? 'none' : '';
         }
+        // Fetch Overview panel
+        updateFetchOverview();
+
     } catch (e) {
         console.error('[updateSummaryTab] Error:', e);
     }
+}
+
+// === FETCH OVERVIEW: Zlecone vs Pobrane ===
+
+function updateFetchOverview() {
+    const panel = document.getElementById('fetchOverview');
+    if (!panel) return;
+
+    const configRaw = localStorage.getItem('nostradamnos_lastFetchConfig');
+    const fetchRaw = localStorage.getItem('nostradamnos_lastFetch');
+
+    if (!configRaw || !fetchRaw) {
+        panel.style.display = 'none';
+        return;
+    }
+
+    let config, fetched;
+    try {
+        config = JSON.parse(configRaw);
+        fetched = JSON.parse(fetchRaw);
+    } catch { panel.style.display = 'none'; return; }
+
+    const modules = config.modules || [];
+    const stats = fetched.stats || {};
+
+    // Mapowanie moduł → klucz w stats
+    const modToStat = {
+        poslowie: 'poslowie',
+        posiedzenia: 'posiedzenia',
+        wypowiedzi: 'wypowiedzi',
+        glosowania: 'glosowania',
+        glosy: 'glosy',
+        interpelacje: 'interpelacje',
+        zapytania: 'zapytania',
+        projekty_ustaw: 'projekty_ustaw',
+        ustawy: 'ustawy',
+        oswiadczenia: 'oswiadczenia_majatkowe'
+    };
+
+    const setText = (id, text) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = text;
+    };
+
+    const setCheck = (id, mod) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const checked = modules.includes(mod);
+        el.textContent = checked ? 'tak' : '—';
+        el.className = checked ? 'fov-checked' : 'fov-unchecked';
+    };
+
+    const setStat = (id, mod) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const statKey = modToStat[mod] || mod;
+        const val = stats[statKey];
+        if (val !== undefined && val > 0) {
+            el.textContent = val.toLocaleString('pl-PL');
+            el.className = 'fov-value';
+        } else if (modules.includes(mod)) {
+            el.textContent = '0';
+            el.className = 'fov-unchecked';
+        } else {
+            el.textContent = '—';
+            el.className = 'fov-unchecked';
+        }
+    };
+
+    // Lewa kolumna: Zlecone
+    const inst = config.typ === 'senat' ? 'Senat' : 'Sejm';
+    setText('fovInst', inst);
+    setText('fovKadencja', config.kadencja ? `nr ${config.kadencja}` : 'wszystkie');
+    setText('fovRange', `${config.rangeFrom || '?'} — ${config.rangeTo || '?'}`);
+    setCheck('fovReqDeputies', 'poslowie');
+    setCheck('fovReqSittings', 'posiedzenia');
+    setCheck('fovReqTranscripts', 'wypowiedzi');
+    setCheck('fovReqVotings', 'glosowania');
+    setCheck('fovReqVotes', 'glosy');
+    setCheck('fovReqInterpellations', 'interpelacje');
+    setCheck('fovReqQuestions', 'zapytania');
+    setCheck('fovReqBills', 'projekty_ustaw');
+    setCheck('fovReqActs', 'ustawy');
+    setCheck('fovReqDisclosures', 'oswiadczenia');
+
+    // Prawa kolumna: Pobrane
+    setText('fovGotInst', inst);
+    setText('fovGotKadencja', config.kadencja ? `nr ${config.kadencja}` : 'wszystkie');
+    setText('fovGotRange', fetched.newSittings > 0 ? `${fetched.newSittings} posiedzeń` : '—');
+    setStat('fovGotDeputies', 'poslowie');
+    setStat('fovGotSittings', 'posiedzenia');
+    setStat('fovGotTranscripts', 'wypowiedzi');
+    setStat('fovGotVotings', 'glosowania');
+    setStat('fovGotVotes', 'glosy');
+    setStat('fovGotInterpellations', 'interpelacje');
+    setStat('fovGotQuestions', 'zapytania');
+    setStat('fovGotBills', 'projekty_ustaw');
+    setStat('fovGotActs', 'ustawy');
+    setStat('fovGotDisclosures', 'oswiadczenia');
+
+    panel.style.display = '';
 }
 
 // === ETL PROGRESS BAR ===
