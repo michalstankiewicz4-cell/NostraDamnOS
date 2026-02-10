@@ -8,54 +8,59 @@ import { applyRodo } from './modules/rodo.js';
 
 export async function runPipeline(config, callbacks = {}) {
     console.log('🚀 Pipeline v2.0 - Starting ETL');
-    
+
     const {
         onProgress = () => {},
         onLog = () => {},
         onError = () => {},
         onComplete = () => {}
     } = callbacks;
-    
+
+    // Multi-kadencja: iteruj po kadencjach, merguj wyniki
+    if (config.kadencje && config.kadencje.length > 1) {
+        return runMultiTermPipeline(config, callbacks);
+    }
+
     let totalRecords = 0;
-    
+
     try {
         // Step 1: Initialize database (0-5%)
         onLog('📦 Initializing database...');
         onProgress(5, 'Initializing database');
-        
+
         if (!db2.database) {
             await db2.init();
         }
-        
+
         // Log RODO filter status
         if (config.rodoFilter) {
             onLog('🔒 RODO Filter: ACTIVE (removing sensitive data)');
         } else {
             onLog('⚠️ RODO Filter: DISABLED (all data included)');
         }
-        
+
         // Step 2: Check cache and determine what to fetch (5-10%)
         onLog('🔍 Checking cache...');
         onProgress(8, 'Checking cache');
-        
+
         const lastPosiedzenie = getLastPosiedzenie(db2);
         const lastUpdate = getLastUpdate(db2);
-        
+
         if (lastPosiedzenie > 0) {
             onLog(`📌 Last fetched sitting: ${lastPosiedzenie}`);
             onLog(`📌 Last update: ${lastUpdate}`);
         }
-        
+
         // Step 3: Get list of sittings (10-15%)
         onLog('⬇️ Fetching list of sittings...');
         onProgress(12, 'Fetching sittings list');
-        
+
         const allSittings = await fetchSittingsList(config);
-        
+
         // SMART AUTO MODE - determine best fetch strategy
         let fetchMode = config.fetchMode || 'auto';
         let sittingsToFetch = [];
-        
+
         if (fetchMode === 'auto') {
             // Zawsze używaj zakresu wybranego przez użytkownika (rangeMode/rangeCount)
             // Ignorujemy lastPosiedzenie — użytkownik decyduje co chce pobrać
@@ -73,17 +78,17 @@ export async function runPipeline(config, callbacks = {}) {
             // Manual range mode
             sittingsToFetch = filterNewSittings(allSittings, lastPosiedzenie, config);
         }
-        
+
         if (sittingsToFetch.length === 0) {
             onLog('✅ All data up to date!');
             onProgress(100, 'Up to date');
             onComplete({ success: true, stats: {}, upToDate: true });
             return { success: true, upToDate: true };
         }
-        
+
         onLog(`📌 Found ${sittingsToFetch.length} new sittings to fetch`);
         onLog(`📌 Range: ${Math.min(...sittingsToFetch)} - ${Math.max(...sittingsToFetch)}`);
-        
+
         // Step 4: Fetch all data using runFetcher (20-70%)
         onLog('⬇️ Fetching data from API...');
         onProgress(20, 'Fetching data from API');
@@ -99,41 +104,41 @@ export async function runPipeline(config, callbacks = {}) {
             const mapped = 20 + Math.round(fetchPct * 0.5); // 20% + (0-100% → 0-50%) = 20-70%
             onProgress(Math.min(mapped, 70), `Pobieranie: ${label}`);
         });
-        
+
         // Apply RODO filter if enabled
         let processedRaw = raw;
-        
+
         if (config.rodoFilter) {
             onLog('🛡️ RODO: removing sensitive fields...');
             processedRaw = applyRodo(raw);
         } else {
             onLog('⚠️ RODO disabled — sensitive fields included');
         }
-        
+
         // Count fetched records
-        totalRecords = Object.values(processedRaw).reduce((sum, arr) => 
+        totalRecords = Object.values(processedRaw).reduce((sum, arr) =>
             sum + (Array.isArray(arr) ? arr.length : 0), 0
         );
-        
+
         onLog(`📥 Fetched ${totalRecords} raw records from API`);
         onProgress(70, 'Fetching complete');
-        
+
         // Step 5: Normalize and save (70-90%)
         onLog('🧹 Normalizing and saving to database...');
         onProgress(75, 'Normalizing data');
-        
+
         const stats = await runNormalizer(db2, processedRaw, config);
-        
+
         onLog(`💾 Saved ${Object.values(stats).reduce((a, b) => a + b, 0)} records to database`);
         onProgress(90, 'Normalization complete');
-        
+
         // Step 6: Update cache metadata (90-98%)
         onLog('📝 Updating cache metadata...');
         onProgress(95, 'Updating metadata');
-        
+
         // Update last_posiedzenie based on actual data
         if (processedRaw.posiedzenia && processedRaw.posiedzenia.length > 0) {
-            const maxSitting = Math.max(...processedRaw.posiedzenia.map(p => 
+            const maxSitting = Math.max(...processedRaw.posiedzenia.map(p =>
                 p.num ?? p.id ?? p.posiedzenie ?? p.number ?? 0
             ));
             if (maxSitting > 0) {
@@ -141,17 +146,17 @@ export async function runPipeline(config, callbacks = {}) {
                 onLog(`📌 Updated cache: last_posiedzenie = ${maxSitting}`);
             }
         }
-        
+
         setLastUpdate(db2, new Date().toISOString());
-        
+
         db2.upsertMetadata('last_fetch_config', JSON.stringify(config));
         db2.upsertMetadata('last_fetch_stats', JSON.stringify(stats));
-        
+
         // Step 8: Complete (98-100%)
         onProgress(100, 'Complete');
         onLog('✅ Pipeline complete!');
         onLog(`📊 Total: ${totalRecords} records fetched, ${Object.values(stats).reduce((a,b)=>a+b,0)} saved`);
-        
+
         const result = {
             success: true,
             stats,
@@ -160,21 +165,79 @@ export async function runPipeline(config, callbacks = {}) {
             newSittings: sittingsToFetch.length,
             timestamp: new Date().toISOString()
         };
-        
+
         onComplete(result);
         return result;
-        
+
     } catch (error) {
         console.error('[Pipeline] Error:', error);
         onError(error);
         onLog(`❌ Pipeline failed: ${error.message}`);
-        
+
         return {
             success: false,
             error: error.message,
             timestamp: new Date().toISOString()
         };
     }
+}
+
+// ===== MULTI-TERM PIPELINE =====
+
+async function runMultiTermPipeline(config, callbacks) {
+    const { onProgress = () => {}, onLog = () => {}, onError = () => {}, onComplete = () => {} } = callbacks;
+    const kadencje = config.kadencje;
+
+    onLog(`📦 Tryb "Wszystkie kadencje" — ${kadencje.length} kadencji: ${kadencje.join(', ')}`);
+
+    const mergedStats = {};
+    let totalFetched = 0;
+    let totalSaved = 0;
+
+    for (let i = 0; i < kadencje.length; i++) {
+        const k = kadencje[i];
+        const pctBase = Math.round((i / kadencje.length) * 100);
+        const pctNext = Math.round(((i + 1) / kadencje.length) * 100);
+
+        onLog(`\n━━━ Kadencja ${k} (${i + 1}/${kadencje.length}) ━━━`);
+
+        const subConfig = { ...config, kadencja: k, kadencje: undefined };
+        const subResult = await runPipeline(subConfig, {
+            onProgress: (pct, label) => {
+                const mapped = pctBase + Math.round((pct / 100) * (pctNext - pctBase));
+                onProgress(mapped, `[${k}] ${label}`);
+            },
+            onLog: (msg) => onLog(`  [${k}] ${msg}`),
+            onError,
+            onComplete: () => {} // nie wywołuj onComplete dla pod-kadencji
+        });
+
+        if (subResult.success && subResult.stats) {
+            for (const [key, val] of Object.entries(subResult.stats)) {
+                mergedStats[key] = (mergedStats[key] || 0) + val;
+            }
+            totalFetched += subResult.fetchedRecords || 0;
+            totalSaved += subResult.savedRecords || 0;
+        } else if (!subResult.success) {
+            onLog(`⚠️ Kadencja ${k} zakończona z błędem: ${subResult.error}`);
+        }
+    }
+
+    onProgress(100, 'Complete');
+    onLog(`\n✅ Wszystkie kadencje pobrane!`);
+    onLog(`📊 Łącznie: ${totalFetched} pobranych, ${totalSaved} zapisanych`);
+
+    const result = {
+        success: true,
+        stats: mergedStats,
+        fetchedRecords: totalFetched,
+        savedRecords: totalSaved,
+        kadencje,
+        timestamp: new Date().toISOString()
+    };
+
+    onComplete(result);
+    return result;
 }
 
 // ===== CACHE HELPERS =====
@@ -251,9 +314,12 @@ function filterNewSittings(allSittings, lastFetched, config) {
 // ===== CONFIG BUILDER =====
 
 export function buildConfigFromUI() {
+    const termValue = document.getElementById('etlTermSelect')?.value;
+    const isAllTerms = termValue === 'all';
+
     const config = {
         typ: document.querySelector('input[name="etlInst"]:checked')?.value || 'sejm',
-        kadencja: parseInt(document.getElementById('etlTermSelect')?.value) || 10,
+        kadencja: isAllTerms ? null : (parseInt(termValue) || 10),
         rodoFilter: document.getElementById('etlRodoFilter')?.checked ?? true,
         fetchMode: 'auto',
         rangeMode: 'custom',
@@ -261,6 +327,17 @@ export function buildConfigFromUI() {
         rangeTo: parseInt(document.getElementById('etlRangeTo')?.value) || 3,
         modules: ['poslowie', 'posiedzenia']
     };
+
+    // "Wszystkie kadencje" — lista kadencji do pobrania, pełny zakres
+    if (isAllTerms) {
+        const selectEl = document.getElementById('etlTermSelect');
+        config.kadencje = [...selectEl.options]
+            .map(o => parseInt(o.value))
+            .filter(n => !isNaN(n));
+        config.kadencja = config.kadencje[0] || 10;
+        config.rangeFrom = 1;
+        config.rangeTo = 999; // pełny zakres — pipeline sam ograniczy do istniejących
+    }
     
     // Collect selected data modules
     if (document.getElementById('etlTranscripts')?.checked) config.modules.push('wypowiedzi');
