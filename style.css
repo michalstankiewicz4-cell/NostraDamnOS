@@ -225,18 +225,6 @@ header p {
     color: #2d3748;
     font-size: 1.8rem;
 }
-/* Sidebar avec tab cards */
-
-.tab-label {
-    font-size: 24px;
-}
-
-.tab-text {
-    font-size: 11px;
-    text-align: center;
-    line-height: 1.2;
-}
-
 /* Sections */
 section {
     background: var(--card-bg);
@@ -250,42 +238,6 @@ section h2 {
     font-size: 1.5rem;
     margin-bottom: 12px;
     color: var(--text-primary);
-}
-/* Upload Area */
-.upload-area {
-    border: 2px dashed var(--border-color);
-    border-radius: 8px;
-    padding: 2rem;
-    text-align: center;
-    transition: all 0.3s ease;
-    cursor: pointer;
-}
-
-.upload-area:hover {
-    border-color: var(--primary-color);
-    background-color: rgba(37, 99, 235, 0.05);
-}
-
-#fileInput {
-    display: none;
-}
-
-.upload-label {
-    cursor: pointer;
-    color: var(--text-secondary);
-    font-size: 1rem;
-}
-
-.file-info {
-    margin-top: 12px;
-    padding: 1rem;
-    background-color: var(--bg-color);
-    border-radius: 6px;
-    display: none;
-}
-
-.file-info.visible {
-    display: block;
 }
 /* Model Status */
 .model-status {
@@ -345,19 +297,6 @@ section h2 {
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 1rem;
 }
-/* Results */
-.results-container {
-    min-height: 200px;
-    padding: 1.5rem;
-    background-color: var(--bg-color);
-    border-radius: 6px;
-}
-
-.placeholder {
-    color: var(--text-secondary);
-    text-align: center;
-    font-style: italic;
-}
 /* Footer */
 footer {
     text-align: center;
@@ -389,80 +328,6 @@ footer a:hover {
         grid-template-columns: 1fr;
     }
 }
-/* Automatyczne ładowanie danych */
-.auto-load {
-    text-align: center;
-    margin-bottom: 12px;
-}
-
-.btn-large {
-    padding: 1rem 2rem;
-    font-size: 1.1rem;
-    font-weight: 600;
-}
-
-.hint {
-    margin-top: 12px;
-    color: var(--text-secondary);
-    font-size: 0.9rem;
-}
-
-.divider {
-    text-align: center;
-    margin: 2rem 0;
-    color: var(--text-secondary);
-    position: relative;
-}
-
-.divider::before,
-.divider::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    width: 40%;
-    height: 1px;
-    background: var(--border-color);
-}
-
-.divider::before {
-    left: 0;
-}
-
-.divider::after {
-    right: 0;
-}
-/* Status danych */
-.data-status {
-    margin-top: 12px;
-    padding: 1rem;
-    background: var(--bg-color);
-    border-radius: 8px;
-    border: 1px solid var(--border-color);
-}
-
-.progress-info {
-    text-align: center;
-}
-
-
-.data-loaded h4 {
-    color: var(--success-color);
-    margin-bottom: 12px;
-}
-
-.data-loaded ul {
-    list-style: none;
-    padding: 0;
-}
-
-.data-loaded li {
-    padding: 0.5rem 0;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.data-loaded li:last-child {
-    border-bottom: none;
-}
 /* ETL PANEL STYLES */
 .etl-panel {
     display: grid;
@@ -488,30 +353,6 @@ footer a:hover {
 
 .etl-main {
     padding: 30px;
-}
-
-/* Mode Selector */
-.mode-selector {
-    background: white;
-    border: 2px solid #e2e8f0;
-    border-radius: 10px;
-    padding: 15px;
-    margin-bottom: 12px;
-}
-
-.mode-option {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: background 0.2s;
-    font-size: 14px;
-}
-
-.mode-option:hover {
-    background: #f7fafc;
 }
 
 /* Summary Items */
@@ -739,44 +580,6 @@ input:disabled {
     background-color: #f3f4f6;
     cursor: not-allowed;
     border-color: #e5e7eb;
-}
-
-/* Advanced Options Panel */
-.etl-advanced {
-    margin-top: 20px;
-}
-
-.etl-advanced summary {
-    cursor: pointer;
-    font-weight: 600;
-    padding: 10px 12px;
-    background: #f7fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 6px;
-    user-select: none;
-    transition: background 0.2s;
-}
-
-.etl-advanced summary:hover {
-    background: #edf2f7;
-}
-
-.etl-advanced[open] summary {
-    background: #e2e8f0;
-    margin-bottom: 10px;
-}
-
-.cache-status {
-    font-size: 13px;
-}
-
-.cache-status h4 {
-    margin-bottom: 10px;
-    color: #2d3748;
-}
-
-#cacheStatusDisplay div {
-    padding: 3px 0;
 }
 
 /* Floating Status Bar */
@@ -1034,16 +837,6 @@ input:disabled {
     border: none;
 }
 
-.models-section-spacing {
-    margin-top: 3rem;
-}
-
-/* Floating Status Bar Components */
-
-.status-bar-spacer {
-    flex: 1;
-}
-
 /* Floating Console Panel */
 .floating-console-panel {
     position: fixed;
@@ -1173,10 +966,10 @@ input:disabled {
     color: #666;
 }
 
-/* AI Status Lamp — zunifikowana z .floating-lamp (12x12, diodowe cieniowanie) */
+/* AI Status Lamp — zunifikowana z .floating-lamp (10x10, diodowe cieniowanie) */
 .status-lamp {
-    width: 12px;
-    height: 12px;
+    width: 10px;
+    height: 10px;
     border-radius: 50%;
     background: #64748b;
     background-image: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0.1) 30%, transparent 60%);
@@ -1612,6 +1405,8 @@ input:disabled {
     font-size: 0.8rem;
     color: #e2e8f0;
     font-family: 'Courier New', 'Consolas', 'Monaco', monospace;
+    letter-spacing: 0.5px;
+    font-weight: bold;
 }
 
 /* === SETTINGS — panele ustawień === */
@@ -1666,6 +1461,38 @@ input:disabled {
     height: 16px;
     cursor: pointer;
     accent-color: #4299e1;
+}
+
+/* Przyciski w ustawieniach (styl, język, import/export, reset) */
+.console-style-btn {
+    padding: 6px 14px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--card-bg);
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.console-style-btn:hover {
+    background: #edf2f7;
+}
+
+.console-style-btn.active {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.console-style-btn-danger {
+    color: var(--danger-color);
+    border-color: var(--danger-color);
+}
+
+.console-style-btn-danger:hover {
+    background: var(--danger-color);
+    color: white;
 }
 
 /* === TOP INFO BAR — pasek informacyjny na górze === */
@@ -1730,10 +1557,10 @@ input:disabled {
     gap: 6px;
 }
 
-/* Lampka diodowa — zunifikowany styl 12x12 z cieniowaniem */
+/* Lampka diodowa — zunifikowany styl 10x10 z cieniowaniem */
 .floating-lamp {
-    width: 12px;
-    height: 12px;
+    width: 10px;
+    height: 10px;
     border-radius: 50%;
     transition: all 0.3s ease;
     background-image: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0.1) 30%, transparent 60%);
@@ -1752,6 +1579,23 @@ input:disabled {
 .floating-lamp-error {
     background-color: #f56565;
     box-shadow: 0 0 8px rgba(245, 101, 101, 0.6), inset 0 -2px 3px rgba(0,0,0,0.25);
+}
+
+.floating-lamp-idle {
+    background-color: #64748b;
+    box-shadow: 0 0 2px rgba(0, 0, 0, 0.3), inset 0 -2px 3px rgba(0,0,0,0.25);
+}
+
+/* HDD-style blink: rapid irregular flicker */
+.floating-lamp-hdd {
+    animation: hddBlink 0.3s ease-in-out infinite;
+}
+
+@keyframes hddBlink {
+    0%   { background-color: #48bb78; box-shadow: 0 0 8px rgba(72, 187, 120, 0.6), inset 0 -2px 3px rgba(0,0,0,0.25); }
+    40%  { background-color: #2f855a; box-shadow: 0 0 3px rgba(47, 133, 90, 0.3), inset 0 -2px 3px rgba(0,0,0,0.25); }
+    60%  { background-color: #48bb78; box-shadow: 0 0 10px rgba(72, 187, 120, 0.8), inset 0 -2px 3px rgba(0,0,0,0.25); }
+    100% { background-color: #2f855a; box-shadow: 0 0 4px rgba(47, 133, 90, 0.4), inset 0 -2px 3px rgba(0,0,0,0.25); }
 }
 
 /* Separator pionowy między sekcjami */
@@ -1861,13 +1705,13 @@ input:disabled {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 4px;
-    padding: 12px 20px;
+    gap: 2px;
+    padding: 8px 16px;
     cursor: pointer;
-    border-radius: 12px;
+    border-radius: 10px;
     transition: all 0.3s;
     border: 2px solid transparent;
-    min-width: 85px;
+    min-width: 75px;
 }
 
 .nav-item:hover {
@@ -1883,7 +1727,7 @@ input:disabled {
 }
 
 .nav-icon {
-    font-size: 1.8rem;
+    font-size: 1.4rem;
 }
 
 .nav-label {

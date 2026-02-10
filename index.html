@@ -69,14 +69,44 @@
         window.logBuffer = [];
         window.originalConsoleLog = console.log;
 
-        // Log level colors
+        // Log level colors (default adapts to console style)
         const LOG_COLORS = {
-            white:  '#e2e8f0',
-            red:    '#f56565',
-            green:  '#48bb78',
-            yellow: '#ecc94b',
-            blue:   '#63b3ed'
+            default: '#1a202c',
+            red:     '#f56565',
+            green:   '#48bb78',
+            yellow:  '#ecc94b',
+            blue:    '#63b3ed'
         };
+
+        // Map console style → default log text color
+        const STYLE_DEFAULT_COLORS = {
+            'console-modern': '#1a202c',
+            'console-win10':  '#e2e8f0',
+            'console-retro':  '#e2e8f0'
+        };
+
+        // Called by style switcher to update default log color
+        window.updateLogDefaultColor = function(styleClass) {
+            const newColor = STYLE_DEFAULT_COLORS[styleClass] || '#1a202c';
+            LOG_COLORS.default = newColor;
+
+            // Recolor existing default-colored log lines (marked with data-default-color)
+            const apiLogs = document.getElementById('apiLogs');
+            if (apiLogs) {
+                apiLogs.querySelectorAll('div[data-default-color]').forEach(line => {
+                    line.style.color = newColor;
+                });
+                window.syncFloatingConsoleLogs && window.syncFloatingConsoleLogs();
+            }
+        };
+
+        // Console lamp: green normally, red when error logged
+        function updateConsoleLamp(color) {
+            if (color === LOG_COLORS.red) {
+                const lamp = document.getElementById('consoleLamp');
+                if (lamp) lamp.className = 'floating-lamp floating-lamp-error';
+            }
+        }
 
         // Core logging function with color support
         function addLogLine(message, color) {
@@ -84,18 +114,23 @@
             const formattedLog = `[${timestamp}] ${message}`;
             const apiLogs = document.getElementById('apiLogs');
 
+            updateConsoleLamp(color);
+
+            const isDefault = !color || color === LOG_COLORS.default;
+
             if (apiLogs) {
                 const line = document.createElement('div');
                 line.textContent = formattedLog;
                 line.style.fontSize = '0.85rem';
                 line.style.fontFamily = 'monospace';
                 line.style.lineHeight = '1.6';
-                line.style.color = color || LOG_COLORS.white;
+                line.style.color = isDefault ? LOG_COLORS.default : color;
+                if (isDefault) line.setAttribute('data-default-color', '');
                 apiLogs.appendChild(line);
                 apiLogs.scrollTop = apiLogs.scrollHeight;
                 window.syncFloatingConsoleLogs && window.syncFloatingConsoleLogs();
             } else {
-                window.logBuffer.push({ text: formattedLog, color: color || LOG_COLORS.white });
+                window.logBuffer.push({ text: formattedLog, color: isDefault ? null : color });
             }
         }
 
@@ -109,16 +144,23 @@
             }).join(' ');
         }
 
-        // Override console.log → white (default)
+        // Override console.log → default color
         console.log = function(...args) {
             window.originalConsoleLog.apply(console, args);
-            addLogLine(formatArgs(args), LOG_COLORS.white);
+            addLogLine(formatArgs(args), LOG_COLORS.default);
+        };
+
+        // Override console.error → red
+        const originalConsoleError = console.error;
+        console.error = function(...args) {
+            originalConsoleError.apply(console, args);
+            addLogLine(formatArgs(args), LOG_COLORS.red);
         };
 
         // clog(level, ...args) — colored console log
-        // Levels: 'red' (error), 'green' (ok), 'yellow' (info), 'blue' (sql), 'white' (default)
+        // Levels: 'red' (error), 'green' (ok), 'yellow' (info), 'blue' (sql), 'default' (normal)
         window.clog = function(level, ...args) {
-            const color = LOG_COLORS[level] || LOG_COLORS.white;
+            const color = LOG_COLORS[level] || LOG_COLORS.default;
             window.originalConsoleLog.apply(console, [`[${level.toUpperCase()}]`, ...args]);
             addLogLine(formatArgs(args), color);
         };
@@ -753,6 +795,7 @@
         <!-- [Load] -->
         <div id="etlProgressSection" class="status-bar-section" title="Pasek ładowania danych z API">
             <span class="status-bar-label">Load:</span>
+            <div id="loadLamp" class="floating-lamp floating-lamp-idle" title="Status ładowania"></div>
             <div class="progress-track">
                 <div id="etlProgressBar" class="progress-bar" style="width:0%"></div>
             </div>
@@ -764,6 +807,7 @@
         <!-- [Memory] -->
         <div id="memorySection" class="status-bar-section" title="Zajętość pamięci przeglądarki">
             <span class="status-bar-label">Memory:</span>
+            <div id="memoryLamp" class="floating-lamp floating-lamp-ok" title="Stan pamięci"></div>
             <div class="progress-track">
                 <div id="memoryProgressBar" class="progress-bar" style="width:0%"></div>
             </div>
@@ -777,7 +821,8 @@
 
         <!-- [Konsola] -->
         <div id="consoleSection" class="status-bar-section status-bar-console" title="Otwórz konsolę (Ctrl+`)">
-            <span class="status-bar-label">📋 KONSOLA</span>
+            <div id="consoleLamp" class="floating-lamp floating-lamp-ok" title="Status konsoli"></div>
+            <span class="status-bar-label">KONSOLA</span>
         </div>
     </div>
 
@@ -869,6 +914,7 @@
                     body.classList.add(addClass);
                     allBtns.forEach(b => b?.classList.remove('active'));
                     activeBtn?.classList.add('active');
+                    window.updateLogDefaultColor && window.updateLogDefaultColor(addClass);
                 }
 
                 // Domyślny styl: Jasny
@@ -882,14 +928,12 @@
 
         <!-- Reset pamięci przeglądarki -->
         <script type="module">
-            import { resetFloatingButtonPositions, resetTabsLayout } from './modules/floating-drag.js';
+            import { resetFloatingButtonPositions } from './modules/floating-drag.js';
 
             document.addEventListener('DOMContentLoaded', () => {
                 const resetBtn = document.getElementById('btnResetMemory');
                 resetBtn?.addEventListener('click', () => {
                     resetFloatingButtonPositions();
-                    resetTabsLayout();
-                    localStorage.removeItem('uiMode');
                     localStorage.removeItem('uiVisibility');
                     location.reload();
                 });
@@ -901,6 +945,7 @@
             document.addEventListener('DOMContentLoaded', () => {
                 const memBar = document.getElementById('memoryProgressBar');
                 const memPct = document.getElementById('memoryPercent');
+                const memLamp = document.getElementById('memoryLamp');
 
                 function updateMemory() {
                     if (performance && performance.memory) {
@@ -910,6 +955,17 @@
                         memBar.style.width = pct + '%';
                         memPct.textContent = pct + '%';
                         memBar.style.background = pct > 80 ? '#f56565' : pct > 50 ? '#f6ad55' : '#48bb78';
+
+                        if (memLamp) {
+                            memLamp.className = 'floating-lamp';
+                            if (pct > 90) {
+                                memLamp.classList.add('floating-lamp-error');
+                            } else if (pct > 70) {
+                                memLamp.classList.add('floating-lamp-warning');
+                            } else {
+                                memLamp.classList.add('floating-lamp-ok');
+                            }
+                        }
                     } else {
                         memPct.textContent = 'N/A';
                     }
@@ -996,7 +1052,6 @@
         
         closeBtn?.addEventListener('click', () => {
             floatingPanel.style.display = 'none';
-            // window.setDbButtonsVisible && window.setDbButtonsVisible(false);
         });
         
         // Simple sync function for logs (called by console interceptor)
@@ -1024,7 +1079,9 @@
                     line.style.fontSize = '0.85rem';
                     line.style.fontFamily = 'monospace';
                     line.style.lineHeight = '1.6';
-                    line.style.color = (typeof entry === 'object' && entry.color) ? entry.color : '#e2e8f0';
+                    const entryColor = (typeof entry === 'object' && entry.color) ? entry.color : null;
+                    line.style.color = entryColor || LOG_COLORS.default;
+                    if (!entryColor) line.setAttribute('data-default-color', '');
                     apiLogs.appendChild(line);
                 });
                 
@@ -1047,17 +1104,6 @@
                 'languageBtn:', !!languageBtn,
                 'helpBtn:', !!helpBtn
             );
-            
-            // Define setDbButtonsVisible function (used by floating console)
-            const setDbButtonsVisible = (visible) => {
-                const toolsButtons = [importDbBtn, exportDbBtn, aboutBtn, languageBtn, helpBtn];
-                toolsButtons.forEach(btn => {
-                    if (btn) btn.style.display = visible ? 'flex' : 'none';
-                });
-            };
-            
-            // Expose globally for floating console
-            window.setDbButtonsVisible = setDbButtonsVisible;
             
             // Helper function to add button animation and click handler
             const addButtonAnimation = (btn, clickHandler) => {

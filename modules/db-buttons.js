@@ -14,7 +14,7 @@ export function initDbButtons() {
         return;
     }
     
-    // Buttons stay hidden - they are controlled by setDbButtonsVisible() in main script
+    // Buttons stay hidden - visibility controlled by uiVisibility settings
     
     // Export button
     exportBtn.addEventListener('click', async () => {

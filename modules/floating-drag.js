@@ -6,16 +6,6 @@
  * - Position reset functionality
  */
 
-// Legacy stubs (tab system removed)
-export function initTabCardsDragDrop() {}
-export function resetTabsLayout() {
-    localStorage.removeItem('sidebarLayout');
-    localStorage.removeItem('tabOrder');
-    Object.keys(localStorage).forEach(key => {
-        if (key.startsWith('tabSide-')) localStorage.removeItem(key);
-    });
-}
-
 // ===== UI MODE MANAGEMENT =====
 
 export function initUIMode() {
@@ -94,7 +84,6 @@ export function initUIMode() {
                 cancelHold();
                 holdTriggered = true;
                 resetFloatingButtonPositions();
-                resetTabsLayout();
                 applyVisibility();
             }
         }, 100);
@@ -194,7 +183,7 @@ export function initFloatingButtonsDragDrop() {
             }
         }, true);
 
-        function startDrag(e, clientX, clientY) {
+        function startDrag(_e, clientX, clientY) {
             draggedElement = btn;
             isDraggingEnabled = false;
 

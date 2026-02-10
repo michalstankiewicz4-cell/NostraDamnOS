@@ -343,11 +343,23 @@ function updateSummaryTab() {
 
 // === ETL PROGRESS BAR ===
 
+function setLoadLamp(state) {
+    const lamp = document.getElementById('loadLamp');
+    if (!lamp) return;
+    lamp.className = 'floating-lamp';
+    if (state === 'loading') {
+        lamp.classList.add('floating-lamp-ok', 'floating-lamp-hdd');
+    } else {
+        lamp.classList.add('floating-lamp-idle');
+    }
+}
+
 function showEtlProgress() {
     const pctEl = document.getElementById('etlProgressPercent');
     const bar = document.getElementById('etlProgressBar');
     if (pctEl) pctEl.style.display = '';
     if (bar) bar.style.width = '0%';
+    setLoadLamp('loading');
 }
 
 function hideEtlProgress() {
@@ -355,6 +367,7 @@ function hideEtlProgress() {
     const bar = document.getElementById('etlProgressBar');
     if (pctEl) pctEl.style.display = 'none';
     if (bar) bar.style.width = '0%';
+    setLoadLamp('idle');
 }
 
 function updateEtlProgress(percent) {
