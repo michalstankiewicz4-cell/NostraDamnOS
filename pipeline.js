@@ -157,12 +157,23 @@ export async function runPipeline(config, callbacks = {}) {
         onLog('✅ Pipeline complete!');
         onLog(`📊 Total: ${totalRecords} records fetched, ${Object.values(stats).reduce((a,b)=>a+b,0)} saved`);
 
+        // Count session days from posiedzenia in range
+        let sessionDays = 0;
+        if (processedRaw.posiedzenia && Array.isArray(processedRaw.posiedzenia)) {
+            for (const p of processedRaw.posiedzenia) {
+                if (sittingsToFetch.includes(p.number) && Array.isArray(p.dates)) {
+                    sessionDays += p.dates.length;
+                }
+            }
+        }
+
         const result = {
             success: true,
             stats,
             fetchedRecords: totalRecords,
             savedRecords: Object.values(stats).reduce((a, b) => a + b, 0),
             newSittings: sittingsToFetch.length,
+            sessionDays,
             timestamp: new Date().toISOString()
         };
 
@@ -193,6 +204,7 @@ async function runMultiTermPipeline(config, callbacks) {
     const mergedStats = {};
     let totalFetched = 0;
     let totalSaved = 0;
+    let totalSessionDays = 0;
 
     for (let i = 0; i < kadencje.length; i++) {
         const k = kadencje[i];
@@ -218,6 +230,7 @@ async function runMultiTermPipeline(config, callbacks) {
             }
             totalFetched += subResult.fetchedRecords || 0;
             totalSaved += subResult.savedRecords || 0;
+            totalSessionDays += subResult.sessionDays || 0;
         } else if (!subResult.success) {
             onLog(`⚠️ Kadencja ${k} zakończona z błędem: ${subResult.error}`);
         }
@@ -232,6 +245,7 @@ async function runMultiTermPipeline(config, callbacks) {
         stats: mergedStats,
         fetchedRecords: totalFetched,
         savedRecords: totalSaved,
+        sessionDays: totalSessionDays,
         kadencje,
         timestamp: new Date().toISOString()
     };

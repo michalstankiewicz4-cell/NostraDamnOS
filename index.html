@@ -428,6 +428,7 @@
                             </tbody>
                             <tbody>
                                 <tr class="fetch-overview-separator"><td colspan="2">Dane per posiedzenie</td></tr>
+                                <tr><td>Dni obrad</td><td id="fovReqSessionDays">—</td></tr>
                                 <tr><td>Wypowiedzi</td><td id="fovReqTranscripts">—</td></tr>
                                 <tr><td>Głosowania</td><td id="fovReqVotings">—</td></tr>
                                 <tr><td>Głosy indywidualne</td><td id="fovReqVotes">—</td></tr>
@@ -457,6 +458,7 @@
                             </tbody>
                             <tbody>
                                 <tr class="fetch-overview-separator"><td colspan="2">Dane per posiedzenie</td></tr>
+                                <tr><td>Dni obrad</td><td id="fovGotSessionDays">—</td></tr>
                                 <tr><td>Wypowiedzi</td><td id="fovGotTranscripts">—</td></tr>
                                 <tr><td>Głosowania</td><td id="fovGotVotings">—</td></tr>
                                 <tr><td>Głosy indywidualne</td><td id="fovGotVotes">—</td></tr>
@@ -863,6 +865,18 @@
             <span id="memoryPercent" class="progress-percent">0%</span>
         </div>
 
+        <div class="status-bar-separator"></div>
+
+        <!-- [Storage] -->
+        <div id="storageSection" class="status-bar-section" title="Zajętość localStorage (limit ~5 MB)">
+            <span class="status-bar-label">Storage:</span>
+            <div id="storageLamp" class="floating-lamp floating-lamp-ok" title="Stan localStorage"></div>
+            <div class="progress-track">
+                <div id="storageProgressBar" class="progress-bar" style="width:0%"></div>
+            </div>
+            <span id="storagePercent" class="progress-percent">0%</span>
+        </div>
+
         <!-- Spacer -->
         <div class="status-bar-spacer"></div>
 
@@ -1022,6 +1036,43 @@
 
                 updateMemory();
                 setInterval(updateMemory, 3000);
+            });
+        </script>
+
+    <!-- localStorage Usage Monitor -->
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                const stBar = document.getElementById('storageProgressBar');
+                const stPct = document.getElementById('storagePercent');
+                const stLamp = document.getElementById('storageLamp');
+                const LIMIT = 5 * 1024 * 1024; // 5 MB
+
+                function updateStorage() {
+                    let totalBytes = 0;
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const key = localStorage.key(i);
+                        totalBytes += (key.length + localStorage.getItem(key).length) * 2; // UTF-16
+                    }
+                    const pct = Math.min(100, Math.round((totalBytes / LIMIT) * 100));
+                    const usedMB = (totalBytes / (1024 * 1024)).toFixed(1);
+
+                    if (stBar) {
+                        stBar.style.width = pct + '%';
+                        stBar.style.background = pct > 85 ? '#f56565' : pct > 60 ? '#f6ad55' : '#48bb78';
+                    }
+                    if (stPct) stPct.textContent = `${usedMB}MB`;
+                    if (stLamp) {
+                        stLamp.className = 'floating-lamp';
+                        if (pct > 90) stLamp.classList.add('floating-lamp-error');
+                        else if (pct > 70) stLamp.classList.add('floating-lamp-warning');
+                        else stLamp.classList.add('floating-lamp-ok');
+                    }
+                }
+
+                updateStorage();
+                setInterval(updateStorage, 5000);
+                // Update after fetch completes
+                window.addEventListener('storage', updateStorage);
             });
         </script>
 

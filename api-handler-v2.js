@@ -366,6 +366,7 @@ function updateFetchOverview() {
 
     const modules = config.modules || [];
     const stats = fetched.stats || {};
+    const reqCounts = fetched.requestedCounts || {};
 
     // Mapowanie moduł → klucz w stats
     const modToStat = {
@@ -381,19 +382,31 @@ function updateFetchOverview() {
         oswiadczenia: 'oswiadczenia_majatkowe'
     };
 
-    const setText = (id, text) => {
+    const setText = (id, text, cls) => {
         const el = document.getElementById(id);
-        if (el) el.textContent = text;
+        if (!el) return;
+        el.textContent = text;
+        if (cls) el.className = cls;
     };
 
-    const setCheck = (id, mod) => {
+    // Left column: show count if available, otherwise "tak/—"
+    const setReq = (id, mod, countValue) => {
         const el = document.getElementById(id);
         if (!el) return;
         const checked = modules.includes(mod);
-        el.textContent = checked ? 'tak' : '—';
-        el.className = checked ? 'fov-checked' : 'fov-unchecked';
+        if (!checked) {
+            el.textContent = '—';
+            el.className = 'fov-unchecked';
+        } else if (countValue !== undefined && countValue > 0) {
+            el.textContent = countValue.toLocaleString('pl-PL');
+            el.className = 'fov-value';
+        } else {
+            el.textContent = 'tak';
+            el.className = 'fov-checked';
+        }
     };
 
+    // Right column: show fetched stat count
     const setStat = (id, mod) => {
         const el = document.getElementById(id);
         if (!el) return;
@@ -416,16 +429,17 @@ function updateFetchOverview() {
     setText('fovInst', inst);
     setText('fovKadencja', config.kadencja ? `nr ${config.kadencja}` : 'wszystkie');
     setText('fovRange', `${config.rangeFrom || '?'} — ${config.rangeTo || '?'}`);
-    setCheck('fovReqDeputies', 'poslowie');
-    setCheck('fovReqSittings', 'posiedzenia');
-    setCheck('fovReqTranscripts', 'wypowiedzi');
-    setCheck('fovReqVotings', 'glosowania');
-    setCheck('fovReqVotes', 'glosy');
-    setCheck('fovReqInterpellations', 'interpelacje');
-    setCheck('fovReqQuestions', 'zapytania');
-    setCheck('fovReqBills', 'projekty_ustaw');
-    setCheck('fovReqActs', 'ustawy');
-    setCheck('fovReqDisclosures', 'oswiadczenia');
+    setReq('fovReqDeputies', 'poslowie');
+    setReq('fovReqSittings', 'posiedzenia', reqCounts.sittings);
+    setReq('fovReqSessionDays', 'wypowiedzi', reqCounts.sessionDays);
+    setReq('fovReqTranscripts', 'wypowiedzi', reqCounts.transcripts);
+    setReq('fovReqVotings', 'glosowania', reqCounts.votings);
+    setReq('fovReqVotes', 'glosy', reqCounts.votes);
+    setReq('fovReqInterpellations', 'interpelacje');
+    setReq('fovReqQuestions', 'zapytania');
+    setReq('fovReqBills', 'projekty_ustaw');
+    setReq('fovReqActs', 'ustawy');
+    setReq('fovReqDisclosures', 'oswiadczenia');
 
     // Prawa kolumna: Pobrane
     setText('fovGotInst', inst);
@@ -433,6 +447,11 @@ function updateFetchOverview() {
     setText('fovGotRange', fetched.newSittings > 0 ? `${fetched.newSittings} posiedzeń` : '—');
     setStat('fovGotDeputies', 'poslowie');
     setStat('fovGotSittings', 'posiedzenia');
+    // Dni obrad: from pipeline's sessionDays count
+    const gotSessionDays = fetched.sessionDays || 0;
+    setText('fovGotSessionDays',
+        gotSessionDays > 0 ? gotSessionDays.toLocaleString('pl-PL') : '—',
+        gotSessionDays > 0 ? 'fov-value' : 'fov-unchecked');
     setStat('fovGotTranscripts', 'wypowiedzi');
     setStat('fovGotVotings', 'glosowania');
     setStat('fovGotVotes', 'glosy');
@@ -639,13 +658,37 @@ async function startPipelineETL() {
             db2.saveToLocalStorage();
             saveLastFetchConfig(config);
 
+            // Capture requested counts from ETL form spans
+            const requestedCounts = {};
+            const sittingsSpanText = document.getElementById('etlSittingsCount')?.textContent || '';
+            const transcriptsSpanText = document.getElementById('etlTranscriptsCount')?.textContent || '';
+            const votingsSpanText = document.getElementById('etlVotingsCount')?.textContent || '';
+            const votesSpanText = document.getElementById('etlVotesCount')?.textContent || '';
+
+            const sMatch = sittingsSpanText.match(/(\d[\d\s]*)/);
+            if (sMatch) requestedCounts.sittings = parseInt(sMatch[1].replace(/\s/g, ''));
+
+            const dMatch = transcriptsSpanText.match(/(\d[\d\s]*)\s*dni/);
+            if (dMatch) requestedCounts.sessionDays = parseInt(dMatch[1].replace(/\s/g, ''));
+
+            const wMatch = transcriptsSpanText.match(/(\d[\d\s]*)\s*wyp/);
+            if (wMatch) requestedCounts.transcripts = parseInt(wMatch[1].replace(/\s/g, ''));
+
+            const vMatch = votingsSpanText.match(/(\d[\d\s]*)/);
+            if (vMatch) requestedCounts.votings = parseInt(vMatch[1].replace(/\s/g, ''));
+
+            const gMatch = votesSpanText.match(/(\d[\d\s]*)/);
+            if (gMatch) requestedCounts.votes = parseInt(gMatch[1].replace(/\s/g, ''));
+
             // Zapisz info o ostatnim pobraniu
             const lastFetch = {
                 newSittings: result.newSittings || 0,
+                sessionDays: result.sessionDays || 0,
                 savedRecords: result.savedRecords || 0,
-                stats: result.stats || {},
+                stats: stats,
                 modules: config.modules || [],
-                timestamp: result.timestamp
+                timestamp: result.timestamp,
+                requestedCounts
             };
             localStorage.setItem('nostradamnos_lastFetch', JSON.stringify(lastFetch));
 
