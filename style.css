@@ -1571,10 +1571,10 @@ input:disabled {
 }
 
 .nav-item.active {
-    background: #667eea;
+    background: #0891b2;
     color: white;
-    border-color: #667eea;
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    border-color: #0891b2;
+    box-shadow: 0 4px 12px rgba(8, 145, 178, 0.3);
 }
 
 .nav-icon {
