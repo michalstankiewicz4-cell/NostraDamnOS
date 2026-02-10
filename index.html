@@ -80,9 +80,7 @@
 
         // Map console style → default log text color
         const STYLE_DEFAULT_COLORS = {
-            'console-modern': '#1a202c',
-            'console-win10':  '#e2e8f0',
-            'console-retro':  '#e2e8f0'
+            'console-modern': '#1a202c'
         };
 
         // Called by style switcher to update default log color
@@ -705,22 +703,6 @@
             </section>
             <!-- SEKCJA 5: Ustawienia programu -->
             <section class="app-section" data-section="5" style="display:none;">
-                <!-- Sekcja 1: Zmiana stylu -->
-                <div class="console-style-panel">
-                    <div class="console-style-header">
-                        <h3>Zmiana stylu</h3>
-                    </div>
-                    <div class="console-style-body">
-                        <div class="console-style-description">
-                            <p>Wybierz wygląd konsoli, aby dopasować ją do swojego gustu. Dostępne style: Jasny, Ciemny, Retro.</p>
-                        </div>
-                        <div class="console-style-options">
-                               <button id="styleLight" class="console-style-btn active">Jasny</button>
-                               <button id="styleDark" class="console-style-btn">Ciemny</button>
-                               <button id="styleRetro" class="console-style-btn">Retro</button>
-                        </div>
-                    </div>
-                </div>
                 <!-- Sekcja 2: Zmiana języka -->
                 <div class="console-style-panel">
                     <div class="console-style-header">
@@ -966,30 +948,11 @@
     <script type="module" src="etl-bridge.js"></script>
     <script type="module" src="models.js"></script>
 
-        <!-- Konsola: obsługa stylów -->
+        <!-- Konsola: domyślny styl -->
         <script>
             document.addEventListener('DOMContentLoaded', () => {
-                const lightBtn = document.getElementById('styleLight');
-                const darkBtn = document.getElementById('styleDark');
-                const retroBtn = document.getElementById('styleRetro');
-                const body = document.body;
-                const allBtns = [lightBtn, darkBtn, retroBtn];
-                const allStyles = ['console-modern', 'console-win10', 'console-retro'];
-
-                function setStyle(addClass, activeBtn) {
-                    allStyles.forEach(s => body.classList.remove(s));
-                    body.classList.add(addClass);
-                    allBtns.forEach(b => b?.classList.remove('active'));
-                    activeBtn?.classList.add('active');
-                    window.updateLogDefaultColor && window.updateLogDefaultColor(addClass);
-                }
-
-                // Domyślny styl: Jasny
-                setStyle('console-modern', lightBtn);
-
-                lightBtn?.addEventListener('click', () => setStyle('console-modern', lightBtn));
-                darkBtn?.addEventListener('click', () => setStyle('console-win10', darkBtn));
-                retroBtn?.addEventListener('click', () => setStyle('console-retro', retroBtn));
+                document.body.classList.add('console-modern');
+                window.updateLogDefaultColor && window.updateLogDefaultColor('console-modern');
             });
         </script>
 
