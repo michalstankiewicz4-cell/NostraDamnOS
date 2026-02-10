@@ -584,7 +584,7 @@ input:disabled {
 
 /* Floating Status Bar */
 #floatingStatusBar {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-family: 'Courier New', 'Consolas', 'Monaco', monospace;
 }
 
 #consoleSection {
@@ -1405,8 +1405,6 @@ input:disabled {
     font-size: 0.8rem;
     color: #e2e8f0;
     font-family: 'Courier New', 'Consolas', 'Monaco', monospace;
-    letter-spacing: 0.5px;
-    font-weight: bold;
 }
 
 /* === SETTINGS — panele ustawień === */
