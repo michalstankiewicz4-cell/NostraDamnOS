@@ -482,10 +482,14 @@ let committeeLoadToken = 0;
 
 async function loadCommitteeOptions() {
     const select = document.getElementById('etlCommitteeSelect');
+    const countSpan = document.getElementById('etlCommitteeSittingsCount');
     if (!select) return;
 
     const committeeSittings = document.getElementById('etlCommitteeSittings');
-    if (!committeeSittings?.checked) return;
+    if (!committeeSittings?.checked) {
+        if (countSpan) countSpan.textContent = '';
+        return;
+    }
 
     const inst = document.querySelector('input[name="etlInst"]:checked')?.value || 'sejm';
     const kadencja = document.getElementById('etlTermSelect')?.value;
@@ -497,6 +501,7 @@ async function loadCommitteeOptions() {
 
     const cacheKey = `${inst}_${kadencja}`;
     const myToken = ++committeeLoadToken;
+    if (countSpan) countSpan.textContent = '(...)';
 
     // 1. Fetch committee list
     let committees = committeeListCache[cacheKey];
@@ -554,9 +559,11 @@ async function loadCommitteeOptions() {
         }
 
         if (myToken !== committeeLoadToken) return;
-        allOpt.textContent = i + BATCH_SIZE >= committees.length
+        const done = i + BATCH_SIZE >= committees.length;
+        allOpt.textContent = done
             ? `✓ Wszystkie komisje (${committees.length}) — ${totalSittings} pos. łącznie`
             : `✓ Wszystkie komisje (${committees.length}) — ładowanie...`;
+        if (done && countSpan) countSpan.textContent = `(${totalSittings})`;
     }
 }
 
