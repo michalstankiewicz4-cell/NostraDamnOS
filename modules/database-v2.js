@@ -262,6 +262,39 @@ export const db2 = {
                     console.log('[DB v2] Migration: added mowca column to wypowiedzi');
                 }
             }
+
+            // Dodaj brakujące tabele (dodane w późniejszych wersjach schematu)
+            this.database.run(`
+                CREATE TABLE IF NOT EXISTS zapytania_odpowiedzi (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    zapytanie_term INTEGER NOT NULL,
+                    zapytanie_num INTEGER NOT NULL,
+                    key TEXT NOT NULL,
+                    from_author TEXT,
+                    receiptDate TEXT,
+                    lastModified TEXT,
+                    onlyAttachment INTEGER DEFAULT 0,
+                    prolongation INTEGER DEFAULT 0,
+                    UNIQUE(zapytanie_term, zapytanie_num, key)
+                );
+                CREATE INDEX IF NOT EXISTS idx_zapytania_odpowiedzi_zapytanie ON zapytania_odpowiedzi(zapytanie_term, zapytanie_num);
+
+                CREATE TABLE IF NOT EXISTS ustawy (
+                    id_ustawy TEXT PRIMARY KEY,
+                    publisher TEXT,
+                    year INTEGER,
+                    pos INTEGER,
+                    title TEXT,
+                    type TEXT,
+                    status TEXT,
+                    promulgation TEXT,
+                    entry_into_force TEXT
+                );
+                CREATE INDEX IF NOT EXISTS idx_ustawy_year ON ustawy(year);
+                CREATE INDEX IF NOT EXISTS idx_ustawy_type ON ustawy(type);
+                CREATE INDEX IF NOT EXISTS idx_ustawy_status ON ustawy(status);
+            `);
+            console.log('[DB v2] Migration: ensured ustawy + zapytania_odpowiedzi tables exist');
         } catch (err) {
             console.warn('[DB v2] Migration error:', err);
         }
@@ -439,12 +472,17 @@ export const db2 = {
         const tables = [
             'poslowie', 'posiedzenia', 'wypowiedzi', 'glosowania', 'glosy',
             'interpelacje', 'projekty_ustaw', 'komisje', 'komisje_posiedzenia',
-            'komisje_wypowiedzi', 'oswiadczenia_majatkowe', 'zapytania'
+            'komisje_wypowiedzi', 'oswiadczenia_majatkowe', 'zapytania',
+            'zapytania_odpowiedzi', 'ustawy'
         ];
-        
+
         tables.forEach(table => {
-            const result = this.database.exec(`SELECT COUNT(*) as count FROM ${table}`);
-            stats[table] = result[0]?.values[0][0] || 0;
+            try {
+                const result = this.database.exec(`SELECT COUNT(*) as count FROM ${table}`);
+                stats[table] = result[0]?.values[0][0] || 0;
+            } catch {
+                stats[table] = 0;
+            }
         });
         
         return stats;
@@ -454,7 +492,7 @@ export const db2 = {
         const tables = [
             'poslowie', 'posiedzenia', 'wypowiedzi', 'glosowania', 'glosy',
             'interpelacje', 'projekty_ustaw', 'komisje', 'komisje_posiedzenia',
-            'komisje_wypowiedzi', 'oswiadczenia_majatkowe', 'zapytania', 'zapytania_odpowiedzi', 'metadata'
+            'komisje_wypowiedzi', 'oswiadczenia_majatkowe', 'zapytania', 'zapytania_odpowiedzi', 'ustawy', 'metadata'
         ];
         
         tables.forEach(table => {
