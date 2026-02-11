@@ -2117,13 +2117,14 @@ input:disabled {
     }
 
     .top-info-bar {
-        font-size: 0.85rem;
-        font-weight: 700;
-        -webkit-text-stroke: 0.4px currentColor;
+        font-size: 0.9rem;
+        font-weight: 900;
+        -webkit-text-stroke: 0.6px currentColor;
     }
 
     .top-info-text {
-        -webkit-text-stroke: 0.4px currentColor;
+        font-weight: 900;
+        -webkit-text-stroke: 0.6px currentColor;
     }
 
     .summary-container {
