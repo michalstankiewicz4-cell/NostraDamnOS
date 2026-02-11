@@ -23,32 +23,46 @@
 
 import { safeFetch } from '../fetcher.js';
 
-export async function fetchZapytania({ kadencja = 10, typ = 'sejm', limit = 500, offset = 0, ...options }) {
+export async function fetchZapytania({ kadencja = 10, typ = 'sejm', ...options }) {
     const base = typ === 'sejm' ? 'sejm' : 'senat';
-    
-    // Build query params
-    const params = new URLSearchParams();
-    if (limit) params.append('limit', limit);
-    if (offset) params.append('offset', offset);
-    
-    // Optional filters
-    if (options.modifiedSince) params.append('modifiedSince', options.modifiedSince);
-    if (options.delayed !== null && options.delayed !== undefined) params.append('delayed', options.delayed);
-    if (options.from) params.append('from', options.from);
-    if (options.to) params.append('to', options.to);
-    if (options.title) params.append('title', options.title);
-    if (options.since) params.append('since', options.since);
-    if (options.till) params.append('till', options.till);
-    if (options.sort_by) params.append('sort_by', options.sort_by);
-    
-    const url = `https://api.sejm.gov.pl/${base}/term${kadencja}/writtenQuestions?${params.toString()}`;
-    
+    const pageSize = 500; // API supports up to 500 per request
+    let allResults = [];
+    let offset = 0;
+
     try {
-        const data = await safeFetch(url);
-        return Array.isArray(data) ? data : [];
+        while (true) {
+            const params = new URLSearchParams();
+            params.append('limit', pageSize);
+            params.append('offset', offset);
+
+            // Optional filters
+            if (options.modifiedSince) params.append('modifiedSince', options.modifiedSince);
+            if (options.delayed !== null && options.delayed !== undefined) params.append('delayed', options.delayed);
+            if (options.from) params.append('from', options.from);
+            if (options.to) params.append('to', options.to);
+            if (options.title) params.append('title', options.title);
+            if (options.since) params.append('since', options.since);
+            if (options.till) params.append('till', options.till);
+            if (options.sort_by) params.append('sort_by', options.sort_by);
+
+            const url = `https://api.sejm.gov.pl/${base}/term${kadencja}/writtenQuestions?${params.toString()}`;
+            const data = await safeFetch(url);
+            const batch = Array.isArray(data) ? data : [];
+
+            if (batch.length === 0) break;
+
+            allResults = allResults.concat(batch);
+            console.log(`[Zapytania] Fetched ${allResults.length} (offset=${offset})`);
+
+            if (batch.length < pageSize) break; // last page
+            offset += batch.length;
+        }
+
+        console.log(`[Zapytania] Total: ${allResults.length}`);
+        return allResults;
     } catch (e) {
-        console.error(`[Zapytania] Error:`, e.message);
-        return [];
+        console.error(`[Zapytania] Error at offset ${offset}:`, e.message);
+        return allResults; // return what we got so far
     }
 }
 
