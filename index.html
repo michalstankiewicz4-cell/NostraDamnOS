@@ -1207,7 +1207,7 @@
                 // Komisje: sprawdź czy wybrano wszystkie czy jedną
                 try {
                     const lfc = JSON.parse(localStorage.getItem('nostradamnos_lastFetchConfig') || '{}');
-                    const committees = lfc.committees || ['all'];
+                    const committees = Array.isArray(lfc.committees) && lfc.committees.length > 0 ? lfc.committees : ['all'];
                     const allSelected = committees.includes('all');
 
                     // Ile komisji w API (z etl-bridge requestedCounts lub z bazy)
