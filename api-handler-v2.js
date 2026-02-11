@@ -494,7 +494,9 @@ function updateFetchOverview() {
         zapytania: 'zapytania',
         projekty_ustaw: 'projekty_ustaw',
         ustawy: 'ustawy',
-        oswiadczenia: 'oswiadczenia_majatkowe'
+        oswiadczenia: 'oswiadczenia_majatkowe',
+        komisje: 'komisje',
+        komisje_posiedzenia: 'komisje_posiedzenia'
     };
 
     const setText = (id, text, cls) => {
@@ -567,6 +569,8 @@ function updateFetchOverview() {
     setReq('fovReqBills', 'projekty_ustaw', reqCounts.projekty_ustaw);
     setReq('fovReqActs', 'ustawy', reqCounts.ustawy);
     setReq('fovReqDisclosures', 'oswiadczenia');
+    setReq('fovReqCommittees', 'komisje', reqCounts.komisje);
+    setReq('fovReqCommitteeSittings', 'komisje_posiedzenia', reqCounts.komisje_posiedzenia);
 
     // Prawa kolumna: Pobrane — ukryj gdy brak danych w DB
     setText('fovGotInst', dbHasData ? inst : '—');
@@ -625,6 +629,8 @@ function updateFetchOverview() {
     setStat('fovGotBills', 'projekty_ustaw');
     setStat('fovGotActs', 'ustawy');
     setStat('fovGotDisclosures', 'oswiadczenia');
+    setStat('fovGotCommittees', 'komisje');
+    setStat('fovGotCommitteeSittings', 'komisje_posiedzenia');
 
     panel.style.display = '';
 }
@@ -688,7 +694,7 @@ function updateEtlDetailPanel(percent, stage, details = {}) {
 
     // Sprawdź czy panel jest włączony w ustawieniach
     try {
-        const vis = JSON.parse(localStorage.getItem('nostradamnos_uiVisibility') || '{}');
+        const vis = JSON.parse(localStorage.getItem('uiVisibility') || '{}');
         if (vis.etlPanel === false) { panel.style.display = 'none'; return; }
     } catch { /* ignore */ }
 
@@ -909,8 +915,16 @@ async function startPipelineETL() {
                 { span: 'etlInterpellationsCount', key: 'interpelacje' },
                 { span: 'etlWrittenQuestionsCount', key: 'zapytania' },
                 { span: 'etlBillsCount', key: 'projekty_ustaw' },
-                { span: 'etlLegalActsCount', key: 'ustawy' }
+                { span: 'etlLegalActsCount', key: 'ustawy' },
+                { span: 'etlCommitteeSittingsCount', key: 'komisje_posiedzenia' }
             ];
+
+            // Komisje count: parse from select "all" option text "Wszystkie komisje (30)"
+            const committeeAllOpt = document.querySelector('#etlCommitteeSelect option[value="all"]');
+            if (committeeAllOpt) {
+                const cMatch = committeeAllOpt.textContent.match(/\((\d+)\)/);
+                if (cMatch) requestedCounts.komisje = parseInt(cMatch[1]);
+            }
             for (const { span, key } of perTermSpans) {
                 const text = document.getElementById(span)?.textContent || '';
                 const m = text.match(/(\d[\d\s]*)/);

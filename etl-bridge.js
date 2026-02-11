@@ -581,7 +581,21 @@ async function updatePerTermCounts() {
     // Per-kadencja module definitions
     const modules = [
         { checkbox: 'etlInterpellations', span: 'etlInterpellationsCount', key: 'interpelacje',
-          url: (i, k) => `https://api.sejm.gov.pl/${i}/term${k}/interpellations`, countFn: data => Array.isArray(data) ? data.length : 0 },
+          url: (i, k) => `https://api.sejm.gov.pl/${i}/term${k}/interpellations`, countFn: data => Array.isArray(data) ? data.length : 0,
+          paginatedCount: async (inst, kadencja) => {
+              const base = `https://api.sejm.gov.pl/${inst}/term${kadencja}/interpellations`;
+              let total = 0, offset = 0;
+              while (true) {
+                  const res = await fetch(`${base}?limit=500&offset=${offset}`);
+                  if (!res.ok) break;
+                  const data = await res.json();
+                  if (!Array.isArray(data) || data.length === 0) break;
+                  total += data.length;
+                  if (data.length < 500) break;
+                  offset += data.length;
+              }
+              return total;
+          }},
         { checkbox: 'etlWrittenQuestions', span: 'etlWrittenQuestionsCount', key: 'zapytania',
           url: (i, k) => `https://api.sejm.gov.pl/${i}/term${k}/writtenQuestions`,
           countFn: data => Array.isArray(data) ? data.length : 0,

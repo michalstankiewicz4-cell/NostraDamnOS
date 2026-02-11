@@ -1,6 +1,6 @@
 {
   "name": "Parlament P.I.M.P.",
-  "version": "4.6.0",
+  "version": "6.0.0",
   "description": "System inteligentnej analizy wypowiedzi parlamentarnych",
   "author": {
     "name": "Michał Stankiewicz",
@@ -15,7 +15,7 @@
   },
   "license": "MIT do v3.x.x",
   "created": "2026-01-24",
-  "updated": "2026-02-03",
+  "updated": "2026-02-11",
   "status": "production",
   "keywords": [
     "parlament",

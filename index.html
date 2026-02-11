@@ -439,6 +439,11 @@
                                 <tr><td>Ustawy</td><td id="fovReqActs">—</td></tr>
                                 <tr><td>Oświadczenia</td><td id="fovReqDisclosures">—</td></tr>
                             </tbody>
+                            <tbody>
+                                <tr class="fetch-overview-separator"><td colspan="2">Komisje</td></tr>
+                                <tr><td>Komisje</td><td id="fovReqCommittees">—</td></tr>
+                                <tr><td>Posiedzenia komisji</td><td id="fovReqCommitteeSittings">—</td></tr>
+                            </tbody>
                         </table>
                     </div>
                     <div class="fetch-overview-col">
@@ -468,6 +473,11 @@
                                 <tr><td>Projekty ustaw</td><td id="fovGotBills">—</td></tr>
                                 <tr><td>Ustawy</td><td id="fovGotActs">—</td></tr>
                                 <tr><td>Oświadczenia</td><td id="fovGotDisclosures">—</td></tr>
+                            </tbody>
+                            <tbody>
+                                <tr class="fetch-overview-separator"><td colspan="2">Komisje</td></tr>
+                                <tr><td>Komisje</td><td id="fovGotCommittees">—</td></tr>
+                                <tr><td>Posiedzenia komisji</td><td id="fovGotCommitteeSittings">—</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -1371,6 +1381,11 @@
             if (!isVisible) {
                 const lamp = document.getElementById('consoleLamp');
                 if (lamp) lamp.className = 'floating-lamp floating-lamp-ok';
+                // Scroll to bottom so newest logs are visible
+                const apiLogs = document.getElementById('apiLogs');
+                const floatingLogs = document.getElementById('floatingConsoleLogs');
+                if (apiLogs) apiLogs.scrollTop = apiLogs.scrollHeight;
+                if (floatingLogs) floatingLogs.scrollTop = floatingLogs.scrollHeight;
             }
         };
         
@@ -1631,6 +1646,12 @@
                 if (prev && prev.classList.contains('status-bar-separator')) {
                     prev.style.display = state[key] ? '' : 'none';
                 }
+            }
+
+            // ETL detail panel (floating progress panel, top-right)
+            const etlDetail = document.getElementById('etlDetailPanel');
+            if (etlDetail && !state.etlPanel) {
+                etlDetail.style.display = 'none';
             }
         }
 
