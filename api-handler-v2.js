@@ -1,5 +1,6 @@
 // API Handler v2.0 - Uses Pipeline ETL
 import { runPipeline, buildConfigFromUI, getCacheStatus } from './pipeline.js';
+import { fetchCounter } from './fetcher/fetcher.js';
 import { db2 } from './modules/database-v2.js';
 import ToastModule from './modules/toast.js';
 
@@ -641,12 +642,22 @@ function setLoadLamp(state) {
     }
 }
 
+let _linksPollInterval = null;
+
 function showEtlProgress() {
     const pctEl = document.getElementById('etlProgressPercent');
     const bar = document.getElementById('etlProgressBar');
     if (pctEl) pctEl.style.display = '';
     if (bar) bar.style.width = '0%';
     setLoadLamp('loading');
+    // Start live link counter polling
+    _linksPollInterval = setInterval(() => {
+        const linksEl = document.getElementById('etlDetailLinks');
+        if (linksEl && fetchCounter.count > 0) {
+            const errInfo = fetchCounter.errors > 0 ? ` (${fetchCounter.errors} err)` : '';
+            linksEl.textContent = `${fetchCounter.count} zapytań API${errInfo}`;
+        }
+    }, 300);
 }
 
 function hideEtlProgress() {
@@ -655,6 +666,8 @@ function hideEtlProgress() {
     if (pctEl) pctEl.style.display = 'none';
     if (bar) bar.style.width = '0%';
     setLoadLamp('idle');
+    // Stop link counter polling
+    if (_linksPollInterval) { clearInterval(_linksPollInterval); _linksPollInterval = null; }
     // Ukryj panel szczegółów ETL
     const detailPanel = document.getElementById('etlDetailPanel');
     if (detailPanel) detailPanel.style.display = 'none';
@@ -675,6 +688,7 @@ function updateEtlDetailPanel(percent, stage, details = {}) {
     const detailBar = document.getElementById('etlDetailBar');
     const pctEl = document.getElementById('etlDetailPercent');
     const statsEl = document.getElementById('etlDetailStats');
+    const linksEl = document.getElementById('etlDetailLinks');
     if (!panel) return;
 
     panel.style.display = '';
@@ -682,6 +696,7 @@ function updateEtlDetailPanel(percent, stage, details = {}) {
     if (detailBar) detailBar.style.width = percent + '%';
     if (pctEl) pctEl.textContent = Math.round(percent) + '%';
     if (statsEl && details.module) statsEl.textContent = details.module;
+    if (linksEl && details.linksLabel) linksEl.textContent = details.linksLabel;
 }
 
 // Export db2 globally for debugging

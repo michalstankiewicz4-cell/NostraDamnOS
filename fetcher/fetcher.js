@@ -16,15 +16,19 @@ import { fetchKomisjeWypowiedzi } from './modules/komisje_wypowiedzi.js';
 import { fetchOswiadczenia } from './modules/oswiadczenia.js';
 import { fetchSenatGlosowania } from './modules/senat_glosowania.js';
 
+// Global fetch counter (reset per pipeline run)
+export const fetchCounter = { count: 0, errors: 0 };
+
 // Safe fetch with retry + exponential backoff
 export async function safeFetch(url) {
     for (let i = 0; i < 3; i++) {
         try {
             const res = await fetch(url);
+            fetchCounter.count++;
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             return await res.json();
         } catch (e) {
-            if (i === 2) throw new Error(`API unreachable: ${url} - ${e.message}`);
+            if (i === 2) { fetchCounter.errors++; throw new Error(`API unreachable: ${url} - ${e.message}`); }
             await new Promise(r => setTimeout(r, 500 * (i + 1)));
         }
     }
@@ -35,11 +39,12 @@ export async function safeFetchText(url) {
     for (let i = 0; i < 3; i++) {
         try {
             const res = await fetch(url);
+            fetchCounter.count++;
             if (res.status === 404) return null;
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             return await res.text();
         } catch (e) {
-            if (i === 2) return null;
+            if (i === 2) { fetchCounter.errors++; return null; }
             await new Promise(r => setTimeout(r, 500 * (i + 1)));
         }
     }

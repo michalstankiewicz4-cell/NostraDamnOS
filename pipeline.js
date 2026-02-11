@@ -1,7 +1,7 @@
 // Pipeline v2.0 - Complete ETL with Incremental Cache
 // UI → Fetcher → Normalizer → Database
 
-import { runFetcher, safeFetch } from './fetcher/fetcher.js';
+import { runFetcher, safeFetch, fetchCounter } from './fetcher/fetcher.js';
 import { runNormalizer } from './normalizer/normalizer.js';
 import { db2 } from './modules/database-v2.js';
 import { applyRodo } from './modules/rodo.js';
@@ -77,11 +77,13 @@ export async function runPipeline(config, callbacks = {}) {
     }
 
     let totalRecords = 0;
+    fetchCounter.count = 0;
+    fetchCounter.errors = 0;
 
     try {
         // Step 1: Initialize database (0-5%)
         onLog('📦 Initializing database...');
-        onProgress(5, 'Initializing database');
+        onProgress(5, 'Inicjalizacja bazy');
 
         if (!db2.database) {
             await db2.init();
@@ -162,7 +164,12 @@ export async function runPipeline(config, callbacks = {}) {
         // Call fetcher with progress callback mapped to 10-85% range
         const raw = await runFetcher(fetchConfig, (fetchPct, label) => {
             const mapped = 10 + Math.round(fetchPct * 0.75); // 10% + (0-100% → 0-75%) = 10-85%
-            onProgress(Math.min(mapped, 85), `Pobieranie: ${label}`, { module: label });
+            const errInfo = fetchCounter.errors > 0 ? ` (${fetchCounter.errors} err)` : '';
+            onProgress(Math.min(mapped, 85), `Pobieranie: ${label}`, {
+                module: label,
+                links: fetchCounter.count,
+                linksLabel: `${fetchCounter.count} zapytań API${errInfo}`
+            });
         });
 
         // Apply RODO filter if enabled
@@ -180,8 +187,8 @@ export async function runPipeline(config, callbacks = {}) {
             sum + (Array.isArray(arr) ? arr.length : 0), 0
         );
 
-        onLog(`📥 Fetched ${totalRecords} raw records from API`);
-        onProgress(85, 'Pobieranie zakończone', { module: `${totalRecords} rekordów` });
+        onLog(`📥 Fetched ${totalRecords} raw records from API (${fetchCounter.count} requests)`);
+        onProgress(85, 'Pobieranie zakończone', { module: `${totalRecords} rekordów`, links: fetchCounter.count, linksLabel: `${fetchCounter.count} zapytań API` });
 
         // Step 5: Normalize and save (85-92%)
         onLog('🧹 Normalizing and saving to database...');
