@@ -1,12 +1,12 @@
 // Normalizer: komisje
 
-export function normalizeKomisje(raw) {
+export function normalizeKomisje(raw, config = {}) {
     return raw.map(k => ({
-        id_komisji: k.id || k.kod || k.id_komisji || null,
-        nazwa: k.nazwa || k.nazwaSkrocona || null,
-        skrot: k.skrot || k.kod || null,
-        typ: k.typ || 'stała',
-        kadencja: k.kadencja || null
+        id_komisji: k.code || null,
+        nazwa: k.name || null,
+        skrot: k.code || null,
+        typ: k.type === 'STANDING' ? 'stała' : k.type === 'EXTRAORDINARY' ? 'nadzwyczajna' : (k.type || 'stała'),
+        kadencja: config.kadencja || null
     }));
 }
 

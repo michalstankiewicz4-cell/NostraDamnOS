@@ -95,7 +95,7 @@ export async function runNormalizer(db, raw, config = {}) {
     
     // 8. Komisje
     if (raw.komisje && raw.komisje.length > 0) {
-        const normalized = normalizeKomisje(raw.komisje);
+        const normalized = normalizeKomisje(raw.komisje, config);
         saveKomisje(db, normalized);
         stats.komisje = normalized.length;
     }

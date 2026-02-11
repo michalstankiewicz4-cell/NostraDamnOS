@@ -2,12 +2,12 @@
 
 export function normalizeProjektyUstaw(raw) {
     return raw.map(p => ({
-        id_projektu: p.id || p.id_projektu || p.druk || null,
-        kadencja: p.kadencja || null,
-        data: p.data || p.dataWplywu || null,
-        tytul: p.tytul || p.tytulSkrocony || null,
-        status: p.status || 'w toku',
-        opis: p.opis || p.tytulPelny || ''
+        id_projektu: `${p.term || 10}_${p.number}`,
+        kadencja: p.term || null,
+        data: p.documentDate || p.deliveryDate || null,
+        tytul: p.title || null,
+        status: 'w toku',
+        opis: ''
     }));
 }
 

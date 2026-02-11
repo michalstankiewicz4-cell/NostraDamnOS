@@ -136,7 +136,8 @@ const summaryLabels = {
     komisje_posiedzenia:   { icon: '📅', label: 'Posiedzenia komisji' },
     komisje_wypowiedzi:    { icon: '🗣️', label: 'Wypowiedzi komisji' },
     oswiadczenia_majatkowe:{ icon: '💰', label: 'Oświadczenia majątkowe' },
-    ustawy:                { icon: '⚖️', label: 'Ustawy (akty prawne)' }
+    ustawy:                { icon: '⚖️', label: 'Ustawy (akty prawne)' },
+    zapytania_odpowiedzi:  { icon: '💬', label: 'Odpowiedzi na zapytania' }
 };
 
 // Kolumny do wyświetlenia per tabela (nie pokazujemy długich tekstów)
@@ -153,7 +154,8 @@ const tableColumns = {
     komisje_posiedzenia:   ['id_posiedzenia_komisji', 'id_komisji', 'numer', 'data', 'opis'],
     komisje_wypowiedzi:    ['id_posiedzenia_komisji', 'id_osoby', 'data', 'typ'],
     oswiadczenia_majatkowe:['id_oswiadczenia', 'id_osoby', 'rok', 'data_zlozenia'],
-    ustawy:                ['id_ustawy', 'publisher', 'year', 'pos', 'title', 'type', 'status']
+    ustawy:                ['id_ustawy', 'publisher', 'year', 'pos', 'title', 'type', 'status'],
+    zapytania_odpowiedzi:  ['zapytanie_term', 'zapytanie_num', 'key', 'from_author', 'receiptDate', 'onlyAttachment', 'prolongation']
 };
 
 function showSummaryTable(tableName) {
@@ -215,7 +217,7 @@ function getSqlCounts() {
     const counts = {};
     const tables = [
         'poslowie', 'posiedzenia', 'wypowiedzi', 'glosowania', 'glosy',
-        'interpelacje', 'zapytania', 'projekty_ustaw', 'komisje',
+        'interpelacje', 'zapytania', 'zapytania_odpowiedzi', 'projekty_ustaw', 'komisje',
         'komisje_posiedzenia', 'komisje_wypowiedzi', 'oswiadczenia_majatkowe', 'ustawy'
     ];
 
