@@ -826,6 +826,11 @@
                                 <input type="checkbox" id="toggleBarConsole" checked>
                                 <span>Konsola</span>
                             </label>
+                            <p style="font-size:0.85rem;color:var(--text-secondary);margin-top:10px;margin-bottom:6px">Inne:</p>
+                            <label class="settings-checkbox-label">
+                                <input type="checkbox" id="toggleEtlPanel" checked>
+                                <span>Panel ETL (prawy górny róg)</span>
+                            </label>
                         </div>
                     </div>
                 </div>
@@ -1183,6 +1188,10 @@
             let wypCoverage = null;
             let glosCoverage = null;
             let glosyCoverage = null;
+            // Pokrycie komisji: ile komisji ma posiedzenia/wypowiedzi vs total
+            let komisjeCoverage = null;
+            let komPosiedCoverage = null;
+            let komWypowCoverage = null;
             if (db2.database) {
                 try {
                     const totalR = db2.database.exec('SELECT COUNT(*) FROM posiedzenia');
@@ -1194,6 +1203,32 @@
                         glosCoverage = { covered: glosR[0]?.values[0]?.[0] || 0, total };
                         const glosyR = db2.database.exec('SELECT COUNT(DISTINCT g.id_posiedzenia) FROM glosy gl JOIN glosowania g ON gl.id_glosowania = g.id_glosowania');
                         glosyCoverage = { covered: glosyR[0]?.values[0]?.[0] || 0, total };
+                    }
+                } catch { /* ignore */ }
+
+                // Komisje: sprawdź czy wybrano wszystkie czy jedną
+                try {
+                    const lfc = JSON.parse(localStorage.getItem('nostradamnos_lastFetchConfig') || '{}');
+                    const committees = lfc.committees || ['all'];
+                    const allSelected = committees.includes('all');
+
+                    // Ile komisji w API (z etl-bridge requestedCounts lub z bazy)
+                    const totalKomR = db2.database.exec('SELECT COUNT(*) FROM komisje');
+                    const totalKom = totalKomR[0]?.values[0]?.[0] || 0;
+
+                    if (totalKom > 0) {
+                        // Komisje: zielone gdy all, żółte gdy wybrane
+                        komisjeCoverage = { allSelected, totalKom };
+
+                        // Posiedzenia komisji: ile komisji ma posiedzenia
+                        const komPR = db2.database.exec('SELECT COUNT(DISTINCT id_komisji) FROM komisje_posiedzenia');
+                        const komPCovered = komPR[0]?.values[0]?.[0] || 0;
+                        komPosiedCoverage = { covered: komPCovered, total: totalKom, allSelected };
+
+                        // Wypowiedzi komisji: ile komisji ma wypowiedzi
+                        const komWR = db2.database.exec('SELECT COUNT(DISTINCT kp.id_komisji) FROM komisje_wypowiedzi kw JOIN komisje_posiedzenia kp ON kw.id_posiedzenia_komisji = kp.id_posiedzenia_komisji');
+                        const komWCovered = komWR[0]?.values[0]?.[0] || 0;
+                        komWypowCoverage = { covered: komWCovered, total: totalKom, allSelected };
                     }
                 } catch { /* ignore */ }
             }
@@ -1210,8 +1245,12 @@
                     } catch { /* table may not exist */ }
                 }
 
-                // Wypowiedzi i głosowania: porównaj pokrycie posiedzeń
+                // Wypowiedzi, głosowania, głosy: porównaj pokrycie posiedzeń
                 const cov = mod.table === 'wypowiedzi' ? wypCoverage : mod.table === 'glosowania' ? glosCoverage : mod.table === 'glosy' ? glosyCoverage : null;
+                // Komisje: porównaj pokrycie komisji
+                const komCov = mod.table === 'komisje' ? komisjeCoverage
+                    : mod.table === 'komisje_posiedzenia' ? komPosiedCoverage
+                    : mod.table === 'komisje_wypowiedzi' ? komWypowCoverage : null;
                 if (cov) {
                     if (count > 0 && cov.covered >= cov.total) {
                         seg.classList.add('cached');
@@ -1221,6 +1260,26 @@
                         seg.title = `${mod.label}: ${count.toLocaleString('pl-PL')} (${cov.covered}/${cov.total} posiedzeń)`;
                     } else {
                         seg.title = `${mod.label}: puste`;
+                    }
+                } else if (komCov && count > 0) {
+                    if (mod.table === 'komisje') {
+                        // Komisje: zielone gdy all, żółte gdy wybrana jedna
+                        if (komCov.allSelected) {
+                            seg.classList.add('cached');
+                            seg.title = `${mod.label}: ${count.toLocaleString('pl-PL')} (wszystkie)`;
+                        } else {
+                            seg.classList.add('partial');
+                            seg.title = `${mod.label}: ${count.toLocaleString('pl-PL')} (wybrane)`;
+                        }
+                    } else {
+                        // komisje_posiedzenia / komisje_wypowiedzi
+                        if (komCov.allSelected && komCov.covered >= komCov.total) {
+                            seg.classList.add('cached');
+                            seg.title = `${mod.label}: ${count.toLocaleString('pl-PL')} (${komCov.covered}/${komCov.total} komisji)`;
+                        } else {
+                            seg.classList.add('partial');
+                            seg.title = `${mod.label}: ${count.toLocaleString('pl-PL')} (${komCov.covered}/${komCov.total} komisji)`;
+                        }
                     }
                 } else {
                     const exp = expected[mod.table] || 0;
@@ -1522,7 +1581,8 @@
             barMemory: false,
             barStorage: false,
             barCache: true,
-            barConsole: true
+            barConsole: true,
+            etlPanel: true
         };
 
         function load() {
@@ -1633,6 +1693,10 @@
             if (chk) chk.checked = !!state[key];
         }
 
+        // ETL panel toggle
+        const chkEtlPanel = document.getElementById('toggleEtlPanel');
+        if (chkEtlPanel) chkEtlPanel.checked = !!state.etlPanel;
+
         apply(state);
 
         function onToggle(key, checkbox) {
@@ -1653,6 +1717,7 @@
         for (const { key, id } of barToggles) {
             onToggle(key, document.getElementById(id));
         }
+        onToggle('etlPanel', chkEtlPanel);
     })();
     </script>
 </body>

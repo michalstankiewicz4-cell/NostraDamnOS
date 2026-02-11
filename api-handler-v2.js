@@ -684,12 +684,19 @@ function updateEtlProgress(percent, stage, details) {
 
 function updateEtlDetailPanel(percent, stage, details = {}) {
     const panel = document.getElementById('etlDetailPanel');
+    if (!panel) return;
+
+    // Sprawdź czy panel jest włączony w ustawieniach
+    try {
+        const vis = JSON.parse(localStorage.getItem('nostradamnos_uiVisibility') || '{}');
+        if (vis.etlPanel === false) { panel.style.display = 'none'; return; }
+    } catch { /* ignore */ }
+
     const stageEl = document.getElementById('etlDetailStage');
     const detailBar = document.getElementById('etlDetailBar');
     const pctEl = document.getElementById('etlDetailPercent');
     const statsEl = document.getElementById('etlDetailStats');
     const linksEl = document.getElementById('etlDetailLinks');
-    if (!panel) return;
 
     panel.style.display = '';
     if (stageEl && stage) stageEl.textContent = stage;
