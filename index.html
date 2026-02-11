@@ -747,6 +747,37 @@
                             </label>
                         </div>
                         <div class="settings-checkboxes" style="margin-top:10px">
+                            <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:6px">Przyciski boczne:</p>
+                            <label class="settings-checkbox-label">
+                                <input type="checkbox" id="toggleBtnImport" checked>
+                                <span>Import bazy</span>
+                            </label>
+                            <label class="settings-checkbox-label">
+                                <input type="checkbox" id="toggleBtnExport" checked>
+                                <span>Export bazy</span>
+                            </label>
+                            <label class="settings-checkbox-label">
+                                <input type="checkbox" id="toggleBtnAi" checked>
+                                <span>Asystent AI</span>
+                            </label>
+                            <label class="settings-checkbox-label">
+                                <input type="checkbox" id="toggleBtnAbout" checked>
+                                <span>Informacje o wersji</span>
+                            </label>
+                            <label class="settings-checkbox-label">
+                                <input type="checkbox" id="toggleBtnLanguage">
+                                <span style="opacity:0.5">Zmiana języka (niedostępna)</span>
+                            </label>
+                            <label class="settings-checkbox-label">
+                                <input type="checkbox" id="toggleBtnHelp" checked>
+                                <span>Podpowiedzi</span>
+                            </label>
+                            <label class="settings-checkbox-label">
+                                <input type="checkbox" id="toggleBtnReset">
+                                <span>Reset pamięci</span>
+                            </label>
+                        </div>
+                        <div class="settings-checkboxes" style="margin-top:10px">
                             <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:6px">Elementy paska statusu:</p>
                             <label class="settings-checkbox-label">
                                 <input type="checkbox" id="toggleBarVersion" checked>
@@ -815,16 +846,13 @@
     </div>
 
     <!-- Floating UI Buttons -->
-    <button id="toggleUIBtn" class="floating-btn btn-toggle" title="Ustawienia">⚙️</button>
-    <div id="uiHoldProgress" aria-hidden="true">
-        <div id="uiHoldProgressBar"></div>
-    </div>
     <button id="aiChatBtn" class="floating-btn btn-ai-chat" title="AI Asystent">🤖</button>
     <button id="exportDbBtn" class="floating-btn btn-export" title="Export bazy danych">📤</button>
     <button id="importDbBtn" class="floating-btn btn-import" title="Import bazy danych">📥</button>
     <button id="helpBtn" class="floating-btn btn-help" title="Podpowiedzi (TODO)">❓</button>
     <button id="aboutBtn" class="floating-btn btn-rodo" title="O projekcie">ℹ️</button>
     <button id="languageBtn" class="floating-btn btn-language" title="Zmień język (TODO)">🇵🇱</button>
+    <button id="resetMemoryBtn" class="floating-btn btn-reset-memory" title="Reset pamięci" style="display:none">🗑️</button>
 
     <!-- Floating Status Bar (Bottom) -->
     <div id="floatingStatusBar" class="floating-status-bar">
@@ -1236,7 +1264,16 @@
                 console.log('❓ TODO: Podpowiedzi');
                 alert('❓ Podpowiedzi\n\nSystem podpowiedzi w przygotowaniu (TODO v5.0)');
             });
-            
+
+            const resetMemoryBtn = document.getElementById('resetMemoryBtn');
+            addButtonAnimation(resetMemoryBtn, () => {
+                if (confirm('Czy na pewno chcesz zresetować pamięć przeglądarki?\n\nTo usunie zapisane pozycje przycisków i ustawienia interfejsu.')) {
+                    import('./modules/floating-drag.js').then(m => m.resetFloatingButtonPositions());
+                    localStorage.removeItem('uiVisibility');
+                    location.reload();
+                }
+            });
+
             // Summary import/export buttons → proxy to floating buttons
             document.getElementById('summaryImportDb')?.addEventListener('click', () => {
                 document.getElementById('importDbBtn')?.click();
@@ -1316,6 +1353,13 @@
             floatingBtns: true,
             topBar: true,
             bottomBar: true,
+            btnImport: true,
+            btnExport: true,
+            btnAi: true,
+            btnAbout: true,
+            btnHelp: true,
+            btnLanguage: false,
+            btnReset: false,
             barVersion: true,
             barDb: true,
             barAi: true,
@@ -1337,7 +1381,7 @@
         }
 
         function apply(state) {
-            // Floating buttons — delegate to UI mode manager
+            // Floating buttons — delegate to UI mode manager (handles master toggle + per-button)
             if (typeof window._updateUIMode === 'function') {
                 window._updateUIMode();
             }
@@ -1366,7 +1410,6 @@
                 const el = document.getElementById(id);
                 if (!el) continue;
                 el.style.display = state[key] ? '' : 'none';
-                // Hide preceding separator when section is hidden
                 const prev = el.previousElementSibling;
                 if (prev && prev.classList.contains('status-bar-separator')) {
                     prev.style.display = state[key] ? '' : 'none';
@@ -1383,6 +1426,21 @@
         if (chkBtns) chkBtns.checked = state.floatingBtns;
         if (chkTop) chkTop.checked = state.topBar;
         if (chkBottom) chkBottom.checked = state.bottomBar;
+
+        // Per-button checkboxes
+        const btnToggles = [
+            { key: 'btnImport', id: 'toggleBtnImport' },
+            { key: 'btnExport', id: 'toggleBtnExport' },
+            { key: 'btnAi', id: 'toggleBtnAi' },
+            { key: 'btnAbout', id: 'toggleBtnAbout' },
+            { key: 'btnHelp', id: 'toggleBtnHelp' },
+            { key: 'btnLanguage', id: 'toggleBtnLanguage' },
+            { key: 'btnReset', id: 'toggleBtnReset' }
+        ];
+        for (const { key, id } of btnToggles) {
+            const chk = document.getElementById(id);
+            if (chk) chk.checked = !!state[key];
+        }
 
         // Bar section checkboxes
         const barToggles = [
@@ -1413,6 +1471,9 @@
         onToggle('floatingBtns', chkBtns);
         onToggle('topBar', chkTop);
         onToggle('bottomBar', chkBottom);
+        for (const { key, id } of btnToggles) {
+            onToggle(key, document.getElementById(id));
+        }
         for (const { key, id } of barToggles) {
             onToggle(key, document.getElementById(id));
         }

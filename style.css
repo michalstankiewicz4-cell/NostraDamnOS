@@ -487,43 +487,10 @@ input:disabled {
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
 }
 
-/* Toggle Button (always visible) */
-.btn-toggle {
-    display: flex;
-    z-index: 2001;
-    top: 20px;
-    left: 20px;
-    background: linear-gradient(135deg, #06b6d4, #0891b2);
-}
-
-/* UI Hold Progress (10s reset) */
-#uiHoldProgress {
-    position: fixed;
-    left: 90px;
-    top: 20px;
-    width: 140px;
-    height: 8px;
-    background: rgba(15, 23, 42, 0.35);
-    border: 1px solid rgba(148, 163, 184, 0.4);
-    border-radius: 999px;
-    overflow: hidden;
-    display: none;
-    z-index: 2002;
-    pointer-events: none;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
-}
-
-#uiHoldProgressBar {
-    height: 100%;
-    width: 0%;
-    background: linear-gradient(90deg, #22c55e, #16a34a);
-    transition: width 0.05s linear;
-}
-
 /* AI Chat Button */
 .btn-ai-chat {
     display: none;
-    top: 90px;
+    top: 20px;
     left: 20px;
     background: linear-gradient(135deg, #06b6d4, #0891b2);
 }
@@ -531,7 +498,7 @@ input:disabled {
 /* Export Button */
 .btn-export {
     display: none;
-    top: 160px;
+    top: 90px;
     left: 20px;
     background: linear-gradient(135deg, #06b6d4, #0891b2);
 }
@@ -539,7 +506,7 @@ input:disabled {
 /* Import Button */
 .btn-import {
     display: none;
-    top: 230px;
+    top: 160px;
     left: 20px;
     background: linear-gradient(135deg, #06b6d4, #0891b2);
 }
@@ -547,7 +514,7 @@ input:disabled {
 /* Help Button */
 .btn-help {
     display: none;
-    top: 300px;
+    top: 230px;
     left: 20px;
     background: linear-gradient(135deg, #06b6d4, #0891b2);
 }
@@ -555,7 +522,7 @@ input:disabled {
 /* About Button */
 .btn-rodo {
     display: none;
-    top: 370px;
+    top: 300px;
     left: 20px;
     background: linear-gradient(135deg, #06b6d4, #0891b2);
 }
@@ -563,9 +530,17 @@ input:disabled {
 /* Language Button */
 .btn-language {
     display: none;
-    top: 440px;
+    top: 370px;
     left: 20px;
     background: linear-gradient(135deg, #06b6d4, #0891b2);
+}
+
+/* Reset Memory Button */
+.btn-reset-memory {
+    display: none;
+    top: 440px;
+    left: 20px;
+    background: linear-gradient(135deg, #ef4444, #dc2626);
 }
 
 /* ETL Utility Classes */
