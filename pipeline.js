@@ -6,6 +6,61 @@ import { runNormalizer } from './normalizer/normalizer.js';
 import { db2 } from './modules/database-v2.js';
 import { applyRodo } from './modules/rodo.js';
 
+// Skip per-term modules that already have data in DB for this kadencja
+function filterCachedModules(db, config, onLog) {
+    if (!db.database) return;
+
+    const k = parseInt(config.kadencja);
+    if (isNaN(k)) return;
+
+    const year = config.ustawyYear || new Date().getFullYear();
+
+    // Module → SQL cache check (per kadencja where possible)
+    const checks = {
+        interpelacje:        `SELECT COUNT(*) FROM interpelacje WHERE id_interpelacji LIKE '${k}_%'`,
+        zapytania:           `SELECT COUNT(*) FROM zapytania WHERE term = ${k}`,
+        projekty_ustaw:      `SELECT COUNT(*) FROM projekty_ustaw WHERE kadencja = ${k}`,
+        komisje:             `SELECT COUNT(*) FROM komisje WHERE kadencja = ${k}`,
+        komisje_posiedzenia: `SELECT COUNT(*) FROM komisje_posiedzenia kp JOIN komisje k ON kp.id_komisji = k.id_komisji WHERE k.kadencja = ${k}`,
+        komisje_wypowiedzi:  `SELECT COUNT(*) FROM komisje_wypowiedzi kw JOIN komisje_posiedzenia kp ON kw.id_posiedzenia_komisji = kp.id_posiedzenia_komisji JOIN komisje k ON kp.id_komisji = k.id_komisji WHERE k.kadencja = ${k}`,
+        ustawy:              `SELECT COUNT(*) FROM ustawy WHERE year = ${year}`,
+        oswiadczenia:        `SELECT COUNT(*) FROM oswiadczenia_majatkowe om JOIN poslowie p ON om.id_osoby = p.id_osoby WHERE p.kadencja = ${k}`
+    };
+
+    // Run cache checks for modules in config
+    const cached = {};
+    for (const [mod, sql] of Object.entries(checks)) {
+        if (!config.modules.includes(mod)) continue;
+        try {
+            const result = db.database.exec(sql);
+            cached[mod] = result[0]?.values[0]?.[0] || 0;
+        } catch {
+            cached[mod] = 0;
+        }
+    }
+
+    const skipped = [];
+    for (const [mod, count] of Object.entries(cached)) {
+        if (count === 0) continue;
+
+        // Respect dependency chains: don't skip if downstream module needs fresh data
+        if (mod === 'komisje' && (
+            (config.modules.includes('komisje_posiedzenia') && !cached.komisje_posiedzenia) ||
+            (config.modules.includes('komisje_wypowiedzi') && !cached.komisje_wypowiedzi)
+        )) continue;
+        if (mod === 'komisje_posiedzenia' &&
+            config.modules.includes('komisje_wypowiedzi') && !cached.komisje_wypowiedzi
+        ) continue;
+
+        config.modules = config.modules.filter(m => m !== mod);
+        skipped.push(`${mod} (${count})`);
+    }
+
+    if (skipped.length > 0) {
+        onLog(`📦 Cache: ${skipped.join(', ')} — pomijam pobieranie`);
+    }
+}
+
 export async function runPipeline(config, callbacks = {}) {
     console.log('🚀 Pipeline v2.0 - Starting ETL');
 
@@ -88,6 +143,11 @@ export async function runPipeline(config, callbacks = {}) {
 
         onLog(`📌 Found ${sittingsToFetch.length} new sittings to fetch`);
         onLog(`📌 Range: ${Math.min(...sittingsToFetch)} - ${Math.max(...sittingsToFetch)}`);
+
+        // Step 3.5: Skip per-term modules already cached in DB
+        if (config.fetchMode !== 'full' && config.kadencja) {
+            filterCachedModules(db2, config, onLog);
+        }
 
         // Step 4: Fetch all data using runFetcher (20-70%)
         onLog('⬇️ Fetching data from API...');
