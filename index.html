@@ -1290,14 +1290,14 @@
                     }
                 } else {
                     const exp = expected[mod.table] || 0;
-                    if (count > 0 && exp > 0 && count >= exp) {
+                    if (count > 0 && (exp === 0 || count >= exp)) {
                         seg.classList.add('cached');
-                        seg.title = `${mod.label}: ${count.toLocaleString('pl-PL')} (kompletne)`;
+                        seg.title = exp > 0
+                            ? `${mod.label}: ${count.toLocaleString('pl-PL')} (kompletne)`
+                            : `${mod.label}: ${count.toLocaleString('pl-PL')}`;
                     } else if (count > 0) {
                         seg.classList.add('partial');
-                        seg.title = exp > 0
-                            ? `${mod.label}: ${count.toLocaleString('pl-PL')} / ${exp.toLocaleString('pl-PL')}`
-                            : `${mod.label}: ${count.toLocaleString('pl-PL')}`;
+                        seg.title = `${mod.label}: ${count.toLocaleString('pl-PL')} / ${exp.toLocaleString('pl-PL')}`;
                     } else {
                         seg.title = `${mod.label}: puste`;
                     }
