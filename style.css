@@ -1621,7 +1621,7 @@ input:disabled {
     padding: 8px;
     z-index: 900;
     overflow: hidden;
-    max-width: calc(3 * 95px + 2 * 5px + 16px); /* 3 items visible */
+    max-width: calc(3 * 95px + 2 * 5px + 16px + 50px); /* 3 items visible + 50px */
     cursor: grab;
 }
 
@@ -2081,7 +2081,7 @@ input:disabled {
     .bottom-nav {
         bottom: 60px;
         padding: 5px;
-        max-width: calc(3 * 85px + 2 * 3px + 10px);
+        max-width: calc(3 * 85px + 2 * 3px + 10px + 50px);
     }
 
     .nav-carousel {
@@ -2099,8 +2099,17 @@ input:disabled {
     
     .nav-label {
         font-size: 0.65rem;
+        font-weight: 700;
         text-align: center;
         display: block;
+    }
+
+    .floating-status-bar {
+        font-weight: 700;
+    }
+
+    .status-bar-label {
+        font-weight: 700;
     }
     
     .summary-container {
