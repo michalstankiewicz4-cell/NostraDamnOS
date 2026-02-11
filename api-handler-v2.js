@@ -454,7 +454,21 @@ function updateFetchOverview() {
         gotSessionDays > 0 ? 'fov-value' : 'fov-unchecked');
     setStat('fovGotTranscripts', 'wypowiedzi');
     setStat('fovGotVotings', 'glosowania');
-    setStat('fovGotVotes', 'glosy');
+    // Głosy indywidualne: użyj individualVotes (z totalVoted) bo moduł glosy jest wyłączony
+    const indVotes = fetched.individualVotes || 0;
+    const votesEl = document.getElementById('fovGotVotes');
+    if (votesEl) {
+        if (indVotes > 0 && modules.includes('glosy')) {
+            votesEl.textContent = indVotes.toLocaleString('pl-PL');
+            votesEl.className = 'fov-value';
+        } else if (modules.includes('glosy')) {
+            votesEl.textContent = '0';
+            votesEl.className = 'fov-unchecked';
+        } else {
+            votesEl.textContent = '—';
+            votesEl.className = 'fov-unchecked';
+        }
+    }
     setStat('fovGotInterpellations', 'interpelacje');
     setStat('fovGotQuestions', 'zapytania');
     setStat('fovGotBills', 'projekty_ustaw');
@@ -693,15 +707,16 @@ async function startPipelineETL() {
                 if (m) requestedCounts[key] = parseInt(m[1].replace(/\s/g, ''));
             }
 
-            // Fallback: jeśli zliczanie z ETL spanów nie zdążyło, użyj stats z pipeline
+            // Fallback: jeśli zliczanie z ETL spanów nie zdążyło, użyj danych z pipeline
             if (!requestedCounts.votings && stats.glosowania > 0) requestedCounts.votings = stats.glosowania;
-            if (!requestedCounts.votes && stats.glosy > 0) requestedCounts.votes = stats.glosy;
+            if (!requestedCounts.votes && result.individualVotes > 0) requestedCounts.votes = result.individualVotes;
             if (!requestedCounts.transcripts && stats.wypowiedzi > 0) requestedCounts.transcripts = stats.wypowiedzi;
 
             // Zapisz info o ostatnim pobraniu
             const lastFetch = {
                 newSittings: result.newSittings || 0,
                 sessionDays: result.sessionDays || 0,
+                individualVotes: result.individualVotes || 0,
                 savedRecords: result.savedRecords || 0,
                 stats: stats,
                 modules: config.modules || [],

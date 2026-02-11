@@ -167,6 +167,14 @@ export async function runPipeline(config, callbacks = {}) {
             }
         }
 
+        // Count individual votes from glosowania totalVoted field
+        let individualVotes = 0;
+        if (Array.isArray(processedRaw.glosowania)) {
+            for (const g of processedRaw.glosowania) {
+                individualVotes += g.totalVoted || 0;
+            }
+        }
+
         const result = {
             success: true,
             stats,
@@ -174,6 +182,7 @@ export async function runPipeline(config, callbacks = {}) {
             savedRecords: Object.values(stats).reduce((a, b) => a + b, 0),
             newSittings: sittingsToFetch.length,
             sessionDays,
+            individualVotes,
             timestamp: new Date().toISOString()
         };
 
@@ -205,6 +214,7 @@ async function runMultiTermPipeline(config, callbacks) {
     let totalFetched = 0;
     let totalSaved = 0;
     let totalSessionDays = 0;
+    let totalIndividualVotes = 0;
 
     for (let i = 0; i < kadencje.length; i++) {
         const k = kadencje[i];
@@ -231,6 +241,7 @@ async function runMultiTermPipeline(config, callbacks) {
             totalFetched += subResult.fetchedRecords || 0;
             totalSaved += subResult.savedRecords || 0;
             totalSessionDays += subResult.sessionDays || 0;
+            totalIndividualVotes += subResult.individualVotes || 0;
         } else if (!subResult.success) {
             onLog(`⚠️ Kadencja ${k} zakończona z błędem: ${subResult.error}`);
         }
@@ -246,6 +257,7 @@ async function runMultiTermPipeline(config, callbacks) {
         fetchedRecords: totalFetched,
         savedRecords: totalSaved,
         sessionDays: totalSessionDays,
+        individualVotes: totalIndividualVotes,
         kadencje,
         timestamp: new Date().toISOString()
     };
