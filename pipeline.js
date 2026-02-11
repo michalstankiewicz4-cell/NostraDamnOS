@@ -16,27 +16,33 @@ function filterCachedModules(db, config, onLog) {
     const year = config.ustawyYear || new Date().getFullYear();
 
     // Module → SQL cache check (per kadencja where possible)
+    function countQuery(sql, params) {
+        try {
+            const stmt = db.database.prepare(sql);
+            stmt.bind(params);
+            let val = 0;
+            if (stmt.step()) val = stmt.get()[0] || 0;
+            stmt.free();
+            return val;
+        } catch { return 0; }
+    }
+
     const checks = {
-        interpelacje:        `SELECT COUNT(*) FROM interpelacje WHERE id_interpelacji LIKE '${k}_%'`,
-        zapytania:           `SELECT COUNT(*) FROM zapytania WHERE term = ${k}`,
-        projekty_ustaw:      `SELECT COUNT(*) FROM projekty_ustaw WHERE kadencja = ${k}`,
-        komisje:             `SELECT COUNT(*) FROM komisje WHERE kadencja = ${k}`,
-        komisje_posiedzenia: `SELECT COUNT(*) FROM komisje_posiedzenia kp JOIN komisje k ON kp.id_komisji = k.id_komisji WHERE k.kadencja = ${k}`,
-        komisje_wypowiedzi:  `SELECT COUNT(*) FROM komisje_wypowiedzi kw JOIN komisje_posiedzenia kp ON kw.id_posiedzenia_komisji = kp.id_posiedzenia_komisji JOIN komisje k ON kp.id_komisji = k.id_komisji WHERE k.kadencja = ${k}`,
-        ustawy:              `SELECT COUNT(*) FROM ustawy WHERE year = ${year}`,
-        oswiadczenia:        `SELECT COUNT(*) FROM oswiadczenia_majatkowe om JOIN poslowie p ON om.id_osoby = p.id_osoby WHERE p.kadencja = ${k}`
+        interpelacje:        ['SELECT COUNT(*) FROM interpelacje WHERE id_interpelacji LIKE ?', [k + '_%']],
+        zapytania:           ['SELECT COUNT(*) FROM zapytania WHERE term = ?', [k]],
+        projekty_ustaw:      ['SELECT COUNT(*) FROM projekty_ustaw WHERE kadencja = ?', [k]],
+        komisje:             ['SELECT COUNT(*) FROM komisje WHERE kadencja = ?', [k]],
+        komisje_posiedzenia: ['SELECT COUNT(*) FROM komisje_posiedzenia kp JOIN komisje k ON kp.id_komisji = k.id_komisji WHERE k.kadencja = ?', [k]],
+        komisje_wypowiedzi:  ['SELECT COUNT(*) FROM komisje_wypowiedzi kw JOIN komisje_posiedzenia kp ON kw.id_posiedzenia_komisji = kp.id_posiedzenia_komisji JOIN komisje k ON kp.id_komisji = k.id_komisji WHERE k.kadencja = ?', [k]],
+        ustawy:              ['SELECT COUNT(*) FROM ustawy WHERE year = ?', [year]],
+        oswiadczenia:        ['SELECT COUNT(*) FROM oswiadczenia_majatkowe om JOIN poslowie p ON om.id_osoby = p.id_osoby WHERE p.kadencja = ?', [k]]
     };
 
     // Run cache checks for modules in config
     const cached = {};
-    for (const [mod, sql] of Object.entries(checks)) {
+    for (const [mod, [sql, params]] of Object.entries(checks)) {
         if (!config.modules.includes(mod)) continue;
-        try {
-            const result = db.database.exec(sql);
-            cached[mod] = result[0]?.values[0]?.[0] || 0;
-        } catch {
-            cached[mod] = 0;
-        }
+        cached[mod] = countQuery(sql, params);
     }
 
     const skipped = [];
@@ -154,7 +160,6 @@ export async function runPipeline(config, callbacks = {}) {
             try {
                 const rows = db2.database.exec('SELECT id_komisji AS code, nazwa AS name FROM komisje');
                 if (rows.length > 0) {
-                    cachedKomisje = rows[0].columns.reduce((arr, _, i) => arr, []);
                     cachedKomisje = rows[0].values.map(r => ({ code: r[0], name: r[1] }));
                     onLog(`📌 Loaded ${cachedKomisje.length} komisje from cache for dependency`);
                 }
@@ -548,7 +553,10 @@ export async function verifyDatabase(db) {
         return { ...chk, dbCount, apiCount };
     });
 
-    const checkResults = await Promise.all(promises);
+    const settled = await Promise.allSettled(promises);
+    const checkResults = settled
+        .filter(r => r.status === 'fulfilled')
+        .map(r => r.value);
 
     for (const chk of checkResults) {
         if (chk.apiCount < 0) {

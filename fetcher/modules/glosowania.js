@@ -15,8 +15,12 @@ export async function fetchGlosowania(config) {
     
     for (const num of sittingNumbers) {
         const url = `https://api.sejm.gov.pl/${base}/term${kadencja}/votings/${num}`;
-        const data = await safeFetch(url);
-        results.push(...(Array.isArray(data) ? data : []));
+        try {
+            const data = await safeFetch(url);
+            results.push(...(Array.isArray(data) ? data : []));
+        } catch (e) {
+            console.warn(`[Glosowania] Failed for sitting ${num}:`, e.message);
+        }
     }
     
     return results;

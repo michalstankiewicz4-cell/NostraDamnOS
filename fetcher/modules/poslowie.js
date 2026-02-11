@@ -2,7 +2,6 @@
 // Fetches deputies list (Sejm) with extended functionality
 
 import { safeFetch } from '../fetcher.js';
-import { fetchInterpelacje, findInterpelacjeByPosel } from './interpelacje.js';
 
 /**
  * Pobiera listę posłów
@@ -15,7 +14,12 @@ export async function fetchPoslowie({ kadencja = 10, typ = 'sejm' }) {
 
     const url = `https://api.sejm.gov.pl/sejm/term${kadencja}/MP`;
 
-    return await safeFetch(url);
+    try {
+        return await safeFetch(url);
+    } catch (e) {
+        console.warn(`[Poslowie] Failed:`, e.message);
+        return [];
+    }
 }
 
 /**

@@ -12,10 +12,13 @@ export async function fetchInterpelacje({ kadencja, typ = 'sejm' }) {
     // API endpoint z term
     const url = `https://api.sejm.gov.pl/${base}/term${kadencja}/interpellations`;
     
-    const allData = await safeFetch(url);
-    
-    // Endpoint zwraca dane już przefiltrowane dla kadencji
-    return Array.isArray(allData) ? allData : [];
+    try {
+        const allData = await safeFetch(url);
+        return Array.isArray(allData) ? allData : [];
+    } catch (e) {
+        console.warn(`[Interpelacje] Failed:`, e.message);
+        return [];
+    }
 }
 
 /**

@@ -402,8 +402,12 @@ export const db2 = {
     
     getMetadata(klucz) {
         try {
-            const r = this.database.exec(`SELECT wartosc FROM metadata WHERE klucz = '${klucz}'`);
-            return r[0]?.values[0]?.[0] || null;
+            const stmt = this.database.prepare('SELECT wartosc FROM metadata WHERE klucz = ?');
+            stmt.bind([klucz]);
+            let val = null;
+            if (stmt.step()) val = stmt.get()[0];
+            stmt.free();
+            return val;
         } catch { return null; }
     },
 

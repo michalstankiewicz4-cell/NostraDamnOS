@@ -9,6 +9,11 @@ export async function fetchPosiedzenia({ kadencja, typ = 'sejm' }) {
     // API endpoint z term — zwraca pełną listę posiedzeń jako metadane referencyjne
     const url = `https://api.sejm.gov.pl/${base}/term${kadencja}/proceedings`;
 
-    const allData = await safeFetch(url);
-    return Array.isArray(allData) ? allData : [];
+    try {
+        const allData = await safeFetch(url);
+        return Array.isArray(allData) ? allData : [];
+    } catch (e) {
+        console.warn(`[Posiedzenia] Failed:`, e.message);
+        return [];
+    }
 }
