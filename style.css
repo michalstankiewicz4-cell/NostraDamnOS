@@ -1483,7 +1483,7 @@ input:disabled {
 .cache-bar {
     display: flex;
     align-items: center;
-    gap: 0;
+    gap: 1px;
     height: 10px;
     border: 1px solid #404040;
     overflow: hidden;
