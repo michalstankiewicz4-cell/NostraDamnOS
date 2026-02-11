@@ -453,9 +453,9 @@ function updateFetchOverview() {
     const stats = fetched.stats || {};
     const reqCounts = fetched.requestedCounts || {};
 
-    // Live SQL counts from database
+    // Live SQL counts from database (includes dni_obrad)
     let sqlStats = {};
-    try { sqlStats = db2.getStats(); } catch { /* db not ready */ }
+    try { sqlStats = getSqlCounts(); } catch { /* db not ready */ }
 
     // Mapowanie moduł → klucz w stats
     const modToStat = {
@@ -538,23 +538,37 @@ function updateFetchOverview() {
     setText('fovGotRange', fetched.newSittings > 0 ? `${fetched.newSittings} posiedzeń` : '—');
     setStat('fovGotDeputies', 'poslowie');
     setStat('fovGotSittings', 'posiedzenia');
-    // Dni obrad: from pipeline's sessionDays count
+    // Dni obrad: from pipeline's sessionDays count + sql
     const gotSessionDays = fetched.sessionDays || 0;
-    setText('fovGotSessionDays',
-        gotSessionDays > 0 ? gotSessionDays.toLocaleString('pl-PL') : '—',
-        gotSessionDays > 0 ? 'fov-value' : 'fov-unchecked');
+    const sqlSessionDays = sqlStats.dni_obrad || 0;
+    const sessionDaysSql = sqlSessionDays > 0 ? ` sql(${sqlSessionDays.toLocaleString('pl-PL')})` : '';
+    const sessionDaysEl = document.getElementById('fovGotSessionDays');
+    if (sessionDaysEl) {
+        if (gotSessionDays > 0) {
+            sessionDaysEl.textContent = gotSessionDays.toLocaleString('pl-PL') + sessionDaysSql;
+            sessionDaysEl.className = 'fov-value';
+        } else if (sqlSessionDays > 0) {
+            sessionDaysEl.textContent = '0' + sessionDaysSql;
+            sessionDaysEl.className = 'fov-value';
+        } else {
+            sessionDaysEl.textContent = '—';
+            sessionDaysEl.className = 'fov-unchecked';
+        }
+    }
     setStat('fovGotTranscripts', 'wypowiedzi');
     setStat('fovGotVotings', 'glosowania');
-    // Głosy indywidualne: użyj individualVotes (z totalVoted) bo moduł glosy jest wyłączony
+    // Głosy indywidualne: użyj individualVotes (z totalVoted) + sql z tabeli glosy
     const indVotes = fetched.individualVotes || 0;
+    const sqlGlosy = sqlStats.glosy || 0;
+    const glosySql = sqlGlosy > 0 ? ` sql(${sqlGlosy.toLocaleString('pl-PL')})` : '';
     const votesEl = document.getElementById('fovGotVotes');
     if (votesEl) {
         if (indVotes > 0 && modules.includes('glosy')) {
-            votesEl.textContent = indVotes.toLocaleString('pl-PL');
+            votesEl.textContent = indVotes.toLocaleString('pl-PL') + glosySql;
             votesEl.className = 'fov-value';
         } else if (modules.includes('glosy')) {
-            votesEl.textContent = '0';
-            votesEl.className = 'fov-unchecked';
+            votesEl.textContent = '0' + glosySql;
+            votesEl.className = sqlGlosy > 0 ? 'fov-value' : 'fov-unchecked';
         } else {
             votesEl.textContent = '—';
             votesEl.className = 'fov-unchecked';
