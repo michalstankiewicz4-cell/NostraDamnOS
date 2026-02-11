@@ -1479,6 +1479,28 @@ input:disabled {
     text-align: right;
 }
 
+/* Cache bar */
+.cache-bar {
+    display: flex;
+    align-items: center;
+    gap: 1px;
+    height: 10px;
+    border: 1px solid #404040;
+    padding: 1px;
+}
+
+.cache-segment {
+    width: 7px;
+    height: 100%;
+    background: #555;
+    transition: background 0.3s ease;
+    cursor: default;
+}
+
+.cache-segment.cached {
+    background: #48bb78;
+}
+
 #sendChatBtn:disabled {
     opacity: 0.5;
     cursor: not-allowed;

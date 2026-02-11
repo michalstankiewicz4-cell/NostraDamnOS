@@ -811,6 +811,10 @@
                                 <span>Storage</span>
                             </label>
                             <label class="settings-checkbox-label">
+                                <input type="checkbox" id="toggleBarCache">
+                                <span>Cache</span>
+                            </label>
+                            <label class="settings-checkbox-label">
                                 <input type="checkbox" id="toggleBarConsole" checked>
                                 <span>Konsola</span>
                             </label>
@@ -923,6 +927,14 @@
                 <div id="storageProgressBar" class="progress-bar" style="width:0%"></div>
             </div>
             <span id="storagePercent" class="progress-percent">0%</span>
+        </div>
+
+        <div class="status-bar-separator"></div>
+
+        <!-- [Cache] -->
+        <div id="cacheSection" class="status-bar-section" title="Zajętość cache bazy danych">
+            <span class="status-bar-label">Cache:</span>
+            <div id="cacheBar" class="cache-bar"></div>
         </div>
 
         <!-- Spacer -->
@@ -1107,6 +1119,55 @@
                 window.addEventListener('storage', updateStorage);
             });
         </script>
+
+    <!-- Cache Bar Logic -->
+    <script type="module">
+        import { db2 } from './modules/database-v2.js';
+
+        const cacheModules = [
+            { table: 'poslowie', label: 'Poslowie' },
+            { table: 'posiedzenia', label: 'Posiedzenia' },
+            { table: 'wypowiedzi', label: 'Wypowiedzi' },
+            { table: 'glosowania', label: 'Glosowania' },
+            { table: 'glosy', label: 'Glosy' },
+            { table: 'interpelacje', label: 'Interpelacje' },
+            { table: 'zapytania', label: 'Zapytania pisemne' },
+            { table: 'zapytania_odpowiedzi', label: 'Odpowiedzi na zapytania' },
+            { table: 'projekty_ustaw', label: 'Projekty ustaw' },
+            { table: 'ustawy', label: 'Ustawy (akty prawne)' },
+            { table: 'komisje', label: 'Komisje' },
+            { table: 'komisje_posiedzenia', label: 'Posiedzenia komisji' },
+            { table: 'komisje_wypowiedzi', label: 'Wypowiedzi komisji' },
+            { table: 'oswiadczenia_majatkowe', label: 'Oswiadczenia majatkowe' }
+        ];
+
+        function updateCacheBar() {
+            const bar = document.getElementById('cacheBar');
+            if (!bar) return;
+
+            bar.innerHTML = '';
+            for (const mod of cacheModules) {
+                const seg = document.createElement('div');
+                seg.className = 'cache-segment';
+                seg.title = mod.label;
+                let count = 0;
+                if (db2.database) {
+                    try {
+                        const r = db2.database.exec(`SELECT COUNT(*) FROM ${mod.table}`);
+                        count = r[0]?.values[0]?.[0] || 0;
+                    } catch { /* table may not exist */ }
+                }
+                if (count > 0) seg.classList.add('cached');
+                bar.appendChild(seg);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            updateCacheBar();
+            setInterval(updateCacheBar, 5000);
+        });
+        window._updateCacheBar = updateCacheBar;
+    </script>
 
     <!-- Bottom Navigation Logic -->
     <script>
@@ -1378,6 +1439,7 @@
             barLoad: true,
             barMemory: false,
             barStorage: false,
+            barCache: false,
             barConsole: true
         };
 
@@ -1416,6 +1478,7 @@
                 { key: 'barLoad', id: 'etlProgressSection' },
                 { key: 'barMemory', id: 'memorySection' },
                 { key: 'barStorage', id: 'storageSection' },
+                { key: 'barCache', id: 'cacheSection' },
                 { key: 'barConsole', id: 'consoleSection' }
             ];
             for (const { key, id } of barSections) {
@@ -1480,6 +1543,7 @@
             { key: 'barLoad', id: 'toggleBarLoad' },
             { key: 'barMemory', id: 'toggleBarMemory' },
             { key: 'barStorage', id: 'toggleBarStorage' },
+            { key: 'barCache', id: 'toggleBarCache' },
             { key: 'barConsole', id: 'toggleBarConsole' }
         ];
         for (const { key, id } of barToggles) {
