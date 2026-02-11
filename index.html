@@ -758,7 +758,14 @@
                             </label>
                             <label class="settings-checkbox-label">
                                 <input type="checkbox" id="toggleBtnAi" checked>
-                                <span>Asystent AI</span>
+                                <span>Nawigator</span>
+                                <select id="btnAiTargetSelect" style="margin-left:8px;font-size:0.75rem;padding:1px 4px;background:var(--bg-secondary);color:var(--text-primary);border:1px solid var(--border-color);border-radius:4px">
+                                    <option value="1">ETL</option>
+                                    <option value="2">Podsumowanie</option>
+                                    <option value="3" selected>AI Asystent</option>
+                                    <option value="4">Wykresy</option>
+                                    <option value="5">Ustawienia</option>
+                                </select>
                             </label>
                             <label class="settings-checkbox-label">
                                 <input type="checkbox" id="toggleBtnAbout" checked>
@@ -1018,9 +1025,11 @@
             document.addEventListener('DOMContentLoaded', () => {
                 const resetBtn = document.getElementById('btnResetMemory');
                 resetBtn?.addEventListener('click', () => {
-                    resetFloatingButtonPositions();
-                    localStorage.removeItem('uiVisibility');
-                    location.reload();
+                    if (confirm('Czy na pewno chcesz zresetować pamięć przeglądarki?\n\nTo usunie zapisane pozycje przycisków i ustawienia interfejsu.')) {
+                        resetFloatingButtonPositions();
+                        localStorage.removeItem('uiVisibility');
+                        location.reload();
+                    }
                 });
             });
         </script>
@@ -1133,17 +1142,19 @@
         });
     </script>
     
-    <!-- AI Chat Button - Navigate to Section 3 -->
+    <!-- AI Chat Button - Navigate to configured section -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const aiChatBtn = document.getElementById('aiChatBtn');
             if (aiChatBtn) {
                 aiChatBtn.addEventListener('click', () => {
-                    // Trigger section 3
-                    const section3Nav = document.querySelector('.nav-item[data-section="3"]');
-                    if (section3Nav) {
-                        section3Nav.click();
-                    }
+                    let target = '3';
+                    try {
+                        const vis = JSON.parse(localStorage.getItem('uiVisibility') || '{}');
+                        if (vis.btnAiTarget) target = vis.btnAiTarget;
+                    } catch { /* default */ }
+                    const nav = document.querySelector(`.nav-item[data-section="${target}"]`);
+                    if (nav) nav.click();
                 });
             }
         });
@@ -1356,6 +1367,7 @@
             btnImport: true,
             btnExport: true,
             btnAi: true,
+            btnAiTarget: '3',
             btnAbout: true,
             btnHelp: true,
             btnLanguage: false,
@@ -1440,6 +1452,24 @@
         for (const { key, id } of btnToggles) {
             const chk = document.getElementById(id);
             if (chk) chk.checked = !!state[key];
+        }
+
+        // AI button target select + icon sync
+        const sectionIcons = { '1': '📥', '2': '📊', '3': '🤖', '4': '📈', '5': '⚙️' };
+        const aiTargetSelect = document.getElementById('btnAiTargetSelect');
+        const aiBtn = document.getElementById('aiChatBtn');
+        function updateAiBtnIcon(target) {
+            if (aiBtn && sectionIcons[target]) aiBtn.textContent = sectionIcons[target];
+        }
+        if (aiTargetSelect) {
+            const savedTarget = state.btnAiTarget || '3';
+            aiTargetSelect.value = savedTarget;
+            updateAiBtnIcon(savedTarget);
+            aiTargetSelect.addEventListener('change', function() {
+                state.btnAiTarget = this.value;
+                save(state);
+                updateAiBtnIcon(this.value);
+            });
         }
 
         // Bar section checkboxes
