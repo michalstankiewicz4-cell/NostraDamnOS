@@ -400,6 +400,13 @@ export const db2 = {
         `, [klucz, wartosc, new Date().toISOString()]);
     },
     
+    getMetadata(klucz) {
+        try {
+            const r = this.database.exec(`SELECT wartosc FROM metadata WHERE klucz = '${klucz}'`);
+            return r[0]?.values[0]?.[0] || null;
+        } catch { return null; }
+    },
+
     // ===== QUERY METHODS =====
     
     getPoslowie(filters = {}) {

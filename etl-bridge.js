@@ -1124,31 +1124,29 @@ function initETLPanel() {
     updateETLEstimate();
     
     
-    // Verify button - check for differences/discrepancies
+    // Verify button - check for differences/discrepancies (independent of form)
     const verifyBtn = document.getElementById('etlVerifyBtn');
     if (verifyBtn) {
         verifyBtn.addEventListener('click', async () => {
             verifyBtn.disabled = true;
             verifyBtn.textContent = '⏳ Sprawdzanie...';
-            
+
             try {
-                const { runPipeline, buildConfigFromUI } = await import('./pipeline.js');
-                const config = buildConfigFromUI();
-                config.fetchMode = 'verify'; // Verify mode - check differences
-                
-                const result = await runPipeline(config, {
-                    onLog: (msg) => console.log(msg),
-                    onProgress: () => {},
-                    onComplete: (res) => {
-                        if (res.differences && res.differences.length > 0) {
-                            window.setValidityStatus(true);
-                            showVerificationResults(res.differences);
-                        } else {
-                            window.setValidityStatus(false);
-                            ToastModule.success('Niema żadnych zmian - baza i API się zgadzają!');
-                        }
-                    }
-                });
+                const { db2 } = await import('./modules/database-v2.js');
+                if (!db2.database) {
+                    ToastModule.error('Baza danych nie jest załadowana');
+                    return;
+                }
+                const { verifyDatabase } = await import('./pipeline.js');
+                const report = await verifyDatabase(db2);
+                const hasIssues = report.results.some(r => r.status === 'new');
+
+                if (hasIssues) {
+                    window.setValidityStatus(true);
+                } else {
+                    window.setValidityStatus(false);
+                }
+                showVerificationResults(report);
             } catch (error) {
                 ToastModule.error('Błąd weryfikacji: ' + error.message);
             } finally {
@@ -1159,19 +1157,53 @@ function initETLPanel() {
     }
 }
 
-function showVerificationResults(differences) {
-    let message = '🔍 Raport niezgodności:\n\n';
-    message += `Znaleziono ${differences.length} różnic(y):\n\n`;
-    
-    differences.forEach((diff, i) => {
-        message += `${i + 1}. ${diff.message}\n`;
-    });
-    
-    const shouldUpdate = confirm(message + '\nCzy chcesz poprawić bazę danych?');
-    
-    if (shouldUpdate) {
-        // Trigger full fetch
-        document.getElementById('etlFetchBtn').click();
+function showVerificationResults(report) {
+    const { kadencja, typ, results, freshness } = report;
+    const inst = typ === 'sejm' ? 'Sejm' : 'Senat';
+
+    let msg = `Raport weryfikacji (kadencja ${kadencja}, ${inst}):\n\n`;
+
+    // Table header
+    const pad = (s, n) => String(s).padEnd(n);
+    const padR = (s, n) => String(s).padStart(n);
+    msg += `${pad('Tabela', 22)} ${padR('Baza', 7)} ${padR('API', 7)}  Status\n`;
+    msg += '─'.repeat(52) + '\n';
+
+    let newCount = 0;
+    for (const r of results) {
+        let status;
+        if (r.status === 'new') {
+            status = `+${r.diff} nowych`;
+            newCount += r.diff;
+        } else if (r.status === 'ok') {
+            status = 'OK';
+        } else if (r.status === 'error') {
+            status = 'Błąd API';
+        } else {
+            status = '—';
+        }
+        msg += `${pad(r.label, 22)} ${padR(r.dbCount.toLocaleString('pl-PL'), 7)} ${padR(String(r.apiCount), 7)}  ${status}\n`;
+    }
+
+    if (freshness) {
+        msg += '\n';
+        if (freshness.days > 7) {
+            msg += `Ostatnia aktualizacja: ${freshness.days} dni temu`;
+        } else if (freshness.days > 0) {
+            msg += `Ostatnia aktualizacja: ${freshness.days} dni temu`;
+        } else {
+            msg += `Ostatnia aktualizacja: dzisiaj`;
+        }
+    }
+
+    if (newCount > 0) {
+        msg += `\n\nZnaleziono ${newCount} nowych rekordów w API.`;
+        const shouldUpdate = confirm(msg + '\n\nCzy chcesz pobrać brakujące dane?');
+        if (shouldUpdate) {
+            document.getElementById('etlFetchBtn').click();
+        }
+    } else {
+        alert(msg + '\n\nBaza jest aktualna — brak nowych danych w API.');
     }
 }
 

@@ -994,7 +994,7 @@
     <script type="module" src="api-handler-v2.js"></script>
     <script type="module">
         // Import needed functions
-        import { getCacheStatus, runPipeline, buildConfigFromUI } from './pipeline.js';
+        import { getCacheStatus } from './pipeline.js';
 
         // Startup integrity check
         async function runStartupCheck() {
@@ -1020,21 +1020,15 @@
                 }
 
                 console.log('[Startup Check] Running verification...');
-                
-                const verifyConfig = buildConfigFromUI();
-                verifyConfig.fetchMode = 'verify';
-                
-                await runPipeline(verifyConfig, {
-                    onProgress: (msg) => console.log('[Verify]', msg),
-                    onComplete: (result) => {
-                        const hasDiscrepancies = result.discrepancies && Object.keys(result.discrepancies).length > 0;
-                        if (hasDiscrepancies) {
-                            console.warn('[Startup Check] ⚠️ Discrepancies found:', result.discrepancies);
-                        } else {
-                            console.log('[Startup Check] ✅ Database matches API');
-                        }
-                    }
-                });
+
+                const { verifyDatabase } = await import('./pipeline.js');
+                const report = await verifyDatabase(window.db2);
+                const hasNew = report.results.some(r => r.status === 'new');
+                if (hasNew) {
+                    console.warn('[Startup Check] ⚠️ New data available in API:', report.results.filter(r => r.status === 'new'));
+                } else {
+                    console.log('[Startup Check] ✅ Database matches API');
+                }
             } catch (err) {
                 console.error('[Startup Check] Error:', err);
             }

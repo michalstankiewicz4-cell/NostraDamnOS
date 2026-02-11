@@ -126,11 +126,6 @@ export async function runPipeline(config, callbacks = {}) {
         } else if (fetchMode === 'full') {
             onLog('🔄 Force Full mode - ignoring cache, fetching all');
             sittingsToFetch = filterNewSittings(allSittings, 0, config);
-        } else if (fetchMode === 'verify') {
-            onLog('🔍 Verify mode - checking for differences...');
-            const differences = await verifyDataIntegrity(db2, config);
-            onComplete({ success: true, verify: true, differences });
-            return { success: true, verify: true, differences };
         } else {
             // Manual range mode
             sittingsToFetch = filterNewSittings(allSittings, lastPosiedzenie, config);
@@ -489,57 +484,107 @@ export function buildConfigFromUI() {
     return config;
 }
 
-// ===== VERIFY DATA INTEGRITY =====
+// ===== VERIFY DATABASE VS API =====
 
-async function verifyDataIntegrity(db, config) {
-    console.log('[Pipeline] Verifying data integrity...');
-    
-    const differences = [];
-    
+async function fetchApiCount(url) {
     try {
-        // Fetch sample data from API
-        const apiSample = await fetchSittingsList(config);
-        
-        // Get stored sittings from DB
-        const dbSittings = db.database.exec('SELECT numer FROM posiedzenia ORDER BY numer DESC LIMIT 10');
-        const dbNums = dbSittings[0]?.values.map(v => v[0]) || [];
-        
-        // Compare counts
-        if (apiSample.length > 0 && dbNums.length > 0) {
-            const maxAPI = Math.max(...apiSample);
-            const maxDB = Math.max(...dbNums);
-            
-            if (maxAPI > maxDB) {
-                differences.push({
-                    type: 'new_sittings',
-                    message: `Nowe posiedzenia dostępne: ${maxDB + 1}-${maxAPI}`,
-                    count: maxAPI - maxDB
-                });
-            }
+        const res = await fetch(url);
+        if (!res.ok) return -1;
+        const data = await res.json();
+        return Array.isArray(data) ? data.length : -1;
+    } catch { return -1; }
+}
+
+async function fetchPaginatedCount(baseUrl) {
+    let total = 0, offset = 0;
+    try {
+        while (true) {
+            const res = await fetch(`${baseUrl}${baseUrl.includes('?') ? '&' : '?'}limit=500&offset=${offset}`);
+            if (!res.ok) break;
+            const data = await res.json();
+            if (!Array.isArray(data) || data.length === 0) break;
+            total += data.length;
+            if (data.length < 500) break;
+            offset += data.length;
         }
-        
-        // Check for data freshness
-        const lastUpdate = getLastUpdate(db);
-        if (lastUpdate !== 'Never') {
-            const daysSinceUpdate = Math.floor((Date.now() - new Date(lastUpdate)) / (1000 * 60 * 60 * 24));
-            if (daysSinceUpdate > 7) {
-                differences.push({
-                    type: 'stale_data',
-                    message: `Dane mogą być nieaktualne (ostatnia aktualizacja: ${daysSinceUpdate} dni temu)`,
-                    days: daysSinceUpdate
-                });
-            }
+    } catch { /* return what we have */ }
+    return total;
+}
+
+export async function verifyDatabase(db) {
+    console.log('[Verify] Starting database verification...');
+
+    // Read config from DB metadata (independent of form)
+    let kadencja = 10, typ = 'sejm';
+    try {
+        const raw = db.getMetadata('last_fetch_config');
+        if (raw) {
+            const cfg = JSON.parse(raw);
+            kadencja = cfg.kadencja || 10;
+            typ = cfg.typ || 'sejm';
         }
-        
-    } catch (error) {
-        console.warn('[Pipeline] Verification error:', error);
-        differences.push({
-            type: 'error',
-            message: `Błąd weryfikacji: ${error.message}`
-        });
+    } catch { /* defaults */ }
+
+    const base = typ === 'sejm' ? 'sejm' : 'senat';
+    const apiBase = `https://api.sejm.gov.pl/${base}/term${kadencja}`;
+    const dbStats = db.getStats();
+    const results = [];
+
+    // Define checks: { label, table, apiUrl, paginated? }
+    const checks = [
+        { label: 'Posiedzenia', table: 'posiedzenia', url: `${apiBase}/proceedings` },
+        { label: 'Posłowie', table: 'poslowie', url: `${apiBase}/MP` },
+        { label: 'Komisje', table: 'komisje', url: `${apiBase}/committees` },
+        { label: 'Interpelacje', table: 'interpelacje', url: `${apiBase}/interpellations`, paginated: true },
+        { label: 'Zapytania', table: 'zapytania', url: `${apiBase}/writtenQuestions`, paginated: true },
+    ];
+
+    // Run all checks in parallel
+    const promises = checks.map(async (chk) => {
+        const dbCount = dbStats[chk.table] || 0;
+        const apiCount = chk.paginated
+            ? await fetchPaginatedCount(chk.url)
+            : await fetchApiCount(chk.url);
+        return { ...chk, dbCount, apiCount };
+    });
+
+    const checkResults = await Promise.all(promises);
+
+    for (const chk of checkResults) {
+        if (chk.apiCount < 0) {
+            results.push({ label: chk.label, table: chk.table, dbCount: chk.dbCount, apiCount: '?', status: 'error' });
+        } else if (chk.apiCount > chk.dbCount) {
+            results.push({ label: chk.label, table: chk.table, dbCount: chk.dbCount, apiCount: chk.apiCount, status: 'new', diff: chk.apiCount - chk.dbCount });
+        } else {
+            results.push({ label: chk.label, table: chk.table, dbCount: chk.dbCount, apiCount: chk.apiCount, status: 'ok' });
+        }
     }
-    
-    return differences;
+
+    // Additional tables with data (show count but no API comparison)
+    const extraTables = [
+        { label: 'Głosowania', table: 'glosowania' },
+        { label: 'Głosy', table: 'glosy' },
+        { label: 'Wypowiedzi', table: 'wypowiedzi' },
+        { label: 'Projekty ustaw', table: 'projekty_ustaw' },
+        { label: 'Posiedzenia komisji', table: 'komisje_posiedzenia' },
+    ];
+    for (const ext of extraTables) {
+        const dbCount = dbStats[ext.table] || 0;
+        if (dbCount > 0) {
+            results.push({ label: ext.label, table: ext.table, dbCount, apiCount: '-', status: 'info' });
+        }
+    }
+
+    // Data freshness
+    const lastUpdate = getLastUpdate(db);
+    let freshness = null;
+    if (lastUpdate && lastUpdate !== 'Never') {
+        const days = Math.floor((Date.now() - new Date(lastUpdate)) / (1000 * 60 * 60 * 24));
+        freshness = { lastUpdate, days };
+    }
+
+    console.log('[Verify] Complete:', results);
+    return { kadencja, typ, results, freshness };
 }
 
 // ===== CACHE STATUS =====

@@ -1,5 +1,5 @@
 // API Handler v2.0 - Uses Pipeline ETL
-import { runPipeline, buildConfigFromUI, getCacheStatus } from './pipeline.js';
+import { runPipeline, buildConfigFromUI, getCacheStatus, verifyDatabase } from './pipeline.js';
 import { fetchCounter } from './fetcher/fetcher.js';
 import { db2 } from './modules/database-v2.js';
 import ToastModule from './modules/toast.js';
@@ -763,14 +763,7 @@ async function smartFetch() {
     showEtlProgress();
 
     try {
-        const verifyConfig = { ...currentConfig, fetchMode: 'verify' };
-        const result = await runPipeline(verifyConfig, {
-            onLog: (msg) => console.log('[Verify]', msg),
-            onProgress: (percent, stage, details) => {
-                updateEtlProgress(percent, stage, details);
-            },
-            onComplete: () => {}
-        });
+        const report = await verifyDatabase(db2);
 
         hideEtlProgress();
         if (btn) {
@@ -778,10 +771,11 @@ async function smartFetch() {
             btn.textContent = '📥 Pobierz/Zaktualizuj dane';
         }
 
-        // Check if there are differences
-        if (result.differences && result.differences.length > 0) {
+        const newItems = report.results.filter(r => r.status === 'new');
+        if (newItems.length > 0) {
             setRecordsStatus(true);
-            const msg = `🆕 Znaleziono ${result.differences.length} nowych/zmienionych rekordów w API.\n\nCzy pobrać?`;
+            const totalNew = newItems.reduce((s, r) => s + (r.diff || 0), 0);
+            const msg = `🆕 Znaleziono ${totalNew} nowych rekordów w API (${newItems.map(r => r.label).join(', ')}).\n\nCzy pobrać?`;
             if (confirm(msg)) {
                 await startPipelineETL();
             }
