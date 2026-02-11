@@ -3,7 +3,7 @@
 export function normalizeGlosy(raw, glosowania) {
     const results = [];
 
-    // Senat: raw to płaska tablica z gotowymi polami
+    // Płaska tablica z gotowymi polami (Sejm + Senat)
     if (Array.isArray(raw)) {
         for (const v of raw) {
             results.push({
