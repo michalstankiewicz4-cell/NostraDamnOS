@@ -786,7 +786,7 @@ function initETLPanel() {
             const dataCheckboxes = [
                 'etlTranscripts', 'etlVotings', 'etlVotes',
                 'etlInterpellations', 'etlWrittenQuestions', 'etlBills', 'etlLegalActs',
-                'etlCommitteeSittings', 'etlCommitteeStatements'
+                'etlCommitteeSittings'
             ];
 
             if (e.target.checked) {
@@ -867,10 +867,12 @@ function initETLPanel() {
 
     // ===== MODULE AVAILABILITY (Sejm vs Senat) =====
     function updateModuleAvailability(institution) {
+        // Nie uwzględniaj modułów na stałe wyłączonych (API niedostępne)
+        const permanentlyDisabled = ['etlDisclosures', 'etlCommitteeStatements'];
         const sejmOnlyModules = [
             'etlTranscripts', 'etlInterpellations', 'etlWrittenQuestions',
-            'etlBills', 'etlLegalActs', 'etlDisclosures',
-            'etlCommitteeSittings', 'etlCommitteeStatements'
+            'etlBills', 'etlLegalActs',
+            'etlCommitteeSittings'
         ];
         const isSenat = institution === 'senat';
 
@@ -912,14 +914,10 @@ function initETLPanel() {
             }
         }
 
-        // Wypowiedzi komisji wymagają posiedzeń komisji
-        if (committeeSittings && committeeStatements) {
-            if (!committeeSittings.checked) {
-                committeeStatements.checked = false;
-                committeeStatements.disabled = true;
-            } else {
-                committeeStatements.disabled = false;
-            }
+        // Wypowiedzi komisji — na stałe wyłączone (API niedostępne)
+        if (committeeStatements) {
+            committeeStatements.checked = false;
+            committeeStatements.disabled = true;
         }
 
         // Wybór komisji tylko gdy wybrano dane komisji
