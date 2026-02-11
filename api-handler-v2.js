@@ -655,13 +655,33 @@ function hideEtlProgress() {
     if (pctEl) pctEl.style.display = 'none';
     if (bar) bar.style.width = '0%';
     setLoadLamp('idle');
+    // Ukryj panel szczegółów ETL
+    const detailPanel = document.getElementById('etlDetailPanel');
+    if (detailPanel) detailPanel.style.display = 'none';
 }
 
-function updateEtlProgress(percent) {
+function updateEtlProgress(percent, stage, details) {
     const bar = document.getElementById('etlProgressBar');
     const pctEl = document.getElementById('etlProgressPercent');
     if (bar) bar.style.width = percent + '%';
     if (pctEl) pctEl.textContent = Math.round(percent) + '%';
+    // Aktualizuj panel szczegółów ETL
+    updateEtlDetailPanel(percent, stage, details);
+}
+
+function updateEtlDetailPanel(percent, stage, details = {}) {
+    const panel = document.getElementById('etlDetailPanel');
+    const stageEl = document.getElementById('etlDetailStage');
+    const detailBar = document.getElementById('etlDetailBar');
+    const pctEl = document.getElementById('etlDetailPercent');
+    const statsEl = document.getElementById('etlDetailStats');
+    if (!panel) return;
+
+    panel.style.display = '';
+    if (stageEl && stage) stageEl.textContent = stage;
+    if (detailBar) detailBar.style.width = percent + '%';
+    if (pctEl) pctEl.textContent = Math.round(percent) + '%';
+    if (statsEl && details.module) statsEl.textContent = details.module;
 }
 
 // Export db2 globally for debugging
@@ -677,6 +697,7 @@ db2.init().then(() => {
     console.log('[API Handler] Database initialized');
     updateStatusIndicators();
     updateSummaryTab();
+    if (window._updateCacheBar) window._updateCacheBar();
 }).catch(err => {
     console.error('[API Handler] Failed to initialize database:', err);
 });
@@ -723,8 +744,8 @@ async function smartFetch() {
         const verifyConfig = { ...currentConfig, fetchMode: 'verify' };
         const result = await runPipeline(verifyConfig, {
             onLog: (msg) => console.log('[Verify]', msg),
-            onProgress: (percent) => {
-                updateEtlProgress(percent);
+            onProgress: (percent, stage, details) => {
+                updateEtlProgress(percent, stage, details);
             },
             onComplete: () => {}
         });
@@ -776,8 +797,8 @@ async function startPipelineETL() {
 
         // Run pipeline with callbacks
         const result = await runPipeline(config, {
-            onProgress: (percent) => {
-                updateEtlProgress(percent);
+            onProgress: (percent, stage, details) => {
+                updateEtlProgress(percent, stage, details);
             },
             onLog: (message) => {},
             onError: (error) => {
@@ -875,10 +896,11 @@ async function startPipelineETL() {
             };
             localStorage.setItem('nostradamnos_lastFetch', JSON.stringify(lastFetch));
 
-            // Update status indicators + summary tab
+            // Update status indicators + summary tab + cache bar
             updateStatusIndicators();
             setRecordsStatus(false);
             updateSummaryTab();
+            if (window._updateCacheBar) window._updateCacheBar();
 
             const persistWarning = db2._persistFailed
                 ? '\n\n⚠️ Baza danych jest za duża na localStorage — dane są dostępne w pamięci, ale nie przetrwają odświeżenia strony.'
@@ -914,11 +936,12 @@ document.getElementById('etlClearBtn')?.addEventListener('click', async () => {
             db2.clearAll();
             console.log('[API Handler] Database cleared');
             
-            // Update status indicators + summary tab after clearing
+            // Update status indicators + summary tab + cache bar after clearing
             updateStatusIndicators();
             setRecordsStatus(false);
             setValidityStatus(false);
             updateSummaryTab();
+            if (window._updateCacheBar) window._updateCacheBar();
 
             ToastModule.success('Baza wyczyszczona');
             console.log('✅ [Zadanie] Wyczyść bazę zakończony');

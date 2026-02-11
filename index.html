@@ -98,11 +98,19 @@
             }
         };
 
-        // Console lamp: green normally, red when error logged
+        // Console lamp: blink on error/warn/info, reset when console opened
         function updateConsoleLamp(color) {
+            const lamp = document.getElementById('consoleLamp');
+            if (!lamp) return;
+            const panel = document.getElementById('floatingConsolePanel');
+            if (panel && getComputedStyle(panel).display !== 'none') return;
+
             if (color === LOG_COLORS.red) {
-                const lamp = document.getElementById('consoleLamp');
-                if (lamp) lamp.className = 'floating-lamp floating-lamp-error';
+                lamp.className = 'floating-lamp floating-lamp-error floating-lamp-blink';
+            } else if (color === LOG_COLORS.yellow) {
+                lamp.className = 'floating-lamp floating-lamp-warn floating-lamp-blink';
+            } else if (color === LOG_COLORS.blue) {
+                lamp.className = 'floating-lamp floating-lamp-info floating-lamp-blink';
             }
         }
 
@@ -949,6 +957,19 @@
         </div>
     </div>
 
+    <!-- ETL Detail Panel (top-right corner during data fetch) -->
+    <div id="etlDetailPanel" class="etl-detail-panel" style="display:none;">
+        <div class="etl-detail-header">Pobieranie danych</div>
+        <div id="etlDetailStage" class="etl-detail-stage">Inicjalizacja...</div>
+        <div class="etl-detail-progress">
+            <div class="progress-track" style="max-width:none;">
+                <div id="etlDetailBar" class="progress-bar" style="width:0%"></div>
+            </div>
+            <span id="etlDetailPercent" class="progress-percent">0%</span>
+        </div>
+        <div id="etlDetailStats" class="etl-detail-stats"></div>
+    </div>
+
     <!-- Floating Console Panel -->
     <div id="floatingConsolePanel" class="floating-console-panel">
         <div class="floating-console-header">
@@ -1157,9 +1178,10 @@
                 }
             } catch { /* ignore */ }
 
-            // Pokrycie posiedzeń: wypowiedzi i głosowania
+            // Pokrycie posiedzeń: wypowiedzi, głosowania i głosy indywidualne
             let wypCoverage = null;
             let glosCoverage = null;
+            let glosyCoverage = null;
             if (db2.database) {
                 try {
                     const totalR = db2.database.exec('SELECT COUNT(*) FROM posiedzenia');
@@ -1169,6 +1191,8 @@
                         wypCoverage = { covered: wypR[0]?.values[0]?.[0] || 0, total };
                         const glosR = db2.database.exec('SELECT COUNT(DISTINCT id_posiedzenia) FROM glosowania');
                         glosCoverage = { covered: glosR[0]?.values[0]?.[0] || 0, total };
+                        const glosyR = db2.database.exec('SELECT COUNT(DISTINCT g.id_posiedzenia) FROM glosy gl JOIN glosowania g ON gl.id_glosowania = g.id_glosowania');
+                        glosyCoverage = { covered: glosyR[0]?.values[0]?.[0] || 0, total };
                     }
                 } catch { /* ignore */ }
             }
@@ -1186,7 +1210,7 @@
                 }
 
                 // Wypowiedzi i głosowania: porównaj pokrycie posiedzeń
-                const cov = mod.table === 'wypowiedzi' ? wypCoverage : mod.table === 'glosowania' ? glosCoverage : null;
+                const cov = mod.table === 'wypowiedzi' ? wypCoverage : mod.table === 'glosowania' ? glosCoverage : mod.table === 'glosy' ? glosyCoverage : null;
                 if (cov) {
                     if (count > 0 && cov.covered >= cov.total) {
                         seg.classList.add('cached');
@@ -1285,6 +1309,10 @@
         const toggleConsole = () => {
             const isVisible = getComputedStyle(floatingPanel).display !== 'none';
             floatingPanel.style.display = isVisible ? 'none' : 'block';
+            if (!isVisible) {
+                const lamp = document.getElementById('consoleLamp');
+                if (lamp) lamp.className = 'floating-lamp floating-lamp-ok';
+            }
         };
         
         // Console section click (from floating bar)

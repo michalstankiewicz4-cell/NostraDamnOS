@@ -459,7 +459,7 @@ input:disabled {
     font-size: 26px;
     cursor: grab;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    z-index: 1000;
+    z-index: 2100;
     transition: all 0.2s ease;
     display: flex;
     align-items: center;
@@ -1411,9 +1411,29 @@ input:disabled {
     box-shadow: 0 0 8px rgba(245, 101, 101, 0.6), inset 0 -2px 3px rgba(0,0,0,0.25);
 }
 
+.floating-lamp-warn {
+    background-color: #ecc94b;
+    box-shadow: 0 0 8px rgba(236, 201, 75, 0.6), inset 0 -2px 3px rgba(0,0,0,0.25);
+}
+
+.floating-lamp-info {
+    background-color: #4299e1;
+    box-shadow: 0 0 8px rgba(66, 153, 225, 0.6), inset 0 -2px 3px rgba(0,0,0,0.25);
+}
+
 .floating-lamp-idle {
     background-color: #64748b;
     box-shadow: 0 0 2px rgba(0, 0, 0, 0.3), inset 0 -2px 3px rgba(0,0,0,0.25);
+}
+
+/* Console lamp blink */
+.floating-lamp-blink {
+    animation: lampBlink 0.8s ease-in-out infinite;
+}
+
+@keyframes lampBlink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
 }
 
 /* HDD-style blink: rapid irregular flicker */
@@ -1503,6 +1523,51 @@ input:disabled {
 
 .cache-segment.cached {
     background: #48bb78;
+}
+
+/* ETL Detail Panel (top-right corner) */
+.etl-detail-panel {
+    position: fixed;
+    top: 30px;
+    right: 10px;
+    width: 280px;
+    background: #2d3748;
+    border: 1px solid #4a5568;
+    border-radius: 8px;
+    padding: 10px 12px;
+    z-index: 2100;
+    font-size: 0.75rem;
+    color: #e2e8f0;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+
+.etl-detail-header {
+    font-weight: 700;
+    font-size: 0.8rem;
+    margin-bottom: 6px;
+    color: #90cdf4;
+}
+
+.etl-detail-stage {
+    margin-bottom: 6px;
+    color: #cbd5e0;
+}
+
+.etl-detail-progress {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.etl-detail-progress .progress-track {
+    flex: 1;
+    max-width: none;
+}
+
+.etl-detail-stats {
+    color: #a0aec0;
+    font-size: 0.7rem;
 }
 
 #sendChatBtn:disabled {

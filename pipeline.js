@@ -149,9 +149,9 @@ export async function runPipeline(config, callbacks = {}) {
             filterCachedModules(db2, config, onLog);
         }
 
-        // Step 4: Fetch all data using runFetcher (20-70%)
+        // Step 4: Fetch all data using runFetcher (10-85%)
         onLog('⬇️ Fetching data from API...');
-        onProgress(20, 'Fetching data from API');
+        onProgress(10, 'Fetching data from API');
 
         // Pass sittings range to config
         const fetchConfig = {
@@ -159,10 +159,10 @@ export async function runPipeline(config, callbacks = {}) {
             sittingsToFetch: sittingsToFetch
         };
 
-        // Call fetcher with progress callback mapped to 20-70% range
+        // Call fetcher with progress callback mapped to 10-85% range
         const raw = await runFetcher(fetchConfig, (fetchPct, label) => {
-            const mapped = 20 + Math.round(fetchPct * 0.5); // 20% + (0-100% → 0-50%) = 20-70%
-            onProgress(Math.min(mapped, 70), `Pobieranie: ${label}`);
+            const mapped = 10 + Math.round(fetchPct * 0.75); // 10% + (0-100% → 0-75%) = 10-85%
+            onProgress(Math.min(mapped, 85), `Pobieranie: ${label}`, { module: label });
         });
 
         // Apply RODO filter if enabled
@@ -181,20 +181,21 @@ export async function runPipeline(config, callbacks = {}) {
         );
 
         onLog(`📥 Fetched ${totalRecords} raw records from API`);
-        onProgress(70, 'Fetching complete');
+        onProgress(85, 'Pobieranie zakończone', { module: `${totalRecords} rekordów` });
 
-        // Step 5: Normalize and save (70-90%)
+        // Step 5: Normalize and save (85-92%)
         onLog('🧹 Normalizing and saving to database...');
-        onProgress(75, 'Normalizing data');
+        onProgress(87, 'Normalizacja danych', { module: 'Zapis do bazy...' });
 
         const stats = await runNormalizer(db2, processedRaw, config);
+        const savedTotal = Object.values(stats).reduce((a, b) => a + b, 0);
 
-        onLog(`💾 Saved ${Object.values(stats).reduce((a, b) => a + b, 0)} records to database`);
-        onProgress(90, 'Normalization complete');
+        onLog(`💾 Saved ${savedTotal} records to database`);
+        onProgress(92, 'Normalizacja zakończona', { module: `Zapisano ${savedTotal} rekordów` });
 
-        // Step 6: Update cache metadata (90-98%)
+        // Step 6: Update cache metadata (92-98%)
         onLog('📝 Updating cache metadata...');
-        onProgress(95, 'Updating metadata');
+        onProgress(95, 'Aktualizacja metadanych');
 
         // Update last_posiedzenie based on actual data
         if (processedRaw.posiedzenia && processedRaw.posiedzenia.length > 0) {
