@@ -1,14 +1,15 @@
 // Module: komisje_posiedzenia.js
 import { safeFetch } from '../fetcher.js';
 
-export async function fetchKomisjePosiedzenia({ komisje, selectedCommittees, kadencja = 10, typ = 'sejm' }) {
+export async function fetchKomisjePosiedzenia({ komisje, selectedCommittees, committees, kadencja = 10, typ = 'sejm' }) {
     const results = [];
     const base = typ === 'sejm' ? 'sejm' : 'senat';
-    
-    // Filter committees
-    const toFetch = selectedCommittees?.includes('all') 
-        ? komisje 
-        : komisje.filter(k => selectedCommittees?.includes(k.code));
+
+    // Filter committees (config uses 'committees', fallback to 'selectedCommittees')
+    const selected = committees || selectedCommittees || ['all'];
+    const toFetch = selected.includes('all')
+        ? komisje
+        : komisje.filter(k => selected.includes(k.code));
     
     for (const kom of toFetch) {
         const url = `https://api.sejm.gov.pl/${base}/term${kadencja}/committees/${kom.code}/sittings`;
