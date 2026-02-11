@@ -1621,7 +1621,7 @@ input:disabled {
     padding: 8px;
     z-index: 900;
     overflow: hidden;
-    max-width: calc(3 * 95px + 2 * 5px + 16px + 50px); /* 3 items visible + 50px */
+    max-width: calc(3 * 95px + 2 * 5px + 16px + 100px); /* 3 items visible + 100px */
     cursor: grab;
 }
 
@@ -2081,7 +2081,7 @@ input:disabled {
     .bottom-nav {
         bottom: 60px;
         padding: 5px;
-        max-width: calc(3 * 85px + 2 * 3px + 10px + 50px);
+        max-width: calc(3 * 85px + 2 * 3px + 10px + 100px);
     }
 
     .nav-carousel {
@@ -2098,18 +2098,22 @@ input:disabled {
     }
     
     .nav-label {
-        font-size: 0.65rem;
+        font-size: 0.75rem;
         font-weight: 700;
+        -webkit-text-stroke: 0.3px currentColor;
         text-align: center;
         display: block;
     }
 
     .floating-status-bar {
+        font-size: 0.85rem;
         font-weight: 700;
+        -webkit-text-stroke: 0.4px currentColor;
     }
 
     .status-bar-label {
         font-weight: 700;
+        -webkit-text-stroke: 0.4px currentColor;
     }
     
     .summary-container {
