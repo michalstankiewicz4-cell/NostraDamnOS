@@ -746,6 +746,37 @@
                                 <span>Pasek statusu (dół)</span>
                             </label>
                         </div>
+                        <div class="settings-checkboxes" style="margin-top:10px">
+                            <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:6px">Elementy paska statusu:</p>
+                            <label class="settings-checkbox-label">
+                                <input type="checkbox" id="toggleBarVersion" checked>
+                                <span>Wersja</span>
+                            </label>
+                            <label class="settings-checkbox-label">
+                                <input type="checkbox" id="toggleBarDb" checked>
+                                <span>Baza</span>
+                            </label>
+                            <label class="settings-checkbox-label">
+                                <input type="checkbox" id="toggleBarAi" checked>
+                                <span>AI</span>
+                            </label>
+                            <label class="settings-checkbox-label">
+                                <input type="checkbox" id="toggleBarLoad" checked>
+                                <span>Load</span>
+                            </label>
+                            <label class="settings-checkbox-label">
+                                <input type="checkbox" id="toggleBarMemory">
+                                <span>Memory</span>
+                            </label>
+                            <label class="settings-checkbox-label">
+                                <input type="checkbox" id="toggleBarStorage">
+                                <span>Storage</span>
+                            </label>
+                            <label class="settings-checkbox-label">
+                                <input type="checkbox" id="toggleBarConsole" checked>
+                                <span>Konsola</span>
+                            </label>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -1284,7 +1315,14 @@
         const defaults = {
             floatingBtns: true,
             topBar: true,
-            bottomBar: true
+            bottomBar: true,
+            barVersion: true,
+            barDb: true,
+            barAi: true,
+            barLoad: true,
+            barMemory: false,
+            barStorage: false,
+            barConsole: true
         };
 
         function load() {
@@ -1313,6 +1351,27 @@
             const bottomBar = document.getElementById('floatingStatusBar');
             if (bottomBar) bottomBar.style.display = state.bottomBar ? '' : 'none';
             document.body.style.paddingBottom = state.bottomBar ? '25px' : '0';
+
+            // Individual bar sections
+            const barSections = [
+                { key: 'barVersion', id: 'versionSection' },
+                { key: 'barDb', id: 'statusIndicators' },
+                { key: 'barAi', id: 'aiStatusSection' },
+                { key: 'barLoad', id: 'etlProgressSection' },
+                { key: 'barMemory', id: 'memorySection' },
+                { key: 'barStorage', id: 'storageSection' },
+                { key: 'barConsole', id: 'consoleSection' }
+            ];
+            for (const { key, id } of barSections) {
+                const el = document.getElementById(id);
+                if (!el) continue;
+                el.style.display = state[key] ? '' : 'none';
+                // Hide preceding separator when section is hidden
+                const prev = el.previousElementSibling;
+                if (prev && prev.classList.contains('status-bar-separator')) {
+                    prev.style.display = state[key] ? '' : 'none';
+                }
+            }
         }
 
         const state = load();
@@ -1324,6 +1383,21 @@
         if (chkBtns) chkBtns.checked = state.floatingBtns;
         if (chkTop) chkTop.checked = state.topBar;
         if (chkBottom) chkBottom.checked = state.bottomBar;
+
+        // Bar section checkboxes
+        const barToggles = [
+            { key: 'barVersion', id: 'toggleBarVersion' },
+            { key: 'barDb', id: 'toggleBarDb' },
+            { key: 'barAi', id: 'toggleBarAi' },
+            { key: 'barLoad', id: 'toggleBarLoad' },
+            { key: 'barMemory', id: 'toggleBarMemory' },
+            { key: 'barStorage', id: 'toggleBarStorage' },
+            { key: 'barConsole', id: 'toggleBarConsole' }
+        ];
+        for (const { key, id } of barToggles) {
+            const chk = document.getElementById(id);
+            if (chk) chk.checked = !!state[key];
+        }
 
         apply(state);
 
@@ -1339,6 +1413,9 @@
         onToggle('floatingBtns', chkBtns);
         onToggle('topBar', chkTop);
         onToggle('bottomBar', chkBottom);
+        for (const { key, id } of barToggles) {
+            onToggle(key, document.getElementById(id));
+        }
     })();
     </script>
 </body>
