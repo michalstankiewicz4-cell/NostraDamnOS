@@ -1483,16 +1483,16 @@ input:disabled {
 .cache-bar {
     display: flex;
     align-items: center;
-    gap: 1px;
+    gap: 0;
     height: 10px;
     border: 1px solid #404040;
-    padding: 1px;
+    overflow: hidden;
 }
 
 .cache-segment {
     width: 7px;
     height: 100%;
-    background: #555;
+    background: #808080;
     transition: background 0.3s ease;
     cursor: default;
 }
