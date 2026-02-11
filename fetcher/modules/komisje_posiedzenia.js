@@ -6,7 +6,9 @@ export async function fetchKomisjePosiedzenia({ komisje, selectedCommittees, com
     const base = typ === 'sejm' ? 'sejm' : 'senat';
 
     // Filter committees (config uses 'committees', fallback to 'selectedCommittees')
-    const selected = committees || selectedCommittees || ['all'];
+    const selected = (Array.isArray(committees) && committees.length > 0) ? committees
+        : (Array.isArray(selectedCommittees) && selectedCommittees.length > 0) ? selectedCommittees
+        : ['all'];
     const toFetch = selected.includes('all')
         ? komisje
         : komisje.filter(k => selected.includes(k.code));
