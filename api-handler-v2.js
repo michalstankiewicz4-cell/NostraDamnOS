@@ -368,6 +368,10 @@ function updateFetchOverview() {
     const stats = fetched.stats || {};
     const reqCounts = fetched.requestedCounts || {};
 
+    // Live SQL counts from database
+    let sqlStats = {};
+    try { sqlStats = db2.getStats(); } catch { /* db not ready */ }
+
     // Mapowanie moduł → klucz w stats
     const modToStat = {
         poslowie: 'poslowie',
@@ -406,18 +410,20 @@ function updateFetchOverview() {
         }
     };
 
-    // Right column: show fetched stat count
+    // Right column: show fetched stat count + sql(x) from live DB
     const setStat = (id, mod) => {
         const el = document.getElementById(id);
         if (!el) return;
         const statKey = modToStat[mod] || mod;
         const val = stats[statKey];
+        const sqlVal = sqlStats[statKey] || 0;
+        const sqlSuffix = sqlVal > 0 ? ` sql(${sqlVal.toLocaleString('pl-PL')})` : '';
         if (val !== undefined && val > 0) {
-            el.textContent = val.toLocaleString('pl-PL');
+            el.textContent = val.toLocaleString('pl-PL') + sqlSuffix;
             el.className = 'fov-value';
         } else if (modules.includes(mod)) {
-            el.textContent = '0';
-            el.className = 'fov-unchecked';
+            el.textContent = '0' + sqlSuffix;
+            el.className = sqlVal > 0 ? 'fov-value' : 'fov-unchecked';
         } else {
             el.textContent = '—';
             el.className = 'fov-unchecked';
