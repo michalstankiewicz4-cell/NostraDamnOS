@@ -151,14 +151,42 @@ export async function runPipeline(config, callbacks = {}) {
             filterCachedModules(db2, config, onLog);
         }
 
+        // Step 3.6: Load dependency data from DB if parent modules were skipped (cached)
+        let cachedKomisje = null;
+        let cachedKomisjePosiedzenia = null;
+        const m = config.modules || [];
+        if (!m.includes('komisje') && (m.includes('komisje_posiedzenia') || m.includes('komisje_wypowiedzi'))) {
+            try {
+                const rows = db2.database.exec('SELECT id_komisji AS code, nazwa AS name FROM komisje');
+                if (rows.length > 0) {
+                    cachedKomisje = rows[0].columns.reduce((arr, _, i) => arr, []);
+                    cachedKomisje = rows[0].values.map(r => ({ code: r[0], name: r[1] }));
+                    onLog(`📌 Loaded ${cachedKomisje.length} komisje from cache for dependency`);
+                }
+            } catch { /* ignore */ }
+        }
+        if (!m.includes('komisje_posiedzenia') && m.includes('komisje_wypowiedzi')) {
+            try {
+                const rows = db2.database.exec('SELECT id_posiedzenia_komisji, id_komisji, numer, data FROM komisje_posiedzenia');
+                if (rows.length > 0) {
+                    cachedKomisjePosiedzenia = rows[0].values.map(r => ({
+                        id: r[0], committeeCode: r[1], num: r[2], date: r[3]
+                    }));
+                    onLog(`📌 Loaded ${cachedKomisjePosiedzenia.length} komisje_posiedzenia from cache for dependency`);
+                }
+            } catch { /* ignore */ }
+        }
+
         // Step 4: Fetch all data using runFetcher (10-85%)
         onLog('⬇️ Fetching data from API...');
         onProgress(10, 'Fetching data from API');
 
-        // Pass sittings range to config
+        // Pass sittings range to config + cached dependencies
         const fetchConfig = {
             ...config,
-            sittingsToFetch: sittingsToFetch
+            sittingsToFetch: sittingsToFetch,
+            _cachedKomisje: cachedKomisje,
+            _cachedKomisjePosiedzenia: cachedKomisjePosiedzenia
         };
 
         // Call fetcher with progress callback mapped to 10-85% range

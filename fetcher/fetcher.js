@@ -161,22 +161,32 @@ export async function runFetcher(config, onProgress) {
         tick('komisje');
     }
 
-    if (m.includes('komisje_posiedzenia') && results.komisje) {
-        console.log('[Fetcher] Fetching komisje_posiedzenia...');
-        results.komisje_posiedzenia = await fetchKomisjePosiedzenia({
-            ...config,
-            komisje: results.komisje
-        });
-        tick('posiedzenia komisji');
+    if (m.includes('komisje_posiedzenia')) {
+        const komisjeData = results.komisje || config._cachedKomisje;
+        if (komisjeData) {
+            console.log('[Fetcher] Fetching komisje_posiedzenia...');
+            results.komisje_posiedzenia = await fetchKomisjePosiedzenia({
+                ...config,
+                komisje: komisjeData
+            });
+            tick('posiedzenia komisji');
+        } else {
+            console.warn('[Fetcher] Skipping komisje_posiedzenia — no komisje data');
+        }
     }
 
-    if (m.includes('komisje_wypowiedzi') && results.komisje_posiedzenia) {
-        console.log('[Fetcher] Fetching komisje_wypowiedzi...');
-        results.komisje_wypowiedzi = await fetchKomisjeWypowiedzi({
-            ...config,
-            posiedzenia_komisji: results.komisje_posiedzenia
-        });
-        tick('wypowiedzi komisji');
+    if (m.includes('komisje_wypowiedzi')) {
+        const posiedzeniaData = results.komisje_posiedzenia || config._cachedKomisjePosiedzenia;
+        if (posiedzeniaData) {
+            console.log('[Fetcher] Fetching komisje_wypowiedzi...');
+            results.komisje_wypowiedzi = await fetchKomisjeWypowiedzi({
+                ...config,
+                posiedzenia_komisji: posiedzeniaData
+            });
+            tick('wypowiedzi komisji');
+        } else {
+            console.warn('[Fetcher] Skipping komisje_wypowiedzi — no komisje_posiedzenia data');
+        }
     }
 
     if (m.includes('oswiadczenia') && results.poslowie) {
