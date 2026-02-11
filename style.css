@@ -2192,14 +2192,6 @@ input:disabled {
         padding: 10px;
     }
 
-    /* Floating buttons: move closer to edge */
-    .floating-btn {
-        width: 45px;
-        height: 45px;
-        font-size: 20px;
-        left: 10px !important;
-    }
-
     /* Fetch Overview table */
     .fetch-overview-table {
         font-size: 12px;
