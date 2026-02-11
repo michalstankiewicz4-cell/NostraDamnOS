@@ -1157,15 +1157,19 @@
                 }
             } catch { /* ignore */ }
 
-            // Wypowiedzi: sprawdź pokrycie posiedzeń (ile posiedzeń ma wypowiedzi vs ile jest w bazie)
-            let wypCoverage = null; // { covered, total }
+            // Pokrycie posiedzeń: wypowiedzi i głosowania
+            let wypCoverage = null;
+            let glosCoverage = null;
             if (db2.database) {
                 try {
                     const totalR = db2.database.exec('SELECT COUNT(*) FROM posiedzenia');
-                    const covR = db2.database.exec('SELECT COUNT(DISTINCT id_posiedzenia) FROM wypowiedzi');
                     const total = totalR[0]?.values[0]?.[0] || 0;
-                    const covered = covR[0]?.values[0]?.[0] || 0;
-                    if (total > 0) wypCoverage = { covered, total };
+                    if (total > 0) {
+                        const wypR = db2.database.exec('SELECT COUNT(DISTINCT id_posiedzenia) FROM wypowiedzi');
+                        wypCoverage = { covered: wypR[0]?.values[0]?.[0] || 0, total };
+                        const glosR = db2.database.exec('SELECT COUNT(DISTINCT id_posiedzenia) FROM glosowania');
+                        glosCoverage = { covered: glosR[0]?.values[0]?.[0] || 0, total };
+                    }
                 } catch { /* ignore */ }
             }
 
@@ -1181,14 +1185,15 @@
                     } catch { /* table may not exist */ }
                 }
 
-                // Wypowiedzi: osobna logika — porównaj pokrycie posiedzeń
-                if (mod.table === 'wypowiedzi' && wypCoverage) {
-                    if (count > 0 && wypCoverage.covered >= wypCoverage.total) {
+                // Wypowiedzi i głosowania: porównaj pokrycie posiedzeń
+                const cov = mod.table === 'wypowiedzi' ? wypCoverage : mod.table === 'glosowania' ? glosCoverage : null;
+                if (cov) {
+                    if (count > 0 && cov.covered >= cov.total) {
                         seg.classList.add('cached');
-                        seg.title = `${mod.label}: ${count.toLocaleString('pl-PL')} (${wypCoverage.covered}/${wypCoverage.total} posiedzeń)`;
+                        seg.title = `${mod.label}: ${count.toLocaleString('pl-PL')} (${cov.covered}/${cov.total} posiedzeń)`;
                     } else if (count > 0) {
                         seg.classList.add('partial');
-                        seg.title = `${mod.label}: ${count.toLocaleString('pl-PL')} (${wypCoverage.covered}/${wypCoverage.total} posiedzeń)`;
+                        seg.title = `${mod.label}: ${count.toLocaleString('pl-PL')} (${cov.covered}/${cov.total} posiedzeń)`;
                     } else {
                         seg.title = `${mod.label}: puste`;
                     }
