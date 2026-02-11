@@ -1525,6 +1525,12 @@ input:disabled {
     background: #48bb78;
 }
 
+.cache-segment.disabled {
+    background: #444;
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
 /* ETL Detail Panel (top-right corner) */
 .etl-detail-panel {
     position: fixed;

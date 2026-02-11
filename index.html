@@ -380,10 +380,8 @@
                                 <span class="badge badge-size">80 KB</span>
                             </div>
                             <div class="checkbox-item">
-                                <input type="checkbox" id="etlCommitteeStatements" data-size="200">
-                                <label for="etlCommitteeStatements">Wypowiedzi komisji</label>
-                                <span id="etlCommitteeStatementsCount" class="term-count"></span>
-                                <span class="badge badge-size">200 KB</span>
+                                <input type="checkbox" id="etlCommitteeStatements" data-size="200" disabled>
+                                <label for="etlCommitteeStatements" style="opacity:0.4">Wypowiedzi komisji <small>(API niedostępne)</small></label>
                             </div>
                             
                             <div class="etl-fieldset-margin">
@@ -1164,8 +1162,8 @@
             { table: 'ustawy', label: 'Ustawy (akty prawne)', reqKey: 'ustawy', statKey: 'ustawy' },
             { table: 'komisje', label: 'Komisje', statKey: 'komisje' },
             { table: 'komisje_posiedzenia', label: 'Posiedzenia komisji', statKey: 'komisje_posiedzenia' },
-            { table: 'komisje_wypowiedzi', label: 'Wypowiedzi komisji', statKey: 'komisje_wypowiedzi' },
-            { table: 'oswiadczenia_majatkowe', label: 'Oświadczenia majątkowe', statKey: 'oswiadczenia_majatkowe' }
+            { table: 'komisje_wypowiedzi', label: 'Wypowiedzi komisji', statKey: 'komisje_wypowiedzi', disabled: true },
+            { table: 'oswiadczenia_majatkowe', label: 'Oświadczenia majątkowe', statKey: 'oswiadczenia_majatkowe', disabled: true }
         ];
 
         function updateCacheBar() {
@@ -1237,6 +1235,15 @@
             for (const mod of cacheModules) {
                 const seg = document.createElement('div');
                 seg.className = 'cache-segment';
+
+                // Wyłączone moduły (API niedostępne)
+                if (mod.disabled) {
+                    seg.classList.add('disabled');
+                    seg.title = `${mod.label}: API niedostępne`;
+                    bar.appendChild(seg);
+                    continue;
+                }
+
                 let count = 0;
                 if (db2.database) {
                     try {
