@@ -693,6 +693,11 @@ async function startPipelineETL() {
                 if (m) requestedCounts[key] = parseInt(m[1].replace(/\s/g, ''));
             }
 
+            // Fallback: jeśli zliczanie z ETL spanów nie zdążyło, użyj stats z pipeline
+            if (!requestedCounts.votings && stats.glosowania > 0) requestedCounts.votings = stats.glosowania;
+            if (!requestedCounts.votes && stats.glosy > 0) requestedCounts.votes = stats.glosy;
+            if (!requestedCounts.transcripts && stats.wypowiedzi > 0) requestedCounts.transcripts = stats.wypowiedzi;
+
             // Zapisz info o ostatnim pobraniu
             const lastFetch = {
                 newSittings: result.newSittings || 0,
