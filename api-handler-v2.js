@@ -1,6 +1,6 @@
 // API Handler v2.0 - Uses Pipeline ETL
 import { runPipeline, buildConfigFromUI, getCacheStatus, verifyDatabase } from './pipeline.js';
-import { fetchCounter } from './fetcher/fetcher.js';
+import { fetchCounter, setFetchAbortController } from './fetcher/fetcher.js';
 import { db2 } from './modules/database-v2.js';
 import ToastModule from './modules/toast.js';
 
@@ -728,9 +728,24 @@ db2.init().then(() => {
 if (!window.__apiHandlerInitialized) {
     window.__apiHandlerInitialized = true;
 
-// Main ETL fetch button handler with intelligent checking
+// Main ETL fetch button handler — fetch / abort / verify
+let currentAbortController = null;
+let fetchBtnMode = 'fetch'; // 'fetch' | 'abort' | 'verify'
+
+function setClearBtnEnabled(enabled) {
+    const clearBtn = document.getElementById('etlClearBtn');
+    if (clearBtn) clearBtn.disabled = !enabled;
+}
+
 document.getElementById('etlFetchBtn')?.addEventListener('click', async () => {
-    if (isFetching) return;
+    if (fetchBtnMode === 'abort') {
+        if (currentAbortController) currentAbortController.abort();
+        return;
+    }
+    if (fetchBtnMode === 'verify') {
+        await runVerification();
+        return;
+    }
     await smartFetch();
 });
 
@@ -797,13 +812,19 @@ async function smartFetch() {
 async function startPipelineETL() {
     console.log('🚀 [Zadanie] Pobierz/Zaktualizuj dane rozpoczęty');
     isFetching = true;
-    
+
+    // Create AbortController for this run
+    currentAbortController = new AbortController();
+    setFetchAbortController(currentAbortController);
+
     const btn = document.getElementById('etlFetchBtn');
-    
-    // UI setup
+
+    // UI setup — button becomes "Stop", disable clear
+    fetchBtnMode = 'abort';
+    setClearBtnEnabled(false);
     if (btn) {
-        btn.disabled = true;
-        btn.textContent = '⏳ Pobieranie...';
+        btn.textContent = '⏹️ Zatrzymaj pobieranie';
+        btn.classList.add('etl-btn-abort');
     }
     showEtlProgress();
 
@@ -926,20 +947,99 @@ async function startPipelineETL() {
                 { title: 'Pobrano dane', duration: 8000 }
             );
             console.log('✅ [Zadanie] Pobierz/Zaktualizuj dane zakończony');
+
+            // Switch button to verify mode
+            fetchBtnMode = 'verify';
         }
-        
+
     } catch (error) {
-        console.error('[API Handler] Error:', error);
-        ToastModule.error('Błąd ETL: ' + error.message);
+        fetchBtnMode = 'fetch';
+        if (error.name === 'AbortError' || currentAbortController?.signal?.aborted) {
+            // User aborted — clear database
+            console.log('[API Handler] Fetch aborted by user — clearing database');
+            try {
+                await db2.init();
+                db2.clearAll();
+                updateStatusIndicators();
+                setRecordsStatus(false);
+                setValidityStatus(false);
+                updateSummaryTab();
+                if (window._updateCacheBar) window._updateCacheBar();
+                ToastModule.success('Pobieranie zatrzymane — baza wyczyszczona');
+            } catch (clearErr) {
+                console.error('[API Handler] Clear after abort error:', clearErr);
+            }
+        } else {
+            console.error('[API Handler] Error:', error);
+            ToastModule.error('Błąd ETL: ' + error.message);
+        }
         console.log('❌ [Zadanie] Pobierz/Zaktualizuj dane zakończony z błędem');
-        
+
     } finally {
         isFetching = false;
+        currentAbortController = null;
+        setFetchAbortController(null);
         hideEtlProgress();
+        setClearBtnEnabled(true);
+        // If still in abort mode (error/abort path), reset to fetch
+        if (fetchBtnMode === 'abort') fetchBtnMode = 'fetch';
         if (btn) {
-            btn.disabled = false;
-            btn.textContent = '📥 Pobierz/Zaktualizuj dane';
+            btn.classList.remove('etl-btn-abort');
+            if (fetchBtnMode === 'verify') {
+                btn.textContent = '🔍 Sprawdź poprawność';
+                btn.classList.add('etl-btn-verify-mode');
+            } else {
+                btn.textContent = '📥 Pobierz/Zaktualizuj dane';
+            }
         }
+    }
+}
+
+// Verification — triggered by 2nd click after fetch
+async function runVerification() {
+    const btn = document.getElementById('etlFetchBtn');
+    setClearBtnEnabled(false);
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = '🔍 Weryfikacja...';
+    }
+    showEtlProgress();
+
+    try {
+        const report = await verifyDatabase(db2);
+        const newItems = report.results.filter(r => r.status === 'new');
+
+        if (newItems.length > 0) {
+            setRecordsStatus(true);
+            setValidityStatus(true);
+            const totalNew = newItems.reduce((s, r) => s + (r.diff || 0), 0);
+            const msg = `Znaleziono ${totalNew} nowych rekordów w API (${newItems.map(r => r.label).join(', ')}).\n\nCzy pobrać poprawki?`;
+            if (confirm(msg)) {
+                hideEtlProgress();
+                fetchBtnMode = 'fetch';
+                if (btn) {
+                    btn.disabled = false;
+                    btn.classList.remove('etl-btn-verify-mode');
+                }
+                await startPipelineETL();
+                return;
+            }
+        } else {
+            setRecordsStatus(false);
+            setValidityStatus(false);
+            ToastModule.success('Baza jest aktualna — brak nowych danych w API.');
+        }
+    } catch (error) {
+        console.error('[Verification] Error:', error);
+        ToastModule.error('Błąd weryfikacji: ' + error.message);
+    }
+
+    // Stay in verify mode — user can re-check or clear DB to start over
+    hideEtlProgress();
+    setClearBtnEnabled(true);
+    if (btn) {
+        btn.disabled = false;
+        btn.textContent = '🔍 Sprawdź poprawność';
     }
 }
 
@@ -951,13 +1051,21 @@ document.getElementById('etlClearBtn')?.addEventListener('click', async () => {
             await db2.init();
             db2.clearAll();
             console.log('[API Handler] Database cleared');
-            
+
             // Update status indicators + summary tab + cache bar after clearing
             updateStatusIndicators();
             setRecordsStatus(false);
             setValidityStatus(false);
             updateSummaryTab();
             if (window._updateCacheBar) window._updateCacheBar();
+
+            // Reset fetch button to default state
+            fetchBtnMode = 'fetch';
+            const fetchBtn = document.getElementById('etlFetchBtn');
+            if (fetchBtn) {
+                fetchBtn.classList.remove('etl-btn-verify-mode');
+                fetchBtn.textContent = '📥 Pobierz/Zaktualizuj dane';
+            }
 
             ToastModule.success('Baza wyczyszczona');
             console.log('✅ [Zadanie] Wyczyść bazę zakończony');

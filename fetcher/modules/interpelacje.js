@@ -4,20 +4,34 @@
 import { safeFetch } from '../fetcher.js';
 
 /**
- * Pobiera wszystkie interpelacje dla danej kadencji
+ * Pobiera wszystkie interpelacje dla danej kadencji (z paginacją)
  */
 export async function fetchInterpelacje({ kadencja, typ = 'sejm' }) {
     const base = typ === 'sejm' ? 'sejm' : 'senat';
-    
-    // API endpoint z term
-    const url = `https://api.sejm.gov.pl/${base}/term${kadencja}/interpellations`;
-    
+    const pageSize = 500;
+    let allResults = [];
+    let offset = 0;
+
     try {
-        const allData = await safeFetch(url);
-        return Array.isArray(allData) ? allData : [];
+        while (true) {
+            const url = `https://api.sejm.gov.pl/${base}/term${kadencja}/interpellations?limit=${pageSize}&offset=${offset}`;
+            const data = await safeFetch(url);
+            const batch = Array.isArray(data) ? data : [];
+
+            if (batch.length === 0) break;
+
+            allResults = allResults.concat(batch);
+            console.log(`[Interpelacje] Fetched ${allResults.length} (offset=${offset})`);
+
+            if (batch.length < pageSize) break;
+            offset += batch.length;
+        }
+
+        console.log(`[Interpelacje] Total: ${allResults.length}`);
+        return allResults;
     } catch (e) {
-        console.warn(`[Interpelacje] Failed:`, e.message);
-        return [];
+        console.warn(`[Interpelacje] Error at offset ${offset}:`, e.message);
+        return allResults;
     }
 }
 

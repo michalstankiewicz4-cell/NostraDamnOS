@@ -243,16 +243,10 @@
                             </div>
                         </div>
                         
-                        <div class="etl-relative-container">
-                            <input type="checkbox" id="fullDatabaseCheckbox" class="btn-checkbox">
-                            <button class="etl-btn etl-btn-primary" id="etlFetchBtn">
-                                📥 Pobierz/Zaktualizuj dane
-                            </button>
-                        </div>
-                        
-                        <button class="etl-btn etl-btn-verify" id="etlVerifyBtn">
-                            🔍 Sprawdź niezgodności
+                        <button class="etl-btn etl-btn-primary" id="etlFetchBtn">
+                            📥 Pobierz/Zaktualizuj dane
                         </button>
+                        
                         <button class="etl-btn etl-btn-danger" id="etlClearBtn">
                             🗑️ Wyczyść bazę
                         </button>
@@ -1797,23 +1791,23 @@
                     }
                 }
 
-                // Committees — wait for options to load
+                // Re-apply dependencies after restoring checkboxes
+                if (typeof window._applyEtlDependencies === 'function') window._applyEtlDependencies();
+
+                // Committees — trigger load, then set saved selections after options arrive
                 const comSel = document.getElementById('etlCommitteeSelect');
-                if (comSel && Array.isArray(s.committees) && s.committees.length > 0) {
-                    const trySetCommittees = () => {
-                        if (comSel.options.length > 0) {
+                if (comSel && typeof window._loadCommitteeOptions === 'function') {
+                    window._loadCommitteeOptions().then(() => {
+                        if (Array.isArray(s.committees) && s.committees.length > 0) {
                             for (const opt of comSel.options) {
                                 opt.selected = s.committees.includes(opt.value);
                             }
                         }
-                    };
-                    trySetCommittees();
-                    setTimeout(trySetCommittees, 1500);
+                        _restoringEtl = false;
+                    }).catch(() => { _restoringEtl = false; });
+                } else {
+                    _restoringEtl = false;
                 }
-
-                // Re-apply dependencies after restoring
-                if (typeof window._applyEtlDependencies === 'function') window._applyEtlDependencies();
-                _restoringEtl = false;
             } catch { _restoringEtl = false; }
         }
 

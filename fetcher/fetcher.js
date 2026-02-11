@@ -19,15 +19,21 @@ import { fetchSenatGlosowania } from './modules/senat_glosowania.js';
 // Global fetch counter (reset per pipeline run)
 export const fetchCounter = { count: 0, errors: 0 };
 
+// Abort controller — set externally to cancel all in-flight fetches
+export let fetchAbortController = null;
+export function setFetchAbortController(ctrl) { fetchAbortController = ctrl; }
+
 // Safe fetch with retry + exponential backoff
 export async function safeFetch(url) {
     for (let i = 0; i < 3; i++) {
         try {
-            const res = await fetch(url);
+            const opts = fetchAbortController ? { signal: fetchAbortController.signal } : {};
+            const res = await fetch(url, opts);
             fetchCounter.count++;
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             return await res.json();
         } catch (e) {
+            if (e.name === 'AbortError') throw e;
             if (i === 2) { fetchCounter.errors++; throw new Error(`API unreachable: ${url} - ${e.message}`); }
             await new Promise(r => setTimeout(r, 500 * (i + 1)));
         }
@@ -38,12 +44,14 @@ export async function safeFetch(url) {
 export async function safeFetchText(url) {
     for (let i = 0; i < 3; i++) {
         try {
-            const res = await fetch(url);
+            const opts = fetchAbortController ? { signal: fetchAbortController.signal } : {};
+            const res = await fetch(url, opts);
             fetchCounter.count++;
             if (res.status === 404) return null;
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             return await res.text();
         } catch (e) {
+            if (e.name === 'AbortError') throw e;
             if (i === 2) { fetchCounter.errors++; return null; }
             await new Promise(r => setTimeout(r, 500 * (i + 1)));
         }

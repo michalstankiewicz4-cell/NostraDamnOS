@@ -1,10 +1,16 @@
 // Pipeline v2.0 - Complete ETL with Incremental Cache
 // UI → Fetcher → Normalizer → Database
 
-import { runFetcher, safeFetch, fetchCounter } from './fetcher/fetcher.js';
+import { runFetcher, safeFetch, fetchCounter, fetchAbortController } from './fetcher/fetcher.js';
 import { runNormalizer } from './normalizer/normalizer.js';
 import { db2 } from './modules/database-v2.js';
 import { applyRodo } from './modules/rodo.js';
+
+function checkAbort() {
+    if (fetchAbortController?.signal?.aborted) {
+        throw new DOMException('Pipeline aborted', 'AbortError');
+    }
+}
 
 // Skip per-term modules that already have data in DB for this kadencja
 function filterCachedModules(db, config, onLog) {
@@ -200,6 +206,8 @@ export async function runPipeline(config, callbacks = {}) {
             });
         });
 
+        checkAbort();
+
         // Apply RODO filter if enabled
         let processedRaw = raw;
 
@@ -217,6 +225,8 @@ export async function runPipeline(config, callbacks = {}) {
 
         onLog(`📥 Fetched ${totalRecords} raw records from API (${fetchCounter.count} requests)`);
         onProgress(85, 'Pobieranie zakończone', { module: `${totalRecords} rekordów`, links: fetchCounter.count, linksLabel: `${fetchCounter.count} zapytań API` });
+
+        checkAbort();
 
         // Step 5: Normalize and save (85-92%)
         onLog('🧹 Normalizing and saving to database...');
@@ -286,6 +296,9 @@ export async function runPipeline(config, callbacks = {}) {
         return result;
 
     } catch (error) {
+        // Re-throw AbortError so caller can handle cancellation
+        if (error.name === 'AbortError') throw error;
+
         console.error('[Pipeline] Error:', error);
         onError(error);
         onLog(`❌ Pipeline failed: ${error.message}`);
@@ -500,6 +513,19 @@ async function fetchApiCount(url) {
     } catch { return -1; }
 }
 
+async function fetchApiCountInRange(url, from, to) {
+    try {
+        const res = await fetch(url);
+        if (!res.ok) return -1;
+        const data = await res.json();
+        if (!Array.isArray(data)) return -1;
+        return data.filter(item => {
+            const num = item.number || item.num || 0;
+            return num >= from && num <= to;
+        }).length;
+    } catch { return -1; }
+}
+
 async function fetchPaginatedCount(baseUrl) {
     let total = 0, offset = 0;
     try {
@@ -535,21 +561,61 @@ export async function verifyDatabase(db) {
     const dbStats = db.getStats();
     const results = [];
 
-    // Define checks: { label, table, apiUrl, paginated? }
+    // Read fetched modules and range from saved config
+    let fetchedModules = ['poslowie', 'posiedzenia'];
+    let rangeFrom = 1, rangeTo = 999;
+    try {
+        const raw = db.getMetadata('last_fetch_config');
+        if (raw) {
+            const cfg = JSON.parse(raw);
+            if (Array.isArray(cfg.modules)) fetchedModules = cfg.modules;
+            if (cfg.rangeFrom) rangeFrom = cfg.rangeFrom;
+            if (cfg.rangeTo) rangeTo = cfg.rangeTo;
+        }
+    } catch { /* defaults */ }
+
+    // Define checks — only verify modules that were actually fetched
     const checks = [
-        { label: 'Posiedzenia', table: 'posiedzenia', url: `${apiBase}/proceedings` },
-        { label: 'Posłowie', table: 'poslowie', url: `${apiBase}/MP` },
-        { label: 'Komisje', table: 'komisje', url: `${apiBase}/committees` },
-        { label: 'Interpelacje', table: 'interpelacje', url: `${apiBase}/interpellations`, paginated: true },
-        { label: 'Zapytania', table: 'zapytania', url: `${apiBase}/writtenQuestions`, paginated: true },
+        { label: 'Posłowie', table: 'poslowie', url: `${apiBase}/MP`, module: 'poslowie' },
     ];
+
+    // Posiedzenia: compare only within fetched range
+    if (fetchedModules.includes('posiedzenia')) {
+        checks.push({
+            label: 'Posiedzenia', table: 'posiedzenia',
+            url: `${apiBase}/proceedings`,
+            module: 'posiedzenia',
+            filterRange: { from: rangeFrom, to: rangeTo }
+        });
+    }
+
+    if (fetchedModules.includes('komisje') || fetchedModules.includes('komisje_posiedzenia')) {
+        checks.push({ label: 'Komisje', table: 'komisje', url: `${apiBase}/committees`, module: 'komisje' });
+    }
+
+    if (fetchedModules.includes('interpelacje')) {
+        checks.push({ label: 'Interpelacje', table: 'interpelacje', url: `${apiBase}/interpellations`, paginated: true, module: 'interpelacje' });
+    }
+
+    if (fetchedModules.includes('zapytania')) {
+        checks.push({ label: 'Zapytania', table: 'zapytania', url: `${apiBase}/writtenQuestions`, paginated: true, module: 'zapytania' });
+    }
 
     // Run all checks in parallel
     const promises = checks.map(async (chk) => {
         const dbCount = dbStats[chk.table] || 0;
-        const apiCount = chk.paginated
-            ? await fetchPaginatedCount(chk.url)
-            : await fetchApiCount(chk.url);
+        let apiCount;
+        if (chk.paginated) {
+            apiCount = await fetchPaginatedCount(chk.url);
+        } else {
+            const fullCount = await fetchApiCount(chk.url);
+            // For posiedzenia: filter API results to fetched range
+            if (chk.filterRange && fullCount >= 0) {
+                apiCount = await fetchApiCountInRange(chk.url, chk.filterRange.from, chk.filterRange.to);
+            } else {
+                apiCount = fullCount;
+            }
+        }
         return { ...chk, dbCount, apiCount };
     });
 

@@ -776,95 +776,6 @@ function initETLPanel() {
         });
     });
 
-    // Full database checkbox - zaznacza wszystko w formularzu ETL
-    const fullDatabaseCheckbox = document.getElementById('fullDatabaseCheckbox');
-    if (fullDatabaseCheckbox) {
-        fullDatabaseCheckbox.addEventListener('click', (e) => {
-            e.stopPropagation();
-        });
-        fullDatabaseCheckbox.addEventListener('change', (e) => {
-            const dataCheckboxes = [
-                'etlTranscripts', 'etlVotings', 'etlVotes',
-                'etlInterpellations', 'etlWrittenQuestions', 'etlBills', 'etlLegalActs',
-                'etlCommitteeSittings'
-            ];
-
-            if (e.target.checked) {
-                // === ZAZNACZ WSZYSTKO ===
-                if (!confirm('Czy na pewno chcesz zaznaczyć wszystkie dane w formularzu ETL?')) {
-                    e.target.checked = false;
-                    return;
-                }
-
-                // Sejm
-                const sejmRadio = document.querySelector('input[name="etlInst"][value="sejm"]');
-                if (sejmRadio && !sejmRadio.checked) {
-                    sejmRadio.checked = true;
-                    sejmRadio.dispatchEvent(new Event('change', { bubbles: true }));
-                }
-
-                // Kadencja "all"
-                const termSelect = document.getElementById('etlTermSelect');
-                if (termSelect) {
-                    termSelect.value = 'all';
-                    termSelect.dispatchEvent(new Event('change', { bubbles: true }));
-                }
-
-                // Zakres posiedzeń max
-                const fromEl = document.getElementById('etlRangeFrom');
-                const toEl = document.getElementById('etlRangeTo');
-                if (fromEl) fromEl.value = fromEl.min || 1;
-                if (toEl) toEl.value = toEl.max || 999;
-
-                // Zaznacz wszystkie checkboxy (pomijaj disabled)
-                for (const id of dataCheckboxes) {
-                    const chk = document.getElementById(id);
-                    if (chk && !chk.disabled && !chk.checked) {
-                        chk.checked = true;
-                        chk.dispatchEvent(new Event('change', { bubbles: true }));
-                    }
-                }
-
-                // Komisje: zaznacz "Wszystkie"
-                const committeeSelect = document.getElementById('etlCommitteeSelect');
-                if (committeeSelect) {
-                    const allOpt = committeeSelect.querySelector('option[value="all"]');
-                    if (allOpt) allOpt.selected = true;
-                }
-            } else {
-                // === ODZNACZ — przywróć domyślne ===
-
-                // Kadencja 10
-                const termSelect = document.getElementById('etlTermSelect');
-                if (termSelect) {
-                    termSelect.value = '10';
-                    termSelect.dispatchEvent(new Event('change', { bubbles: true }));
-                }
-
-                // Zakres 1-3
-                const fromEl = document.getElementById('etlRangeFrom');
-                const toEl = document.getElementById('etlRangeTo');
-                if (fromEl) fromEl.value = 1;
-                if (toEl) toEl.value = 3;
-
-                // Odznacz wszystko oprócz Wypowiedzi
-                for (const id of dataCheckboxes) {
-                    const chk = document.getElementById(id);
-                    if (!chk || chk.disabled) continue;
-                    const shouldBeChecked = id === 'etlTranscripts';
-                    if (chk.checked !== shouldBeChecked) {
-                        chk.checked = shouldBeChecked;
-                        chk.dispatchEvent(new Event('change', { bubbles: true }));
-                    }
-                }
-            }
-
-            // Aktualizuj sidebar
-            if (typeof updateETLSummary === 'function') updateETLSummary();
-            if (typeof updateETLEstimate === 'function') updateETLEstimate();
-        });
-    }
-
     // ===== MODULE AVAILABILITY (Sejm vs Senat) =====
     function updateModuleAvailability(institution) {
         // Nie uwzględniaj modułów na stałe wyłączonych (API niedostępne)
@@ -896,8 +807,9 @@ function initETLPanel() {
         applyDependencies();
     }
 
-    // Expose applyDependencies for external use (ETL settings restore)
+    // Expose helpers for external use (ETL settings restore)
     window._applyEtlDependencies = applyDependencies;
+    window._loadCommitteeOptions = loadCommitteeOptions;
 
     // Save ETL settings on any form change (delegated)
     const etlForm = document.querySelector('[data-section="1"]');
@@ -1124,87 +1036,6 @@ function initETLPanel() {
     updateETLEstimate();
     
     
-    // Verify button - check for differences/discrepancies (independent of form)
-    const verifyBtn = document.getElementById('etlVerifyBtn');
-    if (verifyBtn) {
-        verifyBtn.addEventListener('click', async () => {
-            verifyBtn.disabled = true;
-            verifyBtn.textContent = '⏳ Sprawdzanie...';
-
-            try {
-                const { db2 } = await import('./modules/database-v2.js');
-                if (!db2.database) {
-                    ToastModule.error('Baza danych nie jest załadowana');
-                    return;
-                }
-                const { verifyDatabase } = await import('./pipeline.js');
-                const report = await verifyDatabase(db2);
-                const hasIssues = report.results.some(r => r.status === 'new');
-
-                if (hasIssues) {
-                    window.setValidityStatus(true);
-                } else {
-                    window.setValidityStatus(false);
-                }
-                showVerificationResults(report);
-            } catch (error) {
-                ToastModule.error('Błąd weryfikacji: ' + error.message);
-            } finally {
-                verifyBtn.disabled = false;
-                verifyBtn.textContent = '🔍 Sprawdź niezgodności';
-            }
-        });
-    }
-}
-
-function showVerificationResults(report) {
-    const { kadencja, typ, results, freshness } = report;
-    const inst = typ === 'sejm' ? 'Sejm' : 'Senat';
-
-    let msg = `Raport weryfikacji (kadencja ${kadencja}, ${inst}):\n\n`;
-
-    // Table header
-    const pad = (s, n) => String(s).padEnd(n);
-    const padR = (s, n) => String(s).padStart(n);
-    msg += `${pad('Tabela', 22)} ${padR('Baza', 7)} ${padR('API', 7)}  Status\n`;
-    msg += '─'.repeat(52) + '\n';
-
-    let newCount = 0;
-    for (const r of results) {
-        let status;
-        if (r.status === 'new') {
-            status = `+${r.diff} nowych`;
-            newCount += r.diff;
-        } else if (r.status === 'ok') {
-            status = 'OK';
-        } else if (r.status === 'error') {
-            status = 'Błąd API';
-        } else {
-            status = '—';
-        }
-        msg += `${pad(r.label, 22)} ${padR(r.dbCount.toLocaleString('pl-PL'), 7)} ${padR(String(r.apiCount), 7)}  ${status}\n`;
-    }
-
-    if (freshness) {
-        msg += '\n';
-        if (freshness.days > 7) {
-            msg += `Ostatnia aktualizacja: ${freshness.days} dni temu`;
-        } else if (freshness.days > 0) {
-            msg += `Ostatnia aktualizacja: ${freshness.days} dni temu`;
-        } else {
-            msg += `Ostatnia aktualizacja: dzisiaj`;
-        }
-    }
-
-    if (newCount > 0) {
-        msg += `\n\nZnaleziono ${newCount} nowych rekordów w API.`;
-        const shouldUpdate = confirm(msg + '\n\nCzy chcesz pobrać brakujące dane?');
-        if (shouldUpdate) {
-            document.getElementById('etlFetchBtn').click();
-        }
-    } else {
-        alert(msg + '\n\nBaza jest aktualna — brak nowych danych w API.');
-    }
 }
 
 // Init when DOM ready (with deduplication check)
