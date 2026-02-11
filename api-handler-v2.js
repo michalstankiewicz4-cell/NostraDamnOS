@@ -301,14 +301,9 @@ function updateSummaryTab() {
             container.appendChild(card);
         }
 
-        // Dodaj kartę dla głosów indywidualnych (zliczane z totalVoted, nie pobierane do DB)
-        let indVotes = 0;
-        try {
-            const lf = JSON.parse(localStorage.getItem('nostradamnos_lastFetch') || '{}');
-            indVotes = lf.individualVotes || 0;
-        } catch { /* ignore */ }
-        if (indVotes > 0 || sqlCounts.glosy_indywidualne > 0) {
-            const sqlGlosy = sqlCounts.glosy_indywidualne || 0;
+        // Dodaj kartę dla głosów indywidualnych — tylko gdy są dane w DB
+        const sqlGlosy = sqlCounts.glosy_indywidualne || 0;
+        if (sqlGlosy > 0) {
             const card = document.createElement('div');
             card.className = 'summary-card';
             card.setAttribute('data-table', 'glosowania');
@@ -317,7 +312,7 @@ function updateSummaryTab() {
                 <div class="summary-content">
                     <div class="summary-label">Głosy indywidualne</div>
                     <div class="summary-value">
-                        <span class="summary-value-main">${indVotes.toLocaleString('pl-PL')}</span>
+                        <span class="summary-value-main">${sqlGlosy.toLocaleString('pl-PL')}</span>
                         <span class="summary-value-sql">${sqlGlosy.toLocaleString('pl-PL')}</span>
                     </div>
                 </div>`;
@@ -484,6 +479,9 @@ function updateFetchOverview() {
     let sqlStats = {};
     try { sqlStats = getSqlCounts(); } catch { /* db not ready */ }
 
+    // Sprawdź czy baza ma jakiekolwiek dane
+    const dbHasData = Object.values(sqlStats).some(v => v > 0);
+
     // Mapowanie moduł → klucz w stats
     const modToStat = {
         poslowie: 'poslowie',
@@ -505,10 +503,15 @@ function updateFetchOverview() {
         if (cls) el.className = cls;
     };
 
-    // Left column: show count if available, otherwise "tak/—"
+    // Left column: show count if available, otherwise "tak/—"; hide values when DB empty
     const setReq = (id, mod, countValue) => {
         const el = document.getElementById(id);
         if (!el) return;
+        if (!dbHasData) {
+            el.textContent = '—';
+            el.className = 'fov-unchecked';
+            return;
+        }
         const checked = modules.includes(mod);
         if (!checked) {
             el.textContent = '—';
@@ -522,10 +525,15 @@ function updateFetchOverview() {
         }
     };
 
-    // Right column: show fetched stat count + sql(x) from live DB
+    // Right column: show fetched stat count + sql(x) from live DB; hide when DB empty
     const setStat = (id, mod) => {
         const el = document.getElementById(id);
         if (!el) return;
+        if (!dbHasData) {
+            el.textContent = '—';
+            el.className = 'fov-unchecked';
+            return;
+        }
         const statKey = modToStat[mod] || mod;
         const val = stats[statKey];
         const sqlVal = sqlStats[statKey] || 0;
@@ -542,11 +550,11 @@ function updateFetchOverview() {
         }
     };
 
-    // Lewa kolumna: Zlecone
+    // Lewa kolumna: Zlecone — ukryj gdy brak danych w DB
     const inst = config.typ === 'senat' ? 'Senat' : 'Sejm';
-    setText('fovInst', inst);
-    setText('fovKadencja', config.kadencja ? `nr ${config.kadencja}` : 'wszystkie');
-    setText('fovRange', `${config.rangeFrom || '?'} — ${config.rangeTo || '?'}`);
+    setText('fovInst', dbHasData ? inst : '—');
+    setText('fovKadencja', dbHasData ? (config.kadencja ? `nr ${config.kadencja}` : 'wszystkie') : '—');
+    setText('fovRange', dbHasData ? `${config.rangeFrom || '?'} — ${config.rangeTo || '?'}` : '—');
     setReq('fovReqDeputies', 'poslowie');
     setReq('fovReqSittings', 'posiedzenia', reqCounts.sittings);
     setReq('fovReqSessionDays', 'wypowiedzi', reqCounts.sessionDays);
@@ -559,46 +567,56 @@ function updateFetchOverview() {
     setReq('fovReqActs', 'ustawy', reqCounts.ustawy);
     setReq('fovReqDisclosures', 'oswiadczenia');
 
-    // Prawa kolumna: Pobrane
-    setText('fovGotInst', inst);
-    setText('fovGotKadencja', config.kadencja ? `nr ${config.kadencja}` : 'wszystkie');
-    setText('fovGotRange', fetched.newSittings > 0 ? `${fetched.newSittings} posiedzeń` : '—');
+    // Prawa kolumna: Pobrane — ukryj gdy brak danych w DB
+    setText('fovGotInst', dbHasData ? inst : '—');
+    setText('fovGotKadencja', dbHasData ? (config.kadencja ? `nr ${config.kadencja}` : 'wszystkie') : '—');
+    setText('fovGotRange', dbHasData && fetched.newSittings > 0 ? `${fetched.newSittings} posiedzeń` : '—');
     setStat('fovGotDeputies', 'poslowie');
     setStat('fovGotSittings', 'posiedzenia');
     // Dni obrad: from pipeline's sessionDays count + sql
-    const gotSessionDays = fetched.sessionDays || 0;
-    const sqlSessionDays = sqlStats.dni_obrad || 0;
-    const sessionDaysSql = sqlSessionDays > 0 ? ` sql(${sqlSessionDays.toLocaleString('pl-PL')})` : '';
     const sessionDaysEl = document.getElementById('fovGotSessionDays');
     if (sessionDaysEl) {
-        if (gotSessionDays > 0) {
-            sessionDaysEl.textContent = gotSessionDays.toLocaleString('pl-PL') + sessionDaysSql;
-            sessionDaysEl.className = 'fov-value';
-        } else if (sqlSessionDays > 0) {
-            sessionDaysEl.textContent = '0' + sessionDaysSql;
-            sessionDaysEl.className = 'fov-value';
-        } else {
+        if (!dbHasData) {
             sessionDaysEl.textContent = '—';
             sessionDaysEl.className = 'fov-unchecked';
+        } else {
+            const gotSessionDays = fetched.sessionDays || 0;
+            const sqlSessionDays = sqlStats.dni_obrad || 0;
+            const sessionDaysSql = sqlSessionDays > 0 ? ` sql(${sqlSessionDays.toLocaleString('pl-PL')})` : '';
+            if (gotSessionDays > 0) {
+                sessionDaysEl.textContent = gotSessionDays.toLocaleString('pl-PL') + sessionDaysSql;
+                sessionDaysEl.className = 'fov-value';
+            } else if (sqlSessionDays > 0) {
+                sessionDaysEl.textContent = '0' + sessionDaysSql;
+                sessionDaysEl.className = 'fov-value';
+            } else {
+                sessionDaysEl.textContent = '—';
+                sessionDaysEl.className = 'fov-unchecked';
+            }
         }
     }
     setStat('fovGotTranscripts', 'wypowiedzi');
     setStat('fovGotVotings', 'glosowania');
     // Głosy indywidualne: użyj individualVotes (z totalVoted) + sql SUM(za+przeciw+wstrzymalo)
-    const indVotes = fetched.individualVotes || 0;
-    const sqlGlosy = sqlStats.glosy_indywidualne || 0;
-    const glosySql = sqlGlosy > 0 ? ` sql(${sqlGlosy.toLocaleString('pl-PL')})` : '';
     const votesEl = document.getElementById('fovGotVotes');
     if (votesEl) {
-        if (indVotes > 0 && modules.includes('glosy')) {
-            votesEl.textContent = indVotes.toLocaleString('pl-PL') + glosySql;
-            votesEl.className = 'fov-value';
-        } else if (modules.includes('glosy')) {
-            votesEl.textContent = '0' + glosySql;
-            votesEl.className = sqlGlosy > 0 ? 'fov-value' : 'fov-unchecked';
-        } else {
+        if (!dbHasData) {
             votesEl.textContent = '—';
             votesEl.className = 'fov-unchecked';
+        } else {
+            const indVotes = fetched.individualVotes || 0;
+            const fovSqlGlosy = sqlStats.glosy_indywidualne || 0;
+            const glosySql = fovSqlGlosy > 0 ? ` sql(${fovSqlGlosy.toLocaleString('pl-PL')})` : '';
+            if (indVotes > 0 && modules.includes('glosy')) {
+                votesEl.textContent = indVotes.toLocaleString('pl-PL') + glosySql;
+                votesEl.className = 'fov-value';
+            } else if (modules.includes('glosy')) {
+                votesEl.textContent = '0' + glosySql;
+                votesEl.className = fovSqlGlosy > 0 ? 'fov-value' : 'fov-unchecked';
+            } else {
+                votesEl.textContent = '—';
+                votesEl.className = 'fov-unchecked';
+            }
         }
     }
     setStat('fovGotInterpellations', 'interpelacje');
