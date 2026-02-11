@@ -321,7 +321,7 @@
                             </div>
                             <div class="checkbox-item">
                                 <input type="checkbox" id="etlVotes" data-size="1200">
-                                <label for="etlVotes">Głosy indywidualne</label>
+                                <label for="etlVotes">Głosy indywidualne <small style="color:var(--text-secondary)">(zliczane, nie pobierane)</small></label>
                                 <span id="etlVotesCount" class="term-count"></span>
                                 <span class="badge badge-size">1.2 MB/pos.</span>
                             </div>
@@ -356,9 +356,8 @@
                                 <span class="badge badge-size">~500 KB</span>
                             </div>
                             <div class="checkbox-item">
-                                <input type="checkbox" id="etlDisclosures" data-size="500">
-                                <label for="etlDisclosures">Oświadczenia majątkowe</label>
-                                <span class="badge badge-size">~500 KB</span>
+                                <input type="checkbox" id="etlDisclosures" data-size="500" disabled>
+                                <label for="etlDisclosures" style="opacity:0.4">Oświadczenia majątkowe <small>(API niedostępne)</small></label>
                             </div>
                         </fieldset>
                         
