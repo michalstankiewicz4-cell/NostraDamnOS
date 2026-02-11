@@ -1227,6 +1227,9 @@ input:disabled {
     font-size: 0.8rem;
     color: #e2e8f0;
     font-family: 'Courier New', 'Consolas', 'Monaco', monospace;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    transform: translateZ(0);
 }
 
 /* === SETTINGS — panele ustawień === */
@@ -1623,6 +1626,8 @@ input:disabled {
     overflow: hidden;
     max-width: calc(3 * 95px + 2 * 5px + 16px + 100px); /* 3 items visible + 100px */
     cursor: grab;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
 }
 
 .nav-carousel {
