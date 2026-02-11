@@ -843,27 +843,29 @@
             </section>
         </main>
 
-        <!-- BOTTOM NAVIGATION BAR -->
-        <nav class="bottom-nav">
-            <div class="nav-item active" data-section="1">
-                <div class="nav-icon">📥</div>
-                <div class="nav-label">ETL</div>
-            </div>
-            <div class="nav-item" data-section="2">
-                <div class="nav-icon">📊</div>
-                <div class="nav-label">Podsumowanie</div>
-            </div>
-            <div class="nav-item" data-section="3">
-                <div class="nav-icon">🤖</div>
-                <div class="nav-label">AI Asystent</div>
-            </div>
-            <div class="nav-item" data-section="4">
-                <div class="nav-icon">📈</div>
-                <div class="nav-label">Wykresy</div>
-            </div>
-            <div class="nav-item" data-section="5">
-                <div class="nav-icon">⚙️</div>
-                <div class="nav-label">Ustawienia</div>
+        <!-- BOTTOM NAVIGATION BAR (Carousel) -->
+        <nav class="bottom-nav" id="bottomNav">
+            <div class="nav-carousel" id="navCarousel">
+                <div class="nav-item active" data-section="1">
+                    <div class="nav-icon">📥</div>
+                    <div class="nav-label">ETL</div>
+                </div>
+                <div class="nav-item" data-section="2">
+                    <div class="nav-icon">📊</div>
+                    <div class="nav-label">Podsumowanie</div>
+                </div>
+                <div class="nav-item" data-section="3">
+                    <div class="nav-icon">🤖</div>
+                    <div class="nav-label">AI Asystent</div>
+                </div>
+                <div class="nav-item" data-section="4">
+                    <div class="nav-icon">📈</div>
+                    <div class="nav-label">Wykresy</div>
+                </div>
+                <div class="nav-item" data-section="5">
+                    <div class="nav-icon">⚙️</div>
+                    <div class="nav-label">Ustawienia</div>
+                </div>
             </div>
         </nav>
 
@@ -1315,38 +1317,215 @@
         window._updateCacheBar = updateCacheBar;
     </script>
 
-    <!-- Bottom Navigation Logic -->
+    <!-- Bottom Navigation Logic (Carousel) -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const navItems = document.querySelectorAll('.nav-item');
+            const carousel = document.getElementById('navCarousel');
+            const nav = document.getElementById('bottomNav');
             const sections = document.querySelectorAll('.app-section');
-            
-            navItems.forEach(item => {
-                item.addEventListener('click', () => {
-                    const sectionNum = item.dataset.section;
-                    
-                    // Update nav active state
-                    navItems.forEach(n => n.classList.remove('active'));
-                    item.classList.add('active');
-                    
-                    // Update sections
-                    sections.forEach(s => {
-                        s.style.display = 'none';
-                        s.classList.remove('active');
-                    });
-                    
-                    const targetSection = document.querySelector(`.app-section[data-section="${sectionNum}"]`);
-                    if (targetSection) {
-                        targetSection.style.display = 'block';
-                        targetSection.classList.add('active');
-                    }
+            if (!carousel || !nav) return;
 
-                    // Renderuj wykresy przy wejściu na zakładkę 4
-                    if (sectionNum === '4' && window._renderCharts) {
-                        window._renderCharts();
+            // Collect original items and their section numbers
+            const origItems = [...carousel.querySelectorAll('.nav-item')];
+            const count = origItems.length;
+            const sectionOrder = origItems.map(el => el.dataset.section);
+
+            // Clone items: prepend + append full set for infinite illusion
+            const prependClones = origItems.map(el => { const c = el.cloneNode(true); c.classList.add('nav-clone'); return c; });
+            const appendClones = origItems.map(el => { const c = el.cloneNode(true); c.classList.add('nav-clone'); return c; });
+            prependClones.reverse().forEach(c => carousel.prepend(c));
+            appendClones.forEach(c => carousel.append(c));
+
+            const allItems = [...carousel.querySelectorAll('.nav-item')];
+
+            // --- PIXEL-BASED POSITIONING ---
+            // scrollPx = the carousel pixel coordinate that should appear at center of nav
+            function getNavWidth() {
+                return nav.clientWidth - parseFloat(getComputedStyle(nav).paddingLeft) * 2;
+            }
+
+            // Center pixel of original item i (0-based) relative to carousel
+            function origCenter(i) {
+                const item = allItems[count + i];
+                return item.offsetLeft + item.offsetWidth / 2;
+            }
+
+            // Width of one full set = distance between matching items in prepend vs originals
+            function setWidth() {
+                return allItems[count].offsetLeft - allItems[0].offsetLeft;
+            }
+
+            let scrollPx = 0;
+            let animating = false;
+            let dragging = false;
+            let dragStartX = 0;
+            let dragStartScroll = 0;
+            let dragMoved = false;
+
+            function applyTransform(animate) {
+                const tx = getNavWidth() / 2 - scrollPx;
+                if (animate) carousel.classList.add('animating');
+                else carousel.classList.remove('animating');
+                carousel.style.transform = `translateX(${tx}px)`;
+            }
+
+            // Wrap scrollPx back into originals range (invisible reset)
+            function wrapScroll() {
+                const sw = setWidth();
+                const lo = origCenter(0);
+                const hi = origCenter(count - 1);
+                if (scrollPx < lo - sw * 0.4) scrollPx += sw;
+                else if (scrollPx > hi + sw * 0.4) scrollPx -= sw;
+                applyTransform(false);
+            }
+
+            // Find which original index (0..count-1) is closest to current scrollPx
+            function nearestOrigIndex() {
+                const sw = setWidth();
+                let bestIdx = 0, bestDist = Infinity;
+                for (let i = 0; i < count; i++) {
+                    for (const offset of [-sw, 0, sw]) {
+                        const d = Math.abs(scrollPx - (origCenter(i) + offset));
+                        if (d < bestDist) { bestDist = d; bestIdx = i; }
                     }
-                });
+                }
+                return bestIdx;
+            }
+
+            // Scroll to center original item idx, using shortest path via clones
+            function scrollToItem(idx, animate) {
+                const sw = setWidth();
+                const candidates = [origCenter(idx) - sw, origCenter(idx), origCenter(idx) + sw];
+                let best = candidates[1], bestDist = Math.abs(scrollPx - best);
+                for (const c of candidates) {
+                    const d = Math.abs(scrollPx - c);
+                    if (d < bestDist) { bestDist = d; best = c; }
+                }
+                if (animate) animating = true;
+                scrollPx = best;
+                applyTransform(animate);
+                if (!animate) wrapScroll();
+            }
+
+            // Initialize: center on first active item
+            const activeOrig = origItems.findIndex(el => el.classList.contains('active'));
+            scrollPx = origCenter(activeOrig >= 0 ? activeOrig : 0);
+            applyTransform(false);
+
+            carousel.addEventListener('transitionend', () => {
+                animating = false;
+                wrapScroll();
             });
+
+            // Shift by one item in given direction
+            function shift(dir) {
+                if (animating) return;
+                const cur = nearestOrigIndex();
+                const next = ((cur + dir) % count + count) % count;
+                scrollToItem(next, true);
+            }
+
+            // Snap to nearest item after drag
+            function snapToNearest(animate) {
+                scrollToItem(nearestOrigIndex(), animate);
+            }
+
+            // --- MOUSE WHEEL ---
+            nav.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                if (animating || dragging) return;
+                shift(e.deltaY > 0 || e.deltaX > 0 ? 1 : -1);
+            }, { passive: false });
+
+            // --- MOUSE DRAG ---
+            nav.addEventListener('mousedown', (e) => {
+                if (animating) return;
+                dragging = true;
+                dragMoved = false;
+                dragStartX = e.clientX;
+                dragStartScroll = scrollPx;
+                carousel.classList.remove('animating');
+                nav.style.cursor = 'grabbing';
+                e.preventDefault();
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (!dragging) return;
+                const dx = e.clientX - dragStartX;
+                if (Math.abs(dx) > 3) dragMoved = true;
+                scrollPx = dragStartScroll - dx;
+                carousel.style.transform = `translateX(${getNavWidth() / 2 - scrollPx}px)`;
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (!dragging) return;
+                dragging = false;
+                nav.style.cursor = '';
+                if (dragMoved) snapToNearest(true);
+            });
+
+            // --- TOUCH DRAG ---
+            let touchId = null;
+            nav.addEventListener('touchstart', (e) => {
+                if (animating) return;
+                touchId = e.touches[0].identifier;
+                dragging = true;
+                dragMoved = false;
+                dragStartX = e.touches[0].clientX;
+                dragStartScroll = scrollPx;
+                carousel.classList.remove('animating');
+            }, { passive: true });
+
+            nav.addEventListener('touchmove', (e) => {
+                if (!dragging) return;
+                const touch = [...e.touches].find(t => t.identifier === touchId);
+                if (!touch) return;
+                const dx = touch.clientX - dragStartX;
+                if (Math.abs(dx) > 3) dragMoved = true;
+                scrollPx = dragStartScroll - dx;
+                carousel.style.transform = `translateX(${getNavWidth() / 2 - scrollPx}px)`;
+            }, { passive: true });
+
+            nav.addEventListener('touchend', () => {
+                if (!dragging) return;
+                dragging = false;
+                if (dragMoved) snapToNearest(true);
+            }, { passive: true });
+
+            // --- CLICK: activate section + center item ---
+            function activateSection(sectionNum) {
+                allItems.forEach(n => {
+                    n.classList.toggle('active', n.dataset.section === sectionNum);
+                });
+
+                sections.forEach(s => {
+                    s.style.display = 'none';
+                    s.classList.remove('active');
+                });
+                const target = document.querySelector(`.app-section[data-section="${sectionNum}"]`);
+                if (target) {
+                    target.style.display = 'block';
+                    target.classList.add('active');
+                }
+
+                // Center the clicked section in carousel
+                const idx = sectionOrder.indexOf(sectionNum);
+                if (idx >= 0) scrollToItem(idx, true);
+
+                if (sectionNum === '4' && window._renderCharts) {
+                    window._renderCharts();
+                }
+            }
+
+            nav.addEventListener('click', (e) => {
+                if (dragMoved) return;
+                const item = e.target.closest('.nav-item');
+                if (!item) return;
+                activateSection(item.dataset.section);
+            });
+
+            // Expose for AI button and external navigation
+            window._navActivateSection = activateSection;
         });
     </script>
     

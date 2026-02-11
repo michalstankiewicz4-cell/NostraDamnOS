@@ -1608,7 +1608,7 @@ input:disabled {
     }
 }
 
-/* Bottom Navigation Bar */
+/* Bottom Navigation Bar (Carousel) */
 .bottom-nav {
     position: fixed;
     bottom: 50px; /* Above floating status bar */
@@ -1618,10 +1618,21 @@ input:disabled {
     border: 2px solid #e9ecef;
     border-radius: 16px;
     box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-    display: flex;
-    gap: 5px;
     padding: 8px;
     z-index: 900;
+    overflow: hidden;
+    max-width: calc(3 * 95px + 2 * 5px + 16px); /* 3 items visible */
+    cursor: grab;
+}
+
+.nav-carousel {
+    display: flex;
+    gap: 5px;
+    will-change: transform;
+}
+
+.nav-carousel.animating {
+    transition: transform 0.3s ease;
 }
 
 .nav-item {
@@ -1632,14 +1643,15 @@ input:disabled {
     padding: 8px 16px;
     cursor: pointer;
     border-radius: 10px;
-    transition: all 0.3s;
+    transition: background 0.3s, color 0.3s, border-color 0.3s, box-shadow 0.3s;
     border: 2px solid transparent;
     min-width: 75px;
+    flex-shrink: 0;
+    user-select: none;
 }
 
 .nav-item:hover {
     background: #f8f9fa;
-    transform: translateY(-2px);
 }
 
 .nav-item.active {
@@ -2069,9 +2081,13 @@ input:disabled {
     .bottom-nav {
         bottom: 60px;
         padding: 5px;
-        gap: 2px;
+        max-width: calc(3 * 85px + 2 * 3px + 10px);
     }
-    
+
+    .nav-carousel {
+        gap: 3px;
+    }
+
     .nav-item {
         padding: 8px 12px;
         min-width: 70px;
