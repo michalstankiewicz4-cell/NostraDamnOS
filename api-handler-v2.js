@@ -274,6 +274,29 @@ function updateSummaryTab() {
                     <div class="summary-label">Dni obrad</div>
                     <div class="summary-value">
                         <span class="summary-value-main">${sqlCounts.dni_obrad.toLocaleString('pl-PL')}</span>
+                        <span class="summary-value-sql">${sqlCounts.dni_obrad.toLocaleString('pl-PL')}</span>
+                    </div>
+                </div>`;
+            container.appendChild(card);
+        }
+
+        // Dodaj kartę dla głosów indywidualnych (zliczane z totalVoted, nie pobierane do DB)
+        let indVotes = 0;
+        try {
+            const lf = JSON.parse(localStorage.getItem('nostradamnos_lastFetch') || '{}');
+            indVotes = lf.individualVotes || 0;
+        } catch { /* ignore */ }
+        if (indVotes > 0) {
+            const sqlGlosy = sqlCounts.glosy || 0;
+            const card = document.createElement('div');
+            card.className = 'summary-card';
+            card.innerHTML = `
+                <div class="summary-icon">📋</div>
+                <div class="summary-content">
+                    <div class="summary-label">Głosy indywidualne</div>
+                    <div class="summary-value">
+                        <span class="summary-value-main">${indVotes.toLocaleString('pl-PL')}</span>
+                        <span class="summary-value-sql">${sqlGlosy.toLocaleString('pl-PL')}</span>
                     </div>
                 </div>`;
             container.appendChild(card);
