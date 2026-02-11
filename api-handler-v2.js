@@ -277,10 +277,11 @@ function updateSummaryTab() {
         container.innerHTML = '';
         hideSummaryTable();
 
-        // Dodaj kartę dla dni obrad (jeśli są dane)
+        // Dodaj kartę dla dni obrad (jeśli są dane) — klik otwiera posiedzenia
         if (sqlCounts.dni_obrad > 0) {
             const card = document.createElement('div');
             card.className = 'summary-card';
+            card.setAttribute('data-table', 'posiedzenia');
             card.innerHTML = `
                 <div class="summary-icon">📆</div>
                 <div class="summary-content">
@@ -290,6 +291,11 @@ function updateSummaryTab() {
                         <span class="summary-value-sql">${sqlCounts.dni_obrad.toLocaleString('pl-PL')}</span>
                     </div>
                 </div>`;
+            card.addEventListener('click', () => {
+                const isActive = card.classList.contains('active');
+                document.querySelectorAll('.summary-card.active').forEach(c => c.classList.remove('active'));
+                if (isActive) { hideSummaryTable(); } else { card.classList.add('active'); showSummaryTable('posiedzenia'); }
+            });
             container.appendChild(card);
         }
 
@@ -303,6 +309,7 @@ function updateSummaryTab() {
             const sqlGlosy = sqlCounts.glosy_indywidualne || 0;
             const card = document.createElement('div');
             card.className = 'summary-card';
+            card.setAttribute('data-table', 'glosowania');
             card.innerHTML = `
                 <div class="summary-icon">📋</div>
                 <div class="summary-content">
@@ -312,6 +319,11 @@ function updateSummaryTab() {
                         <span class="summary-value-sql">${sqlGlosy.toLocaleString('pl-PL')}</span>
                     </div>
                 </div>`;
+            card.addEventListener('click', () => {
+                const isActive = card.classList.contains('active');
+                document.querySelectorAll('.summary-card.active').forEach(c => c.classList.remove('active'));
+                if (isActive) { hideSummaryTable(); } else { card.classList.add('active'); showSummaryTable('glosowania'); }
+            });
             container.appendChild(card);
         }
 
