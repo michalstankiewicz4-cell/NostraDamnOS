@@ -244,6 +244,19 @@ function getSqlCounts() {
         counts.dni_obrad = 0;
     }
 
+    // Głosy indywidualne: SUM(za + przeciw + wstrzymalo) z glosowania
+    try {
+        const result = db2.database.exec(`
+            SELECT COALESCE(SUM(za), 0) + COALESCE(SUM(przeciw), 0) + COALESCE(SUM(wstrzymalo), 0)
+            FROM glosowania
+        `);
+        if (result.length > 0 && result[0].values.length > 0) {
+            counts.glosy_indywidualne = result[0].values[0][0];
+        }
+    } catch (e) {
+        counts.glosy_indywidualne = 0;
+    }
+
     return counts;
 }
 
@@ -286,8 +299,8 @@ function updateSummaryTab() {
             const lf = JSON.parse(localStorage.getItem('nostradamnos_lastFetch') || '{}');
             indVotes = lf.individualVotes || 0;
         } catch { /* ignore */ }
-        if (indVotes > 0) {
-            const sqlGlosy = sqlCounts.glosy || 0;
+        if (indVotes > 0 || sqlCounts.glosy_indywidualne > 0) {
+            const sqlGlosy = sqlCounts.glosy_indywidualne || 0;
             const card = document.createElement('div');
             card.className = 'summary-card';
             card.innerHTML = `
@@ -557,9 +570,9 @@ function updateFetchOverview() {
     }
     setStat('fovGotTranscripts', 'wypowiedzi');
     setStat('fovGotVotings', 'glosowania');
-    // Głosy indywidualne: użyj individualVotes (z totalVoted) + sql z tabeli glosy
+    // Głosy indywidualne: użyj individualVotes (z totalVoted) + sql SUM(za+przeciw+wstrzymalo)
     const indVotes = fetched.individualVotes || 0;
-    const sqlGlosy = sqlStats.glosy || 0;
+    const sqlGlosy = sqlStats.glosy_indywidualne || 0;
     const glosySql = sqlGlosy > 0 ? ` sql(${sqlGlosy.toLocaleString('pl-PL')})` : '';
     const votesEl = document.getElementById('fovGotVotes');
     if (votesEl) {
