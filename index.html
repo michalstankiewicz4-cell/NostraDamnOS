@@ -1125,31 +1125,42 @@
         import { db2 } from './modules/database-v2.js';
 
         const cacheModules = [
-            { table: 'poslowie', label: 'Poslowie' },
-            { table: 'posiedzenia', label: 'Posiedzenia' },
-            { table: 'wypowiedzi', label: 'Wypowiedzi' },
-            { table: 'glosowania', label: 'Glosowania' },
-            { table: 'glosy', label: 'Glosy' },
-            { table: 'interpelacje', label: 'Interpelacje' },
-            { table: 'zapytania', label: 'Zapytania pisemne' },
-            { table: 'zapytania_odpowiedzi', label: 'Odpowiedzi na zapytania' },
-            { table: 'projekty_ustaw', label: 'Projekty ustaw' },
-            { table: 'ustawy', label: 'Ustawy (akty prawne)' },
-            { table: 'komisje', label: 'Komisje' },
-            { table: 'komisje_posiedzenia', label: 'Posiedzenia komisji' },
-            { table: 'komisje_wypowiedzi', label: 'Wypowiedzi komisji' },
-            { table: 'oswiadczenia_majatkowe', label: 'Oswiadczenia majatkowe' }
+            { table: 'poslowie', label: 'Posłowie', statKey: 'poslowie' },
+            { table: 'posiedzenia', label: 'Posiedzenia', reqKey: 'sittings', statKey: 'posiedzenia' },
+            { table: 'wypowiedzi', label: 'Wypowiedzi', reqKey: 'transcripts', statKey: 'wypowiedzi' },
+            { table: 'glosowania', label: 'Głosowania', reqKey: 'votings', statKey: 'glosowania' },
+            { table: 'glosy', label: 'Głosy', statKey: 'glosy' },
+            { table: 'interpelacje', label: 'Interpelacje', reqKey: 'interpelacje', statKey: 'interpelacje' },
+            { table: 'zapytania', label: 'Zapytania pisemne', reqKey: 'zapytania', statKey: 'zapytania' },
+            { table: 'zapytania_odpowiedzi', label: 'Odpowiedzi na zapytania', statKey: 'zapytania_odpowiedzi' },
+            { table: 'projekty_ustaw', label: 'Projekty ustaw', reqKey: 'projekty_ustaw', statKey: 'projekty_ustaw' },
+            { table: 'ustawy', label: 'Ustawy (akty prawne)', reqKey: 'ustawy', statKey: 'ustawy' },
+            { table: 'komisje', label: 'Komisje', statKey: 'komisje' },
+            { table: 'komisje_posiedzenia', label: 'Posiedzenia komisji', statKey: 'komisje_posiedzenia' },
+            { table: 'komisje_wypowiedzi', label: 'Wypowiedzi komisji', statKey: 'komisje_wypowiedzi' },
+            { table: 'oswiadczenia_majatkowe', label: 'Oświadczenia majątkowe', statKey: 'oswiadczenia_majatkowe' }
         ];
 
         function updateCacheBar() {
             const bar = document.getElementById('cacheBar');
             if (!bar) return;
 
+            let expected = {};
+            try {
+                const lf = JSON.parse(localStorage.getItem('nostradamnos_lastFetch') || '{}');
+                const req = lf.requestedCounts || {};
+                const stats = lf.stats || {};
+                for (const mod of cacheModules) {
+                    const fromReq = mod.reqKey ? (req[mod.reqKey] || 0) : 0;
+                    const fromStats = mod.statKey ? (stats[mod.statKey] || 0) : 0;
+                    expected[mod.table] = Math.max(fromReq, fromStats);
+                }
+            } catch { /* ignore */ }
+
             bar.innerHTML = '';
             for (const mod of cacheModules) {
                 const seg = document.createElement('div');
                 seg.className = 'cache-segment';
-                seg.title = mod.label;
                 let count = 0;
                 if (db2.database) {
                     try {
@@ -1157,7 +1168,18 @@
                         count = r[0]?.values[0]?.[0] || 0;
                     } catch { /* table may not exist */ }
                 }
-                if (count > 0) seg.classList.add('cached');
+                const exp = expected[mod.table] || 0;
+                if (count > 0 && exp > 0 && count >= exp) {
+                    seg.classList.add('cached');
+                    seg.title = `${mod.label}: ${count.toLocaleString('pl-PL')} (kompletne)`;
+                } else if (count > 0) {
+                    seg.classList.add('partial');
+                    seg.title = exp > 0
+                        ? `${mod.label}: ${count.toLocaleString('pl-PL')} / ${exp.toLocaleString('pl-PL')}`
+                        : `${mod.label}: ${count.toLocaleString('pl-PL')}`;
+                } else {
+                    seg.title = `${mod.label}: puste`;
+                }
                 bar.appendChild(seg);
             }
         }

@@ -1432,7 +1432,7 @@ input:disabled {
 .status-bar-separator {
     width: 1px;
     height: 14px;
-    background: rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.15);
 }
 
 /* Spacer (flex grow) */
@@ -1495,6 +1495,10 @@ input:disabled {
     background: #808080;
     transition: background 0.3s ease;
     cursor: default;
+}
+
+.cache-segment.partial {
+    background: #ecc94b;
 }
 
 .cache-segment.cached {
