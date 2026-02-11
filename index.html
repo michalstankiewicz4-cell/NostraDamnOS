@@ -829,6 +829,10 @@
                                 <input type="checkbox" id="toggleEtlPanel" checked>
                                 <span>Panel ETL (prawy górny róg)</span>
                             </label>
+                            <label class="settings-checkbox-label">
+                                <input type="checkbox" id="toggleRememberEtl">
+                                <span>Pamiętaj ustawienia ETL</span>
+                            </label>
                         </div>
                     </div>
                 </div>
@@ -1589,7 +1593,8 @@
             barStorage: false,
             barCache: true,
             barConsole: true,
-            etlPanel: true
+            etlPanel: true,
+            rememberEtl: false
         };
 
         function load() {
@@ -1725,6 +1730,106 @@
             onToggle(key, document.getElementById(id));
         }
         onToggle('etlPanel', chkEtlPanel);
+
+        // Remember ETL settings toggle
+        const chkRememberEtl = document.getElementById('toggleRememberEtl');
+        if (chkRememberEtl) chkRememberEtl.checked = !!state.rememberEtl;
+        onToggle('rememberEtl', chkRememberEtl);
+
+        // ETL settings persistence
+        const ETL_SETTINGS_KEY = 'nostradamnos_etlSettings';
+
+        const etlCheckboxIds = [
+            'etlTranscripts', 'etlVotings', 'etlVotes',
+            'etlInterpellations', 'etlWrittenQuestions', 'etlBills',
+            'etlLegalActs', 'etlDisclosures', 'etlCommitteeSittings'
+        ];
+
+        function saveEtlSettings() {
+            if (!state.rememberEtl || _restoringEtl) return;
+            const settings = {
+                inst: document.querySelector('input[name="etlInst"]:checked')?.value || 'sejm',
+                term: document.getElementById('etlTermSelect')?.value || '10',
+                rangeFrom: document.getElementById('etlRangeFrom')?.value || '1',
+                rangeTo: document.getElementById('etlRangeTo')?.value || '3',
+                checkboxes: {},
+                committees: Array.from(document.getElementById('etlCommitteeSelect')?.selectedOptions || []).map(o => o.value)
+            };
+            for (const id of etlCheckboxIds) {
+                const cb = document.getElementById(id);
+                if (cb) settings.checkboxes[id] = cb.checked;
+            }
+            localStorage.setItem(ETL_SETTINGS_KEY, JSON.stringify(settings));
+        }
+
+        let _restoringEtl = false;
+
+        function restoreEtlSettings() {
+            if (!state.rememberEtl) return;
+            try {
+                const raw = localStorage.getItem(ETL_SETTINGS_KEY);
+                if (!raw) return;
+                const s = JSON.parse(raw);
+                _restoringEtl = true;
+
+                // Institution (set without dispatching — avoids refetching terms)
+                const instRadio = document.querySelector(`input[name="etlInst"][value="${s.inst}"]`);
+                if (instRadio) instRadio.checked = true;
+
+                // Term — wait for options to load, then set
+                const termSelect = document.getElementById('etlTermSelect');
+                if (termSelect && s.term) {
+                    const trySetTerm = () => {
+                        if ([...termSelect.options].some(o => o.value === s.term)) {
+                            termSelect.value = s.term;
+                        }
+                    };
+                    trySetTerm();
+                    // Retry after terms are fetched from API
+                    setTimeout(trySetTerm, 1000);
+                }
+
+                // Range
+                const rf = document.getElementById('etlRangeFrom');
+                const rt = document.getElementById('etlRangeTo');
+                if (rf && s.rangeFrom) rf.value = s.rangeFrom;
+                if (rt && s.rangeTo) rt.value = s.rangeTo;
+
+                // Checkboxes
+                if (s.checkboxes) {
+                    for (const [id, checked] of Object.entries(s.checkboxes)) {
+                        const cb = document.getElementById(id);
+                        if (cb && !cb.disabled) cb.checked = checked;
+                    }
+                }
+
+                // Committees — wait for options to load
+                const comSel = document.getElementById('etlCommitteeSelect');
+                if (comSel && Array.isArray(s.committees) && s.committees.length > 0) {
+                    const trySetCommittees = () => {
+                        if (comSel.options.length > 0) {
+                            for (const opt of comSel.options) {
+                                opt.selected = s.committees.includes(opt.value);
+                            }
+                        }
+                    };
+                    trySetCommittees();
+                    setTimeout(trySetCommittees, 1500);
+                }
+
+                // Re-apply dependencies after restoring
+                if (typeof window._applyEtlDependencies === 'function') window._applyEtlDependencies();
+                _restoringEtl = false;
+            } catch { _restoringEtl = false; }
+        }
+
+        // Restore on load (after etl-bridge has initialized)
+        window.addEventListener('etl-bridge-ready', restoreEtlSettings);
+        // Fallback: restore after short delay if event not fired
+        setTimeout(restoreEtlSettings, 500);
+
+        // Save on any ETL input change
+        window._saveEtlSettings = saveEtlSettings;
     })();
     </script>
 </body>

@@ -896,6 +896,20 @@ function initETLPanel() {
         applyDependencies();
     }
 
+    // Expose applyDependencies for external use (ETL settings restore)
+    window._applyEtlDependencies = applyDependencies;
+
+    // Save ETL settings on any form change (delegated)
+    const etlForm = document.querySelector('[data-section="1"]');
+    if (etlForm) {
+        etlForm.addEventListener('change', () => {
+            if (typeof window._saveEtlSettings === 'function') window._saveEtlSettings();
+        });
+    }
+
+    // Signal that etl-bridge is ready
+    window.dispatchEvent(new Event('etl-bridge-ready'));
+
     // ===== DEPENDENCIES =====
     function applyDependencies() {
         const votings = document.getElementById('etlVotings');
