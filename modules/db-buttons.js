@@ -2,6 +2,7 @@
 // Handles saving and loading SQLite database
 
 import { db2 } from './database-v2.js';
+import ToastModule from './toast.js';
 
 export function initDbButtons() {
     console.log('[DB Buttons] Initializing import/export buttons...');
@@ -27,7 +28,7 @@ export function initDbButtons() {
             
             // Check if database is initialized
             if (!db2.database) {
-                alert('❌ Baza danych nie jest zainicjowana.\n\nPobierz najpierw dane z API.');
+                ToastModule.error('Baza danych nie jest zainicjowana.\n\nPobierz najpierw dane z API.');
                 console.error('[DB Export] Database not initialized');
                 return;
             }
@@ -56,7 +57,10 @@ export function initDbButtons() {
                     await writable.close();
                     
                     console.log(`[DB Export] ✅ Database exported to Desktop: ${filename} (${(blob.size / 1024).toFixed(2)} KB)`);
-                    alert(`✅ Baza wyeksportowana na Pulpit!\n\n📁 ${filename}\n📊 Rozmiar: ${(blob.size / 1024).toFixed(2)} KB`);
+                    ToastModule.success(
+                        `📁 ${filename}\n📊 Rozmiar: ${(blob.size / 1024).toFixed(2)} KB`,
+                        { title: 'Baza wyeksportowana na Pulpit', duration: 6000 }
+                    );
                     return;
                 } catch (err) {
                     if (err.name === 'AbortError') {
@@ -83,13 +87,16 @@ export function initDbButtons() {
             }, 100);
             
             console.log(`[DB Export] ✅ Database exported: ${filename} (${(blob.size / 1024).toFixed(2)} KB)`);
-            alert(`✅ Baza wyeksportowana!\n\n📁 ${filename}\n📊 Rozmiar: ${(blob.size / 1024).toFixed(2)} KB\n\n💡 Plik zapisany w domyślnym folderze pobierania`);
-            
+            ToastModule.success(
+                `📁 ${filename}\n📊 Rozmiar: ${(blob.size / 1024).toFixed(2)} KB\n\n💡 Plik zapisany w domyślnym folderze pobierania`,
+                { title: 'Baza wyeksportowana', duration: 6000 }
+            );
+
             console.log('✅ [Zadanie] Export bazy zakończony');
-            
+
         } catch (error) {
             console.error('[DB Export] Error:', error);
-            alert(`❌ Błąd podczas eksportu:\n\n${error.message}`);
+            ToastModule.error('Błąd podczas eksportu:\n\n' + error.message);
         }
     });
     
@@ -153,7 +160,7 @@ export function initDbButtons() {
             
         } catch (error) {
             console.error('[DB Import] Error:', error);
-            alert(`❌ Błąd podczas importu:\n\n${error.message}`);
+            ToastModule.error('Błąd podczas importu:\n\n' + error.message);
         }
     });
     
@@ -205,14 +212,19 @@ export function initDbButtons() {
             const summary = Object.entries(recordCounts)
                 .map(([table, count]) => `${table}: ${count}`)
                 .join('\n');
-            
-            alert(`✅ Baza zaimportowana z Pulpitu!\n\n📁 ${file.name}\n📊 Rozmiar: ${(file.size / 1024).toFixed(2)} KB\n\n📋 Rekordy:\n${summary}`);
-            
+
+            ToastModule.success(
+                `📁 ${file.name}\n📊 Rozmiar: ${(file.size / 1024).toFixed(2)} KB\n\n📋 Rekordy:\n${summary}`,
+                { title: 'Baza zaimportowana z Pulpitu', duration: 8000 }
+            );
+
             console.log('✅ [Zadanie] Import bazy zakończony');
-            
+
         } catch (error) {
             console.error('[DB Import] Error loading database:', error);
-            alert(`❌ Błąd podczas importu:\n\n${error.message}\n\nUpewnij się, że plik jest poprawną bazą SQLite.`);
+            ToastModule.error(
+                `Błąd podczas importu:\n\n${error.message}\n\nUpewnij się, że plik jest poprawną bazą SQLite.`
+            );
         }
     }
     

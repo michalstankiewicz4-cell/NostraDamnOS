@@ -1009,6 +1009,7 @@
     </script>
     <script type="module" src="etl-bridge.js"></script>
     <script type="module" src="models.js"></script>
+    <script type="module" src="modules/toast.js"></script>
 
         <!-- Konsola: domyślny styl -->
         <script>
@@ -1257,23 +1258,22 @@
             
             // Attach button listeners with animation
             addButtonAnimation(aboutBtn, () => {
-                alert(
-                    'Parlament P.I.M.P.\n' +
-                    'Parliamentary Intelligence & Monitoring Platform\n\n' +
-                    'Autor: Micha\u0142 Stankiewicz\n\n' +
-                    'Osoby kt\u00f3re wspieraj\u0105: Robin070\n\n' +
-                    'Pomoc w realizacji: Tomasz Gierczak, xBigle22x, szauw_iks'
+                ToastModule.info(
+                    'Autor: Michał Stankiewicz\n\n' +
+                    'Osoby które wspierają: Robin070\n\n' +
+                    'Pomoc w realizacji: Tomasz Gierczak, xBigle22x, szauw_iks',
+                    { title: 'Parlament P.I.M.P. - Parliamentary Intelligence & Monitoring Platform', duration: 10000 }
                 );
             });
             
             addButtonAnimation(languageBtn, () => {
                 console.log('🇵🇱 TODO: Zmiana języka');
-                alert('🇵🇱 Zmiana języka\n\nFunkcja w przygotowaniu (TODO v5.0)');
+                ToastModule.info('Funkcja w przygotowaniu (TODO v5.0)', { title: '🇵🇱 Zmiana języka' });
             });
             
             addButtonAnimation(helpBtn, () => {
                 console.log('❓ TODO: Podpowiedzi');
-                alert('❓ Podpowiedzi\n\nSystem podpowiedzi w przygotowaniu (TODO v5.0)');
+                ToastModule.info('System podpowiedzi w przygotowaniu (TODO v5.0)', { title: '❓ Podpowiedzi' });
             });
 
             const resetMemoryBtn = document.getElementById('resetMemoryBtn');
@@ -1296,7 +1296,7 @@
             // Language buttons (TODO)
             ['langPL', 'langEN', 'langUA'].forEach(id => {
                 document.getElementById(id)?.addEventListener('click', () => {
-                    alert('🇵🇱 Zmiana języka\n\nFunkcja w przygotowaniu (TODO v5.0)');
+                    ToastModule.info('Funkcja w przygotowaniu (TODO v5.0)', { title: '🇵🇱 Zmiana języka' });
                 });
             });
 

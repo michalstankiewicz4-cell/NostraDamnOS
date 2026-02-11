@@ -1,6 +1,7 @@
 // API Handler v2.0 - Uses Pipeline ETL
 import { runPipeline, buildConfigFromUI, getCacheStatus } from './pipeline.js';
 import { db2 } from './modules/database-v2.js';
+import ToastModule from './modules/toast.js';
 
 let isFetching = false;
 
@@ -207,9 +208,49 @@ function hideSummaryTable() {
 // Zamknij tabelę
 document.getElementById('summaryTableClose')?.addEventListener('click', hideSummaryTable);
 
+// Funkcja pomocnicza: pobierz rzeczywiste zliczenia z SQL
+function getSqlCounts() {
+    if (!db2.database) return {};
+
+    const counts = {};
+    const tables = [
+        'poslowie', 'posiedzenia', 'wypowiedzi', 'glosowania', 'glosy',
+        'interpelacje', 'zapytania', 'projekty_ustaw', 'komisje',
+        'komisje_posiedzenia', 'komisje_wypowiedzi', 'oswiadczenia_majatkowe', 'ustawy'
+    ];
+
+    for (const table of tables) {
+        try {
+            const result = db2.database.exec(`SELECT COUNT(*) FROM ${table}`);
+            if (result.length > 0 && result[0].values.length > 0) {
+                counts[table] = result[0].values[0][0];
+            }
+        } catch (e) {
+            counts[table] = 0;
+        }
+    }
+
+    // Dodatkowe: dni obrad (unikalne daty z posiedzeń)
+    try {
+        const result = db2.database.exec(`
+            SELECT COUNT(DISTINCT data_start)
+            FROM posiedzenia
+            WHERE data_start IS NOT NULL
+        `);
+        if (result.length > 0 && result[0].values.length > 0) {
+            counts.dni_obrad = result[0].values[0][0];
+        }
+    } catch (e) {
+        counts.dni_obrad = 0;
+    }
+
+    return counts;
+}
+
 function updateSummaryTab() {
     try {
         const stats = db2.getStats();
+        const sqlCounts = getSqlCounts();
         const cacheStatus = getCacheStatus(db2);
         const totalRecords = Object.values(stats).reduce((sum, c) => sum + c, 0);
 
@@ -222,9 +263,27 @@ function updateSummaryTab() {
         // Generuj karty dynamicznie — tylko typy z danymi
         container.innerHTML = '';
         hideSummaryTable();
+
+        // Dodaj kartę dla dni obrad (jeśli są dane)
+        if (sqlCounts.dni_obrad > 0) {
+            const card = document.createElement('div');
+            card.className = 'summary-card';
+            card.innerHTML = `
+                <div class="summary-icon">📆</div>
+                <div class="summary-content">
+                    <div class="summary-label">Dni obrad</div>
+                    <div class="summary-value">
+                        <span class="summary-value-main">${sqlCounts.dni_obrad.toLocaleString('pl-PL')}</span>
+                    </div>
+                </div>`;
+            container.appendChild(card);
+        }
+
+        // Generuj karty dla tabel z danymi
         for (const [table, count] of Object.entries(stats)) {
             if (count === 0) continue;
             const meta = summaryLabels[table] || { icon: '📊', label: table };
+            const sqlCount = sqlCounts[table] || 0;
             const card = document.createElement('div');
             card.className = 'summary-card';
             card.setAttribute('data-table', table);
@@ -232,7 +291,10 @@ function updateSummaryTab() {
                 <div class="summary-icon">${meta.icon}</div>
                 <div class="summary-content">
                     <div class="summary-label">${meta.label}</div>
-                    <div class="summary-value">${count.toLocaleString('pl-PL')}</div>
+                    <div class="summary-value">
+                        <span class="summary-value-main">${count.toLocaleString('pl-PL')}</span>
+                        <span class="summary-value-sql">${sqlCount.toLocaleString('pl-PL')}</span>
+                    </div>
                 </div>`;
             card.addEventListener('click', () => {
                 const isActive = card.classList.contains('active');
@@ -600,7 +662,7 @@ async function smartFetch() {
             }
         } else {
             setRecordsStatus(false);
-            alert('✅ Brak nowych danych w API. Baza jest aktualna.');
+            ToastModule.success('Brak nowych danych w API. Baza jest aktualna.');
         }
     } catch (error) {
         console.error('[Smart Fetch] Verify error:', error);
@@ -609,7 +671,7 @@ async function smartFetch() {
             btn.disabled = false;
             btn.textContent = '📥 Pobierz/Zaktualizuj dane';
         }
-        alert('❌ Błąd sprawdzenia: ' + error.message);
+        ToastModule.error('Błąd sprawdzenia: ' + error.message);
     }
 }
 
@@ -739,13 +801,16 @@ async function startPipelineETL() {
             const persistWarning = db2._persistFailed
                 ? '\n\n⚠️ Baza danych jest za duża na localStorage — dane są dostępne w pamięci, ale nie przetrwają odświeżenia strony.'
                 : '';
-            alert(`✅ Pobrano dane:\n\n${details || 'Brak danych w bazie'}${persistWarning}`);
+            ToastModule.success(
+                `${details || 'Brak danych w bazie'}${persistWarning}`,
+                { title: 'Pobrano dane', duration: 8000 }
+            );
             console.log('✅ [Zadanie] Pobierz/Zaktualizuj dane zakończony');
         }
         
     } catch (error) {
         console.error('[API Handler] Error:', error);
-        alert(`❌ Błąd ETL: ${error.message}`);
+        ToastModule.error('Błąd ETL: ' + error.message);
         console.log('❌ [Zadanie] Pobierz/Zaktualizuj dane zakończony z błędem');
         
     } finally {
@@ -773,11 +838,11 @@ document.getElementById('etlClearBtn')?.addEventListener('click', async () => {
             setValidityStatus(false);
             updateSummaryTab();
 
-            alert('✅ Baza wyczyszczona');
+            ToastModule.success('Baza wyczyszczona');
             console.log('✅ [Zadanie] Wyczyść bazę zakończony');
         } catch (error) {
             console.error('[API Handler] Clear error:', error);
-            alert(`❌ Błąd: ${error.message}`);
+            ToastModule.error('Błąd: ' + error.message);
         }
     }
 });

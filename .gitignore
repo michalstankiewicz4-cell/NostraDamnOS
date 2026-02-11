@@ -14,6 +14,8 @@ debug-*.json
 # Temp files
 *.tmp
 *.temp
+temp_*.json
+nul
 
 # OS files
 .DS_Store
@@ -23,6 +25,7 @@ desktop.ini
 # IDE
 .vscode/
 .idea/
+.claude/
 *.swp
 *.swo
 

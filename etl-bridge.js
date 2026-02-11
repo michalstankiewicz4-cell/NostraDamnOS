@@ -3,6 +3,7 @@ import {
     initFloatingButtonsDragDrop,
     initUIMode
 } from './modules/floating-drag.js';
+import ToastModule from './modules/toast.js';
 
 // Cache dla pobranych kadencji (żeby nie odpytywać API przy każdym kliknięciu)
 const termsCache = {};
@@ -1107,12 +1108,12 @@ function initETLPanel() {
                             showVerificationResults(res.differences);
                         } else {
                             window.setValidityStatus(false);
-                            alert('✅ Niema żadnych zmian - baza i API się zgadzają!');
+                            ToastModule.success('Niema żadnych zmian - baza i API się zgadzają!');
                         }
                     }
                 });
             } catch (error) {
-                alert('❌ Błąd weryfikacji: ' + error.message);
+                ToastModule.error('Błąd weryfikacji: ' + error.message);
             } finally {
                 verifyBtn.disabled = false;
                 verifyBtn.textContent = '🔍 Sprawdź niezgodności';
