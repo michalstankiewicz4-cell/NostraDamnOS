@@ -2115,7 +2115,17 @@ input:disabled {
         font-weight: 700;
         -webkit-text-stroke: 0.4px currentColor;
     }
-    
+
+    .top-info-bar {
+        font-size: 0.85rem;
+        font-weight: 700;
+        -webkit-text-stroke: 0.4px currentColor;
+    }
+
+    .top-info-text {
+        -webkit-text-stroke: 0.4px currentColor;
+    }
+
     .summary-container {
         grid-template-columns: 1fr;
     }
