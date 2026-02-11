@@ -504,18 +504,18 @@ export function buildConfigFromUI() {
 
 // ===== VERIFY DATABASE VS API =====
 
-async function fetchApiCount(url) {
+async function fetchApiCount(url, signal) {
     try {
-        const res = await fetch(url);
+        const res = await fetch(url, { signal });
         if (!res.ok) return -1;
         const data = await res.json();
         return Array.isArray(data) ? data.length : -1;
-    } catch { return -1; }
+    } catch (e) { if (e.name === 'AbortError') throw e; return -1; }
 }
 
-async function fetchApiCountInRange(url, from, to) {
+async function fetchApiCountInRange(url, from, to, signal) {
     try {
-        const res = await fetch(url);
+        const res = await fetch(url, { signal });
         if (!res.ok) return -1;
         const data = await res.json();
         if (!Array.isArray(data)) return -1;
@@ -523,14 +523,14 @@ async function fetchApiCountInRange(url, from, to) {
             const num = item.number || item.num || 0;
             return num >= from && num <= to;
         }).length;
-    } catch { return -1; }
+    } catch (e) { if (e.name === 'AbortError') throw e; return -1; }
 }
 
-async function fetchPaginatedCount(baseUrl) {
+async function fetchPaginatedCount(baseUrl, signal) {
     let total = 0, offset = 0;
     try {
         while (true) {
-            const res = await fetch(`${baseUrl}${baseUrl.includes('?') ? '&' : '?'}limit=500&offset=${offset}`);
+            const res = await fetch(`${baseUrl}${baseUrl.includes('?') ? '&' : '?'}limit=500&offset=${offset}`, { signal });
             if (!res.ok) break;
             const data = await res.json();
             if (!Array.isArray(data) || data.length === 0) break;
@@ -538,11 +538,11 @@ async function fetchPaginatedCount(baseUrl) {
             if (data.length < 500) break;
             offset += data.length;
         }
-    } catch { /* return what we have */ }
+    } catch (e) { if (e.name === 'AbortError') throw e; }
     return total;
 }
 
-export async function verifyDatabase(db) {
+export async function verifyDatabase(db, { signal } = {}) {
     console.log('[Verify] Starting database verification...');
 
     // Read config from DB metadata (independent of form)
@@ -606,12 +606,12 @@ export async function verifyDatabase(db) {
         const dbCount = dbStats[chk.table] || 0;
         let apiCount;
         if (chk.paginated) {
-            apiCount = await fetchPaginatedCount(chk.url);
+            apiCount = await fetchPaginatedCount(chk.url, signal);
         } else {
-            const fullCount = await fetchApiCount(chk.url);
+            const fullCount = await fetchApiCount(chk.url, signal);
             // For posiedzenia: filter API results to fetched range
             if (chk.filterRange && fullCount >= 0) {
-                apiCount = await fetchApiCountInRange(chk.url, chk.filterRange.from, chk.filterRange.to);
+                apiCount = await fetchApiCountInRange(chk.url, chk.filterRange.from, chk.filterRange.to, signal);
             } else {
                 apiCount = fullCount;
             }

@@ -731,6 +731,7 @@ if (!window.__apiHandlerInitialized) {
 // Main ETL fetch button handler — fetch / abort / verify
 let currentAbortController = null;
 let fetchBtnMode = 'fetch'; // 'fetch' | 'abort' | 'verify'
+let verifyAbortController = null;
 
 function setClearBtnEnabled(enabled) {
     const clearBtn = document.getElementById('etlClearBtn');
@@ -740,6 +741,7 @@ function setClearBtnEnabled(enabled) {
 document.getElementById('etlFetchBtn')?.addEventListener('click', async () => {
     if (fetchBtnMode === 'abort') {
         if (currentAbortController) currentAbortController.abort();
+        if (verifyAbortController) verifyAbortController.abort();
         return;
     }
     if (fetchBtnMode === 'verify') {
@@ -998,15 +1000,19 @@ async function startPipelineETL() {
 // Verification — triggered by 2nd click after fetch
 async function runVerification() {
     const btn = document.getElementById('etlFetchBtn');
+
+    // Switch to abort mode so user can cancel
+    verifyAbortController = new AbortController();
+    fetchBtnMode = 'abort';
     setClearBtnEnabled(false);
     if (btn) {
-        btn.disabled = true;
-        btn.textContent = '🔍 Weryfikacja...';
+        btn.textContent = '⏹️ Zatrzymaj weryfikację';
+        btn.classList.add('etl-btn-abort');
     }
     showEtlProgress();
 
     try {
-        const report = await verifyDatabase(db2);
+        const report = await verifyDatabase(db2, { signal: verifyAbortController.signal });
         const newItems = report.results.filter(r => r.status === 'new');
 
         if (newItems.length > 0) {
@@ -1016,10 +1022,10 @@ async function runVerification() {
             const msg = `Znaleziono ${totalNew} nowych rekordów w API (${newItems.map(r => r.label).join(', ')}).\n\nCzy pobrać poprawki?`;
             if (confirm(msg)) {
                 hideEtlProgress();
+                verifyAbortController = null;
                 fetchBtnMode = 'fetch';
                 if (btn) {
-                    btn.disabled = false;
-                    btn.classList.remove('etl-btn-verify-mode');
+                    btn.classList.remove('etl-btn-abort', 'etl-btn-verify-mode');
                 }
                 await startPipelineETL();
                 return;
@@ -1030,15 +1036,22 @@ async function runVerification() {
             ToastModule.success('Baza jest aktualna — brak nowych danych w API.');
         }
     } catch (error) {
-        console.error('[Verification] Error:', error);
-        ToastModule.error('Błąd weryfikacji: ' + error.message);
+        if (error.name === 'AbortError') {
+            console.log('[Verification] Aborted by user');
+        } else {
+            console.error('[Verification] Error:', error);
+            ToastModule.error('Błąd weryfikacji: ' + error.message);
+        }
     }
 
-    // Stay in verify mode — user can re-check or clear DB to start over
+    // Return to verify mode
+    verifyAbortController = null;
+    fetchBtnMode = 'verify';
     hideEtlProgress();
     setClearBtnEnabled(true);
     if (btn) {
-        btn.disabled = false;
+        btn.classList.remove('etl-btn-abort');
+        btn.classList.add('etl-btn-verify-mode');
         btn.textContent = '🔍 Sprawdź poprawność';
     }
 }
