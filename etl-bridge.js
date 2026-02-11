@@ -750,15 +750,92 @@ function initETLPanel() {
         });
     });
 
-    // Full database checkbox - przełączanie bez funkcjonalności na razie
+    // Full database checkbox - zaznacza wszystko w formularzu ETL
     const fullDatabaseCheckbox = document.getElementById('fullDatabaseCheckbox');
     if (fullDatabaseCheckbox) {
-        // Prevent button click when clicking checkbox
         fullDatabaseCheckbox.addEventListener('click', (e) => {
             e.stopPropagation();
         });
         fullDatabaseCheckbox.addEventListener('change', (e) => {
-            console.log('Full database mode:', e.target.checked ? 'enabled' : 'disabled');
+            const dataCheckboxes = [
+                'etlTranscripts', 'etlVotings', 'etlVotes',
+                'etlInterpellations', 'etlWrittenQuestions', 'etlBills', 'etlLegalActs',
+                'etlCommitteeSittings', 'etlCommitteeStatements'
+            ];
+
+            if (e.target.checked) {
+                // === ZAZNACZ WSZYSTKO ===
+                if (!confirm('Czy na pewno chcesz zaznaczyć wszystkie dane w formularzu ETL?')) {
+                    e.target.checked = false;
+                    return;
+                }
+
+                // Sejm
+                const sejmRadio = document.querySelector('input[name="etlInst"][value="sejm"]');
+                if (sejmRadio && !sejmRadio.checked) {
+                    sejmRadio.checked = true;
+                    sejmRadio.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+
+                // Kadencja "all"
+                const termSelect = document.getElementById('etlTermSelect');
+                if (termSelect) {
+                    termSelect.value = 'all';
+                    termSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+
+                // Zakres posiedzeń max
+                const fromEl = document.getElementById('etlRangeFrom');
+                const toEl = document.getElementById('etlRangeTo');
+                if (fromEl) fromEl.value = fromEl.min || 1;
+                if (toEl) toEl.value = toEl.max || 999;
+
+                // Zaznacz wszystkie checkboxy (pomijaj disabled)
+                for (const id of dataCheckboxes) {
+                    const chk = document.getElementById(id);
+                    if (chk && !chk.disabled && !chk.checked) {
+                        chk.checked = true;
+                        chk.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                }
+
+                // Komisje: zaznacz "Wszystkie"
+                const committeeSelect = document.getElementById('etlCommitteeSelect');
+                if (committeeSelect) {
+                    const allOpt = committeeSelect.querySelector('option[value="all"]');
+                    if (allOpt) allOpt.selected = true;
+                }
+            } else {
+                // === ODZNACZ — przywróć domyślne ===
+
+                // Kadencja 10
+                const termSelect = document.getElementById('etlTermSelect');
+                if (termSelect) {
+                    termSelect.value = '10';
+                    termSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+
+                // Zakres 1-3
+                const fromEl = document.getElementById('etlRangeFrom');
+                const toEl = document.getElementById('etlRangeTo');
+                if (fromEl) fromEl.value = 1;
+                if (toEl) toEl.value = 3;
+
+                // Odznacz wszystko oprócz Wypowiedzi
+                for (const id of dataCheckboxes) {
+                    const chk = document.getElementById(id);
+                    if (!chk || chk.disabled) continue;
+                    const shouldBeChecked = id === 'etlTranscripts';
+                    if (chk.checked !== shouldBeChecked) {
+                        chk.checked = shouldBeChecked;
+                        chk.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                }
+            }
+
+            // Aktualizuj sidebar
+            if (typeof updateETLSummary === 'function') updateETLSummary();
+            if (typeof updateETLEstimate === 'function') updateETLEstimate();
         });
     }
 
