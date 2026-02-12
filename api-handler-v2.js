@@ -458,30 +458,31 @@ function updateFetchOverview() {
     const panel = document.getElementById('fetchOverview');
     if (!panel) return;
 
+    // Live SQL counts from database
+    let sqlStats = {};
+    try { sqlStats = getSqlCounts(); } catch { /* db not ready */ }
+    const dbHasData = Object.values(sqlStats).some(v => v > 0);
+
+    // Try to load fetch config (may not exist after import)
     const configRaw = localStorage.getItem('nostradamnos_lastFetchConfig');
     const fetchRaw = localStorage.getItem('nostradamnos_lastFetch');
+    let config = null, fetched = null;
+    try {
+        if (configRaw) config = JSON.parse(configRaw);
+        if (fetchRaw) fetched = JSON.parse(fetchRaw);
+    } catch { /* parse error — treat as import mode */ }
 
-    if (!configRaw || !fetchRaw) {
+    const hasFetchHistory = !!(config && fetched);
+
+    // Jeśli nie ma danych w DB i nie ma historii fetcha — ukryj panel
+    if (!dbHasData && !hasFetchHistory) {
         panel.style.display = 'none';
         return;
     }
 
-    let config, fetched;
-    try {
-        config = JSON.parse(configRaw);
-        fetched = JSON.parse(fetchRaw);
-    } catch { panel.style.display = 'none'; return; }
-
-    const modules = config.modules || [];
-    const stats = fetched.stats || {};
-    const reqCounts = fetched.requestedCounts || {};
-
-    // Live SQL counts from database (includes dni_obrad)
-    let sqlStats = {};
-    try { sqlStats = getSqlCounts(); } catch { /* db not ready */ }
-
-    // Sprawdź czy baza ma jakiekolwiek dane
-    const dbHasData = Object.values(sqlStats).some(v => v > 0);
+    const modules = hasFetchHistory ? (config.modules || []) : [];
+    const stats = hasFetchHistory ? (fetched.stats || {}) : {};
+    const reqCounts = hasFetchHistory ? (fetched.requestedCounts || {}) : {};
 
     // Mapowanie moduł → klucz w stats
     const modToStat = {
@@ -510,7 +511,7 @@ function updateFetchOverview() {
     const setReq = (id, mod, countValue) => {
         const el = document.getElementById(id);
         if (!el) return;
-        if (!dbHasData) {
+        if (!dbHasData || !hasFetchHistory) {
             el.textContent = '—';
             el.className = 'fov-unchecked';
             return;
@@ -528,7 +529,7 @@ function updateFetchOverview() {
         }
     };
 
-    // Right column: show fetched stat count + sql(x) from live DB; hide when DB empty
+    // Right column: show fetched count + sql(x); in import mode show only sql(x)
     const setStat = (id, mod) => {
         const el = document.getElementById(id);
         if (!el) return;
@@ -540,6 +541,17 @@ function updateFetchOverview() {
         const statKey = modToStat[mod] || mod;
         const val = stats[statKey];
         const sqlVal = sqlStats[statKey] || 0;
+        // Import mode (no fetch history): show only sql count
+        if (!hasFetchHistory) {
+            if (sqlVal > 0) {
+                el.textContent = `${sqlVal.toLocaleString('pl-PL')} sql(${sqlVal.toLocaleString('pl-PL')})`;
+                el.className = 'fov-value';
+            } else {
+                el.textContent = '—';
+                el.className = 'fov-unchecked';
+            }
+            return;
+        }
         const sqlSuffix = sqlVal > 0 ? ` sql(${sqlVal.toLocaleString('pl-PL')})` : '';
         if (val !== undefined && val > 0) {
             el.textContent = val.toLocaleString('pl-PL') + sqlSuffix;
@@ -553,11 +565,17 @@ function updateFetchOverview() {
         }
     };
 
-    // Lewa kolumna: Zlecone — ukryj gdy brak danych w DB
-    const inst = config.typ === 'senat' ? 'Senat' : 'Sejm';
-    setText('fovInst', dbHasData ? inst : '—');
-    setText('fovKadencja', dbHasData ? (config.kadencja ? `nr ${config.kadencja}` : 'wszystkie') : '—');
-    setText('fovRange', dbHasData ? `${config.rangeFrom || '?'} — ${config.rangeTo || '?'}` : '—');
+    // Lewa kolumna: Zlecone
+    if (hasFetchHistory) {
+        const inst = config.typ === 'senat' ? 'Senat' : 'Sejm';
+        setText('fovInst', dbHasData ? inst : '—');
+        setText('fovKadencja', dbHasData ? (config.kadencja ? `nr ${config.kadencja}` : 'wszystkie') : '—');
+        setText('fovRange', dbHasData ? `${config.rangeFrom || '?'} — ${config.rangeTo || '?'}` : '—');
+    } else {
+        setText('fovInst', '—');
+        setText('fovKadencja', '—');
+        setText('fovRange', '—');
+    }
     setReq('fovReqDeputies', 'poslowie');
     setReq('fovReqSittings', 'posiedzenia', reqCounts.sittings);
     setReq('fovReqSessionDays', 'wypowiedzi', reqCounts.sessionDays);
@@ -572,23 +590,34 @@ function updateFetchOverview() {
     setReq('fovReqCommittees', 'komisje', reqCounts.komisje);
     setReq('fovReqCommitteeSittings', 'komisje_posiedzenia', reqCounts.komisje_posiedzenia);
 
-    // Prawa kolumna: Pobrane — ukryj gdy brak danych w DB
-    setText('fovGotInst', dbHasData ? inst : '—');
-    setText('fovGotKadencja', dbHasData ? (config.kadencja ? `nr ${config.kadencja}` : 'wszystkie') : '—');
-    setText('fovGotRange', dbHasData && fetched.newSittings > 0 ? `${fetched.newSittings} posiedzeń` : '—');
+    // Prawa kolumna: Pobrane / dane importowane
+    if (hasFetchHistory) {
+        const inst = config.typ === 'senat' ? 'Senat' : 'Sejm';
+        setText('fovGotInst', dbHasData ? inst : '—');
+        setText('fovGotKadencja', dbHasData ? (config.kadencja ? `nr ${config.kadencja}` : 'wszystkie') : '—');
+        setText('fovGotRange', dbHasData && fetched.newSittings > 0 ? `${fetched.newSittings} posiedzeń` : '—');
+    } else {
+        // Import mode: try to detect from DB metadata
+        setText('fovGotInst', dbHasData ? 'import' : '—');
+        setText('fovGotKadencja', '—');
+        setText('fovGotRange', '—');
+    }
     setStat('fovGotDeputies', 'poslowie');
     setStat('fovGotSittings', 'posiedzenia');
-    // Dni obrad: from pipeline's sessionDays count + sql
+    // Dni obrad
     const sessionDaysEl = document.getElementById('fovGotSessionDays');
     if (sessionDaysEl) {
         if (!dbHasData) {
             sessionDaysEl.textContent = '—';
             sessionDaysEl.className = 'fov-unchecked';
         } else {
-            const gotSessionDays = fetched.sessionDays || 0;
+            const gotSessionDays = hasFetchHistory ? (fetched.sessionDays || 0) : 0;
             const sqlSessionDays = sqlStats.dni_obrad || 0;
             const sessionDaysSql = sqlSessionDays > 0 ? ` sql(${sqlSessionDays.toLocaleString('pl-PL')})` : '';
-            if (gotSessionDays > 0) {
+            if (!hasFetchHistory && sqlSessionDays > 0) {
+                sessionDaysEl.textContent = `${sqlSessionDays.toLocaleString('pl-PL')} sql(${sqlSessionDays.toLocaleString('pl-PL')})`;
+                sessionDaysEl.className = 'fov-value';
+            } else if (gotSessionDays > 0) {
                 sessionDaysEl.textContent = gotSessionDays.toLocaleString('pl-PL') + sessionDaysSql;
                 sessionDaysEl.className = 'fov-value';
             } else if (sqlSessionDays > 0) {
@@ -602,22 +631,28 @@ function updateFetchOverview() {
     }
     setStat('fovGotTranscripts', 'wypowiedzi');
     setStat('fovGotVotings', 'glosowania');
-    // Głosy indywidualne: użyj individualVotes (z totalVoted) + sql SUM(za+przeciw+wstrzymalo)
+    // Głosy indywidualne
     const votesEl = document.getElementById('fovGotVotes');
     if (votesEl) {
         if (!dbHasData) {
             votesEl.textContent = '—';
             votesEl.className = 'fov-unchecked';
         } else {
-            const indVotes = fetched.individualVotes || 0;
+            const indVotes = hasFetchHistory ? (fetched.individualVotes || 0) : 0;
             const fovSqlGlosy = sqlStats.glosy_indywidualne || 0;
             const glosySql = fovSqlGlosy > 0 ? ` sql(${fovSqlGlosy.toLocaleString('pl-PL')})` : '';
-            if (indVotes > 0 && modules.includes('glosy')) {
+            if (!hasFetchHistory && fovSqlGlosy > 0) {
+                votesEl.textContent = `${fovSqlGlosy.toLocaleString('pl-PL')} sql(${fovSqlGlosy.toLocaleString('pl-PL')})`;
+                votesEl.className = 'fov-value';
+            } else if (indVotes > 0 && modules.includes('glosy')) {
                 votesEl.textContent = indVotes.toLocaleString('pl-PL') + glosySql;
                 votesEl.className = 'fov-value';
             } else if (modules.includes('glosy')) {
                 votesEl.textContent = '0' + glosySql;
                 votesEl.className = fovSqlGlosy > 0 ? 'fov-value' : 'fov-unchecked';
+            } else if (!hasFetchHistory && fovSqlGlosy > 0) {
+                votesEl.textContent = `${fovSqlGlosy.toLocaleString('pl-PL')} sql(${fovSqlGlosy.toLocaleString('pl-PL')})`;
+                votesEl.className = 'fov-value';
             } else {
                 votesEl.textContent = '—';
                 votesEl.className = 'fov-unchecked';
@@ -715,10 +750,11 @@ function updateEtlDetailPanel(percent, stage, details = {}) {
 // Export db2 globally for debugging
 window.db2 = db2;
 
-// Export status functions globally for etl-bridge.js
+// Export status functions globally for etl-bridge.js and db-buttons.js
 window.updateStatusIndicators = updateStatusIndicators;
 window.setRecordsStatus = setRecordsStatus;
 window.setValidityStatus = setValidityStatus;
+window.updateSummaryTab = updateSummaryTab;
 
 // Initialize database on load
 db2.init().then(() => {

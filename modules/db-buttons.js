@@ -187,7 +187,11 @@ export function initDbButtons() {
             if (db2.database) {
                 db2.database.close();
             }
-            
+
+            // Wyczyść historię fetcha — importowana baza nie ma związku z poprzednim ETL
+            localStorage.removeItem('nostradamnos_lastFetchConfig');
+            localStorage.removeItem('nostradamnos_lastFetch');
+
             // Load new database
             db2.database = new db2.sql.Database(uint8Array);
             
@@ -219,6 +223,11 @@ export function initDbButtons() {
             );
 
             console.log('✅ [Zadanie] Import bazy zakończony');
+
+            // Odśwież panel podsumowania po imporcie
+            if (typeof window.updateSummaryTab === 'function') {
+                window.updateSummaryTab();
+            }
 
         } catch (error) {
             console.error('[DB Import] Error loading database:', error);
