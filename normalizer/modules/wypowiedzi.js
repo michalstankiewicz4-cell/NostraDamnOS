@@ -34,4 +34,9 @@ export function saveWypowiedzi(db, records) {
     
     stmt.free();
     console.log(`[Normalizer] Saved ${records.length} wypowiedzi`);
+
+    // Resolve mowca text → id_osoby using poslowie table
+    if (typeof db.resolveWypowiedziSpeakers === 'function') {
+        db.resolveWypowiedziSpeakers();
+    }
 }

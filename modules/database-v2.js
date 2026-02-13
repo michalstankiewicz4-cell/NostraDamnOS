@@ -312,8 +312,43 @@ export const db2 = {
                 CREATE INDEX IF NOT EXISTS idx_ustawy_status ON ustawy(status);
             `);
             console.log('[DB v2] Migration: ensured ustawy + zapytania_odpowiedzi tables exist');
+
+            // Resolve wypowiedzi.id_osoby from mowca text ↔ poslowie names
+            this.resolveWypowiedziSpeakers();
         } catch (err) {
             console.warn('[DB v2] Migration error:', err);
+        }
+    },
+
+    /**
+     * Match wypowiedzi.mowca text to poslowie.id_osoby
+     * by checking if both imie AND nazwisko appear in mowca string.
+     * Runs on init (for cached data) and after each wypowiedzi save.
+     */
+    resolveWypowiedziSpeakers() {
+        try {
+            const updated = this.database.exec(`
+                UPDATE wypowiedzi
+                SET id_osoby = (
+                    SELECT p.id_osoby
+                    FROM poslowie p
+                    WHERE wypowiedzi.mowca LIKE '%' || p.nazwisko || '%'
+                      AND wypowiedzi.mowca LIKE '%' || p.imie || '%'
+                    LIMIT 1
+                )
+                WHERE id_osoby IS NULL
+                  AND mowca IS NOT NULL
+                  AND mowca != ''
+            `);
+            const countResult = this.database.exec(
+                "SELECT changes() as cnt"
+            );
+            const cnt = countResult.length ? countResult[0].values[0][0] : 0;
+            if (cnt > 0) {
+                console.log(`[DB v2] Resolved ${cnt} wypowiedzi speakers → id_osoby`);
+            }
+        } catch (err) {
+            console.warn('[DB v2] resolveWypowiedziSpeakers error:', err);
         }
     },
 
