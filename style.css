@@ -11,12 +11,27 @@
     --warning-color: #f59e0b;
     --danger-color: #ef4444;
     --bg-color: #f8fafc;
+    --bg-secondary: #f1f5f9;
     --card-bg: #ffffff;
     --text-primary: #1e293b;
     --text-secondary: #64748b;
     --border-color: #e2e8f0;
     --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
 }
+
+/* Dark mode support - for system preference */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg-color: #0f172a;
+        --bg-secondary: #1e293b;
+        --card-bg: #1e293b;
+        --text-primary: #f1f5f9;
+        --text-secondary: #94a3b8;
+        --border-color: #334155;
+        --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3);
+    }
+}
+
 html {
     overflow: hidden;
     height: 100%;
