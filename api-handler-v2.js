@@ -4,6 +4,7 @@ import { fetchCounter, setFetchAbortController } from './fetcher/fetcher.js';
 import { db2 } from './modules/database-v2.js';
 import ToastModule from './modules/toast.js';
 import { startLivePolling, stopLivePolling } from './modules/sejm-live-checker.js';
+import { refreshChartsManager } from './modules/charts-manager.js';
 
 // === TASK QUEUE SYSTEM ===
 // Zapobiega jednoczesnym operacjom: fetch, verify, checkNewRecords, checkDataChanges
@@ -1440,6 +1441,9 @@ async function startPipelineETL() {
             onError: (error) => {
                 console.error('[Pipeline Error]', error);
             },
+                // Odśwież panel zarządzania wykresami po zakończeniu pipeline
+                refreshChartsManager();
+            
             onComplete: (result) => {}
         });
         

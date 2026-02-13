@@ -3,6 +3,7 @@
 
 import { db2 } from './database-v2.js';
 import ToastModule from './toast.js';
+import { refreshChartsManager } from './charts-manager.js';
 
 export function initDbButtons() {
     console.log('[DB Buttons] Initializing import/export buttons...');
@@ -256,6 +257,9 @@ export function initDbButtons() {
             if (typeof window.startDbMonitoring === 'function') {
                 window.startDbMonitoring();
             }
+            
+            // Odśwież panel zarządzania wykresami (lampki statusu)
+            refreshChartsManager();
 
         } catch (error) {
             console.error('[DB Import] Error loading database:', error);

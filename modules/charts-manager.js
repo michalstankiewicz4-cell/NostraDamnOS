@@ -41,6 +41,14 @@ export function initChartsManager() {
 }
 
 /**
+ * Odśwież panel kontrolny (np. po załadowaniu danych)
+ */
+export function refreshChartsManager() {
+    console.log('[Charts Manager] Refreshing...');
+    renderControlPanel();
+}
+
+/**
  * Załaduj stan wykresów z localStorage
  */
 function loadChartsState() {
