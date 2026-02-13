@@ -2037,17 +2037,18 @@
             });
         }
 
-        // Force check buttons
+        // Force check buttons - używają debounce z api-handler-v2.js
         const btnCheckNewRecords = document.getElementById('btnCheckNewRecords');
         if (btnCheckNewRecords) {
             btnCheckNewRecords.addEventListener('click', function() {
-                if (window.checkNewRecords) window.checkNewRecords();
+                if (window.forceCheckNewRecords) window.forceCheckNewRecords();
             });
         }
+        
         const btnCheckDataChanges = document.getElementById('btnCheckDataChanges');
         if (btnCheckDataChanges) {
             btnCheckDataChanges.addEventListener('click', function() {
-                if (window.checkDataChanges) window.checkDataChanges();
+                if (window.forceCheckDataChanges) window.forceCheckDataChanges();
             });
         }
 

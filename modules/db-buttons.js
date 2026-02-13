@@ -20,6 +20,13 @@ export function initDbButtons() {
     // Export button
     exportBtn.addEventListener('click', async () => {
         console.log('🚀 [Zadanie] Export bazy rozpoczęty');
+        
+        // Sprawdź czy kolejka zadań nie działa
+        if (window.taskQueue?.isRunning()) {
+            ToastModule.info('Poczekaj na zakończenie sprawdzania danych...', { duration: 2000 });
+            return;
+        }
+        
         try {
             exportBtn.style.transform = 'scale(0.9)';
             setTimeout(() => exportBtn.style.transform = 'scale(1)', 200);
@@ -102,6 +109,12 @@ export function initDbButtons() {
     
     // Import button
     importBtn.addEventListener('click', async () => {
+        // Sprawdź czy kolejka zadań nie działa
+        if (window.taskQueue?.isRunning()) {
+            ToastModule.info('Poczekaj na zakończenie sprawdzania danych...', { duration: 2000 });
+            return;
+        }
+        
         try {
             importBtn.style.transform = 'scale(0.9)';
             setTimeout(() => importBtn.style.transform = 'scale(1)', 200);

@@ -5,7 +5,222 @@ import { db2 } from './modules/database-v2.js';
 import ToastModule from './modules/toast.js';
 import { startLivePolling, stopLivePolling } from './modules/sejm-live-checker.js';
 
+// === TASK QUEUE SYSTEM ===
+// Zapobiega jednoczesnym operacjom: fetch, verify, checkNewRecords, checkDataChanges
+
+class TaskQueue {
+    constructor() {
+        this.queue = [];
+        this.running = false;
+        this.currentTask = null;
+        this.onStateChange = null; // Callback dla zmiany stanu
+    }
+
+    async add(taskName, taskFn) {
+        // Jeśli to samo zadanie już jest w kolejce lub wykonywane, pomiń
+        if (this.currentTask === taskName || this.queue.some(t => t.name === taskName)) {
+            console.log(`[TaskQueue] Task "${taskName}" already queued/running, skipping`);
+            return null;
+        }
+
+        return new Promise((resolve, reject) => {
+            this.queue.push({ name: taskName, fn: taskFn, resolve, reject });
+            this.process();
+        });
+    }
+
+    async process() {
+        if (this.running || this.queue.length === 0) return;
+        
+        this.running = true;
+        const task = this.queue.shift();
+        this.currentTask = task.name;
+        
+        console.log(`[TaskQueue] Starting task: ${task.name}`);
+        this.notifyStateChange(); // Powiadom o zmianie stanu
+        
+        try {
+            const result = await task.fn();
+            task.resolve(result);
+        } catch (error) {
+            console.error(`[TaskQueue] Task "${task.name}" failed:`, error);
+            task.reject(error);
+        } finally {
+            this.currentTask = null;
+            this.running = false;
+            console.log(`[TaskQueue] Finished task: ${task.name}`);
+            this.notifyStateChange(); // Powiadom o zmianie stanu
+            
+            // Process next task
+            if (this.queue.length > 0) {
+                setTimeout(() => this.process(), 100);
+            }
+        }
+    }
+
+    isRunning(taskName) {
+        if (taskName) {
+            return this.currentTask === taskName || this.queue.some(t => t.name === taskName);
+        }
+        return this.running || this.queue.length > 0;
+    }
+
+    clear() {
+        this.queue = [];
+    }
+    
+    notifyStateChange() {
+        if (this.onStateChange) {
+            this.onStateChange(this.isRunning(), this.currentTask);
+        }
+    }
+}
+
+const taskQueue = new TaskQueue();
+
+// Export dla debugowania
+window.taskQueue = taskQueue;
+
+// === GLOBAL STATE VARIABLES ===
+// Muszą być zdefiniowane przed updateButtonStates która ich używa
+
 let isFetching = false;
+let fetchBtnMode = 'fetch'; // 'fetch' | 'abort' | 'verify'
+let currentAbortController = null;
+let verifyAbortController = null;
+
+// === BUTTON STATE MANAGEMENT ===
+// Blokuje/odblokuje przyciski podczas operacji w kolejce
+
+function updateButtonStates(isQueueRunning, currentTask) {
+    const etlFetchBtn = document.getElementById('etlFetchBtn');
+    const etlClearBtn = document.getElementById('etlClearBtn');
+    const btnCheckNewRecords = document.getElementById('btnCheckNewRecords');
+    const btnCheckDataChanges = document.getElementById('btnCheckDataChanges');
+    const dbExportBtn = document.getElementById('dbExportBtn');
+    const dbImportBtn = document.getElementById('dbImportBtn');
+    
+    // Jeśli kolejka działa, blokuj wszystkie przyciski oprócz abort
+    if (isQueueRunning) {
+        // Pokaż info w konsoli dla user-a
+        console.log(`[TaskQueue] Running: ${currentTask} - przyciski zablokowane`);
+        
+        // ETL Clear button
+        if (etlClearBtn && !isFetching) {
+            etlClearBtn.disabled = true;
+            etlClearBtn.title = `Oczekuj - ${currentTask}...`;
+        }
+        
+        // Force check buttons (jeśli to nie one działają)
+        if (btnCheckNewRecords && currentTask !== 'checkNewRecords') {
+            btnCheckNewRecords.disabled = true;
+        }
+        if (btnCheckDataChanges && currentTask !== 'checkDataChanges') {
+            btnCheckDataChanges.disabled = true;
+        }
+        
+        // Import/Export buttons
+        if (dbExportBtn) {
+            dbExportBtn.disabled = true;
+            dbExportBtn.title = `Oczekuj - ${currentTask}...`;
+        }
+        if (dbImportBtn) {
+            dbImportBtn.disabled = true;
+            dbImportBtn.title = `Oczekuj - ${currentTask}...`;
+        }
+        
+        // ETL Fetch button - blokuj tylko jeśli nie jest w trybie abort
+        if (etlFetchBtn && fetchBtnMode !== 'abort' && !isFetching) {
+            etlFetchBtn.disabled = true;
+            etlFetchBtn.title = `Oczekuj - ${currentTask}...`;
+        }
+    } else {
+        // Odblokuj wszystkie przyciski
+        if (etlClearBtn && !isFetching) {
+            etlClearBtn.disabled = false;
+            etlClearBtn.title = 'Wyczyść wszystkie dane z bazy';
+        }
+        if (btnCheckNewRecords && !checkNewRecordsDebounce) {
+            btnCheckNewRecords.disabled = false;
+        }
+        if (btnCheckDataChanges && !checkDataChangesDebounce) {
+            btnCheckDataChanges.disabled = false;
+        }
+        if (dbExportBtn) {
+            dbExportBtn.disabled = false;
+            dbExportBtn.title = 'Eksportuj bazę do pliku JSON';
+        }
+        if (dbImportBtn) {
+            dbImportBtn.disabled = false;
+            dbImportBtn.title = 'Importuj bazę z pliku JSON';
+        }
+        if (etlFetchBtn && !isFetching) {
+            etlFetchBtn.disabled = false;
+            etlFetchBtn.title = '';
+        }
+    }
+    
+    // Aktualizuj lampki - pokaż status "checking" dla aktualnego zadania
+    updateLampsForTask(currentTask);
+}
+
+function updateLampsForTask(taskName) {
+    const recordsLamp = document.getElementById('floatingStatusRecords');
+    const validityLamp = document.getElementById('floatingStatusValidity');
+    
+    if (!taskName) return; // Brak aktywnego zadania
+    
+    // Pokaż lampki "checking" w zależności od zadania
+    if (taskName === 'checkNewRecords' || taskName === 'runVerification') {
+        if (recordsLamp && !recordsLamp.className.includes('checking')) {
+            recordsLamp.className = 'floating-lamp floating-lamp-checking';
+            recordsLamp.title = 'Sprawdzam nowe rekordy...';
+        }
+    }
+    
+    if (taskName === 'checkDataChanges') {
+        if (validityLamp && !validityLamp.className.includes('checking')) {
+            validityLamp.className = 'floating-lamp floating-lamp-checking';
+            validityLamp.title = 'Sprawdzam zmiany danych...';
+        }
+    }
+}
+
+// Podpięcie callbacku do kolejki
+taskQueue.onStateChange = updateButtonStates;
+
+// Zmienne dla debounce (muszą być w tym scope dla updateButtonStates)
+let checkNewRecordsDebounce = null;
+let checkDataChangesDebounce = null;
+
+// Funkcje z debounce dla force check buttons (exportowane globalnie)
+window.forceCheckNewRecords = function() {
+    if (checkNewRecordsDebounce) return; // Ignore if already pending
+    
+    const btn = document.getElementById('btnCheckNewRecords');
+    if (btn) btn.disabled = true;
+    
+    checkNewRecords();
+    
+    checkNewRecordsDebounce = setTimeout(() => {
+        checkNewRecordsDebounce = null;
+        if (btn && !taskQueue.isRunning()) btn.disabled = false;
+    }, 1000); // 1s debounce
+};
+
+window.forceCheckDataChanges = function() {
+    if (checkDataChangesDebounce) return; // Ignore if already pending
+    
+    const btn = document.getElementById('btnCheckDataChanges');
+    if (btn) btn.disabled = true;
+    
+    checkDataChanges();
+    
+    checkDataChangesDebounce = setTimeout(() => {
+        checkDataChangesDebounce = null;
+        if (btn && !taskQueue.isRunning()) btn.disabled = false;
+    }, 1000); // 1s debounce
+};
 
 // === CONFIG COMPARISON HELPERS ===
 
@@ -898,63 +1113,71 @@ let dataChangesInterval = null;
 /**
  * Sprawdza nowe rekordy (druga lampka)
  * Używa tej samej logiki co przycisk "Sprawdź nowe dane" - verifyDatabase()
+ * Używa kolejki zadań aby zapobiec jednoczesnym operacjom
  */
 async function checkNewRecords() {
     if (!db2.database) return;
     
-    const lamp = document.getElementById('floatingStatusRecords');
-    if (lamp) {
-        lamp.className = 'floating-lamp floating-lamp-checking';
-        lamp.title = 'Sprawdzam nowe rekordy...';
-    }
-    
-    console.log('[DB Monitor] Checking for new records...');
-    try {
-        // Używamy dokładnie tej samej funkcji co przycisk sprawdzania
-        const result = await verifyDatabase(db2, {});
-        if (result && result.hasNewRecords) {
-            setRecordsStatus(true);
-            console.log('[DB Monitor] 🆕 New records detected');
-        } else {
-            setRecordsStatus(false);
-        }
-    } catch (error) {
-        console.error('[DB Monitor] Error checking new records:', error);
+    // Dodaj do kolejki zadań
+    return taskQueue.add('checkNewRecords', async () => {
+        const lamp = document.getElementById('floatingStatusRecords');
         if (lamp) {
-            lamp.className = 'floating-lamp floating-lamp-ok';
-            lamp.title = 'Błąd sprawdzania';
+            lamp.className = 'floating-lamp floating-lamp-checking';
+            lamp.title = 'Sprawdzam nowe rekordy...';
         }
-    }
+        
+        console.log('[DB Monitor] Checking for new records...');
+        try {
+            // Używamy dokładnie tej samej funkcji co przycisk sprawdzania
+            const result = await verifyDatabase(db2, {});
+            if (result && result.hasNewRecords) {
+                setRecordsStatus(true);
+                console.log('[DB Monitor] 🆕 New records detected');
+            } else {
+                setRecordsStatus(false);
+            }
+        } catch (error) {
+            console.error('[DB Monitor] Error checking new records:', error);
+            if (lamp) {
+                lamp.className = 'floating-lamp floating-lamp-ok';
+                lamp.title = 'Błąd sprawdzania';
+            }
+        }
+    });
 }
 
 /**
  * Sprawdza zmiany danych (trzecia lampka)
+ * Używa kolejki zadań aby zapobiec jednoczesnym operacjom
  */
 async function checkDataChanges() {
     if (!db2.database) return;
     
-    const lamp = document.getElementById('floatingStatusValidity');
-    if (lamp) {
-        lamp.className = 'floating-lamp floating-lamp-checking';
-        lamp.title = 'Sprawdzam zmiany danych...';
-    }
-    
-    console.log('[DB Monitor] Checking for data changes...');
-    try {
-        const result = await detectDataChanges(db2);
-        if (result && result.hasChanges) {
-            setValidityStatus(true); // true = has errors/changes
-            console.log('[DB Monitor] ⚠️ Data changes detected:', result.changes);
-        } else {
-            setValidityStatus(false);
-        }
-    } catch (error) {
-        console.error('[DB Monitor] Error checking data changes:', error);
+    // Dodaj do kolejki zadań
+    return taskQueue.add('checkDataChanges', async () => {
+        const lamp = document.getElementById('floatingStatusValidity');
         if (lamp) {
-            lamp.className = 'floating-lamp floating-lamp-ok';
-            lamp.title = 'Błąd sprawdzania';
+            lamp.className = 'floating-lamp floating-lamp-checking';
+            lamp.title = 'Sprawdzam zmiany danych...';
         }
-    }
+        
+        console.log('[DB Monitor] Checking for data changes...');
+        try {
+            const result = await detectDataChanges(db2);
+            if (result && result.hasChanges) {
+                setValidityStatus(true); // true = has errors/changes
+                console.log('[DB Monitor] ⚠️ Data changes detected:', result.changes);
+            } else {
+                setValidityStatus(false);
+            }
+        } catch (error) {
+            console.error('[DB Monitor] Error checking data changes:', error);
+            if (lamp) {
+                lamp.className = 'floating-lamp floating-lamp-ok';
+                lamp.title = 'Błąd sprawdzania';
+            }
+        }
+    });
 }
 
 /**
@@ -993,12 +1216,11 @@ function startDbMonitoring(skipInitialCheck = false) {
         const interval = settings.dbCheckDataChangesInterval * 60 * 1000;
         console.log(`[DB Monitor] Starting data changes check (every ${settings.dbCheckDataChangesInterval} min)`);
         
-        // Pierwsze sprawdzenie od razu (tylko jeśli nie skipujemy)
-        if (!skipInitialCheck) {
-            checkDataChanges();
-        }
+        // Pierwsze sprawdzenie - NIE od razu, nawet gdy skipInitialCheck=false
+        // Zapobiega jednoczesnym operacjom które blokują UI
+        // Pierwsze sprawdzenie odbędzie się po upływie interwału (11 min)
         
-        // Późniejsze co N minut
+        // Póżniejsze co N minut
         dataChangesInterval = setInterval(checkDataChanges, interval);
     }
 }
@@ -1047,7 +1269,10 @@ db2.init().then(() => {
     console.log('[API Handler] Live Sejm monitoring started');
     
     // Uruchom monitorowanie bazy (jeśli włączone w ustawieniach)
-    startDbMonitoring();
+    // ZAWSZE skip initial check przy starcie - pierwsze sprawdzenie dopiero po upływie interwałów
+    setTimeout(() => {
+        startDbMonitoring(true); // Skip initial check - zapobiega zawieszeniu przy starcie
+    }, 2000);
     
     // Ustaw widoczność lampek według ustawień
     updateLampsVisibility();
@@ -1063,9 +1288,7 @@ if (!window.__apiHandlerInitialized) {
     window.__apiHandlerInitialized = true;
 
 // Main ETL fetch button handler — fetch / abort / verify
-let currentAbortController = null;
-let fetchBtnMode = 'fetch'; // 'fetch' | 'abort' | 'verify'
-let verifyAbortController = null;
+// Zmienne globalne przeniesione na górę pliku przed updateButtonStates()
 
 function setClearBtnEnabled(enabled) {
     const clearBtn = document.getElementById('etlClearBtn');
@@ -1100,6 +1323,12 @@ function updateFetchButtonMode() {
 window.updateFetchButtonMode = updateFetchButtonMode;
 
 document.getElementById('etlFetchBtn')?.addEventListener('click', async () => {
+    // Jeśli kolejka zadań jest aktywna (monitoring sprawdza dane), nie pozwól kliknąć
+    if (taskQueue.isRunning() && fetchBtnMode !== 'abort') {
+        ToastModule.info('Poczekaj na zakończenie sprawdzania danych...', { duration: 2000 });
+        return;
+    }
+    
     if (fetchBtnMode === 'abort') {
         if (currentAbortController) currentAbortController.abort();
         if (verifyAbortController) verifyAbortController.abort();
@@ -1373,7 +1602,8 @@ async function startPipelineETL() {
         }
         
         // Wznow monitorowanie bazy po zakończeniu fetcha
-        startDbMonitoring();
+        // Skip initial check - dane świeżo pobrane/zaktualizowane, nie sprawdzaj od razu
+        startDbMonitoring(true);
     }
 }
 
@@ -1381,19 +1611,24 @@ async function startPipelineETL() {
 async function runVerification() {
     const btn = document.getElementById('etlFetchBtn');
 
-    // Switch to abort mode so user can cancel
-    verifyAbortController = new AbortController();
-    fetchBtnMode = 'abort';
-    setClearBtnEnabled(false);
-    if (btn) {
-        btn.textContent = '⏹️ Zatrzymaj weryfikację';
-        btn.classList.add('etl-btn-abort');
-    }
-    showEtlProgress();
+    // Zatrzymaj monitoring bazy podczas weryfikacji
+    stopDbMonitoring();
 
-    try {
-        const report = await verifyDatabase(db2, { signal: verifyAbortController.signal });
-        const newItems = report.results.filter(r => r.status === 'new');
+    // Użyj kolejki zadań aby zapobiec jednoczesnym operacjom
+    return taskQueue.add('runVerification', async () => {
+        // Switch to abort mode so user can cancel
+        verifyAbortController = new AbortController();
+        fetchBtnMode = 'abort';
+        setClearBtnEnabled(false);
+        if (btn) {
+            btn.textContent = '⏹️ Zatrzymaj weryfikację';
+            btn.classList.add('etl-btn-abort');
+        }
+        showEtlProgress();
+
+        try {
+            const report = await verifyDatabase(db2, { signal: verifyAbortController.signal });
+            const newItems = report.results.filter(r => r.status === 'new');
 
         if (newItems.length > 0) {
             setRecordsStatus(true);
@@ -1407,6 +1642,7 @@ async function runVerification() {
                 if (btn) {
                     btn.classList.remove('etl-btn-abort', 'etl-btn-verify-mode');
                 }
+                // Nie wznawiamy monitoringu tutaj - startPipelineETL zrobi to sam
                 await startPipelineETL();
                 return;
             }
@@ -1422,22 +1658,33 @@ async function runVerification() {
             console.error('[Verification] Error:', error);
             ToastModule.error('Błąd weryfikacji: ' + error.message);
         }
+    } finally {
+        // Return to verify mode
+        verifyAbortController = null;
+        fetchBtnMode = 'verify';
+        hideEtlProgress();
+        setClearBtnEnabled(true);
+        if (btn) {
+            btn.classList.remove('etl-btn-abort');
+            btn.classList.add('etl-btn-verify-mode');
+            btn.textContent = '🔍 Sprawdź poprawność';
+        }
+        
+        // Wznów monitorowanie bazy po weryfikacji
+        // Skip initial check - użytkownik właśnie zakończył weryfikację, nie sprawdzaj od razu ponownie
+        startDbMonitoring(true);
     }
-
-    // Return to verify mode
-    verifyAbortController = null;
-    fetchBtnMode = 'verify';
-    hideEtlProgress();
-    setClearBtnEnabled(true);
-    if (btn) {
-        btn.classList.remove('etl-btn-abort');
-        btn.classList.add('etl-btn-verify-mode');
-        btn.textContent = '🔍 Sprawdź poprawność';
-    }
+    }); // Zamknięcie taskQueue.add
 }
 
 // Clear cache button
 document.getElementById('etlClearBtn')?.addEventListener('click', async () => {
+    // Sprawdź czy kolejka zadań nie działa
+    if (taskQueue.isRunning()) {
+        ToastModule.info('Poczekaj na zakończenie sprawdzania danych...', { duration: 2000 });
+        return;
+    }
+    
     if (confirm('Wyczyścić wszystkie dane z bazy?')) {
         console.log('🚀 [Zadanie] Wyczyść bazę rozpoczęty');
         try {
