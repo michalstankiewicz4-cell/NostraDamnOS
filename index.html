@@ -1901,6 +1901,13 @@
                         const navItem = document.querySelector('.nav-item[data-section="1"]');
                         if (navItem) navItem.click();
                     }
+                    // Przewiń do góry sekcji ETL
+                    setTimeout(() => {
+                        const etlSection = document.querySelector('.app-section[data-section="1"]');
+                        if (etlSection) {
+                            etlSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+                    }, 100);
                 } else if (action === 'import-db') {
                     // Kliknij przycisk importu bazy
                     const importBtn = document.getElementById('importDbBtn');
