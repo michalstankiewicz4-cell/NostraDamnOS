@@ -3486,8 +3486,8 @@ input:disabled {
 
 /* Highlighted element — NO z-index, stays below shield (shield is transparent) */
 .help-highlighted {
-    outline: 6px solid #facc15 !important;
-    outline-offset: 6px;
+    outline: 4px solid #facc15 !important;
+    outline-offset: 4px;
     box-shadow: 0 0 0 10px rgba(250, 204, 21, 0.35),
                 0 0 30px rgba(250, 204, 21, 0.5),
                 inset 0 0 0 2px rgba(250, 204, 21, 0.2) !important;
