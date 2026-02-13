@@ -67,7 +67,8 @@ const predictionLoaders = {
     'topicClassification': analyzeTopicClassification,
     'mpContradictions': analyzeMpContradictions,
     'aiReport': generateAiReport,
-    'webllmChat': loadWebLLMChat
+    'webllmChat': loadWebLLMChat,
+    'antiPolish': analyzeAntiPolish
 };
 
 /**
@@ -3988,6 +3989,301 @@ async function loadWebLLMChat() {
     } catch (err) {
         console.error('[Predictions] loadWebLLMChat error:', err);
         container.innerHTML = '<div class="prediction-error">Błąd WebLLM: ' + err.message + '</div>';
+    }
+}
+
+/**
+ * 27. Wykrywanie zachowań antypolskich
+ * Analiza wypowiedzi pod kątem narracji prorosyjskich, antypaństwowych, dezinformacji
+ */
+function analyzeAntiPolish() {
+    const container = document.getElementById('antiPolishContent');
+    if (!container) return;
+
+    console.log('[Predictions] Analyzing anti-Polish behaviors...');
+
+    // === Słowniki detekcji ===
+    const PROROSYJSKIE = [
+        'rosja ma rację', 'sojusz z rosją', 'nato prowokuje', 'nato agresj',
+        'sankcje szkodzą', 'sankcje przeciw', 'zniesienie sankcji', 'nord stream',
+        'gazprom', 'rosyjski gaz', 'pipeline', 'nie prowokować rosj',
+        'krym jest ros', 'donbas', 'denazyfikacj', 'specjalna operacja',
+        'wina nato', 'wina zachodu', 'ekspansja nato', 'obietnice nato',
+        'rosja partner', 'współpraca z rosją', 'dialog z moskwą',
+        'putin ma racj', 'propaganda zachodnia', 'rusofobia'
+    ];
+
+    const ANTYPOLSKIE = [
+        'polskie obozy', 'polskie obozy zagłady', 'polish death camp',
+        'polish concentration', 'współudział polski', 'polscy sprawcy',
+        'polski antysemityzm', 'kolaboracja polsk', 'naród sprawców',
+        'odpowiedzialność polski za', 'polski faszyzm', 'polak faszysta',
+        'tradycja antysemicka', 'polskie zbrodnie', 'polacy współpracowali z'
+    ];
+
+    const ANTYPANSTWOWE = [
+        'polska nie ma prawa', 'likwidacja wojsk', 'armia niepotrzebna',
+        'polexit', 'wyjście z ue', 'wyjść z unii', 'wyjście z nato',
+        'nato nie obroni', 'rozwiązać nato', 'wasalstwo wobec usa',
+        'kolonia ameryk', 'amerykańska okupacja', 'bazy amerykańskie zagrożen',
+        'niepodległość od zachodu', 'sowietyzacja', 'brukselska dyktatura',
+        'wasalstwo', 'zdrada narodowa', 'demontaż państwa'
+    ];
+
+    const DEZINFORMACJA = [
+        'plandemie', 'plandemia', 'szczepionki zabijają', 'bill gates czipuje',
+        'wielki reset', 'nowy porządek świata', 'spisek globalist',
+        'ue narzuca', 'dyktatura sanitarna', 'fałszywa pandemia',
+        'broń biologiczna', 'chemtrails', 'agenda 2030 zagrożen',
+        'zastępowanie ludności', 'kalergi', 'wielka wymiana'
+    ];
+
+    try {
+        // Pobierz wypowiedzi
+        const speechResult = db2.database.exec(`
+            SELECT w.id, w.tresc, w.data, p.imie || ' ' || p.nazwisko as speaker,
+                   p.klub as club
+            FROM wypowiedzi w
+            LEFT JOIN poslowie p ON w.posel_id = p.id
+            WHERE w.tresc IS NOT NULL AND length(w.tresc) > 50
+            ORDER BY w.data DESC
+            LIMIT 5000
+        `);
+
+        if (!speechResult.length || !speechResult[0].values.length) {
+            container.innerHTML = '<div class="prediction-error">Brak wypowiedzi do analizy</div>';
+            return;
+        }
+
+        const speeches = speechResult[0].values;
+        const flagged = [];
+
+        // Funkcja detekcji
+        function detectPatterns(text, patterns) {
+            const lower = text.toLowerCase();
+            const found = [];
+            for (const pattern of patterns) {
+                if (lower.includes(pattern)) {
+                    found.push(pattern);
+                }
+            }
+            return found;
+        }
+
+        // Skanuj wypowiedzi
+        for (const [id, text, date, speaker, club] of speeches) {
+            if (!text) continue;
+
+            const proRus = detectPatterns(text, PROROSYJSKIE);
+            const antiPol = detectPatterns(text, ANTYPOLSKIE);
+            const antiState = detectPatterns(text, ANTYPANSTWOWE);
+            const disinfo = detectPatterns(text, DEZINFORMACJA);
+
+            const totalFlags = proRus.length + antiPol.length + antiState.length + disinfo.length;
+            if (totalFlags === 0) continue;
+
+            const categories = [];
+            if (proRus.length) categories.push({ type: 'Prorosyjskie', icon: '🇷🇺', matches: proRus, color: '#e53e3e' });
+            if (antiPol.length) categories.push({ type: 'Antypolskie', icon: '⚠️', matches: antiPol, color: '#dd6b20' });
+            if (antiState.length) categories.push({ type: 'Antypaństwowe', icon: '🏴', matches: antiState, color: '#805ad5' });
+            if (disinfo.length) categories.push({ type: 'Dezinformacja', icon: '🔻', matches: disinfo, color: '#718096' });
+
+            // Severity: 1 match = low, 2-3 = medium, 4+ = high
+            const severity = totalFlags >= 4 ? 'high' : totalFlags >= 2 ? 'medium' : 'low';
+
+            flagged.push({
+                id, text: text.substring(0, 500), date, speaker: speaker || 'Nieznany',
+                club: club || '?', categories, totalFlags, severity
+            });
+        }
+
+        // Sortuj wg severity
+        flagged.sort((a, b) => b.totalFlags - a.totalFlags);
+
+        // === Statystyki ===
+        const totalFlagged = flagged.length;
+        const byClub = {};
+        const byCategory = { 'Prorosyjskie': 0, 'Antypolskie': 0, 'Antypaństwowe': 0, 'Dezinformacja': 0 };
+        const bySpeaker = {};
+
+        for (const f of flagged) {
+            byClub[f.club] = (byClub[f.club] || 0) + 1;
+            bySpeaker[f.speaker] = (bySpeaker[f.speaker] || 0) + 1;
+            for (const c of f.categories) {
+                byCategory[c.type] += c.matches.length;
+            }
+        }
+
+        const topSpeakers = Object.entries(bySpeaker).sort((a, b) => b[1] - a[1]).slice(0, 10);
+        const clubEntries = Object.entries(byClub).sort((a, b) => b[1] - a[1]);
+
+        // Severity counts
+        const highCount = flagged.filter(f => f.severity === 'high').length;
+        const mediumCount = flagged.filter(f => f.severity === 'medium').length;
+        const lowCount = flagged.filter(f => f.severity === 'low').length;
+
+        // === Opcjonalna analiza AI ===
+        const apiKey = getApiKey();
+        let aiSection = '';
+        if (apiKey && flagged.length > 0) {
+            aiSection = `
+                <div class="antipolish-ai">
+                    <button class="prediction-btn-primary" id="antiPolishAiBtn">✨ Analiza AI — ocena kontekstu</button>
+                    <div id="antiPolishAiResult" style="display:none;"></div>
+                </div>`;
+        }
+
+        // === Render ===
+        container.innerHTML = `
+            <div class="antipolish-summary">
+                <h4>🛡️ Raport bezpieczeństwa narracyjnego</h4>
+                <p class="antipolish-subtitle">Przeskanowano ${speeches.length} wypowiedzi · Wykryto ${totalFlagged} podejrzanych</p>
+
+                <div class="antipolish-stats">
+                    <div class="antipolish-stat severity-high">
+                        <span class="antipolish-stat-val">${highCount}</span>
+                        <span class="antipolish-stat-label">🔴 Wysoki</span>
+                    </div>
+                    <div class="antipolish-stat severity-medium">
+                        <span class="antipolish-stat-val">${mediumCount}</span>
+                        <span class="antipolish-stat-label">🟠 Średni</span>
+                    </div>
+                    <div class="antipolish-stat severity-low">
+                        <span class="antipolish-stat-val">${lowCount}</span>
+                        <span class="antipolish-stat-label">🟡 Niski</span>
+                    </div>
+                    <div class="antipolish-stat">
+                        <span class="antipolish-stat-val">${speeches.length}</span>
+                        <span class="antipolish-stat-label">📄 Łącznie</span>
+                    </div>
+                </div>
+
+                <div class="antipolish-categories">
+                    <h5>Rozkład kategorii</h5>
+                    <div class="antipolish-cat-grid">
+                        <div class="antipolish-cat" style="border-left: 3px solid #e53e3e;">
+                            <span class="antipolish-cat-icon">🇷🇺</span>
+                            <span class="antipolish-cat-name">Prorosyjskie</span>
+                            <span class="antipolish-cat-count">${byCategory['Prorosyjskie']}</span>
+                        </div>
+                        <div class="antipolish-cat" style="border-left: 3px solid #dd6b20;">
+                            <span class="antipolish-cat-icon">⚠️</span>
+                            <span class="antipolish-cat-name">Antypolskie</span>
+                            <span class="antipolish-cat-count">${byCategory['Antypolskie']}</span>
+                        </div>
+                        <div class="antipolish-cat" style="border-left: 3px solid #805ad5;">
+                            <span class="antipolish-cat-icon">🏴</span>
+                            <span class="antipolish-cat-name">Antypaństwowe</span>
+                            <span class="antipolish-cat-count">${byCategory['Antypaństwowe']}</span>
+                        </div>
+                        <div class="antipolish-cat" style="border-left: 3px solid #718096;">
+                            <span class="antipolish-cat-icon">🔻</span>
+                            <span class="antipolish-cat-name">Dezinformacja</span>
+                            <span class="antipolish-cat-count">${byCategory['Dezinformacja']}</span>
+                        </div>
+                    </div>
+                </div>
+
+                ${clubEntries.length ? `
+                <div class="antipolish-clubs">
+                    <h5>Wykrycia wg klubu</h5>
+                    <div class="antipolish-club-list">
+                        ${clubEntries.map(([club, cnt]) => {
+                            const pct = Math.round(cnt / totalFlagged * 100);
+                            return `<div class="antipolish-club-row">
+                                <span class="antipolish-club-name">${club}</span>
+                                <div class="antipolish-club-bar"><div class="antipolish-club-fill" style="width:${pct}%"></div></div>
+                                <span class="antipolish-club-cnt">${cnt}</span>
+                            </div>`;
+                        }).join('')}
+                    </div>
+                </div>` : ''}
+
+                ${topSpeakers.length ? `
+                <div class="antipolish-speakers">
+                    <h5>Najczęściej flagowani posłowie</h5>
+                    <div class="antipolish-speaker-list">
+                        ${topSpeakers.map(([name, cnt], i) => `
+                            <div class="antipolish-speaker-row">
+                                <span class="antipolish-speaker-rank">#${i + 1}</span>
+                                <span class="antipolish-speaker-name">${name}</span>
+                                <span class="antipolish-speaker-cnt">${cnt} wypowiedzi</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>` : ''}
+
+                ${aiSection}
+
+                <div class="antipolish-flagged">
+                    <h5>Oflagowane wypowiedzi (top ${Math.min(flagged.length, 30)})</h5>
+                    <div class="antipolish-list">
+                        ${flagged.slice(0, 30).map(f => `
+                            <div class="antipolish-item severity-${f.severity}">
+                                <div class="antipolish-item-header">
+                                    <span class="antipolish-item-speaker">${f.speaker}</span>
+                                    <span class="antipolish-item-club">${f.club}</span>
+                                    <span class="antipolish-item-date">${f.date || ''}</span>
+                                    <span class="antipolish-item-severity severity-tag-${f.severity}">
+                                        ${f.severity === 'high' ? '🔴 Wysoki' : f.severity === 'medium' ? '🟠 Średni' : '🟡 Niski'}
+                                    </span>
+                                </div>
+                                <div class="antipolish-item-tags">
+                                    ${f.categories.map(c => `
+                                        <span class="antipolish-tag" style="border-color:${c.color};color:${c.color}">
+                                            ${c.icon} ${c.type} (${c.matches.length})
+                                        </span>`).join('')}
+                                </div>
+                                <div class="antipolish-item-text">${f.text.substring(0, 300)}${f.text.length > 300 ? '…' : ''}</div>
+                                <div class="antipolish-item-matches">
+                                    Dopasowania: ${f.categories.flatMap(c => c.matches).map(m => `<code>${m}</code>`).join(', ')}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <p class="antipolish-disclaimer">⚠️ Analiza oparta na dopasowaniu słów kluczowych. Wyniki wymagają weryfikacji przez człowieka — kontekst może zmieniać znaczenie wypowiedzi.</p>
+            </div>
+        `;
+
+        // AI handler
+        if (apiKey && flagged.length > 0) {
+            document.getElementById('antiPolishAiBtn')?.addEventListener('click', async function() {
+                const btn = this;
+                const resultDiv = document.getElementById('antiPolishAiResult');
+                btn.disabled = true;
+                btn.textContent = '⏳ Analizuję kontekst...';
+                resultDiv.style.display = 'block';
+                resultDiv.innerHTML = '<div class="prediction-loading">Analiza kontekstowa przez AI...</div>';
+
+                try {
+                    const excerpts = flagged.slice(0, 15).map(f =>
+                        `[${f.speaker}, ${f.club}] Kategorie: ${f.categories.map(c => c.type).join(', ')}. Tekst: ${f.text.substring(0, 200)}`
+                    ).join('\n');
+
+                    const prompt = `Jesteś ekspertem od bezpieczeństwa narracyjnego i dezinformacji w polskim parlamencie.
+Poniżej masz wypowiedzi parlamentarne oflagowane automatycznie przez system. Dla każdej oceń:
+1. Czy kontekst potwierdza flagę (true positive) czy to fałszywy alarm (false positive)?
+2. Jakie jest realne zagrożenie narracyjne?
+3. Daj ogólną ocenę.
+
+Wypowiedzi:\n${excerpts}\n\nOdpowiedz po polsku, zwięźle, strukturalnie.`;
+
+                    const aiText = await callGeminiForPrediction(prompt, 1500);
+                    resultDiv.innerHTML = `<div class="antipolish-ai-result"><h5>🤖 Ocena AI</h5><div class="antipolish-ai-text">${aiText.replace(/\n/g, '<br>')}</div></div>`;
+                } catch (err) {
+                    resultDiv.innerHTML = `<div class="prediction-error">Błąd AI: ${err.message}</div>`;
+                } finally {
+                    btn.disabled = false;
+                    btn.textContent = '✨ Analiza AI — ocena kontekstu';
+                }
+            });
+        }
+
+    } catch (err) {
+        console.error('[Predictions] analyzeAntiPolish error:', err);
+        container.innerHTML = '<div class="prediction-error">Błąd analizy: ' + err.message + '</div>';
     }
 }
 

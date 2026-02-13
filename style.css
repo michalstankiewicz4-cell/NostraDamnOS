@@ -4520,6 +4520,73 @@ input:disabled {
 .webllm-quick-btn { padding: 4px 10px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; font-size: 0.72rem; color: var(--text-primary); cursor: pointer; transition: all 0.2s; }
 .webllm-quick-btn:hover { background: rgba(8, 145, 178, 0.13); border-color: var(--primary-color, #0891b2); }
 
+/* AI Badge */
+.ai-badge {
+    display: inline-flex; align-items: center; gap: 2px;
+    font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+    padding: 2px 7px; border-radius: 10px; vertical-align: middle; margin-left: 6px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6, #a855f7);
+    color: #fff; box-shadow: 0 0 8px rgba(139, 92, 246, 0.35);
+    animation: aiBadgePulse 3s ease-in-out infinite;
+}
+@keyframes aiBadgePulse {
+    0%, 100% { box-shadow: 0 0 8px rgba(139, 92, 246, 0.35); }
+    50% { box-shadow: 0 0 14px rgba(139, 92, 246, 0.6); }
+}
+
+/* Anti-Polish Detection Module */
+.antipolish-summary { display: flex; flex-direction: column; gap: 16px; }
+.antipolish-summary h4 { font-size: 1.1rem; color: var(--text-primary); margin: 0; }
+.antipolish-subtitle { font-size: 0.82rem; color: var(--text-secondary); margin: 0; }
+.antipolish-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; }
+.antipolish-stat { display: flex; flex-direction: column; align-items: center; padding: 12px; background: var(--bg-secondary); border-radius: 8px; border: 1px solid var(--border-color); }
+.antipolish-stat-val { font-size: 1.6rem; font-weight: 700; color: var(--text-primary); }
+.antipolish-stat-label { font-size: 0.72rem; color: var(--text-secondary); margin-top: 2px; }
+.antipolish-stat.severity-high { border-color: #e53e3e; }
+.antipolish-stat.severity-medium { border-color: #dd6b20; }
+.antipolish-stat.severity-low { border-color: #ecc94b; }
+.antipolish-categories h5, .antipolish-clubs h5, .antipolish-speakers h5, .antipolish-flagged h5 { font-size: 0.9rem; color: var(--text-primary); margin: 0 0 8px 0; }
+.antipolish-cat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; }
+.antipolish-cat { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--bg-secondary); border-radius: 6px; }
+.antipolish-cat-icon { font-size: 1.1rem; }
+.antipolish-cat-name { flex: 1; font-size: 0.82rem; color: var(--text-primary); }
+.antipolish-cat-count { font-weight: 700; font-size: 0.9rem; color: var(--text-primary); }
+.antipolish-club-list { display: flex; flex-direction: column; gap: 6px; }
+.antipolish-club-row { display: flex; align-items: center; gap: 10px; }
+.antipolish-club-name { width: 70px; font-size: 0.8rem; font-weight: 600; color: var(--text-primary); text-align: right; }
+.antipolish-club-bar { flex: 1; height: 8px; background: var(--bg-secondary); border-radius: 4px; overflow: hidden; }
+.antipolish-club-fill { height: 100%; background: linear-gradient(90deg, #e53e3e, #dd6b20); border-radius: 4px; transition: width 0.5s; }
+.antipolish-club-cnt { font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); min-width: 30px; }
+.antipolish-speaker-list { display: flex; flex-direction: column; gap: 4px; }
+.antipolish-speaker-row { display: flex; align-items: center; gap: 8px; padding: 4px 8px; border-radius: 4px; }
+.antipolish-speaker-row:nth-child(odd) { background: var(--bg-secondary); }
+.antipolish-speaker-rank { font-size: 0.72rem; color: var(--text-secondary); font-weight: 700; min-width: 24px; }
+.antipolish-speaker-name { flex: 1; font-size: 0.82rem; color: var(--text-primary); }
+.antipolish-speaker-cnt { font-size: 0.72rem; color: var(--text-secondary); }
+.antipolish-list { display: flex; flex-direction: column; gap: 10px; }
+.antipolish-item { padding: 12px; background: var(--bg-secondary); border-radius: 8px; border: 1px solid var(--border-color); }
+.antipolish-item.severity-high { border-left: 3px solid #e53e3e; }
+.antipolish-item.severity-medium { border-left: 3px solid #dd6b20; }
+.antipolish-item.severity-low { border-left: 3px solid #ecc94b; }
+.antipolish-item-header { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 6px; }
+.antipolish-item-speaker { font-weight: 600; font-size: 0.85rem; color: var(--text-primary); }
+.antipolish-item-club { font-size: 0.72rem; padding: 1px 6px; background: var(--bg-color); border-radius: 4px; color: var(--text-secondary); }
+.antipolish-item-date { font-size: 0.72rem; color: var(--text-secondary); margin-left: auto; }
+.antipolish-item-severity { font-size: 0.68rem; font-weight: 700; }
+.severity-tag-high { color: #e53e3e; }
+.severity-tag-medium { color: #dd6b20; }
+.severity-tag-low { color: #ecc94b; }
+.antipolish-item-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; }
+.antipolish-tag { font-size: 0.68rem; padding: 2px 6px; border: 1px solid; border-radius: 4px; background: transparent; }
+.antipolish-item-text { font-size: 0.78rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 6px; }
+.antipolish-item-matches { font-size: 0.7rem; color: var(--text-secondary); }
+.antipolish-item-matches code { font-size: 0.68rem; background: rgba(229, 62, 62, 0.15); color: #e53e3e; padding: 1px 4px; border-radius: 3px; }
+.antipolish-ai { margin-top: 4px; }
+.antipolish-ai-result { padding: 12px; background: var(--bg-secondary); border-radius: 8px; border: 1px solid var(--primary-color, #6366f1); margin-top: 8px; }
+.antipolish-ai-result h5 { margin: 0 0 8px; font-size: 0.9rem; }
+.antipolish-ai-text { font-size: 0.82rem; line-height: 1.6; color: var(--text-primary); }
+.antipolish-disclaimer { font-size: 0.72rem; color: var(--text-secondary); font-style: italic; padding: 8px; background: rgba(236, 201, 75, 0.1); border-radius: 6px; border-left: 3px solid #ecc94b; margin: 0; }
+
 /* Empty State */
 .predictions-empty-state {
     display: flex;
