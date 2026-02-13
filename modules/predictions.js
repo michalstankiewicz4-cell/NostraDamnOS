@@ -418,53 +418,88 @@ function calculateCoalition() {
 
 /**
  * 4. Trend aktywności - analiza wzrostów/spadków aktywności
+ * Porównuje liczbę wypowiedzi posła w starszej vs nowszej połowie posiedzeń.
  */
 function analyzeActivityTrend() {
     const container = document.getElementById('activityContent');
     if (!container) return;
     
     try {
-        // Pobierz top 10 najbardziej aktywnych posłów z trendem
-        const result = db2.database.exec(`
-            SELECT 
-                p.imie || ' ' || p.nazwisko as name,
-                p.klub,
-                COUNT(w.id_wypowiedzi) as total_speeches
-            FROM poslowie p
-            LEFT JOIN wypowiedzi w ON p.id_osoby = w.id_osoby
-            WHERE p.klub IS NOT NULL AND p.klub != ''
-            GROUP BY p.id_osoby, p.imie, p.nazwisko, p.klub
-            HAVING COUNT(w.id_wypowiedzi) > 0
-            ORDER BY total_speeches DESC
-            LIMIT 10
+        // Znajdź medianę id_posiedzenia — dzieli posiedzenia na starszą i nowszą połowę
+        const medianResult = db2.database.exec(`
+            SELECT id_posiedzenia FROM (
+                SELECT DISTINCT id_posiedzenia FROM wypowiedzi
+                WHERE id_posiedzenia IS NOT NULL
+                ORDER BY id_posiedzenia
+            )
+            LIMIT 1 OFFSET (
+                SELECT COUNT(DISTINCT id_posiedzenia) / 2
+                FROM wypowiedzi WHERE id_posiedzenia IS NOT NULL
+            )
         `);
         
-        if (!result.length || !result[0].values.length) {
+        if (!medianResult.length || !medianResult[0].values.length) {
             container.innerHTML = '<div class="prediction-no-data">Brak danych wypowiedzi do analizy</div>';
             return;
         }
         
+        const medianPos = medianResult[0].values[0][0];
+        console.log(`[Predictions] Activity trend — median posiedzenie: ${medianPos}`);
+        
+        // Policz wypowiedzi w obu połówkach per poseł
+        const result = db2.database.exec(`
+            SELECT 
+                p.imie || ' ' || p.nazwisko as name,
+                p.klub,
+                SUM(CASE WHEN w.id_posiedzenia < ? THEN 1 ELSE 0 END) as old_half,
+                SUM(CASE WHEN w.id_posiedzenia >= ? THEN 1 ELSE 0 END) as new_half,
+                COUNT(w.id_wypowiedzi) as total_speeches
+            FROM poslowie p
+            JOIN wypowiedzi w ON p.id_osoby = w.id_osoby
+            WHERE p.klub IS NOT NULL AND p.klub != ''
+            AND w.id_posiedzenia IS NOT NULL
+            GROUP BY p.id_osoby, p.imie, p.nazwisko, p.klub
+            HAVING COUNT(w.id_wypowiedzi) >= 5
+            ORDER BY total_speeches DESC
+            LIMIT 15
+        `, [medianPos, medianPos]);
+        
+        if (!result.length || !result[0].values.length) {
+            container.innerHTML = '<div class="prediction-no-data">Brak wystarczających danych wypowiedzi</div>';
+            return;
+        }
+        
+        // Oblicz trend i posortuj wg największej zmiany
+        const trendData = result[0].values.map(row => {
+            const [name, club, oldHalf, newHalf, total] = row;
+            let trendPercent = 0;
+            if (oldHalf > 0) {
+                trendPercent = ((newHalf - oldHalf) / oldHalf * 100);
+            } else if (newHalf > 0) {
+                trendPercent = 100; // nowy poseł — 100% wzrost
+            }
+            return { name, club, total, oldHalf, newHalf, trendPercent };
+        }).sort((a, b) => Math.abs(b.trendPercent) - Math.abs(a.trendPercent));
+        
         let html = '<div class="activity-list">';
         
-        result[0].values.forEach((row, index) => {
-            const [name, club, speeches] = row;
-            // Symulacja trendu (w przyszłości można obliczyć na podstawie dat)
-            const trend = Math.random() > 0.5 ? 'up' : 'down';
+        trendData.forEach((data, index) => {
+            const trend = data.trendPercent >= 0 ? 'up' : 'down';
             const trendIcon = trend === 'up' ? '📈' : '📉';
-            const trendPercent = (Math.random() * 20 + 5).toFixed(1);
             const trendColor = trend === 'up' ? '#48bb78' : '#f56565';
+            const absTrend = Math.abs(data.trendPercent).toFixed(1);
             
             html += `
                 <div class="activity-item">
                     <div class="activity-rank">#${index + 1}</div>
                     <div class="activity-info">
-                        <strong>${name}</strong>
-                        <span class="activity-club">${club}</span>
+                        <strong>${data.name}</strong>
+                        <span class="activity-club">${data.club}</span>
                     </div>
                     <div class="activity-stats">
-                        <div class="activity-speeches">${speeches} wypowiedzi</div>
+                        <div class="activity-speeches">${data.total} wypowiedzi</div>
                         <div class="activity-trend" style="color: ${trendColor};">
-                            ${trendIcon} ${trendPercent}%
+                            ${trendIcon} ${data.trendPercent >= 0 ? '+' : '-'}${absTrend}%
                         </div>
                     </div>
                 </div>
@@ -472,7 +507,7 @@ function analyzeActivityTrend() {
         });
         
         html += '</div>';
-        html += '<div class="activity-info">📊 Trend pokazuje zmianę aktywności w ostatnim okresie</div>';
+        html += '<div class="activity-note" style="font-size:0.8em;color:#888;margin-top:8px;">📊 Trend: zmiana liczby wypowiedzi między starszą a nowszą połową posiedzeń</div>';
         
         container.innerHTML = html;
         
