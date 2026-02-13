@@ -3692,6 +3692,641 @@ input:disabled {
     font-size: 0.65rem;
 }
 
+/* ===== Kontrowersyjne wypowiedzi ===== */
+.controversial-summary {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+.controversial-stat {
+    flex: 1;
+    min-width: 90px;
+    background: var(--bg-secondary, #1e1e2e);
+    border-radius: 8px;
+    padding: 12px;
+    text-align: center;
+    border: 1px solid var(--border-color, #333);
+}
+.controversial-stat--negative {
+    border-color: #e74c3c44;
+    background: #e74c3c11;
+}
+.controversial-stat--positive {
+    border-color: #27ae6044;
+    background: #27ae6011;
+}
+.controversial-stat-value {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--text-primary, #e0e0e0);
+}
+.controversial-stat-label {
+    font-size: 0.72rem;
+    color: var(--text-secondary, #999);
+    margin-top: 2px;
+}
+
+.controversial-party-ranking {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+.controversial-party-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8rem;
+}
+.controversial-party-name {
+    min-width: 60px;
+    font-weight: 600;
+    color: var(--text-primary, #e0e0e0);
+}
+.controversial-party-bar-bg {
+    flex: 1;
+    height: 10px;
+    background: var(--bg-secondary, #1e1e2e);
+    border-radius: 5px;
+    overflow: hidden;
+}
+.controversial-party-bar {
+    height: 100%;
+    border-radius: 5px;
+    transition: width 0.5s ease;
+}
+.controversial-party-pct {
+    min-width: 60px;
+    text-align: right;
+    color: var(--text-secondary, #999);
+    font-size: 0.72rem;
+}
+
+.controversial-speech-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 500px;
+    overflow-y: auto;
+}
+.controversial-speech-item {
+    background: var(--bg-secondary, #1e1e2e);
+    border-radius: 8px;
+    padding: 10px 12px;
+    border-left: 3px solid #e74c3c;
+}
+.controversial-speech-item--aggressive {
+    border-left-color: #e67e22;
+}
+.controversial-speech-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 4px;
+    font-size: 0.78rem;
+}
+.controversial-speech-rank {
+    font-weight: 700;
+    color: #e74c3c;
+    min-width: 24px;
+}
+.controversial-speech-speaker {
+    font-weight: 600;
+    color: var(--text-primary, #e0e0e0);
+}
+.controversial-speech-party {
+    background: var(--accent-color, #4a90d9);
+    color: #fff;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.68rem;
+}
+.controversial-speech-date {
+    color: var(--text-secondary, #999);
+    font-size: 0.7rem;
+    margin-left: auto;
+}
+.controversial-speech-score {
+    font-weight: 700;
+    font-size: 0.75rem;
+}
+.controversial-speech-bar-bg {
+    height: 4px;
+    background: var(--bg-tertiary, #2a2a3e);
+    border-radius: 2px;
+    margin: 4px 0;
+    overflow: hidden;
+}
+.controversial-speech-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #e74c3c, #c0392b);
+    border-radius: 2px;
+}
+.controversial-speech-text {
+    font-size: 0.75rem;
+    color: var(--text-secondary, #bbb);
+    line-height: 1.4;
+    margin-top: 4px;
+    padding: 6px 8px;
+    background: var(--bg-tertiary, #16161e);
+    border-radius: 4px;
+    border: 1px solid var(--border-color, #333);
+}
+.controversial-keywords {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin: 4px 0;
+}
+.controversial-keyword {
+    background: #e74c3c33;
+    color: #e74c3c;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.68rem;
+    font-weight: 600;
+}
+
+/* ===== Sprzeczne głosowania ===== */
+.contradictory-club-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 16px;
+}
+.contradictory-club-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 10px;
+    background: var(--bg-secondary, #1e1e2e);
+    border-radius: 6px;
+    font-size: 0.8rem;
+}
+.contradictory-club-name {
+    min-width: 60px;
+    font-weight: 600;
+    color: var(--text-primary, #e0e0e0);
+}
+.contradictory-club-rebels {
+    color: var(--text-secondary, #999);
+}
+.contradictory-club-votes {
+    margin-left: auto;
+    color: #e67e22;
+    font-weight: 600;
+}
+
+.contradictory-rebels-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 500px;
+    overflow-y: auto;
+}
+.contradictory-rebel-item {
+    background: var(--bg-secondary, #1e1e2e);
+    border-radius: 8px;
+    padding: 10px 12px;
+    border-left: 3px solid #e67e22;
+}
+.contradictory-rebel-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 4px;
+    font-size: 0.8rem;
+}
+.contradictory-rebel-rank {
+    font-weight: 700;
+    color: #e67e22;
+    min-width: 24px;
+}
+.contradictory-rebel-name {
+    font-weight: 600;
+    color: var(--text-primary, #e0e0e0);
+}
+.contradictory-rebel-party {
+    background: var(--accent-color, #4a90d9);
+    color: #fff;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.68rem;
+}
+.contradictory-rebel-count {
+    margin-left: auto;
+    color: #e74c3c;
+    font-weight: 700;
+    font-size: 0.82rem;
+}
+.contradictory-rebel-conflicts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin: 4px 0;
+}
+.contradictory-conflict-badge {
+    background: #e67e2233;
+    color: #e67e22;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.68rem;
+    font-weight: 600;
+}
+.contradictory-rebel-titles {
+    margin-top: 6px;
+}
+.contradictory-title-item {
+    font-size: 0.72rem;
+    color: var(--text-secondary, #999);
+    padding: 3px 0;
+    border-bottom: 1px solid var(--border-color, #222);
+    line-height: 1.3;
+}
+.contradictory-title-item:last-child {
+    border-bottom: none;
+}
+
+/* ===== Ryzyko odejścia z klubu ===== */
+.defection-summary {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+.defection-stat {
+    flex: 1;
+    min-width: 90px;
+    background: var(--bg-secondary, #1e1e2e);
+    border-radius: 8px;
+    padding: 12px;
+    text-align: center;
+    border: 1px solid var(--border-color, #333);
+}
+.defection-stat--high { border-color: #e74c3c44; background: #e74c3c11; }
+.defection-stat--medium { border-color: #e67e2244; background: #e67e2211; }
+.defection-stat-value { font-size: 1.4rem; font-weight: 700; color: var(--text-primary, #e0e0e0); }
+.defection-stat-label { font-size: 0.72rem; color: var(--text-secondary, #999); margin-top: 2px; }
+.defection-legend { margin-bottom: 12px; }
+.defection-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 500px;
+    overflow-y: auto;
+}
+.defection-item {
+    background: var(--bg-secondary, #1e1e2e);
+    border-radius: 8px;
+    padding: 10px 12px;
+    border-left: 3px solid #27ae60;
+}
+.defection-item--high { border-left-color: #e74c3c; }
+.defection-item--medium { border-left-color: #e67e22; }
+.defection-item-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 4px;
+    font-size: 0.8rem;
+}
+.defection-rank { font-weight: 700; color: #e74c3c; min-width: 24px; }
+.defection-name { font-weight: 600; color: var(--text-primary, #e0e0e0); }
+.defection-party {
+    background: var(--accent-color, #4a90d9);
+    color: #fff;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.68rem;
+}
+.defection-score { margin-left: auto; font-weight: 700; font-size: 0.85rem; }
+.defection-bar-bg {
+    height: 6px;
+    background: var(--bg-tertiary, #2a2a3e);
+    border-radius: 3px;
+    margin: 4px 0;
+    overflow: hidden;
+}
+.defection-bar {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.5s ease;
+}
+.defection-factors {
+    display: flex;
+    gap: 12px;
+    font-size: 0.72rem;
+    color: var(--text-secondary, #999);
+}
+.defection-factor { cursor: help; }
+
+/* ===== Prognoza wyniku głosowania ===== */
+.vote-pred-simulation { margin-bottom: 16px; }
+.vote-pred-result {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+}
+.vote-pred-result--pass { background: #27ae6022; border: 1px solid #27ae6044; }
+.vote-pred-result--fail { background: #e74c3c22; border: 1px solid #e74c3c44; }
+.vote-pred-result-label { font-size: 0.8rem; color: var(--text-secondary); }
+.vote-pred-result-value { font-size: 1.3rem; font-weight: 700; color: var(--text-primary, #e0e0e0); }
+.vote-pred-confidence { margin-left: auto; font-size: 0.8rem; color: var(--text-secondary); }
+.vote-pred-breakdown {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.vote-pred-count {
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    background: var(--bg-secondary, #1e1e2e);
+}
+.vote-pred-count--yes { color: #27ae60; }
+.vote-pred-count--no { color: #e74c3c; }
+.vote-pred-count--abstain { color: #95a5a6; }
+.vote-pred-clubs { display: flex; flex-direction: column; gap: 8px; }
+.vote-pred-club-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.8rem;
+}
+.vote-pred-club-name {
+    min-width: 110px;
+    font-weight: 600;
+    color: var(--text-primary, #e0e0e0);
+}
+.vote-pred-club-name small { font-weight: 400; color: var(--text-secondary); }
+.vote-pred-club-bars { flex: 1; }
+.vote-pred-bar-stack {
+    display: flex;
+    height: 12px;
+    border-radius: 6px;
+    overflow: hidden;
+    background: var(--bg-tertiary, #2a2a3e);
+}
+.vote-pred-bar-yes { background: #27ae60; }
+.vote-pred-bar-no { background: #e74c3c; }
+.vote-pred-bar-abstain { background: #95a5a6; }
+.vote-pred-club-pcts {
+    min-width: 100px;
+    text-align: right;
+    font-size: 0.7rem;
+}
+.vote-pred-recent { display: flex; flex-direction: column; gap: 4px; }
+.vote-pred-recent-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 8px;
+    background: var(--bg-secondary, #1e1e2e);
+    border-radius: 4px;
+    font-size: 0.75rem;
+}
+.vote-pred-recent-result {
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 0.68rem;
+    min-width: 70px;
+    text-align: center;
+}
+.vote-pred-recent-result--pass { background: #27ae6033; color: #27ae60; }
+.vote-pred-recent-result--fail { background: #e74c3c33; color: #e74c3c; }
+.vote-pred-recent-title {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-primary, #e0e0e0);
+}
+.vote-pred-recent-votes { color: var(--text-secondary); font-size: 0.7rem; }
+.vote-pred-recent-date { color: var(--text-secondary); font-size: 0.7rem; }
+
+/* ===== Barometr napięcia ===== */
+.tension-trend-banner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+}
+.tension-trend-banner--hot { background: #e74c3c22; border: 1px solid #e74c3c44; }
+.tension-trend-banner--cool { background: #27ae6022; border: 1px solid #27ae6044; }
+.tension-trend-banner--stable { background: var(--bg-secondary, #1e1e2e); border: 1px solid var(--border-color, #333); }
+.tension-trend-emoji { font-size: 1.8rem; }
+.tension-trend-label { font-size: 0.85rem; color: var(--text-primary, #e0e0e0); }
+.tension-trend-slope { font-size: 0.72rem; color: var(--text-secondary); }
+
+.tension-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 120px;
+    padding: 8px 4px;
+    background: var(--bg-secondary, #1e1e2e);
+    border-radius: 8px;
+    margin-bottom: 12px;
+    overflow-x: auto;
+}
+.tension-chart-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    min-width: 16px;
+    height: 100%;
+    justify-content: flex-end;
+}
+.tension-chart-bar {
+    width: 100%;
+    border-radius: 3px 3px 0 0;
+    min-height: 2px;
+    transition: height 0.5s ease;
+}
+.tension-chart-label {
+    font-size: 0.55rem;
+    color: var(--text-secondary);
+    margin-top: 2px;
+    white-space: nowrap;
+}
+
+.tension-details {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    max-height: 250px;
+    overflow-y: auto;
+}
+.tension-detail-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 8px;
+    background: var(--bg-secondary, #1e1e2e);
+    border-radius: 4px;
+    font-size: 0.75rem;
+}
+.tension-detail-month { font-weight: 600; min-width: 55px; color: var(--text-primary); }
+.tension-detail-score { font-weight: 700; min-width: 50px; }
+.tension-detail-neg, .tension-detail-pos { font-size: 0.7rem; }
+.tension-detail-count { margin-left: auto; color: var(--text-secondary); font-size: 0.68rem; }
+
+.tension-forecast {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.tension-forecast-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: var(--bg-secondary, #1e1e2e);
+    border-radius: 6px;
+    border: 1px dashed #3498db44;
+}
+.tension-forecast-month { font-weight: 600; color: var(--text-primary); font-size: 0.8rem; }
+.tension-forecast-score { font-weight: 700; font-size: 0.85rem; }
+.tension-forecast-badge {
+    background: #3498db33;
+    color: #3498db;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.62rem;
+    font-weight: 600;
+}
+
+/* ===== Prognoza koalicji ===== */
+.coalition-matrix-wrap {
+    overflow-x: auto;
+    margin-bottom: 12px;
+}
+.coalition-matrix {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 0.72rem;
+}
+.coalition-matrix th {
+    padding: 4px 6px;
+    background: var(--bg-secondary, #1e1e2e);
+    color: var(--text-primary, #e0e0e0);
+    font-weight: 600;
+    text-align: center;
+    white-space: nowrap;
+}
+.coalition-cell {
+    padding: 4px 6px;
+    text-align: center;
+    color: var(--text-primary, #e0e0e0);
+    font-weight: 600;
+    border: 1px solid var(--border-color, #333);
+}
+.coalition-cell--self {
+    background: transparent !important;
+    color: var(--text-secondary);
+}
+.coalition-trends { display: flex; flex-direction: column; gap: 6px; }
+.coalition-trend-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    background: var(--bg-secondary, #1e1e2e);
+    border-radius: 6px;
+    font-size: 0.78rem;
+}
+.coalition-trend-pair { font-weight: 600; color: var(--text-primary); min-width: 110px; }
+.coalition-trend-emoji { font-size: 1rem; }
+.coalition-trend-dir { font-size: 0.72rem; }
+.coalition-trend-agreement { margin-left: auto; color: var(--text-secondary); font-size: 0.72rem; }
+
+.coalition-pair-ranking { display: flex; flex-direction: column; gap: 4px; }
+.coalition-pair-section { font-size: 0.78rem; color: var(--text-primary); padding: 4px 0; }
+.coalition-pair-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    color: var(--text-primary);
+}
+.coalition-pair-item--allies { background: #27ae6011; }
+.coalition-pair-item--rivals { background: #e74c3c11; }
+
+/* ===== Predykcja aktywności ===== */
+.activity-fc-summary {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+.activity-fc-stat {
+    flex: 1;
+    min-width: 90px;
+    background: var(--bg-secondary, #1e1e2e);
+    border-radius: 8px;
+    padding: 12px;
+    text-align: center;
+    border: 1px solid var(--border-color, #333);
+}
+.activity-fc-stat--rising { border-color: #27ae6044; background: #27ae6011; }
+.activity-fc-stat--falling { border-color: #e74c3c44; background: #e74c3c11; }
+.activity-fc-stat-value { font-size: 1.4rem; font-weight: 700; color: var(--text-primary, #e0e0e0); }
+.activity-fc-stat-label { font-size: 0.72rem; color: var(--text-secondary, #999); margin-top: 2px; }
+
+.activity-fc-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 350px;
+    overflow-y: auto;
+}
+.activity-fc-item {
+    background: var(--bg-secondary, #1e1e2e);
+    border-radius: 8px;
+    padding: 8px 12px;
+    border-left: 3px solid var(--border-color, #333);
+}
+.activity-fc-item--rising { border-left-color: #27ae60; }
+.activity-fc-item--falling { border-left-color: #e74c3c; }
+.activity-fc-item-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    font-size: 0.8rem;
+}
+.activity-fc-rank { font-weight: 700; min-width: 24px; color: var(--text-secondary); }
+.activity-fc-name { font-weight: 600; color: var(--text-primary, #e0e0e0); }
+.activity-fc-party {
+    background: var(--accent-color, #4a90d9);
+    color: #fff;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.68rem;
+}
+.activity-fc-trend { margin-left: auto; font-weight: 700; font-size: 0.82rem; }
+.activity-fc-details {
+    display: flex;
+    gap: 12px;
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    margin-top: 4px;
+}
+
 /* Empty State */
 .predictions-empty-state {
     display: flex;

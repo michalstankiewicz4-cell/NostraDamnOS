@@ -1044,7 +1044,52 @@
                 </div>
 
                 <div class="predictions-grid">
-                    <!-- Card 1: Dyscyplina klubowa -->
+                    <!-- Card 1: Profil parlamentarzysty -->
+                    <div class="prediction-card" data-prediction="mpProfile"
+                        data-help-id="predMpProfile">
+                        <div class="prediction-card-header">
+                            <div class="prediction-card-icon">👤</div>
+                            <div>
+                                <h3>Profil parlamentarzysty</h3>
+                                <p>Szczegółowy profil wybranego posła</p>
+                            </div>
+                        </div>
+                        <div class="prediction-card-body" style="display:none;">
+                            <div id="mpProfileContent" class="prediction-content"></div>
+                        </div>
+                    </div>
+
+                    <!-- Card 2: Profil klubu/partii -->
+                    <div class="prediction-card" data-prediction="clubProfile"
+                        data-help-id="predClubProfile">
+                        <div class="prediction-card-header">
+                            <div class="prediction-card-icon">🏛️</div>
+                            <div>
+                                <h3>Profil klubu / partii</h3>
+                                <p>Statystyki wybranego klubu</p>
+                            </div>
+                        </div>
+                        <div class="prediction-card-body" style="display:none;">
+                            <div id="clubProfileContent" class="prediction-content"></div>
+                        </div>
+                    </div>
+
+                    <!-- Card 3: Profil komisji -->
+                    <div class="prediction-card" data-prediction="committeeProfile"
+                        data-help-id="predCommitteeProfile">
+                        <div class="prediction-card-header">
+                            <div class="prediction-card-icon">📋</div>
+                            <div>
+                                <h3>Profil komisji</h3>
+                                <p>Szczegóły wybranej komisji</p>
+                            </div>
+                        </div>
+                        <div class="prediction-card-body" style="display:none;">
+                            <div id="committeeProfileContent" class="prediction-content"></div>
+                        </div>
+                    </div>
+
+                    <!-- Card 4: Dyscyplina klubowa -->
                     <div class="prediction-card" data-prediction="discipline"
                         data-help-id="predDiscipline">
                         <div class="prediction-card-header">
@@ -1059,7 +1104,7 @@
                         </div>
                     </div>
 
-                    <!-- Card 2: Wykrywanie buntowników -->
+                    <!-- Card 5: Wykrywanie buntowników -->
                     <div class="prediction-card" data-prediction="rebels"
                         data-help-id="predRebels">
                         <div class="prediction-card-header">
@@ -1074,7 +1119,7 @@
                         </div>
                     </div>
 
-                    <!-- Card 3: Macierz koalicyjna -->
+                    <!-- Card 6: Macierz koalicyjna -->
                     <div class="prediction-card" data-prediction="coalition"
                         data-help-id="predCoalitions">
                         <div class="prediction-card-header">
@@ -1209,48 +1254,108 @@
                         </div>
                     </div>
 
-                    <!-- Card 12: Profil parlamentarzysty -->
-                    <div class="prediction-card" data-prediction="mpProfile"
-                        data-help-id="predMpProfile">
+                    <!-- Card 12: Kontrowersyjne wypowiedzi -->
+                    <div class="prediction-card" data-prediction="controversialSpeeches"
+                        data-help-id="predControversialSpeeches">
                         <div class="prediction-card-header">
-                            <div class="prediction-card-icon">👤</div>
+                            <div class="prediction-card-icon">🔥</div>
                             <div>
-                                <h3>Profil parlamentarzysty</h3>
-                                <p>Szczegółowy profil wybranego posła</p>
+                                <h3>Kontrowersyjne wypowiedzi</h3>
+                                <p>Najbardziej agresywne i negatywne wystąpienia</p>
                             </div>
                         </div>
                         <div class="prediction-card-body" style="display:none;">
-                            <div id="mpProfileContent" class="prediction-content"></div>
+                            <div id="controversialSpeechesContent" class="prediction-content"></div>
                         </div>
                     </div>
 
-                    <!-- Card 13: Profil klubu/partii -->
-                    <div class="prediction-card" data-prediction="clubProfile"
-                        data-help-id="predClubProfile">
+                    <!-- Card 13: Sprzeczne głosowania -->
+                    <div class="prediction-card" data-prediction="contradictoryVotes"
+                        data-help-id="predContradictoryVotes">
                         <div class="prediction-card-header">
-                            <div class="prediction-card-icon">🏛️</div>
+                            <div class="prediction-card-icon">⚔️</div>
                             <div>
-                                <h3>Profil klubu / partii</h3>
-                                <p>Statystyki wybranego klubu</p>
+                                <h3>Sprzeczne głosowania</h3>
+                                <p>Posłowie głosujący wbrew linii klubu</p>
                             </div>
                         </div>
                         <div class="prediction-card-body" style="display:none;">
-                            <div id="clubProfileContent" class="prediction-content"></div>
+                            <div id="contradictoryVotesContent" class="prediction-content"></div>
                         </div>
                     </div>
 
-                    <!-- Card 14: Profil komisji -->
-                    <div class="prediction-card" data-prediction="committeeProfile"
-                        data-help-id="predCommitteeProfile">
+                    <!-- Card 14: Ryzyko odejścia z klubu -->
+                    <div class="prediction-card" data-prediction="defectionRisk"
+                        data-help-id="predDefectionRisk">
                         <div class="prediction-card-header">
-                            <div class="prediction-card-icon">📋</div>
+                            <div class="prediction-card-icon">🚪</div>
                             <div>
-                                <h3>Profil komisji</h3>
-                                <p>Szczegóły wybranej komisji</p>
+                                <h3>Ryzyko odejścia z klubu</h3>
+                                <p>Scoring prawdopodobieństwa zmiany partii</p>
                             </div>
                         </div>
                         <div class="prediction-card-body" style="display:none;">
-                            <div id="committeeProfileContent" class="prediction-content"></div>
+                            <div id="defectionRiskContent" class="prediction-content"></div>
+                        </div>
+                    </div>
+
+                    <!-- Card 15: Prognoza wyniku głosowania -->
+                    <div class="prediction-card" data-prediction="votePredictor"
+                        data-help-id="predVotePredictor">
+                        <div class="prediction-card-header">
+                            <div class="prediction-card-icon">🎯</div>
+                            <div>
+                                <h3>Prognoza głosowania</h3>
+                                <p>Symulacja wyniku na podstawie historii</p>
+                            </div>
+                        </div>
+                        <div class="prediction-card-body" style="display:none;">
+                            <div id="votePredictorContent" class="prediction-content"></div>
+                        </div>
+                    </div>
+
+                    <!-- Card 16: Barometr napięcia politycznego -->
+                    <div class="prediction-card" data-prediction="tensionBarometer"
+                        data-help-id="predTensionBarometer">
+                        <div class="prediction-card-header">
+                            <div class="prediction-card-icon">🌡️</div>
+                            <div>
+                                <h3>Barometr napięcia</h3>
+                                <p>Trend radykalizacji debaty politycznej</p>
+                            </div>
+                        </div>
+                        <div class="prediction-card-body" style="display:none;">
+                            <div id="tensionBarometerContent" class="prediction-content"></div>
+                        </div>
+                    </div>
+
+                    <!-- Card 17: Prognoza koalicji -->
+                    <div class="prediction-card" data-prediction="coalitionForecast"
+                        data-help-id="predCoalitionForecast">
+                        <div class="prediction-card-header">
+                            <div class="prediction-card-icon">🤝</div>
+                            <div>
+                                <h3>Prognoza koalicji</h3>
+                                <p>Zbieżność głosowań między klubami w czasie</p>
+                            </div>
+                        </div>
+                        <div class="prediction-card-body" style="display:none;">
+                            <div id="coalitionForecastContent" class="prediction-content"></div>
+                        </div>
+                    </div>
+
+                    <!-- Card 18: Predykcja aktywności posła -->
+                    <div class="prediction-card" data-prediction="activityForecast"
+                        data-help-id="predActivityForecast">
+                        <div class="prediction-card-header">
+                            <div class="prediction-card-icon">📈</div>
+                            <div>
+                                <h3>Predykcja aktywności</h3>
+                                <p>Prognoza przyszłej aktywności posłów</p>
+                            </div>
+                        </div>
+                        <div class="prediction-card-body" style="display:none;">
+                            <div id="activityForecastContent" class="prediction-content"></div>
                         </div>
                     </div>
                 </div>
