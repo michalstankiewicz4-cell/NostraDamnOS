@@ -2133,9 +2133,58 @@ input:disabled {
 
 .chart-no-data {
     text-align: center;
-    padding: 40px 16px;
-    color: #666;
+    padding: 60px 20px;
+    color: #94a3b8;
+    font-size: 0.9rem;
+    background: rgba(255,255,255,0.02);
+    border: 2px dashed rgba(255,255,255,0.08);
+    border-radius: 8px;
+    margin: 8px;
+}
+
+.chart-no-data-icon {
+    font-size: 3rem;
+    margin-bottom: 12px;
+    opacity: 0.5;
+}
+
+.chart-no-data-title {
+    font-size: 1rem;
+    color: #cbd5e1;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.chart-no-data-hint {
     font-size: 0.85rem;
+    color: #64748b;
+    margin-bottom: 16px;
+}
+
+.chart-no-data-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.chart-no-data-btn {
+    background: rgba(102, 126, 234, 0.1);
+    border: 1px solid rgba(102, 126, 234, 0.3);
+    border-radius: 6px;
+    padding: 8px 16px;
+    color: #a5b4fc;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.chart-no-data-btn:hover {
+    background: rgba(102, 126, 234, 0.2);
+    border-color: #667eea;
+    color: #c7d2fe;
 }
 
 .chart-select {

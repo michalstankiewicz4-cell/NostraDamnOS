@@ -652,7 +652,15 @@
                             <button class="chart-refresh-btn" data-chart="kluby" title="Aktualizuj">🔄</button>
                         </div>
                         <canvas id="canvasKluby"></canvas>
-                        <div class="chart-no-data">Brak danych — pobierz posłów w ETL</div>
+                        <div class="chart-no-data">
+                            <div class="chart-no-data-icon">📊</div>
+                            <div class="chart-no-data-title">Brak danych</div>
+                            <div class="chart-no-data-hint">Pobierz posłów aby wyświetlić ten wykres</div>
+                            <div class="chart-no-data-actions">
+                                <button class="chart-no-data-btn" data-action="goto-etl">📥 Pobierz dane</button>
+                                <button class="chart-no-data-btn" data-action="import-db">📂 Importuj bazę</button>
+                            </div>
+                        </div>
                     </div>
                     <div class="chart-card" id="chartTopPoslowie">
                         <div class="chart-card-header">
@@ -660,7 +668,15 @@
                             <button class="chart-refresh-btn" data-chart="topPoslowie" title="Aktualizuj">🔄</button>
                         </div>
                         <canvas id="canvasTopPoslowie"></canvas>
-                        <div class="chart-no-data">Brak danych — pobierz wypowiedzi w ETL</div>
+                        <div class="chart-no-data">
+                            <div class="chart-no-data-icon">📊</div>
+                            <div class="chart-no-data-title">Brak danych</div>
+                            <div class="chart-no-data-hint">Pobierz wypowiedzi aby wyświetlić ten wykres</div>
+                            <div class="chart-no-data-actions">
+                                <button class="chart-no-data-btn" data-action="goto-etl">📥 Pobierz dane</button>
+                                <button class="chart-no-data-btn" data-action="import-db">📂 Importuj bazę</button>
+                            </div>
+                        </div>
                     </div>
                     <div class="chart-card" id="chartGlosowania">
                         <div class="chart-card-header">
@@ -668,7 +684,15 @@
                             <button class="chart-refresh-btn" data-chart="glosowania" title="Aktualizuj">🔄</button>
                         </div>
                         <canvas id="canvasGlosowania"></canvas>
-                        <div class="chart-no-data">Brak danych — pobierz głosowania w ETL</div>
+                        <div class="chart-no-data">
+                            <div class="chart-no-data-icon">📊</div>
+                            <div class="chart-no-data-title">Brak danych</div>
+                            <div class="chart-no-data-hint">Pobierz głosowania aby wyświetlić ten wykres</div>
+                            <div class="chart-no-data-actions">
+                                <button class="chart-no-data-btn" data-action="goto-etl">📥 Pobierz dane</button>
+                                <button class="chart-no-data-btn" data-action="import-db">📂 Importuj bazę</button>
+                            </div>
+                        </div>
                     </div>
                     <div class="chart-card" id="chartCustom">
                         <div class="chart-card-header">
@@ -681,7 +705,15 @@
                             <button class="chart-refresh-btn" data-chart="custom" title="Aktualizuj">🔄</button>
                         </div>
                         <canvas id="canvasCustom"></canvas>
-                        <div class="chart-no-data">Brak danych — pobierz odpowiednie dane w ETL</div>
+                        <div class="chart-no-data">
+                            <div class="chart-no-data-icon">📊</div>
+                            <div class="chart-no-data-title">Brak danych</div>
+                            <div class="chart-no-data-hint">Pobierz dane aby wyświetlić ten wykres</div>
+                            <div class="chart-no-data-actions">
+                                <button class="chart-no-data-btn" data-action="goto-etl">📥 Pobierz dane</button>
+                                <button class="chart-no-data-btn" data-action="import-db">📂 Importuj bazę</button>
+                            </div>
+                        </div>
                     </div>
                     <div class="chart-card" id="chartNajmniejAktywni">
                         <div class="chart-card-header">
@@ -689,7 +721,15 @@
                             <button class="chart-refresh-btn" data-chart="najmniejAktywni" title="Aktualizuj">🔄</button>
                         </div>
                         <canvas id="canvasNajmniejAktywni"></canvas>
-                        <div class="chart-no-data">Brak danych — pobierz wypowiedzi w ETL</div>
+                        <div class="chart-no-data">
+                            <div class="chart-no-data-icon">📊</div>
+                            <div class="chart-no-data-title">Brak danych</div>
+                            <div class="chart-no-data-hint">Pobierz wypowiedzi i posłów aby wyświetlić ten wykres</div>
+                            <div class="chart-no-data-actions">
+                                <button class="chart-no-data-btn" data-action="goto-etl">📥 Pobierz dane</button>
+                                <button class="chart-no-data-btn" data-action="import-db">📂 Importuj bazę</button>
+                            </div>
+                        </div>
                     </div>
                     <div class="chart-card" id="chartNajmniejAktywneKluby">
                         <div class="chart-card-header">
@@ -697,7 +737,15 @@
                             <button class="chart-refresh-btn" data-chart="najmniejAktywneKluby" title="Aktualizuj">🔄</button>
                         </div>
                         <canvas id="canvasNajmniejAktywneKluby"></canvas>
-                        <div class="chart-no-data">Brak danych — pobierz wypowiedzi i posłów w ETL</div>
+                        <div class="chart-no-data">
+                            <div class="chart-no-data-icon">📊</div>
+                            <div class="chart-no-data-title">Brak danych</div>
+                            <div class="chart-no-data-hint">Pobierz wypowiedzi i posłów aby wyświetlić ten wykres</div>
+                            <div class="chart-no-data-actions">
+                                <button class="chart-no-data-btn" data-action="goto-etl">📥 Pobierz dane</button>
+                                <button class="chart-no-data-btn" data-action="import-db">📂 Importuj bazę</button>
+                            </div>
+                        </div>
                     </div>
                     <div class="chart-card chart-card-wide" id="chartHeatmap">
                         <div class="chart-card-header">
@@ -721,7 +769,15 @@
                             <button class="chart-refresh-btn" data-chart="heatmap" title="Aktualizuj">🔄</button>
                         </div>
                         <canvas id="canvasHeatmap"></canvas>
-                        <div class="chart-no-data">Brak danych — pobierz głosy i posłów w ETL</div>
+                        <div class="chart-no-data">
+                            <div class="chart-no-data-icon">📊</div>
+                            <div class="chart-no-data-title">Brak danych</div>
+                            <div class="chart-no-data-hint">Pobierz głosy i posłów aby wyświetlić heatmapę</div>
+                            <div class="chart-no-data-actions">
+                                <button class="chart-no-data-btn" data-action="goto-etl">📥 Pobierz dane</button>
+                                <button class="chart-no-data-btn" data-action="import-db">📂 Importuj bazę</button>
+                            </div>
+                        </div>
                     </div>
                     
                     <!-- WYKRESY ANALIZY SENTYMENTU -->
@@ -731,7 +787,15 @@
                             <button class="chart-refresh-btn" onclick="window.refreshSentimentCharts()" title="Analizuj ponownie">🔄</button>
                         </div>
                         <canvas id="canvasSentimentDist"></canvas>
-                        <div class="chart-no-data">Brak danych — pobierz wypowiedzi w ETL</div>
+                        <div class="chart-no-data">
+                            <div class="chart-no-data-icon">📊</div>
+                            <div class="chart-no-data-title">Brak danych</div>
+                            <div class="chart-no-data-hint">Pobierz wypowiedzi aby analizować sentyment</div>
+                            <div class="chart-no-data-actions">
+                                <button class="chart-no-data-btn" data-action="goto-etl">📥 Pobierz dane</button>
+                                <button class="chart-no-data-btn" data-action="import-db">📂 Importuj bazę</button>
+                            </div>
+                        </div>
                     </div>
                     
                     <div class="chart-card chart-card-wide" id="chartSentimentTime">
@@ -740,7 +804,15 @@
                             <button class="chart-refresh-btn" onclick="window.refreshSentimentCharts()" title="Analizuj ponownie">🔄</button>
                         </div>
                         <canvas id="canvasSentimentTime"></canvas>
-                        <div class="chart-no-data">Brak danych — pobierz wypowiedzi w ETL</div>
+                        <div class="chart-no-data">
+                            <div class="chart-no-data-icon">📊</div>
+                            <div class="chart-no-data-title">Brak danych</div>
+                            <div class="chart-no-data-hint">Pobierz wypowiedzi aby analizować sentyment w czasie</div>
+                            <div class="chart-no-data-actions">
+                                <button class="chart-no-data-btn" data-action="goto-etl">📥 Pobierz dane</button>
+                                <button class="chart-no-data-btn" data-action="import-db">📂 Importuj bazę</button>
+                            </div>
+                        </div>
                     </div>
                     
                     <div class="chart-card" id="chartSentimentParty">
@@ -749,7 +821,15 @@
                             <button class="chart-refresh-btn" onclick="window.refreshSentimentCharts()" title="Analizuj ponownie">🔄</button>
                         </div>
                         <canvas id="canvasSentimentParty"></canvas>
-                        <div class="chart-no-data">Brak danych — pobierz wypowiedzi w ETL</div>
+                        <div class="chart-no-data">
+                            <div class="chart-no-data-icon">📊</div>
+                            <div class="chart-no-data-title">Brak danych</div>
+                            <div class="chart-no-data-hint">Pobierz wypowiedzi aby analizować sentyment per klub</div>
+                            <div class="chart-no-data-actions">
+                                <button class="chart-no-data-btn" data-action="goto-etl">📥 Pobierz dane</button>
+                                <button class="chart-no-data-btn" data-action="import-db">📂 Importuj bazę</button>
+                            </div>
+                        </div>
                     </div>
                     
                     <div class="chart-card chart-card-wide" id="chartTopSpeakers">
@@ -758,7 +838,15 @@
                             <button class="chart-refresh-btn" onclick="window.refreshSentimentCharts()" title="Analizuj ponownie">🔄</button>
                         </div>
                         <canvas id="canvasTopSpeakers"></canvas>
-                        <div class="chart-no-data">Brak danych — pobierz wypowiedzi w ETL</div>
+                        <div class="chart-no-data">
+                            <div class="chart-no-data-icon">📊</div>
+                            <div class="chart-no-data-title">Brak danych</div>
+                            <div class="chart-no-data-hint">Pobierz wypowiedzi aby analizować top mówców</div>
+                            <div class="chart-no-data-actions">
+                                <button class="chart-no-data-btn" data-action="goto-etl">📥 Pobierz dane</button>
+                                <button class="chart-no-data-btn" data-action="import-db">📂 Importuj bazę</button>
+                            </div>
+                        </div>
                     </div>
                     
                 </div>
@@ -1796,6 +1884,24 @@
                 document.getElementById(id)?.addEventListener('click', () => {
                     ToastModule.info('Funkcja w przygotowaniu (TODO v5.0)', { title: '🇵🇱 Zmiana języka' });
                 });
+            });
+
+            // Chart no-data action buttons
+            document.addEventListener('click', (e) => {
+                const btn = e.target.closest('[data-action]');
+                if (!btn) return;
+                
+                const action = btn.dataset.action;
+                if (action === 'goto-etl') {
+                    // Przejdź do sekcji ETL
+                    const etlSection = document.querySelector('[data-section="1"]');
+                    const navItem = etlSection?.previousElementSibling?.querySelector('.nav-item');
+                    if (navItem) navItem.click();
+                } else if (action === 'import-db') {
+                    // Kliknij przycisk importu bazy
+                    const importBtn = document.getElementById('importDbBtn');
+                    if (importBtn) importBtn.click();
+                }
             });
 
             console.log('[DOMContentLoaded] Initialization complete');
