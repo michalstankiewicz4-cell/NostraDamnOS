@@ -128,12 +128,12 @@ function renderControlPanel() {
         item.dataset.index = index;
         
         const hasData = checkDataAvailability(chart.id);
-        const lampClass = hasData ? 'chart-data-lamp-ok' : 'chart-data-lamp-error';
+        const lampClass = hasData ? 'floating-lamp floating-lamp-ok' : 'floating-lamp floating-lamp-error';
         const lampTitle = hasData ? 'Dane dostępne' : 'Brak danych';
         
         item.innerHTML = `
             <span class="charts-order-drag-handle" title="Przeciągnij aby zmienić kolejność">⋮⋮</span>
-            <span class="${lampClass}" title="${lampTitle}">●</span>
+            <div class="${lampClass}" title="${lampTitle}"></div>
             <input type="checkbox" 
                    id="chart-toggle-${chart.id}" 
                    class="charts-order-checkbox" 
