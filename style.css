@@ -1870,6 +1870,32 @@ input:disabled {
     padding: 4px 0;
 }
 
+/* Live Link Section */
+.etl-live-link-section {
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #4a5568;
+}
+
+.etl-live-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.75rem;
+    color: #90cdf4;
+    text-decoration: none;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: all 0.2s;
+    background: #1a202c;
+}
+
+.etl-live-link:hover {
+    background: #2d3748;
+    color: #63b3ed;
+    text-decoration: none;
+}
+
 /* ============================================
    LIVE STREAM MODAL
    ============================================ */
