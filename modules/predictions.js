@@ -69,6 +69,8 @@ function calculateDiscipline() {
     const container = document.getElementById('disciplineContent');
     if (!container) return;
     
+    console.log('[Predictions] Calculating club discipline...');
+    
     try {
         // Pobierz głosowania z wynikiem klubowym
         const votings = db2.database.exec(`
@@ -82,9 +84,12 @@ function calculateDiscipline() {
         `);
         
         if (!votings.length || !votings[0].values.length) {
+            console.warn('[Predictions] No voting data found');
             container.innerHTML = '<div class="prediction-no-data">Brak danych głosowań</div>';
             return;
         }
+        
+        console.log(`[Predictions] Found ${votings[0].values.length} votings`);
         
         // Pobierz kluby
         const clubs = db2.database.exec(`
@@ -95,38 +100,59 @@ function calculateDiscipline() {
         `);
         
         if (!clubs.length) {
+            console.warn('[Predictions] No clubs found');
             container.innerHTML = '<div class="prediction-no-data">Brak danych klubów</div>';
             return;
         }
         
         const clubList = clubs[0].values.map(row => row[0]);
+        console.log(`[Predictions] Found ${clubList.length} clubs:`, clubList);
         
         // Analiza dyscypliny dla każdego klubu
+        // Metoda: dla każdego głosowania znajdź dominujący głos w klubie,
+        // następnie policz % posłów klubu głosujących zgodnie z większością klubu
         const disciplineData = clubList.map(club => {
             const result = db2.database.exec(`
+                WITH club_votes AS (
+                    SELECT 
+                        gl.id_glosowania,
+                        gl.glos,
+                        COUNT(*) as vote_count
+                    FROM glosy gl
+                    JOIN poslowie p ON gl.id_osoby = p.id_osoby
+                    WHERE p.klub = ?
+                    AND gl.glos IN ('Za', 'Przeciw', 'Wstrzymał się', 'Wstrzymał')
+                    GROUP BY gl.id_glosowania, gl.glos
+                ),
+                club_majority AS (
+                    SELECT 
+                        id_glosowania,
+                        glos as majority_vote,
+                        MAX(vote_count) as max_count
+                    FROM club_votes
+                    GROUP BY id_glosowania
+                )
                 SELECT 
-                    COUNT(*) as total,
-                    SUM(CASE 
-                        WHEN gl.glos = 'Za' AND g.wynik_glosowania = 'PRZYJĘTY' THEN 1
-                        WHEN gl.glos = 'Przeciw' AND g.wynik_glosowania = 'ODRZUCONY' THEN 1
-                        ELSE 0
-                    END) as aligned
+                    COUNT(*) as total_votes,
+                    SUM(CASE WHEN gl.glos = cm.majority_vote THEN 1 ELSE 0 END) as aligned_votes
                 FROM glosy gl
-                JOIN glosowania g ON gl.id_glosowania = g.id_glosowania
-                JOIN poslowie p ON gl.id_posla = p.id_osoby
+                JOIN poslowie p ON gl.id_osoby = p.id_osoby
+                JOIN club_majority cm ON gl.id_glosowania = cm.id_glosowania
                 WHERE p.klub = ?
-                AND g.wynik_glosowania IS NOT NULL
-            `, [club]);
+                AND gl.glos IN ('Za', 'Przeciw', 'Wstrzymał się', 'Wstrzymał')
+            `, [club, club]);
             
             if (!result.length || !result[0].values.length) {
                 return { club, discipline: 0, total: 0 };
             }
             
-            const [total, aligned] = result[0].values[0];
-            const discipline = total > 0 ? (aligned / total * 100) : 0;
+            const [totalVotes, alignedVotes] = result[0].values[0];
+            const discipline = totalVotes > 0 ? (alignedVotes / totalVotes * 100) : 0;
             
-            return { club, discipline: discipline.toFixed(1), total };
+            return { club, discipline: discipline.toFixed(1), total: totalVotes };
         }).filter(d => d.total > 0).sort((a, b) => b.discipline - a.discipline);
+        
+        console.log('[Predictions] Discipline results:', disciplineData);
         
         // Renderuj wyniki
         let html = '<div class="discipline-list">';
@@ -170,31 +196,63 @@ function detectRebels() {
     const container = document.getElementById('rebelsContent');
     if (!container) return;
     
+    console.log('[Predictions] Detecting rebels...');
+    
     try {
-        // Znajdź posłów z niską dyscypliną
+        // Znajdź posłów z niską dyscypliną klubową
+        // Dla każdego posła: ile razy głosował zgodnie z większością swojego klubu
         const result = db2.database.exec(`
+            WITH club_majority AS (
+                SELECT 
+                    cv.id_glosowania,
+                    cv.klub,
+                    cv.glos
+                FROM (
+                    SELECT 
+                        gl.id_glosowania,
+                        p.klub,
+                        gl.glos,
+                        COUNT(*) as vote_count
+                    FROM glosy gl
+                    JOIN poslowie p ON gl.id_osoby = p.id_osoby
+                    WHERE gl.glos IN ('Za', 'Przeciw', 'Wstrzymał się', 'Wstrzymał')
+                    AND p.klub IS NOT NULL AND p.klub != ''
+                    GROUP BY gl.id_glosowania, p.klub, gl.glos
+                ) cv
+                WHERE cv.vote_count = (
+                    SELECT MAX(vote_count) 
+                    FROM (
+                        SELECT COUNT(*) as vote_count
+                        FROM glosy gl2
+                        JOIN poslowie p2 ON gl2.id_osoby = p2.id_osoby
+                        WHERE gl2.id_glosowania = cv.id_glosowania 
+                        AND p2.klub = cv.klub
+                        AND gl2.glos IN ('Za', 'Przeciw', 'Wstrzymał się', 'Wstrzymał')
+                        GROUP BY gl2.glos
+                    )
+                )
+            )
             SELECT 
                 p.imie || ' ' || p.nazwisko as name,
                 p.klub,
                 COUNT(*) as total_votes,
-                SUM(CASE 
-                    WHEN gl.glos = 'Za' AND g.wynik_glosowania = 'PRZYJĘTY' THEN 1
-                    WHEN gl.glos = 'Przeciw' AND g.wynik_glosowania = 'ODRZUCONY' THEN 1
-                    ELSE 0
-                END) as aligned_votes
+                SUM(CASE WHEN gl.glos = cm.glos THEN 1 ELSE 0 END) as aligned_votes
             FROM poslowie p
-            JOIN glosy gl ON p.id_osoby = gl.id_posla
-            JOIN glosowania g ON gl.id_glosowania = g.id_glosowania
-            WHERE g.wynik_glosowania IS NOT NULL
+            JOIN glosy gl ON p.id_osoby = gl.id_osoby
+            JOIN club_majority cm ON gl.id_glosowania = cm.id_glosowania AND p.klub = cm.klub
+            WHERE gl.glos IN ('Za', 'Przeciw', 'Wstrzymał się', 'Wstrzymał')
             AND p.klub IS NOT NULL AND p.klub != ''
             GROUP BY p.id_osoby, p.imie, p.nazwisko, p.klub
             HAVING COUNT(*) >= 10
         `);
         
         if (!result.length || !result[0].values.length) {
+            console.warn('[Predictions] No voting data for rebel detection');
             container.innerHTML = '<div class="prediction-no-data">Brak wystarczających danych głosowań</div>';
             return;
         }
+        
+        console.log(`[Predictions] Found ${result[0].values.length} MPs with voting records`);
         
         const rebels = result[0].values.map(row => {
             const [name, club, total, aligned] = row;
@@ -277,9 +335,9 @@ function calculateCoalition() {
                             COUNT(*) as total,
                             SUM(CASE WHEN gl1.glos = gl2.glos THEN 1 ELSE 0 END) as matching
                         FROM glosy gl1
-                        JOIN poslowie p1 ON gl1.id_posla = p1.id_osoby
+                        JOIN poslowie p1 ON gl1.id_osoby = p1.id_osoby
                         JOIN glosy gl2 ON gl1.id_glosowania = gl2.id_glosowania
-                        JOIN poslowie p2 ON gl2.id_posla = p2.id_osoby
+                        JOIN poslowie p2 ON gl2.id_osoby = p2.id_osoby
                         WHERE p1.klub = ? AND p2.klub = ?
                         AND gl1.glos IN ('Za', 'Przeciw')
                         AND gl2.glos IN ('Za', 'Przeciw')
@@ -353,7 +411,7 @@ function analyzeActivityTrend() {
                 p.klub,
                 COUNT(w.id_wypowiedzi) as total_speeches
             FROM poslowie p
-            LEFT JOIN wypowiedzi w ON p.id_osoby = w.id_poslujacego
+            LEFT JOIN wypowiedzi w ON p.id_osoby = w.id_osoby
             WHERE p.klub IS NOT NULL AND p.klub != ''
             GROUP BY p.id_osoby, p.imie, p.nazwisko, p.klub
             HAVING COUNT(w.id_wypowiedzi) > 0
