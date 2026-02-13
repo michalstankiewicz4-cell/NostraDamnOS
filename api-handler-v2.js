@@ -1420,6 +1420,7 @@ async function smartFetch() {
 async function startPipelineETL() {
     console.log('🚀 [Zadanie] Pobierz/Zaktualizuj dane rozpoczęty');
     isFetching = true;
+    updateChartActionButtons(true); // Zablokuj przyciski akcji podczas pobierania
 
     // Zatrzymaj monitorowanie bazy podczas fetcha
     stopDbMonitoring();
@@ -1600,6 +1601,7 @@ async function startPipelineETL() {
 
     } finally {
         isFetching = false;
+        updateChartActionButtons(false); // Odblokuj przyciski akcji
         currentAbortController = null;
         setFetchAbortController(null);
         hideEtlProgress();
