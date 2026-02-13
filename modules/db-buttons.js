@@ -4,6 +4,7 @@
 import { db2 } from './database-v2.js';
 import ToastModule from './toast.js';
 import { refreshChartsManager } from './charts-manager.js';
+import { refreshPredictions } from './predictions.js';
 
 export function initDbButtons() {
     console.log('[DB Buttons] Initializing import/export buttons...');
@@ -260,6 +261,13 @@ export function initDbButtons() {
             
             // Odśwież panel zarządzania wykresami (lampki statusu)
             refreshChartsManager();
+            
+            // Odśwież predykcje
+            try {
+                refreshPredictions();
+            } catch (e) {
+                console.warn('[DB Import] Could not refresh predictions:', e);
+            }
 
         } catch (error) {
             console.error('[DB Import] Error loading database:', error);

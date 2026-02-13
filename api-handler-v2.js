@@ -5,6 +5,7 @@ import { db2 } from './modules/database-v2.js';
 import ToastModule from './modules/toast.js';
 import { startLivePolling, stopLivePolling } from './modules/sejm-live-checker.js';
 import { refreshChartsManager } from './modules/charts-manager.js';
+import { refreshPredictions } from './modules/predictions.js';
 
 // === TASK QUEUE SYSTEM ===
 // Zapobiega jednoczesnym operacjom: fetch, verify, checkNewRecords, checkDataChanges
@@ -1469,6 +1470,8 @@ async function startPipelineETL() {
             onComplete: (result) => {
                 // Odśwież panel zarządzania wykresami po zakończeniu pipeline
                 try { refreshChartsManager(); } catch(e) {}
+                // Odśwież predykcje
+                try { refreshPredictions(); } catch(e) {}
             }
         });
         

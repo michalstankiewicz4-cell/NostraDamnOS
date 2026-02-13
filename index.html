@@ -1011,6 +1011,115 @@
                     </div>
                 </div>
             </section>
+
+            <!-- SEKCJA 6: PREDYKCJA & MODELE -->
+            <section class="app-section" data-section="6" style="display:none;">
+                <div class="predictions-header">
+                    <h2>🔮 Model Predykcyjny</h2>
+                    <p class="predictions-subtitle">Analiza wzorców i prognozowanie na podstawie danych historycznych</p>
+                </div>
+
+                <div class="predictions-grid">
+                    <!-- Card 1: Dyscyplina klubowa -->
+                    <div class="prediction-card">
+                        <div class="prediction-card-header">
+                            <div class="prediction-card-icon">🎯</div>
+                            <div>
+                                <h3>Dyscyplina klubowa</h3>
+                                <p>Zgodność głosowań z linią partyjną</p>
+                            </div>
+                        </div>
+                        <div class="prediction-card-body">
+                            <div id="disciplineContent" class="prediction-content">
+                                <div class="prediction-loading">
+                                    <div class="prediction-spinner"></div>
+                                    <p>Analizuję dane głosowań...</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="prediction-card-footer">
+                            <button class="prediction-refresh-btn" data-prediction="discipline">🔄 Odśwież</button>
+                        </div>
+                    </div>
+
+                    <!-- Card 2: Wykrywanie buntowników -->
+                    <div class="prediction-card">
+                        <div class="prediction-card-header">
+                            <div class="prediction-card-icon">⚠️</div>
+                            <div>
+                                <h3>Wykrywanie anomalii</h3>
+                                <p>Posłowie głosujący wbrew klubowi</p>
+                            </div>
+                        </div>
+                        <div class="prediction-card-body">
+                            <div id="rebelsContent" class="prediction-content">
+                                <div class="prediction-loading">
+                                    <div class="prediction-spinner"></div>
+                                    <p>Szukam anomalii...</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="prediction-card-footer">
+                            <button class="prediction-refresh-btn" data-prediction="rebels">🔄 Odśwież</button>
+                        </div>
+                    </div>
+
+                    <!-- Card 3: Macierz koalicyjna -->
+                    <div class="prediction-card">
+                        <div class="prediction-card-header">
+                            <div class="prediction-card-icon">🤝</div>
+                            <div>
+                                <h3>Potencjalne koalicje</h3>
+                                <p>Podobieństwo głosowania między klubami</p>
+                            </div>
+                        </div>
+                        <div class="prediction-card-body">
+                            <div id="coalitionContent" class="prediction-content">
+                                <div class="prediction-loading">
+                                    <div class="prediction-spinner"></div>
+                                    <p>Obliczam podobieństwa...</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="prediction-card-footer">
+                            <button class="prediction-refresh-btn" data-prediction="coalition">🔄 Odśwież</button>
+                        </div>
+                    </div>
+
+                    <!-- Card 4: Predykcja aktywności -->
+                    <div class="prediction-card">
+                        <div class="prediction-card-header">
+                            <div class="prediction-card-icon">📈</div>
+                            <div>
+                                <h3>Trend aktywności</h3>
+                                <p>Przewidywanie przyszłej aktywności</p>
+                            </div>
+                        </div>
+                        <div class="prediction-card-body">
+                            <div id="activityContent" class="prediction-content">
+                                <div class="prediction-loading">
+                                    <div class="prediction-spinner"></div>
+                                    <p>Analizuję trendy...</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="prediction-card-footer">
+                            <button class="prediction-refresh-btn" data-prediction="activity">🔄 Odśwież</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Empty state gdy brak danych -->
+                <div id="predictionsEmptyState" class="predictions-empty-state" style="display:none;">
+                    <div class="predictions-empty-icon">🔮</div>
+                    <h3>Brak danych do analizy</h3>
+                    <p>Aby wykorzystać modele predykcyjne, najpierw pobierz dane głosowań i wypowiedzi.</p>
+                    <div class="predictions-empty-actions">
+                        <button class="prediction-btn-primary" data-action="goto-etl">📥 Pobierz dane</button>
+                        <button class="prediction-btn-secondary" data-action="import-db">💾 Importuj bazę</button>
+                    </div>
+                </div>
+            </section>
         </main>
 
         <!-- BOTTOM NAVIGATION BAR (Carousel) -->
@@ -1031,6 +1140,10 @@
                 <div class="nav-item" data-section="4">
                     <div class="nav-icon">📈</div>
                     <div class="nav-label">Wykresy</div>
+                </div>
+                <div class="nav-item" data-section="6">
+                    <div class="nav-icon">🔮</div>
+                    <div class="nav-label">Predykcja</div>
                 </div>
                 <div class="nav-item" data-section="5">
                     <div class="nav-icon">⚙️</div>
@@ -1949,6 +2062,7 @@
     <script type="module">
         import { renderAllCharts } from './modules/charts.js';
         import { initChartsManager } from './modules/charts-manager.js';
+        import { initPredictions } from './modules/predictions.js';
         
         window._renderCharts = renderAllCharts;
         
@@ -1958,11 +2072,13 @@
                 // Daj czas aby wykresy zostały dodane do DOM
                 setTimeout(() => {
                     initChartsManager();
+                    initPredictions();
                 }, 100);
             });
         } else {
             setTimeout(() => {
                 initChartsManager();
+                initPredictions();
             }, 100);
         }
     </script>
