@@ -1893,10 +1893,14 @@
                 
                 const action = btn.dataset.action;
                 if (action === 'goto-etl') {
-                    // Przejdź do sekcji ETL
-                    const etlSection = document.querySelector('[data-section="1"]');
-                    const navItem = etlSection?.previousElementSibling?.querySelector('.nav-item');
-                    if (navItem) navItem.click();
+                    // Przejdź do sekcji ETL (sekcja 1)
+                    if (window._navActivateSection) {
+                        window._navActivateSection('1');
+                    } else {
+                        // Fallback jeśli funkcja nawigacji jeszcze nie jest dostępna
+                        const navItem = document.querySelector('.nav-item[data-section="1"]');
+                        if (navItem) navItem.click();
+                    }
                 } else if (action === 'import-db') {
                     // Kliknij przycisk importu bazy
                     const importBtn = document.getElementById('importDbBtn');
