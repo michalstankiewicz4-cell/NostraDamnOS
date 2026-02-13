@@ -1893,6 +1893,9 @@
                 const btn = e.target.closest('[data-action]');
                 if (!btn) return;
                 
+                // Sprawdź czy przycisk jest zablokowany
+                if (btn.disabled) return;
+                
                 const action = btn.dataset.action;
                 if (action === 'goto-etl') {
                     // Przejdź do sekcji ETL (sekcja 1)
@@ -1911,12 +1914,16 @@
                         }
                     }, 100);
                 } else if (action === 'import-db') {
+                    // Sprawdź czy kolejka zadań działa
+                    if (window.taskQueue?.isRunning()) {
+                        import('./modules/toast.js').then(m => {
+                            m.default.info('Poczekaj na zakończenie sprawdzania danych...', { duration: 2000 });
+                        });
+                        return;
+                    }
                     // Kliknij przycisk importu bazy
-                    console.log('[Chart Action] Trying to trigger import...');
                     const importBtn = document.getElementById('importDbBtn');
-                    console.log('[Chart Action] importBtn found:', !!importBtn);
                     if (importBtn) {
-                        console.log('[Chart Action] Clicking importBtn...');
                         importBtn.click();
                     } else {
                         console.error('[Chart Action] importDbBtn not found in DOM!');

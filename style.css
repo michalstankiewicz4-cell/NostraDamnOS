@@ -2349,6 +2349,40 @@ input:disabled {
     opacity: 0.7;
 }
 
+.chart-item-actions {
+    display: flex;
+    gap: 4px;
+    margin-left: auto;
+}
+
+.chart-item-btn {
+    background: rgba(102, 126, 234, 0.15);
+    border: 1px solid rgba(102, 126, 234, 0.3);
+    border-radius: 4px;
+    padding: 4px 8px;
+    color: #a5b4fc;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    line-height: 1;
+}
+
+.chart-item-btn:hover {
+    background: rgba(102, 126, 234, 0.25);
+    border-color: #667eea;
+    transform: scale(1.05);
+}
+
+.chart-item-btn:active {
+    transform: scale(0.95);
+}
+
+.chart-item-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
 @media (max-width: 768px) {
     .charts-order-list {
         grid-template-columns: 1fr;
