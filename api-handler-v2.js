@@ -1441,10 +1441,10 @@ async function startPipelineETL() {
             onError: (error) => {
                 console.error('[Pipeline Error]', error);
             },
+            onComplete: (result) => {
                 // Odśwież panel zarządzania wykresami po zakończeniu pipeline
-                refreshChartsManager();
-            
-            onComplete: (result) => {}
+                try { refreshChartsManager(); } catch(e) {}
+            }
         });
         
         // Show success or stats
