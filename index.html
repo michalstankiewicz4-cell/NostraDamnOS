@@ -627,6 +627,24 @@
             <!-- SEKCJA 4: WYKRESY & ANALITYKA -->
             <section class="app-section" data-section="4" style="display:none;">
 
+                <!-- Panel kontrolny wykresów -->
+                <div class="charts-control-panel">
+                    <div class="charts-control-header">
+                        <h3>📊 Zarządzanie wykresami</h3>
+                        <div class="charts-control-actions">
+                            <button id="chartsSelectAll" class="charts-btn-small">Zaznacz wszystkie</button>
+                            <button id="chartsDeselectAll" class="charts-btn-small">Odznacz wszystkie</button>
+                            <button id="chartsResetOrder" class="charts-btn-small">Resetuj kolejność</button>
+                        </div>
+                    </div>
+                    <div class="charts-control-body">
+                        <p class="charts-control-hint">💡 Przeciągnij aby zmienić kolejność, zaznacz aby pokazać wykres</p>
+                        <ul id="chartsOrderList" class="charts-order-list">
+                            <!-- Lista będzie generowana dynamicznie przez JS -->
+                        </ul>
+                    </div>
+                </div>
+
                 <div id="chartsGrid" class="charts-grid">
                     <div class="chart-card" id="chartKluby">
                         <div class="chart-card-header">
@@ -1789,7 +1807,23 @@
     </script>
     <script type="module">
         import { renderAllCharts } from './modules/charts.js';
+        import { initChartsManager } from './modules/charts-manager.js';
+        
         window._renderCharts = renderAllCharts;
+        
+        // Inicjalizuj manager wykresów po załadowaniu DOM
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                // Daj czas aby wykresy zostały dodane do DOM
+                setTimeout(() => {
+                    initChartsManager();
+                }, 100);
+            });
+        } else {
+            setTimeout(() => {
+                initChartsManager();
+            }, 100);
+        }
     </script>
 
     <script type="module">
