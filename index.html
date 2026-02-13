@@ -268,6 +268,42 @@
                                 <label class="etl-radio-option" style="opacity: 0.5; cursor: not-allowed;">
                                     <input type="radio" name="etlInst" value="senat" disabled> Senat <span id="etlTermCountSenat" class="term-count"></span>
                                 </label>
+                                <label class="etl-radio-option" style="opacity: 0.5; cursor: not-allowed;">
+                                    <input type="radio" name="etlInst" value="minfin" disabled> Min. Fin. 💰
+                                </label>
+                                <label class="etl-radio-option" style="opacity: 0.5; cursor: not-allowed;">
+                                    <input type="radio" name="etlInst" value="internet" disabled> Internet API 🌐
+                                </label>
+                            </div>
+                            <div class="etl-internet-api-box" style="margin-top: 8px; opacity: 0.45; pointer-events: none;">
+                                <select class="form-control etl-select-margin" id="etlInternetSource" disabled>
+                                    <option value="" disabled selected>— Wybierz źródło —</option>
+                                    <optgroup label="📰 Gazety / Portale">
+                                        <option value="onet">Onet.pl — Wiadomości</option>
+                                        <option value="wp">Wirtualna Polska (WP)</option>
+                                        <option value="interia">Interia Fakty</option>
+                                        <option value="gazeta">Gazeta.pl</option>
+                                        <option value="tvn24">TVN24.pl</option>
+                                        <option value="polsat">Polsat News</option>
+                                        <option value="rp">Rzeczpospolita</option>
+                                        <option value="wyborcza">Gazeta Wyborcza</option>
+                                        <option value="dorzeczy">Do Rzeczy</option>
+                                        <option value="wpolityce">wPolityce.pl</option>
+                                        <option value="niezalezna">Niezależna.pl</option>
+                                        <option value="oko">OKO.press</option>
+                                    </optgroup>
+                                    <optgroup label="📡 Agencje prasowe">
+                                        <option value="pap">PAP — Polska Agencja Prasowa</option>
+                                        <option value="isa">ISBnews / ISBtech</option>
+                                    </optgroup>
+                                    <optgroup label="🏛️ Instytucje">
+                                        <option value="prezydent">Prezydent.pl</option>
+                                        <option value="premier">Gov.pl — Premier</option>
+                                        <option value="nik">NIK — Najwyższa Izba Kontroli</option>
+                                        <option value="rpo">RPO — Rzecznik Praw Obywatelskich</option>
+                                    </optgroup>
+                                </select>
+                                <div class="etl-section-hint" style="margin-top: 4px;">🔜 Wkrótce — scraping i analiza artykułów</div>
                             </div>
                         </fieldset>
                         
