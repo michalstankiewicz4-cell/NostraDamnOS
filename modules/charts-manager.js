@@ -131,6 +131,13 @@ function renderControlPanel() {
         const lampClass = hasData ? 'floating-lamp floating-lamp-ok' : 'floating-lamp floating-lamp-error';
         const lampTitle = hasData ? 'Dane dostępne' : 'Brak danych';
         
+        const actionButtons = !hasData ? `
+            <div class="chart-item-actions">
+                <button class="chart-item-btn" data-action="goto-etl" title="Przejdź do pobierania danych">📥</button>
+                <button class="chart-item-btn" data-action="import-db" title="Importuj bazę danych">💾</button>
+            </div>
+        ` : '';
+        
         item.innerHTML = `
             <span class="charts-order-drag-handle" title="Przeciągnij aby zmienić kolejność">⋮⋮</span>
             <div class="${lampClass}" title="${lampTitle}"></div>
@@ -142,6 +149,7 @@ function renderControlPanel() {
                 <span class="charts-order-icon">${chart.icon}</span>
                 ${chart.name}
             </label>
+            ${actionButtons}
         `;
         
         // Event listener dla checkboxa

@@ -163,6 +163,17 @@ function updateButtonStates(isQueueRunning, currentTask) {
     
     // Aktualizuj lampki - pokaż status "checking" dla aktualnego zadania
     updateLampsForTask(currentTask);
+    
+    // Odśwież stan przycisków akcji na liście wykresów
+    updateChartActionButtons(isQueueRunning);
+}
+
+function updateChartActionButtons(isBlocked) {
+    // Znajdź wszystkie przyciski akcji z data-action w całej aplikacji
+    const actionButtons = document.querySelectorAll('[data-action="goto-etl"], [data-action="import-db"]');
+    actionButtons.forEach(btn => {
+        btn.disabled = isBlocked;
+    });
 }
 
 function updateLampsForTask(taskName) {
