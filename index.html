@@ -179,7 +179,9 @@
         </header>
 
         <!-- Top Info Bar -->
-        <div id="topInfoBar" class="top-info-bar">
+        <div id="topInfoBar" class="top-info-bar"
+            data-help="Pasek informacyjny pod nagłówkiem. Pokazuje bieżący status operacji, komunikaty systemowe i podsumowania."
+            data-help-title="📢 Pasek info">
             <span id="topInfoText" class="top-info-text"></span>
         </div>
 
@@ -215,7 +217,9 @@
                             <div class="summary-data-list" id="etlData">wypowiedzi</div>
                         </div>
                         
-                        <div class="estimate-box">
+                        <div class="estimate-box"
+                            data-help="Estymacja rozmiaru danych, czasu pobierania i liczby zapytań API na podstaw ie wybranych opcji."
+                            data-help-title="💡 Estymacja">
                             <div class="estimate-title">💡 Estymacja</div>
                             <div class="estimate-grid">
                                 <div class="estimate-row">
@@ -243,18 +247,24 @@
                             </div>
                         </div>
                         
-                        <button class="etl-btn etl-btn-primary" id="etlFetchBtn">
+                        <button class="etl-btn etl-btn-primary" id="etlFetchBtn"
+                            data-help="Rozpoczyna pobieranie danych z API Sejmu. Pipeline ETL pobiera, normalizuje i zapisuje dane do lokalnej bazy SQLite w przeglądarce."
+                            data-help-title="📥 Pobierz dane">
                             📥 Pobierz/Zaktualizuj dane
                         </button>
                         
-                        <button class="etl-btn etl-btn-danger" id="etlClearBtn">
+                        <button class="etl-btn etl-btn-danger" id="etlClearBtn"
+                            data-help="Kasuje całą bazę danych SQLite z przeglądarki. Operacja nieodwracalna — dane będą musiały być pobrane ponownie."
+                            data-help-title="🗑️ Wyczyść bazę">
                             🗑️ Wyczyść bazę
                         </button>
                     </div>
                     
                     <div class="etl-main">
                         <!-- Instytucja -->
-                        <fieldset class="etl-fieldset">
+                        <fieldset class="etl-fieldset"
+                            data-help="Wybierz Sejm lub Senat. Każda instytucja ma własne API i strukturę danych. Senat jest obecnie wyłączony."
+                            data-help-title="🏛️ Instytucja">
                             <legend>🏛️ Instytucja</legend>
                             <div class="etl-radio-group">
                                 <label class="etl-radio-option">
@@ -267,7 +277,9 @@
                         </fieldset>
                         
                         <!-- Kadencja -->
-                        <fieldset class="etl-fieldset">
+                        <fieldset class="etl-fieldset"
+                            data-help="Kadencja to okres działania parlamentu (np. X = 2023-2027). Wybierz którą kadencję chcesz analizować."
+                            data-help-title="📅 Kadencja">
                             <legend>📅 Kadencja</legend>
                             <select id="etlTermSelect" class="form-control">
                                 <option value="10">10. kadencja (2023-obecnie)</option>
@@ -279,7 +291,9 @@
                         </fieldset>
                         
                         <!-- Zakres posiedzeń -->
-                        <fieldset class="etl-fieldset">
+                        <fieldset class="etl-fieldset"
+                            data-help="Określ numery posiedzeń do pobrania (np. od 1 do 5). Im więcej posiedzeń, tym dłużej potrwa pobieranie."
+                            data-help-title="🎯 Zakres posiedzeń">
                             <legend>🎯 Zakres posiedzeń</legend>
                             <div class="etl-input-group">
                                 <span id="etlRangeFromLabel" class="etl-input-label">od</span>
@@ -290,7 +304,9 @@
                         </fieldset>
                         
                         <!-- Dane podstawowe -->
-                        <fieldset class="etl-fieldset">
+                        <fieldset class="etl-fieldset"
+                            data-help="Posłowie i posiedzenia są pobierane zawsze — to fundament bazy danych. Nie można ich odznaczyć."
+                            data-help-title="📋 Dane podstawowe">
                             <legend>📋 Dane podstawowe</legend>
                             <div class="etl-section-hint">Zawsze pobierane</div>
                             <div class="checkbox-item">
@@ -306,7 +322,9 @@
                         </fieldset>
                         
                         <!-- Dane per posiedzenie -->
-                        <fieldset class="etl-fieldset">
+                        <fieldset class="etl-fieldset"
+                            data-help="Wypowiedzi, głosowania i głosy indywidualne — pobierane per posiedzenie. Każde posiedzenie oznacza dodatkowe zapytania API."
+                            data-help-title="📝 Dane per posiedzenie">
                             <legend>📝 Dane per posiedzenie</legend>
                             <div class="etl-section-hint">Incremental (per posiedzenie)</div>
                             <div class="checkbox-item">
@@ -330,7 +348,9 @@
                         </fieldset>
                         
                         <!-- Dane per kadencja -->
-                        <fieldset class="etl-fieldset">
+                        <fieldset class="etl-fieldset"
+                            data-help="Interpelacje, zapytania, projekty ustaw i akty prawne — pobierane dla całej kadencji naraz. Mogą być duże (kilka MB)."
+                            data-help-title="🗂️ Dane per kadencja">
                             <legend>🗂️ Dane per kadencja</legend>
                             <div class="etl-section-hint">Cała kadencja (duże!)</div>
                             <div class="checkbox-item">
@@ -364,7 +384,9 @@
                         </fieldset>
                         
                         <!-- Komisje -->
-                        <fieldset class="etl-fieldset">
+                        <fieldset class="etl-fieldset"
+                            data-help="Dane o komisjach sejmowych: lista posiedzeń, składy i protokoły. Możesz wybrać konkretne komisje z listy."
+                            data-help-title="🏢 Komisje">
                             <legend>🏢 Komisje</legend>
                             <div class="etl-section-hint">Wybierz dane komisji</div>
                             <div class="checkbox-item">
@@ -502,8 +524,12 @@
                 </div>
 
                 <div class="summary-actions" id="summaryActions" style="margin-top:12px; display:flex; gap:10px;">
-                    <button id="summaryImportDb" class="console-style-btn">📥 Import bazy</button>
-                    <button id="summaryExportDb" class="console-style-btn">📤 Export bazy</button>
+                    <button id="summaryImportDb" class="console-style-btn"
+                        data-help="Importuj bazę SQLite z pliku na dysku."
+                        data-help-title="📥 Import bazy">📥 Import bazy</button>
+                    <button id="summaryExportDb" class="console-style-btn"
+                        data-help="Eksportuj bieżącą bazę SQLite jako plik do pobrania."
+                        data-help-title="📤 Export bazy">📤 Export bazy</button>
                 </div>
 
                 <div class="summary-placeholder" id="summaryPlaceholder">
@@ -526,7 +552,9 @@
                                 <label class="chat-filter-checkbox" title="Pokaż wszystkie modele">
                                     <input type="checkbox" id="showAllModels" checked>
                                 </label>
-                                <select id="aiModelSelect">
+                                <select id="aiModelSelect"
+                                    data-help="Wybierz model AI: OpenAI, Claude, Gemini lub modele lokalne. Każdy ma inne możliwości i wymagania."
+                                    data-help-title="🤖 Wybór modelu AI">
                                     <option value="openai">OpenAI GPT-4</option>
                                     <option value="claude">Anthropic Claude 3.5</option>
                                     <optgroup label="🔥 Gemini - Główne">
@@ -587,11 +615,17 @@
                         </div>
                     </div>
                     
-                    <div id="chatMessages" class="chat-messages-fullscreen"></div>
+                    <div id="chatMessages" class="chat-messages-fullscreen"
+                        data-help="Historia rozmów z AI. Model odpowiada na pytania o dane parlamentarne, analizuje wzorce i może odpytywać bazę."
+                        data-help-title="💬 Historia czatu"></div>
                     
                     <div class="chat-input-area">
-                        <textarea id="chatInput" placeholder="Zadaj pytanie o dane parlamentarne..." rows="1"></textarea>
-                        <button id="sendChatBtn" title="Wyślij wiadomość">📤</button>
+                        <textarea id="chatInput" placeholder="Zadaj pytanie o dane parlamentarne..." rows="1"
+                            data-help="Wpisz pytanie lub polecenie dla AI. Możesz pytać o posłów, głosowania, statystyki czy wzorce zachowań."
+                            data-help-title="✍️ Pole tekstowe"></textarea>
+                        <button id="sendChatBtn" title="Wyślij wiadomość"
+                            data-help="Kliknij lub naciśnij Enter aby wysłać wiadomość do wybranego modelu AI."
+                            data-help-title="📤 Wyślij">📤</button>
                     </div>
                 </div>
                 </div><!-- /ai-column-chat -->
@@ -628,7 +662,9 @@
             <section class="app-section" data-section="4" style="display:none;">
 
                 <!-- Panel kontrolny wykresów -->
-                <div class="charts-control-panel">
+                <div class="charts-control-panel"
+                    data-help="Zarządzaj widocznością i kolejnością wykresów. Przeciągnij aby zmienić kolejność, zaznacz/odznacz aby pokazać/ukryć."
+                    data-help-title="📊 Zarządzanie wykresami">
                     <div class="charts-control-header">
                         <h3>📊 Zarządzanie wykresami</h3>
                         <div class="charts-control-actions">
@@ -647,7 +683,9 @@
                     </div>
                 </div>
 
-                <div id="chartsGrid" class="charts-grid">
+                <div id="chartsGrid" class="charts-grid"
+                    data-help="Siatka interaktywnych wykresów Chart.js. Każdy wykres ma przycisk odświeżania. Najedź na punkty danych by zobaczyć szczegóły."
+                    data-help-title="📈 Wykresy">
                     <div class="chart-card" id="chartKluby">
                         <div class="chart-card-header">
                             <h4>Rozkład klubów parlamentarnych</h4>
@@ -878,7 +916,9 @@
                             <p>Resetuj zapisane pozycje przycisków oraz ustawienia interfejsu do wartości domyślnych.</p>
                         </div>
                         <div class="console-style-options">
-                               <button id="btnResetMemory" class="console-style-btn console-style-btn-danger">Reset pamięci</button>
+                               <button id="btnResetMemory" class="console-style-btn console-style-btn-danger"
+                                   data-help="Usuwa ustawienia z localStorage: pozycje przycisków, kolejność wykresów, preferencje UI. Operacja nieodwracalna."
+                                   data-help-title="🗑️ Reset pamięci">Reset pamięci</button>
                         </div>
                     </div>
                 </div>
@@ -1016,24 +1056,10 @@
                         <h3>Tryb pomocy interaktywnej</h3>
                     </div>
                     <div class="console-style-body">
-                        <div class="console-style-description">
-                            <p>Wybierz sposób wyświetlania pomocy po kliknięciu przycisku ❓</p>
-                        </div>
-                        <div class="settings-radio-group">
-                            <label class="settings-radio-label">
-                                <input type="radio" name="helpMode" value="glass" checked>
-                                <span>
-                                    <strong>Szklany</strong><br>
-                                    <small>Efekt rozmycia z podświetlonym elementem</small>
-                                </span>
-                            </label>
-                            <label class="settings-radio-label">
-                                <input type="radio" name="helpMode" value="marker">
-                                <span>
-                                    <strong>Markerowy</strong><br>
-                                    <small>Zaznaczenie elementu na żółto z dymkiem pomocy</small>
-                                </span>
-                            </label>
+                        <div class="console-style-description"
+                            data-help="Kliknij przycisk ❓ — strona się zablokuje, najedź na element by zobaczyć opis. ESC aby wyjść."
+                            data-help-title="❓ Tryb pomocy">
+                            <p>Kliknij przycisk ❓ aby włączyć tryb pomocy. Strona zostanie zablokowana — najedź na element i kliknij aby zobaczyć opis. Wciśnij <kbd>ESC</kbd> aby wyjść.</p>
                         </div>
                     </div>
                 </div>
@@ -1048,7 +1074,9 @@
 
                 <div class="predictions-grid">
                     <!-- Card 1: Dyscyplina klubowa -->
-                    <div class="prediction-card">
+                    <div class="prediction-card"
+                        data-help="Analiza jak często posłowie głosują zgodnie z linią swojego klubu. Wyższy wskaźnik = większa dyscyplina partii."
+                        data-help-title="🎯 Dyscyplina klubowa">
                         <div class="prediction-card-header">
                             <div class="prediction-card-icon">🎯</div>
                             <div>
@@ -1070,7 +1098,9 @@
                     </div>
 
                     <!-- Card 2: Wykrywanie buntowników -->
-                    <div class="prediction-card">
+                    <div class="prediction-card"
+                        data-help="Wykrywa posłów którzy często głosują przeciwko większości swojego klubu. Identyfikuje niezależnych myślicieli."
+                        data-help-title="⚠️ Wykrywanie anomalii">
                         <div class="prediction-card-header">
                             <div class="prediction-card-icon">⚠️</div>
                             <div>
@@ -1092,7 +1122,9 @@
                     </div>
 
                     <!-- Card 3: Macierz koalicyjna -->
-                    <div class="prediction-card">
+                    <div class="prediction-card"
+                        data-help="Macierz koalicji — pokazuje jak często różne kluby głosują tak samo. Pozwala przewidywać potencjalne sojusze."
+                        data-help-title="🤝 Potencjalne koalicje">
                         <div class="prediction-card-header">
                             <div class="prediction-card-icon">🤝</div>
                             <div>
@@ -1114,7 +1146,9 @@
                     </div>
 
                     <!-- Card 4: Predykcja aktywności -->
-                    <div class="prediction-card">
+                    <div class="prediction-card"
+                        data-help="Analiza zmian aktywności posłów w czasie: kto zwiększa zaangażowanie a kto je zmniejsza. Porównuje dwie połowy kadencji."
+                        data-help-title="📈 Trend aktywności">
                         <div class="prediction-card-header">
                             <div class="prediction-card-icon">📈</div>
                             <div>
@@ -1136,7 +1170,9 @@
                     </div>
 
                     <!-- Card 5: Analiza online -->
-                    <div class="prediction-card">
+                    <div class="prediction-card"
+                        data-help="Pobierz i analizuj artykuły z polskich serwisów informacyjnych. Analiza sentymentu treści o posłach."
+                        data-help-title="📰 Analiza online">
                         <div class="prediction-card-header">
                             <div class="prediction-card-icon">📰</div>
                             <div>
@@ -1179,27 +1215,39 @@
         <!-- BOTTOM NAVIGATION BAR (Carousel) -->
         <nav class="bottom-nav" id="bottomNav">
             <div class="nav-carousel" id="navCarousel">
-                <div class="nav-item active" data-section="1">
+                <div class="nav-item active" data-section="1"
+                    data-help="Sekcja ETL — konfiguracja i pobieranie danych z API Sejmu do lokalnej bazy SQLite."
+                    data-help-title="📥 Dane">
                     <div class="nav-icon">📥</div>
                     <div class="nav-label">Dane</div>
                 </div>
-                <div class="nav-item" data-section="2">
+                <div class="nav-item" data-section="2"
+                    data-help="Podsumowanie bazy danych: liczba rekordów, tabele, statystyki i eksport/import."
+                    data-help-title="📊 Podsumowanie">
                     <div class="nav-icon">📊</div>
                     <div class="nav-label">Podsumowanie</div>
                 </div>
-                <div class="nav-item" data-section="3">
+                <div class="nav-item" data-section="3"
+                    data-help="Czat z AI działającym lokalnie w przeglądarce. Zadawaj pytania o dane parlamentarne."
+                    data-help-title="🤖 AI Asystent">
                     <div class="nav-icon">🤖</div>
                     <div class="nav-label">AI Asystent</div>
                 </div>
-                <div class="nav-item" data-section="4">
+                <div class="nav-item" data-section="4"
+                    data-help="Interaktywne wykresy: aktywność posłów, frekwencja, głosowania, kluby parlamentarne, sentyment."
+                    data-help-title="📈 Wykresy">
                     <div class="nav-icon">📈</div>
                     <div class="nav-label">Wykresy</div>
                 </div>
-                <div class="nav-item" data-section="6">
+                <div class="nav-item" data-section="6"
+                    data-help="Modele predykcyjne: dyscyplina klubowa, buntownicy, koalicje, trendy aktywności."
+                    data-help-title="🔮 Predykcja">
                     <div class="nav-icon">🔮</div>
                     <div class="nav-label">Predykcja</div>
                 </div>
-                <div class="nav-item" data-section="5">
+                <div class="nav-item" data-section="5"
+                    data-help="Ustawienia interfejsu: styl, widoczność elementów, tryb pomocy, język."
+                    data-help-title="⚙️ Ustawienia">
                     <div class="nav-icon">⚙️</div>
                     <div class="nav-label">Ustawienia</div>
                 </div>
@@ -1215,43 +1263,46 @@
     </div>
 
     <!-- Floating UI Buttons -->
-    <button id="aiChatBtn" class="floating-btn btn-ai-chat" title="AI Asystent">🤖</button>
-    <button id="exportDbBtn" class="floating-btn btn-export" title="Export bazy danych">📤</button>
-    <button id="importDbBtn" class="floating-btn btn-import" title="Import bazy danych">📥</button>
-    <button id="helpBtn" class="floating-btn btn-help" title="Podpowiedzi (TODO)">❓</button>
-    <button id="aboutBtn" class="floating-btn btn-rodo" title="O projekcie">ℹ️</button>
-    <button id="languageBtn" class="floating-btn btn-language" title="Zmień język (TODO)">🇵🇱</button>
-    <button id="resetMemoryBtn" class="floating-btn btn-reset-memory" title="Reset pamięci" style="display:none">🗑️</button>
+    <button id="aiChatBtn" class="floating-btn btn-ai-chat" title="AI Asystent"
+        data-help="Otwiera sekcję AI Asystenta. Rozmawiaj z modelem językowym o danych parlamentarnych."
+        data-help-title="🤖 AI Asystent">🤖</button>
+    <button id="exportDbBtn" class="floating-btn btn-export" title="Export bazy danych"
+        data-help="Eksportuje całą bazę SQLite jako plik .sqlite do pobrania na dysk."
+        data-help-title="📤 Export bazy">📤</button>
+    <button id="importDbBtn" class="floating-btn btn-import" title="Import bazy danych"
+        data-help="Importuje wcześniej wyeksportowaną bazę SQLite z pliku. Zastępuje aktualną bazę."
+        data-help-title="📥 Import bazy">📥</button>
+    <button id="helpBtn" class="floating-btn btn-help" title="Pomoc interaktywna"
+        data-help="Włącza tryb pomocy. W trybie Marker kliknij element by zobaczyć opis. W trybie Glass strona się rozmywa."
+        data-help-title="❓ Pomoc">❓</button>
+    <button id="aboutBtn" class="floating-btn btn-rodo" title="O projekcie"
+        data-help="Wyświetla informacje o projekcie, autorze i współtwórcach."
+        data-help-title="ℹ️ O projekcie">ℹ️</button>
+    <button id="languageBtn" class="floating-btn btn-language" title="Zmień język"
+        data-help="Zmienia język interfejsu (funkcja w przygotowaniu)."
+        data-help-title="🇵🇱 Język">🇵🇱</button>
+    <button id="resetMemoryBtn" class="floating-btn btn-reset-memory" title="Reset pamięci" style="display:none"
+        data-help="Resetuje wszystkie ustawienia UI: pozycje przycisków, kolejność wykresów, preferencje."
+        data-help-title="🗑️ Reset pamięci">🗑️</button>
 
-    <!-- Interactive Tour Overlay -->
-    <div id="tourOverlay" class="tour-overlay" style="display: none;">
-        <div class="tour-spotlight"></div>
-        <div class="tour-tooltip">
-            <button class="tour-close" id="tourClose" title="Zamknij (Esc)">✕</button>
-            <div class="tour-content">
-                <h3 class="tour-title" id="tourTitle">Tytuł</h3>
-                <p class="tour-description" id="tourDescription">Opis elementu</p>
-            </div>
-            <div class="tour-navigation">
-                <button class="tour-nav-btn tour-prev" id="tourPrev" title="Poprzedni (←)">← Wstecz</button>
-                <span class="tour-counter" id="tourCounter">1 / 10</span>
-                <button class="tour-nav-btn tour-next" id="tourNext" title="Następny (→)">Dalej →</button>
-            </div>
-        </div>
-    </div>
+    <!-- Help overlay (created dynamically by help.js) -->
 
     <!-- Floating Status Bar (Bottom) -->
     <div id="floatingStatusBar" class="floating-status-bar">
 
         <!-- [Wersja] -->
-        <div id="versionSection" class="status-bar-section">
+        <div id="versionSection" class="status-bar-section"
+            data-help="Aktualna wersja programu. Format: major.minor.patch."
+            data-help-title="🏷️ Wersja">
             <span class="status-bar-label">v<span id="programVersion">4.0.0</span></span>
         </div>
 
         <div class="status-bar-separator"></div>
 
         <!-- [Baza] -->
-        <div id="statusIndicators" class="status-bar-section">
+        <div id="statusIndicators" class="status-bar-section"
+            data-help="Trzy lampki: stan bazy danych, stan rekordów z API, poprawność danych. Zielona = OK, czerwona = błąd, żółta = ostrzeżenie."
+            data-help-title="💾 Status bazy">
             <span class="status-bar-label">Baza:</span>
             <div class="status-bar-lamps">
                 <div class="floating-lamp floating-lamp-error" id="floatingStatusDbState" title="Stan bazy danych"></div>
@@ -1263,7 +1314,9 @@
         <div class="status-bar-separator"></div>
 
         <!-- [AI] -->
-        <div id="aiStatusSection" class="status-bar-section">
+        <div id="aiStatusSection" class="status-bar-section"
+            data-help="Status modelu AI WebLLM. Lampka sygnalizuje czy model jest załadowany i gotowy do użycia."
+            data-help-title="🤖 Status AI">
             <span class="status-bar-label">AI:</span>
             <div id="aiStatusLamps" class="status-bar-lamps"></div>
         </div>
@@ -1271,7 +1324,9 @@
         <div class="status-bar-separator"></div>
 
         <!-- [Load] -->
-        <div id="etlProgressSection" class="status-bar-section" title="Pasek ładowania danych z API">
+        <div id="etlProgressSection" class="status-bar-section" title="Pasek ładowania danych z API"
+            data-help="Pasek postępu ładowania danych z API Sejmu. Lampka: idle = brak akcji, pulsuje = ładowanie, zielona = gotowe."
+            data-help-title="📡 Ładowanie danych">
             <span class="status-bar-label">Load:</span>
             <div id="loadLamp" class="floating-lamp floating-lamp-idle" title="Status ładowania"></div>
             <div class="progress-track">
@@ -1283,7 +1338,9 @@
         <div class="status-bar-separator"></div>
 
         <!-- [Memory] -->
-        <div id="memorySection" class="status-bar-section" title="Zajętość pamięci przeglądarki">
+        <div id="memorySection" class="status-bar-section" title="Zajętość pamięci przeglądarki"
+            data-help="Zajętość pamięci RAM przeglądarki. Zielona = poniżej 50%, żółta = 50-80%, czerwona = powyżej 80%."
+            data-help-title="🧠 Pamięć RAM">
             <span class="status-bar-label">Memory:</span>
             <div id="memoryLamp" class="floating-lamp floating-lamp-ok" title="Stan pamięci"></div>
             <div class="progress-track">
@@ -1295,7 +1352,9 @@
         <div class="status-bar-separator"></div>
 
         <!-- [Storage] -->
-        <div id="storageSection" class="status-bar-section" title="Zajętość localStorage (limit ~5 MB)">
+        <div id="storageSection" class="status-bar-section" title="Zajętość localStorage (limit ~5 MB)"
+            data-help="Zajętość localStorage przeglądarki (limit ~5 MB). Baza danych i ustawienia są tu przechowywane."
+            data-help-title="💿 Storage">
             <span class="status-bar-label">Storage:</span>
             <div id="storageLamp" class="floating-lamp floating-lamp-ok" title="Stan localStorage"></div>
             <div class="progress-track">
@@ -1307,7 +1366,9 @@
         <div class="status-bar-separator"></div>
 
         <!-- [Cache] -->
-        <div id="cacheSection" class="status-bar-section" title="Zajętość cache bazy danych">
+        <div id="cacheSection" class="status-bar-section" title="Zajętość cache bazy danych"
+            data-help="Graficzne przedstawienie zajętości cache bazy danych — widać zużycie poszczególnych tabel."
+            data-help-title="📊 Cache">
             <span class="status-bar-label">Cache:</span>
             <div id="cacheBar" class="cache-bar"></div>
         </div>
@@ -1318,7 +1379,9 @@
         <div class="status-bar-separator"></div>
 
         <!-- [Live] -->
-        <div id="liveSection" class="status-bar-section status-bar-live" title="Status transmisji Sejmu - kliknij aby obejrzeć" style="display:none;">
+        <div id="liveSection" class="status-bar-section status-bar-live" title="Status transmisji Sejmu - kliknij aby obejrzeć" style="display:none;"
+            data-help="Pojawia się gdy trwa transmisja na żywo z Sejmu. Kliknij aby obejrzeć transmisję."
+            data-help-title="🔴 LIVE">
             <div id="liveLamp" class="floating-lamp floating-lamp-idle" title="Brak transmisji"></div>
             <span class="status-bar-label">LIVE</span>
         </div>
@@ -1326,14 +1389,18 @@
         <div class="status-bar-separator"></div>
 
         <!-- [Konsola] -->
-        <div id="consoleSection" class="status-bar-section status-bar-console" title="Otwórz konsolę (Ctrl+`)">
+        <div id="consoleSection" class="status-bar-section status-bar-console" title="Otwórz konsolę (Ctrl+`)"
+            data-help="Otwiera konsolę deweloperską z logami systemu. Skrót: Ctrl+`. Lampka sygnalizuje status."
+            data-help-title="🖥️ Konsola">
             <div id="consoleLamp" class="floating-lamp floating-lamp-ok" title="Status konsoli"></div>
             <span class="status-bar-label">KONSOLA</span>
         </div>
     </div>
 
     <!-- Info Detail Panel (top-right corner) -->
-    <div id="etlDetailPanel" class="etl-detail-panel" style="display:none;">
+    <div id="etlDetailPanel" class="etl-detail-panel" style="display:none;"
+        data-help="Rozwijany panel informacyjny w prawym górnym rogu. Zawiera szczegóły pobierania danych (postęp ETL) oraz informacje o transmisji LIVE z Sejmu."
+        data-help-title="📋 Panel informacyjny">
         <div class="etl-detail-header">
             <span>Panel informacyjny</span>
             <button id="etlDetailPanelToggle" class="etl-detail-toggle" title="Zwiń/rozwiń panel">▼</button>

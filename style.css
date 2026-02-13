@@ -3695,226 +3695,107 @@ input:disabled {
 }
 
 /* ============================================
-   INTERACTIVE TOUR MODE
+   HELP SYSTEM v3.0
+   Marker mode — blocks everything except ESC
    ============================================ */
 
-.tour-overlay {
+/* Body when help is active */
+.help-active {
+    overflow: hidden !important;
+}
+
+/* Transparent shield over entire page */
+.help-shield {
     position: fixed;
     top: 0;
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(3px);
-    z-index: 999999;
-    animation: tourFadeIn 0.3s ease;
-}
-
-@keyframes tourFadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-@keyframes tourFadeOut {
-    from { opacity: 1; }
-    to { opacity: 0; }
-}
-
-/* Spotlight - element który jest wyeksponowany */
-.tour-spotlight {
-    position: absolute;
-    pointer-events: none;
-    border: 3px solid #667eea;
-    border-radius: 8px;
-    box-shadow: 
-        0 0 0 5px rgba(102, 126, 234, 0.3),
-        0 0 0 9999px rgba(0, 0, 0, 0.7);
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 1000000;
-}
-
-/* ===== MARKER MODE - Żółte zaznaczenie ===== */
-.tour-overlay-marker {
+    cursor: help;
+    display: none;
     background: transparent;
-    backdrop-filter: none;
 }
 
-.tour-spotlight-marker {
-    background: rgba(250, 204, 21, 0.4);
-    border: 3px solid #facc15;
-    box-shadow: 
-        0 0 0 5px rgba(250, 204, 21, 0.2),
-        0 0 20px rgba(250, 204, 21, 0.4);
-    animation: markerPulse 2s ease-in-out infinite;
+/* Highlighted element — NO z-index, stays below shield (shield is transparent) */
+.help-highlighted {
+    outline: 6px solid #facc15 !important;
+    outline-offset: 6px;
+    box-shadow: 0 0 0 10px rgba(250, 204, 21, 0.35),
+                0 0 30px rgba(250, 204, 21, 0.5),
+                inset 0 0 0 2px rgba(250, 204, 21, 0.2) !important;
+    border-radius: 6px;
+    background-color: rgba(250, 204, 21, 0.08) !important;
+    transition: outline 0.15s, box-shadow 0.15s, background-color 0.15s;
 }
 
-@keyframes markerPulse {
-    0%, 100% {
-        background: rgba(250, 204, 21, 0.3);
-        box-shadow: 
-            0 0 0 5px rgba(250, 204, 21, 0.2),
-            0 0 20px rgba(250, 204, 21, 0.4);
-    }
-    50% {
-        background: rgba(250, 204, 21, 0.5);
-        box-shadow: 
-            0 0 0 8px rgba(250, 204, 21, 0.3),
-            0 0 30px rgba(250, 204, 21, 0.6);
-    }
-}
-
-/* Tooltip ma inny styl w marker mode */
-.tour-overlay-marker .tour-tooltip {
+/* === TOOLTIP === */
+.help-tooltip {
+    position: fixed;
+    background: #1a1a2e;
+    color: #e0e0e0;
     border: 2px solid #facc15;
-    box-shadow: 0 10px 40px rgba(250, 204, 21, 0.3);
-}
-
-/* Tooltip z opisem */
-.tour-tooltip {
-    position: absolute;
-    background: white;
     border-radius: 12px;
-    padding: 1.5rem;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-    max-width: 400px;
-    min-width: 300px;
-    z-index: 1000001;
-    animation: tourTooltipSlide 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 1.2rem 1.5rem;
+    max-width: 380px;
+    min-width: 260px;
+    z-index: 1000010;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 16px rgba(250, 204, 21, 0.2);
+    display: none;
+    animation: helpTooltipIn 0.25s ease;
+    font-family: inherit;
 }
 
-@keyframes tourTooltipSlide {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+@keyframes helpTooltipIn {
+    from { opacity: 0; transform: translateY(10px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-.tour-close {
+.help-tooltip-close {
     position: absolute;
-    top: 0.75rem;
-    right: 0.75rem;
+    top: 0.5rem;
+    right: 0.6rem;
     background: transparent;
     border: none;
-    font-size: 1.5rem;
-    color: var(--text-secondary);
+    font-size: 1.3rem;
+    color: #888;
     cursor: pointer;
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 6px;
     transition: all 0.2s;
+    z-index: 1000011;
 }
-
-.tour-close:hover {
-    background: rgba(239, 68, 68, 0.1);
+.help-tooltip-close:hover {
+    background: rgba(239, 68, 68, 0.2);
     color: #ef4444;
-    transform: rotate(90deg);
 }
 
-.tour-content {
-    margin-bottom: 1.5rem;
-}
-
-.tour-title {
-    font-size: 1.25rem;
-    color: var(--text-primary);
-    margin-bottom: 0.75rem;
+.help-tooltip-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #facc15;
+    margin: 0 0 0.5rem 0;
     padding-right: 2rem;
 }
 
-.tour-description {
-    font-size: 0.95rem;
-    color: var(--text-secondary);
-    line-height: 1.6;
+.help-tooltip-desc {
+    font-size: 0.92rem;
+    color: #ccc;
+    line-height: 1.55;
     margin: 0;
 }
 
-.tour-navigation {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    padding-top: 1rem;
-    border-top: 1px solid var(--border-color);
-}
-
-.tour-nav-btn {
-    background: #667eea;
-    color: white;
-    border: none;
-    padding: 0.5rem 1rem;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 0.875rem;
-    font-weight: 600;
-    transition: all 0.2s;
-    white-space: nowrap;
-}
-
-.tour-nav-btn:hover {
-    background: #5a67d8;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-}
-
-.tour-nav-btn:active {
-    transform: translateY(0);
-}
-
-.tour-nav-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-    transform: none;
-}
-
-.tour-counter {
-    font-size: 0.875rem;
-    color: var(--text-secondary);
-    font-weight: 600;
-}
-
-/* Pulsing effect dla spotlight */
-@keyframes tourSpotlightPulse {
-    0%, 100% {
-        box-shadow: 
-            0 0 0 5px rgba(102, 126, 234, 0.3),
-            0 0 0 9999px rgba(0, 0, 0, 0.7);
-    }
-    50% {
-        box-shadow: 
-            0 0 0 8px rgba(102, 126, 234, 0.5),
-            0 0 0 9999px rgba(0, 0, 0, 0.7);
-    }
-}
-
-.tour-spotlight.pulse {
-    animation: tourSpotlightPulse 2s ease-in-out infinite;
-}
-
-/* Mobile responsive */
+/* === Mobile === */
 @media (max-width: 768px) {
-    .tour-tooltip {
+    .help-tooltip {
         max-width: 90vw;
-        min-width: 280px;
+        min-width: 220px;
         padding: 1rem;
     }
-    
-    .tour-title {
-        font-size: 1.1rem;
-    }
-    
-    .tour-description {
-        font-size: 0.9rem;
-    }
-    
-    .tour-nav-btn {
-        padding: 0.4rem 0.8rem;
-        font-size: 0.8rem;
-    }
+    .help-tooltip-title { font-size: 1rem; }
+    .help-tooltip-desc { font-size: 0.85rem; }
 }
