@@ -1041,6 +1041,9 @@ db2.init().then(() => {
     
     // Ustaw widoczność lampek według ustawień
     updateLampsVisibility();
+    
+    // Ustaw tryb przycisku ETL na podstawie stanu bazy
+    updateFetchButtonMode();
 }).catch(err => {
     console.error('[API Handler] Failed to initialize database:', err);
 });
@@ -1058,6 +1061,33 @@ function setClearBtnEnabled(enabled) {
     const clearBtn = document.getElementById('etlClearBtn');
     if (clearBtn) clearBtn.disabled = !enabled;
 }
+
+/**
+ * Ustawia tryb przycisku ETL na podstawie stanu bazy
+ */
+function updateFetchButtonMode() {
+    const btn = document.getElementById('etlFetchBtn');
+    if (!btn) return;
+    
+    const dbEmpty = isDatabaseEmpty();
+    
+    if (dbEmpty) {
+        // Baza pusta - tryb fetch (pierwsze pobranie)
+        fetchBtnMode = 'fetch';
+        btn.textContent = '📥 Pobierz/Zaktualizuj dane';
+        btn.classList.remove('etl-btn-verify-mode');
+    } else {
+        // Baza ma dane - tryb verify (sprawdzenie)
+        fetchBtnMode = 'verify';
+        btn.textContent = '🔍 Sprawdź poprawność';
+        btn.classList.add('etl-btn-verify-mode');
+    }
+    
+    console.log(`[updateFetchButtonMode] Mode set to: ${fetchBtnMode}`);
+}
+
+// Export globally for db-buttons.js
+window.updateFetchButtonMode = updateFetchButtonMode;
 
 document.getElementById('etlFetchBtn')?.addEventListener('click', async () => {
     if (fetchBtnMode === 'abort') {
@@ -1303,6 +1333,7 @@ async function startPipelineETL() {
                 setValidityStatus(false);
                 updateSummaryTab();
                 if (window._updateCacheBar) window._updateCacheBar();
+                updateFetchButtonMode(); // Reset to fetch mode (empty database)
                 ToastModule.success('Pobieranie zatrzymane — baza wyczyszczona');
             } catch (clearErr) {
                 console.error('[API Handler] Clear after abort error:', clearErr);
@@ -1411,13 +1442,8 @@ document.getElementById('etlClearBtn')?.addEventListener('click', async () => {
             updateSummaryTab();
             if (window._updateCacheBar) window._updateCacheBar();
 
-            // Reset fetch button to default state
-            fetchBtnMode = 'fetch';
-            const fetchBtn = document.getElementById('etlFetchBtn');
-            if (fetchBtn) {
-                fetchBtn.classList.remove('etl-btn-verify-mode');
-                fetchBtn.textContent = '📥 Pobierz/Zaktualizuj dane';
-            }
+            // Reset fetch button to default state (empty database = fetch mode)
+            updateFetchButtonMode();
 
             ToastModule.success('Baza wyczyszczona');
             console.log('✅ [Zadanie] Wyczyść bazę zakończony');

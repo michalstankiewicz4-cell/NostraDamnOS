@@ -228,6 +228,21 @@ export function initDbButtons() {
             if (typeof window.updateSummaryTab === 'function') {
                 window.updateSummaryTab();
             }
+            
+            // Odśwież status lampek
+            if (typeof window.updateStatusIndicators === 'function') {
+                window.updateStatusIndicators();
+            }
+            
+            // Ustaw przycisk ETL w tryb verify (baza ma już dane)
+            if (typeof window.updateFetchButtonMode === 'function') {
+                window.updateFetchButtonMode();
+            }
+            
+            // Uruchom monitorowanie bazy
+            if (typeof window.startDbMonitoring === 'function') {
+                window.startDbMonitoring();
+            }
 
         } catch (error) {
             console.error('[DB Import] Error loading database:', error);

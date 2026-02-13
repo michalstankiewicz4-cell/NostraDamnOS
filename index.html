@@ -800,7 +800,7 @@
                                 <input type="checkbox" id="toggleBarVersion" checked>
                                 <span>Wersja</span>
                             </label>
-                            <div style="margin-top:5px;">
+                            <div style="display:flex;flex-direction:column;gap:10px;">
                                 <label class="settings-checkbox-label" style="font-size:0.9rem;">
                                     <input type="checkbox" id="toggleDbCheckNewRecords">
                                     <span>Monitoruj nowe rekordy co</span>
@@ -2029,7 +2029,7 @@
         }
         if (inputDbCheckDataChangesInterval) {
             inputDbCheckDataChangesInterval.addEventListener('change', function() {
-                state.dbCheckDataChangesInterval = parseInt(this.value) || 5;
+                state.dbCheckDataChangesInterval = parseInt(this.value) || 11;
                 save(state);
                 if (window.restartDbMonitoring) window.restartDbMonitoring();
             });
