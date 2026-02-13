@@ -68,6 +68,7 @@ class InteractiveTour {
         this.overlay = null;
         this.spotlight = null;
         this.tooltip = null;
+        this.mode = localStorage.getItem('helpMode') || 'glass'; // 'glass' or 'marker'
         
         // Bind methods
         this.start = this.start.bind(this);
@@ -76,6 +77,26 @@ class InteractiveTour {
         this.prev = this.prev.bind(this);
         this.goToStep = this.goToStep.bind(this);
         this.handleKeyboard = this.handleKeyboard.bind(this);
+        this.setMode = this.setMode.bind(this);
+    }
+    
+    /**
+     * Ustaw tryb pomocy
+     */
+    setMode(mode) {
+        if (mode !== 'glass' && mode !== 'marker') return;
+        this.mode = mode;
+        localStorage.setItem('helpMode', mode);
+        
+        // Aktualizuj klasę overlay jeśli tour jest aktywny
+        if (this.isActive && this.overlay) {
+            this.overlay.className = mode === 'glass' ? 'tour-overlay' : 'tour-overlay tour-overlay-marker';
+            if (this.spotlight) {
+                this.spotlight.className = mode === 'glass' ? 'tour-spotlight' : 'tour-spotlight tour-spotlight-marker';
+            }
+        }
+        
+        console.log(`[Tour] Mode changed to: ${mode}`);
     }
     
     /**
@@ -111,11 +132,17 @@ class InteractiveTour {
         this.currentStep = 0;
         
         if (this.overlay) {
+            // Ustaw klasę w zależności od trybu
+            this.overlay.className = this.mode === 'glass' ? 'tour-overlay' : 'tour-overlay tour-overlay-marker';
             this.overlay.style.display = 'block';
         }
         
+        if (this.spotlight) {
+            this.spotlight.className = this.mode === 'glass' ? 'tour-spotlight' : 'tour-spotlight tour-spotlight-marker';
+        }
+        
         this.goToStep(0);
-        console.log('[Tour] Started');
+        console.log(`[Tour] Started in ${this.mode} mode`);
     }
     
     /**
@@ -262,6 +289,24 @@ const tour = new InteractiveTour();
 export function initHelp() {
     console.log('[Help] Initializing...');
     tour.init();
+    
+    // Inicjalizuj radio buttony trybu pomocy
+    const helpModeRadios = document.querySelectorAll('input[name="helpMode"]');
+    const savedMode = localStorage.getItem('helpMode') || 'glass';
+    
+    helpModeRadios.forEach(radio => {
+        // Ustaw zaznaczenie zgodnie z zapisanym trybem
+        if (radio.value === savedMode) {
+            radio.checked = true;
+        }
+        
+        // Nasłuchuj zmian
+        radio.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                tour.setMode(e.target.value);
+            }
+        });
+    });
 }
 
 export function startTour() {
@@ -272,6 +317,11 @@ export function stopTour() {
     tour.stop();
 }
 
+export function setHelpMode(mode) {
+    tour.setMode(mode);
+}
+
 // Export dla window
 window.startInteractiveTour = startTour;
 window.stopInteractiveTour = stopTour;
+window.setHelpMode = setHelpMode;

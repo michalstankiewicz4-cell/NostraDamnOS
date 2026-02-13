@@ -1298,6 +1298,59 @@ input:disabled {
     accent-color: #0891b2;
 }
 
+.settings-radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 10px;
+}
+
+.settings-radio-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: var(--bg-secondary);
+}
+
+.settings-radio-label:hover {
+    border-color: var(--primary-color);
+    background: var(--card-bg);
+}
+
+.settings-radio-label input[type="radio"] {
+    width: 18px;
+    height: 18px;
+    margin-top: 2px;
+    cursor: pointer;
+    accent-color: var(--primary-color);
+}
+
+.settings-radio-label input[type="radio"]:checked + span {
+    color: var(--primary-color);
+}
+
+.settings-radio-label span {
+    flex: 1;
+    line-height: 1.4;
+}
+
+.settings-radio-label span strong {
+    font-size: 0.95rem;
+    display: block;
+    margin-bottom: 2px;
+}
+
+.settings-radio-label span small {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    display: block;
+}
+
 /* Przyciski w ustawieniach (styl, język, import/export, reset) */
 .console-style-btn {
     padding: 6px 14px;
@@ -3324,6 +3377,42 @@ input:disabled {
         0 0 0 9999px rgba(0, 0, 0, 0.7);
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 1000000;
+}
+
+/* ===== MARKER MODE - Żółte zaznaczenie ===== */
+.tour-overlay-marker {
+    background: transparent;
+    backdrop-filter: none;
+}
+
+.tour-spotlight-marker {
+    background: rgba(250, 204, 21, 0.4);
+    border: 3px solid #facc15;
+    box-shadow: 
+        0 0 0 5px rgba(250, 204, 21, 0.2),
+        0 0 20px rgba(250, 204, 21, 0.4);
+    animation: markerPulse 2s ease-in-out infinite;
+}
+
+@keyframes markerPulse {
+    0%, 100% {
+        background: rgba(250, 204, 21, 0.3);
+        box-shadow: 
+            0 0 0 5px rgba(250, 204, 21, 0.2),
+            0 0 20px rgba(250, 204, 21, 0.4);
+    }
+    50% {
+        background: rgba(250, 204, 21, 0.5);
+        box-shadow: 
+            0 0 0 8px rgba(250, 204, 21, 0.3),
+            0 0 30px rgba(250, 204, 21, 0.6);
+    }
+}
+
+/* Tooltip ma inny styl w marker mode */
+.tour-overlay-marker .tour-tooltip {
+    border: 2px solid #facc15;
+    box-shadow: 0 10px 40px rgba(250, 204, 21, 0.3);
 }
 
 /* Tooltip z opisem */
