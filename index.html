@@ -800,10 +800,20 @@
                                 <input type="checkbox" id="toggleBarVersion" checked>
                                 <span>Wersja</span>
                             </label>
-                            <label class="settings-checkbox-label">
-                                <input type="checkbox" id="toggleBarDb" checked>
-                                <span>Baza</span>
-                            </label>
+                            <div style="margin-top:5px;">
+                                <label class="settings-checkbox-label" style="font-size:0.9rem;">
+                                    <input type="checkbox" id="toggleDbCheckNewRecords">
+                                    <span>Monitoruj nowe rekordy co</span>
+                                    <input type="number" id="dbCheckNewRecordsInterval" min="1" max="60" value="5" style="width:50px;margin:0 5px;padding:2px 5px;">
+                                    <span>min</span>
+                                </label>
+                                <label class="settings-checkbox-label" style="font-size:0.9rem;">
+                                    <input type="checkbox" id="toggleDbCheckDataChanges">
+                                    <span>Monitoruj zmiany danych co</span>
+                                    <input type="number" id="dbCheckDataChangesInterval" min="1" max="60" value="11" style="width:50px;margin:0 5px;padding:2px 5px;">
+                                    <span>min</span>
+                                </label>
+                            </div>
                             <label class="settings-checkbox-label">
                                 <input type="checkbox" id="toggleBarAi" checked>
                                 <span>AI</span>
@@ -828,10 +838,22 @@
                                 <input type="checkbox" id="toggleBarConsole" checked>
                                 <span>Konsola</span>
                             </label>
+                            <label class="settings-checkbox-label">
+                                <input type="checkbox" id="toggleBarLive">
+                                <span>Live</span>
+                            </label>
                             <p style="font-size:0.85rem;color:var(--text-secondary);margin-top:10px;margin-bottom:6px">Inne:</p>
                             <label class="settings-checkbox-label">
-                                <input type="checkbox" id="toggleEtlPanel" checked>
-                                <span>Panel ściągania danych (prawy górny róg)</span>
+                                <input type="checkbox" id="toggleInfoPanel" checked>
+                                <span>Panel informacyjny (prawy górny róg)</span>
+                            </label>
+                            <label class="settings-checkbox-label" style="margin-left:20px;">
+                                <input type="checkbox" id="toggleInfoFetch" checked>
+                                <span>Informuj o ściąganiu danych</span>
+                            </label>
+                            <label class="settings-checkbox-label" style="margin-left:20px;">
+                                <input type="checkbox" id="toggleInfoLive" checked>
+                                <span>Informuj o live Sejmu</span>
                             </label>
                             <label class="settings-checkbox-label">
                                 <input type="checkbox" id="toggleRememberEtl">
@@ -963,6 +985,14 @@
 
         <div class="status-bar-separator"></div>
 
+        <!-- [Live] -->
+        <div id="liveSection" class="status-bar-section" title="Status transmisji Sejmu" style="display:none;">
+            <div id="liveLamp" class="floating-lamp floating-lamp-idle" title="Brak transmisji"></div>
+            <span class="status-bar-label">LIVE</span>
+        </div>
+
+        <div class="status-bar-separator"></div>
+
         <!-- [Konsola] -->
         <div id="consoleSection" class="status-bar-section status-bar-console" title="Otwórz konsolę (Ctrl+`)">
             <div id="consoleLamp" class="floating-lamp floating-lamp-ok" title="Status konsoli"></div>
@@ -970,18 +1000,31 @@
         </div>
     </div>
 
-    <!-- ETL Detail Panel (top-right corner during data fetch) -->
+    <!-- Info Detail Panel (top-right corner) -->
     <div id="etlDetailPanel" class="etl-detail-panel" style="display:none;">
-        <div class="etl-detail-header">Pobieranie danych</div>
-        <div id="etlDetailStage" class="etl-detail-stage">Inicjalizacja...</div>
-        <div class="etl-detail-progress">
-            <div class="progress-track" style="max-width:none;">
-                <div id="etlDetailBar" class="progress-bar" style="width:0%"></div>
+        <div class="etl-detail-header">Panel informacyjny</div>
+        
+        <!-- Sekcja: Ściąganie danych -->
+        <div id="etlDetailFetchSection" class="etl-detail-section" style="display:none;">
+            <div class="etl-detail-section-title">📥 Pobieranie danych</div>
+            <div id="etlDetailStage" class="etl-detail-stage">Inicjalizacja...</div>
+            <div class="etl-detail-progress">
+                <div class="progress-track" style="max-width:none;">
+                    <div id="etlDetailBar" class="progress-bar" style="width:0%"></div>
+                </div>
+                <span id="etlDetailPercent" class="progress-percent">0%</span>
             </div>
-            <span id="etlDetailPercent" class="progress-percent">0%</span>
+            <div id="etlDetailStats" class="etl-detail-stats"></div>
+            <div id="etlDetailLinks" class="etl-detail-links"></div>
         </div>
-        <div id="etlDetailStats" class="etl-detail-stats"></div>
-        <div id="etlDetailLinks" class="etl-detail-links"></div>
+
+        <!-- Sekcja: Live Sejmu -->
+        <div id="etlDetailLiveSection" class="etl-detail-section" style="display:none;">
+            <div class="etl-detail-live-indicator">
+                <span class="etl-detail-live-dot">🔴</span>
+                <span class="etl-detail-live-text">Trwa transmisja Sejmu</span>
+            </div>
+        </div>
     </div>
 
     <!-- Floating Console Panel -->
@@ -1070,6 +1113,7 @@
                     if (confirm('Czy na pewno chcesz zresetować pamięć przeglądarki?\n\nTo usunie zapisane pozycje przycisków i ustawienia interfejsu.')) {
                         resetFloatingButtonPositions();
                         localStorage.removeItem('uiVisibility');
+                        localStorage.removeItem('nostradamnos_etlSettings');
                         location.reload();
                     }
                 });
@@ -1676,6 +1720,7 @@
                 if (confirm('Czy na pewno chcesz zresetować pamięć przeglądarki?\n\nTo usunie zapisane pozycje przycisków i ustawienia interfejsu.')) {
                     import('./modules/floating-drag.js').then(m => m.resetFloatingButtonPositions());
                     localStorage.removeItem('uiVisibility');
+                    localStorage.removeItem('nostradamnos_etlSettings');
                     location.reload();
                 }
             });
@@ -1768,22 +1813,39 @@
             btnLanguage: false,
             btnReset: false,
             barVersion: true,
-            barDb: true,
             barAi: true,
             barLoad: true,
             barMemory: false,
             barStorage: false,
             barCache: true,
             barConsole: true,
-            etlPanel: true,
+            barLive: false,
+            dbCheckNewRecords: true,
+            dbCheckNewRecordsInterval: 5,
+            dbCheckDataChanges: true,
+            dbCheckDataChangesInterval: 11,
+            infoPanel: true,
+            infoFetch: true,
+            infoLive: true,
             rememberEtl: false
         };
 
         function load() {
             try {
                 const saved = localStorage.getItem(STORAGE_KEY);
-                return saved ? { ...defaults, ...JSON.parse(saved) } : { ...defaults };
-            } catch { return { ...defaults }; }
+                if (saved) {
+                    return { ...defaults, ...JSON.parse(saved) };
+                } else {
+                    // Jeśli nie ma zapisanych ustawień, zapisz defaults
+                    const state = { ...defaults };
+                    save(state);
+                    return state;
+                }
+            } catch { 
+                const state = { ...defaults };
+                save(state);
+                return state;
+            }
         }
 
         function save(state) {
@@ -1809,12 +1871,12 @@
             // Individual bar sections
             const barSections = [
                 { key: 'barVersion', id: 'versionSection' },
-                { key: 'barDb', id: 'statusIndicators' },
                 { key: 'barAi', id: 'aiStatusSection' },
                 { key: 'barLoad', id: 'etlProgressSection' },
                 { key: 'barMemory', id: 'memorySection' },
                 { key: 'barStorage', id: 'storageSection' },
                 { key: 'barCache', id: 'cacheSection' },
+                { key: 'barLive', id: 'liveSection' },
                 { key: 'barConsole', id: 'consoleSection' }
             ];
             for (const { key, id } of barSections) {
@@ -1827,10 +1889,10 @@
                 }
             }
 
-            // ETL detail panel (floating progress panel, top-right)
-            const etlDetail = document.getElementById('etlDetailPanel');
-            if (etlDetail && !state.etlPanel) {
-                etlDetail.style.display = 'none';
+            // Info panel (floating panel, top-right)
+            const infoPanel = document.getElementById('etlDetailPanel');
+            if (infoPanel && !state.infoPanel) {
+                infoPanel.style.display = 'none';
             }
         }
 
@@ -1880,12 +1942,12 @@
         // Bar section checkboxes
         const barToggles = [
             { key: 'barVersion', id: 'toggleBarVersion' },
-            { key: 'barDb', id: 'toggleBarDb' },
             { key: 'barAi', id: 'toggleBarAi' },
             { key: 'barLoad', id: 'toggleBarLoad' },
             { key: 'barMemory', id: 'toggleBarMemory' },
             { key: 'barStorage', id: 'toggleBarStorage' },
             { key: 'barCache', id: 'toggleBarCache' },
+            { key: 'barLive', id: 'toggleBarLive' },
             { key: 'barConsole', id: 'toggleBarConsole' }
         ];
         for (const { key, id } of barToggles) {
@@ -1893,11 +1955,31 @@
             if (chk) chk.checked = !!state[key];
         }
 
-        // ETL panel toggle
-        const chkEtlPanel = document.getElementById('toggleEtlPanel');
-        if (chkEtlPanel) chkEtlPanel.checked = !!state.etlPanel;
+        // Info panel toggles
+        const chkInfoPanel = document.getElementById('toggleInfoPanel');
+        if (chkInfoPanel) chkInfoPanel.checked = !!state.infoPanel;
+        const chkInfoFetch = document.getElementById('toggleInfoFetch');
+        if (chkInfoFetch) chkInfoFetch.checked = !!state.infoFetch;
+        const chkInfoLive = document.getElementById('toggleInfoLive');
+        if (chkInfoLive) chkInfoLive.checked = !!state.infoLive;
+
+        // Database monitoring toggles
+        const chkDbCheckNewRecords = document.getElementById('toggleDbCheckNewRecords');
+        if (chkDbCheckNewRecords) chkDbCheckNewRecords.checked = !!state.dbCheckNewRecords;
+        const inputDbCheckNewRecordsInterval = document.getElementById('dbCheckNewRecordsInterval');
+        if (inputDbCheckNewRecordsInterval) inputDbCheckNewRecordsInterval.value = state.dbCheckNewRecordsInterval || 5;
+        
+        const chkDbCheckDataChanges = document.getElementById('toggleDbCheckDataChanges');
+        if (chkDbCheckDataChanges) chkDbCheckDataChanges.checked = !!state.dbCheckDataChanges;
+        const inputDbCheckDataChangesInterval = document.getElementById('dbCheckDataChangesInterval');
+        if (inputDbCheckDataChangesInterval) inputDbCheckDataChangesInterval.value = state.dbCheckDataChangesInterval || 11;
 
         apply(state);
+        
+        // Initialize lamps visibility based on settings
+        if (window.updateLampsVisibility) {
+            window.updateLampsVisibility();
+        }
 
         function onToggle(key, checkbox) {
             if (!checkbox) return;
@@ -1917,7 +1999,41 @@
         for (const { key, id } of barToggles) {
             onToggle(key, document.getElementById(id));
         }
-        onToggle('etlPanel', chkEtlPanel);
+        onToggle('infoPanel', chkInfoPanel);
+        onToggle('infoFetch', chkInfoFetch);
+        onToggle('infoLive', chkInfoLive);
+
+        // Database monitoring toggles with restart callback
+        if (chkDbCheckNewRecords) {
+            chkDbCheckNewRecords.addEventListener('change', function() {
+                state.dbCheckNewRecords = this.checked;
+                save(state);
+                if (window.updateLampsVisibility) window.updateLampsVisibility();
+                if (window.restartDbMonitoring) window.restartDbMonitoring();
+            });
+        }
+        if (inputDbCheckNewRecordsInterval) {
+            inputDbCheckNewRecordsInterval.addEventListener('change', function() {
+                state.dbCheckNewRecordsInterval = parseInt(this.value) || 5;
+                save(state);
+                if (window.restartDbMonitoring) window.restartDbMonitoring();
+            });
+        }
+        if (chkDbCheckDataChanges) {
+            chkDbCheckDataChanges.addEventListener('change', function() {
+                state.dbCheckDataChanges = this.checked;
+                save(state);
+                if (window.updateLampsVisibility) window.updateLampsVisibility();
+                if (window.restartDbMonitoring) window.restartDbMonitoring();
+            });
+        }
+        if (inputDbCheckDataChangesInterval) {
+            inputDbCheckDataChangesInterval.addEventListener('change', function() {
+                state.dbCheckDataChangesInterval = parseInt(this.value) || 5;
+                save(state);
+                if (window.restartDbMonitoring) window.restartDbMonitoring();
+            });
+        }
 
         // Remember ETL settings toggle
         const chkRememberEtl = document.getElementById('toggleRememberEtl');

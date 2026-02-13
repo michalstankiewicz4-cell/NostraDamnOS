@@ -1,8 +1,9 @@
 // API Handler v2.0 - Uses Pipeline ETL
-import { runPipeline, buildConfigFromUI, getCacheStatus, verifyDatabase } from './pipeline.js';
+import { runPipeline, buildConfigFromUI, getCacheStatus, verifyDatabase, backgroundVerify, detectDataChanges } from './pipeline.js';
 import { fetchCounter, setFetchAbortController } from './fetcher/fetcher.js';
 import { db2 } from './modules/database-v2.js';
 import ToastModule from './modules/toast.js';
+import { startLivePolling, stopLivePolling } from './modules/sejm-live-checker.js';
 
 let isFetching = false;
 
@@ -91,9 +92,40 @@ function updateStatusIndicators() {
     // Stan rekordów i poprawności - domyślnie OK, zmienia się przy sprawdzeniu
     statusRecords.className = 'floating-lamp floating-lamp-ok';
     statusValidity.className = 'floating-lamp floating-lamp-ok';
+    
+    // Aktualizuj widoczność lampek
+    updateLampsVisibility();
   } catch (error) {
     console.error('[updateStatusIndicators] Error:', error);
   }
+}
+
+/**
+ * Ukrywa/pokazuje lampki na podstawie ustawień monitorowania
+ */
+function updateLampsVisibility() {
+    const statusRecords = document.getElementById('floatingStatusRecords');
+    const statusValidity = document.getElementById('floatingStatusValidity');
+    
+    if (!statusRecords || !statusValidity) return;
+    
+    try {
+        const saved = JSON.parse(localStorage.getItem('uiVisibility') || '{}');
+        
+        // Domyślne wartości jeśli nie ma zapisanych
+        const settings = {
+            dbCheckNewRecords: saved.dbCheckNewRecords !== undefined ? saved.dbCheckNewRecords : true,
+            dbCheckDataChanges: saved.dbCheckDataChanges !== undefined ? saved.dbCheckDataChanges : true
+        };
+        
+        // Druga lampka - widoczna gdy monitorowanie nowych rekordów włączone
+        statusRecords.style.display = settings.dbCheckNewRecords ? '' : 'none';
+        
+        // Trzecia lampka - widoczna gdy monitorowanie zmian włączone
+        statusValidity.style.display = settings.dbCheckDataChanges ? '' : 'none';
+    } catch (error) {
+        console.error('[updateLampsVisibility] Error:', error);
+    }
 }
 
 function setRecordsStatus(hasNewRecords) {
@@ -114,8 +146,8 @@ function setValidityStatus(hasErrors) {
   if (!lamp) return;
 
   if (hasErrors) {
-    lamp.className = 'floating-lamp floating-lamp-error';
-    lamp.title = 'Znaleziono błędy';
+    lamp.className = 'floating-lamp floating-lamp-error floating-lamp-blink';
+    lamp.title = 'Znaleziono zmiany w danych API';
   } else {
     lamp.className = 'floating-lamp floating-lamp-ok';
     lamp.title = 'Dane są poprawne';
@@ -709,9 +741,11 @@ function hideEtlProgress() {
     setLoadLamp('idle');
     // Stop link counter polling
     if (_linksPollInterval) { clearInterval(_linksPollInterval); _linksPollInterval = null; }
-    // Ukryj panel szczegółów ETL
-    const detailPanel = document.getElementById('etlDetailPanel');
-    if (detailPanel) detailPanel.style.display = 'none';
+    // Ukryj sekcję fetch (ale nie cały panel - może być widoczna sekcja live)
+    const fetchSection = document.getElementById('etlDetailFetchSection');
+    if (fetchSection) fetchSection.style.display = 'none';
+    // Zaktualizuj widoczność całego panelu
+    updatePanelVisibility();
 }
 
 function updateEtlProgress(percent, stage, details) {
@@ -725,12 +759,21 @@ function updateEtlProgress(percent, stage, details) {
 
 function updateEtlDetailPanel(percent, stage, details = {}) {
     const panel = document.getElementById('etlDetailPanel');
-    if (!panel) return;
+    const fetchSection = document.getElementById('etlDetailFetchSection');
+    if (!panel || !fetchSection) return;
 
-    // Sprawdź czy panel jest włączony w ustawieniach
+    // Sprawdź czy panel i sekcja fetch są włączone w ustawieniach
     try {
         const vis = JSON.parse(localStorage.getItem('uiVisibility') || '{}');
-        if (vis.etlPanel === false) { panel.style.display = 'none'; return; }
+        if (vis.infoPanel === false) { 
+            panel.style.display = 'none'; 
+            return; 
+        }
+        if (vis.infoFetch === false) {
+            fetchSection.style.display = 'none';
+            updatePanelVisibility();
+            return;
+        }
     } catch { /* ignore */ }
 
     const stageEl = document.getElementById('etlDetailStage');
@@ -739,12 +782,98 @@ function updateEtlDetailPanel(percent, stage, details = {}) {
     const statsEl = document.getElementById('etlDetailStats');
     const linksEl = document.getElementById('etlDetailLinks');
 
-    panel.style.display = '';
+    // Pokazuj sekcję fetch podczas ściągania
+    fetchSection.style.display = '';
     if (stageEl && stage) stageEl.textContent = stage;
     if (detailBar) detailBar.style.width = percent + '%';
     if (pctEl) pctEl.textContent = Math.round(percent) + '%';
     if (statsEl && details.module) statsEl.textContent = details.module;
     if (linksEl && details.linksLabel) linksEl.textContent = details.linksLabel;
+    
+    // Pokazuj cały panel
+    updatePanelVisibility();
+}
+
+/**
+ * Aktualizuje widoczność sekcji live Sejmu
+ * @param {boolean} isLive - czy trwa transmisja
+ */
+function updateLiveSection(isLive) {
+    const liveSection = document.getElementById('etlDetailLiveSection');
+    const liveLamp = document.getElementById('liveLamp');
+    
+    if (!liveSection) return;
+
+    try {
+        const vis = JSON.parse(localStorage.getItem('uiVisibility') || '{}');
+        
+        // Jeśli panel wyłączony lub opcja live wyłączona - ukryj sekcję
+        if (vis.infoPanel === false || vis.infoLive === false) {
+            liveSection.style.display = 'none';
+            updatePanelVisibility();
+            return;
+        }
+
+        // Pokaż/ukryj sekcję na podstawie statusu live
+        if (isLive) {
+            liveSection.style.display = '';
+            console.log('[Info Panel] 🔴 Trwa transmisja Sejmu');
+            
+            // Aktualizuj lampkę na pasku dolnym (jeśli widoczna)
+            if (liveLamp) {
+                liveLamp.className = 'floating-lamp floating-lamp-live-blink';
+                liveLamp.title = 'Trwa transmisja Sejmu';
+            }
+        } else {
+            liveSection.style.display = 'none';
+            
+            // Przywróć domyślny stan lampki
+            if (liveLamp) {
+                liveLamp.className = 'floating-lamp floating-lamp-idle';
+                liveLamp.title = 'Brak transmisji';
+            }
+        }
+        
+        updatePanelVisibility();
+    } catch (error) {
+        console.error('[updateLiveSection] Error:', error);
+    }
+}
+
+/**
+ * Aktualizuje widoczność całego panelu na podstawie widoczności sekcji
+ */
+function updatePanelVisibility() {
+    const panel = document.getElementById('etlDetailPanel');
+    const fetchSection = document.getElementById('etlDetailFetchSection');
+    const liveSection = document.getElementById('etlDetailLiveSection');
+    
+    if (!panel) return;
+
+    try {
+        const vis = JSON.parse(localStorage.getItem('uiVisibility') || '{}');
+        
+        // Jeśli panel całkowicie wyłączony - ukryj
+        if (vis.infoPanel === false) {
+            panel.style.display = 'none';
+            return;
+        }
+
+        // Sprawdź czy któraś sekcja jest widoczna
+        const fetchVisible = fetchSection && 
+            getComputedStyle(fetchSection).display !== 'none';
+        const liveVisible = liveSection && 
+            getComputedStyle(liveSection).display !== 'none';
+
+        // Pokaż panel tylko jeśli przynajmniej jedna sekcja jest widoczna
+        if (fetchVisible || liveVisible) {
+            panel.style.display = '';
+        } else {
+            panel.style.display = 'none';
+        }
+    } catch (error) {
+        console.error('[updatePanelVisibility] Error:', error);
+    }
 }
 
 // Export db2 globally for debugging
@@ -752,9 +881,149 @@ window.db2 = db2;
 
 // Export status functions globally for etl-bridge.js and db-buttons.js
 window.updateStatusIndicators = updateStatusIndicators;
+window.updateLampsVisibility = updateLampsVisibility;
 window.setRecordsStatus = setRecordsStatus;
 window.setValidityStatus = setValidityStatus;
 window.updateSummaryTab = updateSummaryTab;
+
+// Export info panel functions globally
+window.updateLiveSection = updateLiveSection;
+window.updatePanelVisibility = updatePanelVisibility;
+
+// === DATABASE MONITORING ===
+
+let newRecordsInterval = null;
+let dataChangesInterval = null;
+
+/**
+ * Sprawdza nowe rekordy (druga lampka)
+ */
+async function checkNewRecords() {
+    if (!db2.database) return;
+    
+    const lamp = document.getElementById('floatingStatusRecords');
+    if (lamp) {
+        lamp.className = 'floating-lamp floating-lamp-checking';
+        lamp.title = 'Sprawdzam nowe rekordy...';
+    }
+    
+    console.log('[DB Monitor] Checking for new records...');
+    try {
+        const result = await backgroundVerify(db2);
+        if (result && result.hasNewRecords) {
+            setRecordsStatus(true);
+            console.log('[DB Monitor] 🆕 New records detected');
+        } else {
+            setRecordsStatus(false);
+        }
+    } catch (error) {
+        console.error('[DB Monitor] Error checking new records:', error);
+        if (lamp) {
+            lamp.className = 'floating-lamp floating-lamp-ok';
+            lamp.title = 'Błąd sprawdzania';
+        }
+    }
+}
+
+/**
+ * Sprawdza zmiany danych (trzecia lampka)
+ */
+async function checkDataChanges() {
+    if (!db2.database) return;
+    
+    const lamp = document.getElementById('floatingStatusValidity');
+    if (lamp) {
+        lamp.className = 'floating-lamp floating-lamp-checking';
+        lamp.title = 'Sprawdzam zmiany danych...';
+    }
+    
+    console.log('[DB Monitor] Checking for data changes...');
+    try {
+        const result = await detectDataChanges(db2);
+        if (result && result.hasChanges) {
+            setValidityStatus(true); // true = has errors/changes
+            console.log('[DB Monitor] ⚠️ Data changes detected:', result.changes);
+        } else {
+            setValidityStatus(false);
+        }
+    } catch (error) {
+        console.error('[DB Monitor] Error checking data changes:', error);
+        if (lamp) {
+            lamp.className = 'floating-lamp floating-lamp-ok';
+            lamp.title = 'Błąd sprawdzania';
+        }
+    }
+}
+
+/**
+ * Uruchamia monitorowanie bazy według ustawień
+ */
+function startDbMonitoring() {
+    stopDbMonitoring(); // Clear existing intervals
+    
+    const saved = JSON.parse(localStorage.getItem('uiVisibility') || '{}');
+    
+    // Domyślne wartości jeśli nie ma zapisanych
+    const settings = {
+        dbCheckNewRecords: saved.dbCheckNewRecords !== undefined ? saved.dbCheckNewRecords : true,
+        dbCheckNewRecordsInterval: saved.dbCheckNewRecordsInterval || 5,
+        dbCheckDataChanges: saved.dbCheckDataChanges !== undefined ? saved.dbCheckDataChanges : true,
+        dbCheckDataChangesInterval: saved.dbCheckDataChangesInterval || 11
+    };
+    
+    // Monitoring nowych rekordów (druga lampka)
+    if (settings.dbCheckNewRecords && db2.database) {
+        const interval = settings.dbCheckNewRecordsInterval * 60 * 1000;
+        console.log(`[DB Monitor] Starting new records check (every ${settings.dbCheckNewRecordsInterval} min)`);
+        
+        // Pierwsze sprawdzenie od razu
+        checkNewRecords();
+        
+        // Póżniejsze co N minut
+        newRecordsInterval = setInterval(checkNewRecords, interval);
+    }
+    
+    // Monitoring zmian danych (trzecia lampka)
+    if (settings.dbCheckDataChanges && db2.database) {
+        const interval = settings.dbCheckDataChangesInterval * 60 * 1000;
+        console.log(`[DB Monitor] Starting data changes check (every ${settings.dbCheckDataChangesInterval} min)`);
+        
+        // Pierwsze sprawdzenie od razu
+        checkDataChanges();
+        
+        // Późniejsze co N minut
+        dataChangesInterval = setInterval(checkDataChanges, interval);
+    }
+}
+
+/**
+ * Zatrzymuje monitorowanie bazy
+ */
+function stopDbMonitoring() {
+    if (newRecordsInterval) {
+        clearInterval(newRecordsInterval);
+        newRecordsInterval = null;
+        console.log('[DB Monitor] Stopped new records check');
+    }
+    if (dataChangesInterval) {
+        clearInterval(dataChangesInterval);
+        dataChangesInterval = null;
+        console.log('[DB Monitor] Stopped data changes check');
+    }
+}
+
+/**
+ * Restartuje monitorowanie (gdy zmieniają się ustawienia)
+ */
+function restartDbMonitoring() {
+    console.log('[DB Monitor] Restarting monitoring...');
+    startDbMonitoring();
+}
+
+// Export monitoring functions globally
+window.startDbMonitoring = startDbMonitoring;
+window.stopDbMonitoring = stopDbMonitoring;
+window.restartDbMonitoring = restartDbMonitoring;
 
 // Initialize database on load
 db2.init().then(() => {
@@ -762,6 +1031,16 @@ db2.init().then(() => {
     updateStatusIndicators();
     updateSummaryTab();
     if (window._updateCacheBar) window._updateCacheBar();
+    
+    // Uruchom monitorowanie statusu live Sejmu (co 5 minut)
+    startLivePolling(updateLiveSection, 5);
+    console.log('[API Handler] Live Sejm monitoring started');
+    
+    // Uruchom monitorowanie bazy (jeśli włączone w ustawieniach)
+    startDbMonitoring();
+    
+    // Ustaw widoczność lampek według ustawień
+    updateLampsVisibility();
 }).catch(err => {
     console.error('[API Handler] Failed to initialize database:', err);
 });
@@ -822,7 +1101,11 @@ async function smartFetch() {
     showEtlProgress();
 
     try {
-        const report = await verifyDatabase(db2);
+        const report = await verifyDatabase(db2, {
+            onProgress: (percent, stage, details) => {
+                updateEtlProgress(percent, stage, details);
+            }
+        });
 
         hideEtlProgress();
         if (btn) {
@@ -856,6 +1139,9 @@ async function smartFetch() {
 async function startPipelineETL() {
     console.log('🚀 [Zadanie] Pobierz/Zaktualizuj dane rozpoczęty');
     isFetching = true;
+
+    // Zatrzymaj monitorowanie bazy podczas fetcha
+    stopDbMonitoring();
 
     // Create AbortController for this run
     currentAbortController = new AbortController();
@@ -1044,6 +1330,9 @@ async function startPipelineETL() {
                 btn.textContent = '📥 Pobierz/Zaktualizuj dane';
             }
         }
+        
+        // Wznow monitorowanie bazy po zakończeniu fetcha
+        startDbMonitoring();
     }
 }
 

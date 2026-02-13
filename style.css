@@ -1453,6 +1453,38 @@ input:disabled {
     100% { background-color: #2f855a; box-shadow: 0 0 4px rgba(47, 133, 90, 0.4), inset 0 -2px 3px rgba(0,0,0,0.25); }
 }
 
+/* Live status blink: gray → green every 0.5s */
+.floating-lamp-live-blink {
+    animation: liveBlink 1s ease-in-out infinite;
+}
+
+@keyframes liveBlink {
+    0%, 49% { 
+        background-color: #64748b; 
+        box-shadow: 0 0 2px rgba(0, 0, 0, 0.3), inset 0 -2px 3px rgba(0,0,0,0.25); 
+    }
+    50%, 100% { 
+        background-color: #48bb78; 
+        box-shadow: 0 0 8px rgba(72, 187, 120, 0.6), inset 0 -2px 3px rgba(0,0,0,0.25); 
+    }
+}
+
+/* Checking status blink: blue pulse during sampling */
+.floating-lamp-checking {
+    animation: checkingBlink 1s ease-in-out infinite;
+}
+
+@keyframes checkingBlink {
+    0%, 100% { 
+        background-color: #4299e1; 
+        box-shadow: 0 0 8px rgba(66, 153, 225, 0.8), inset 0 -2px 3px rgba(0,0,0,0.25); 
+    }
+    50% { 
+        background-color: #63b3ed; 
+        box-shadow: 0 0 12px rgba(99, 179, 237, 1), inset 0 -2px 3px rgba(0,0,0,0.25); 
+    }
+}
+
 /* Separator pionowy między sekcjami */
 .status-bar-separator {
     width: 1px;
@@ -1585,6 +1617,59 @@ input:disabled {
     color: #90cdf4;
     font-size: 0.7rem;
     margin-top: 2px;
+}
+
+/* Info Panel Sections */
+.etl-detail-section {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid #4a5568;
+}
+
+.etl-detail-section:first-of-type {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+}
+
+.etl-detail-section-title {
+    font-weight: 600;
+    font-size: 0.75rem;
+    margin-bottom: 6px;
+    color: #a0aec0;
+}
+
+.etl-detail-section-hidden {
+    display: none !important;
+}
+
+/* Live Sejmu Indicator */
+.etl-detail-live-indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 0;
+}
+
+.etl-detail-live-dot {
+    font-size: 0.9rem;
+    line-height: 1;
+    animation: pulse-red 2s ease-in-out infinite;
+}
+
+.etl-detail-live-text {
+    color: #fc8181;
+    font-weight: 600;
+    font-size: 0.75rem;
+}
+
+@keyframes pulse-red {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
 }
 
 #sendChatBtn:disabled {

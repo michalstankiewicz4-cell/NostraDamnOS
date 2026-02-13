@@ -542,8 +542,10 @@ async function fetchPaginatedCount(baseUrl, signal) {
     return total;
 }
 
-export async function verifyDatabase(db, { signal } = {}) {
+export async function verifyDatabase(db, { signal, onProgress } = {}) {
     console.log('[Verify] Starting database verification...');
+
+    if (onProgress) onProgress(5, 'Odczytywanie konfiguracji bazy');
 
     // Read config from DB metadata (independent of form)
     let kadencja = 10, typ = 'sejm';
@@ -601,28 +603,44 @@ export async function verifyDatabase(db, { signal } = {}) {
         checks.push({ label: 'Zapytania', table: 'zapytania', url: `${apiBase}/writtenQuestions`, paginated: true, module: 'zapytania' });
     }
 
-    // Run all checks in parallel
-    const promises = checks.map(async (chk) => {
-        const dbCount = dbStats[chk.table] || 0;
-        let apiCount;
-        if (chk.paginated) {
-            apiCount = await fetchPaginatedCount(chk.url, signal);
-        } else {
-            const fullCount = await fetchApiCount(chk.url, signal);
-            // For posiedzenia: filter API results to fetched range
-            if (chk.filterRange && fullCount >= 0) {
-                apiCount = await fetchApiCountInRange(chk.url, chk.filterRange.from, chk.filterRange.to, signal);
-            } else {
-                apiCount = fullCount;
-            }
-        }
-        return { ...chk, dbCount, apiCount };
-    });
+    if (onProgress) onProgress(15, 'Rozpoczynam sprawdzanie API Sejmu');
 
-    const settled = await Promise.allSettled(promises);
-    const checkResults = settled
-        .filter(r => r.status === 'fulfilled')
-        .map(r => r.value);
+    // Run checks sequentially to provide accurate progress updates
+    const checkResults = [];
+    const total = checks.length;
+    
+    for (let i = 0; i < checks.length; i++) {
+        const chk = checks[i];
+        const progress = 15 + Math.floor(((i + 1) / total) * 50);
+        
+        if (onProgress) {
+            onProgress(progress, `Sprawdzam: ${chk.label}`, { module: `${i + 1}/${total}` });
+        }
+        
+        try {
+            const dbCount = dbStats[chk.table] || 0;
+            let apiCount;
+            
+            if (chk.paginated) {
+                apiCount = await fetchPaginatedCount(chk.url, signal);
+            } else {
+                const fullCount = await fetchApiCount(chk.url, signal);
+                // For posiedzenia: filter API results to fetched range
+                if (chk.filterRange && fullCount >= 0) {
+                    apiCount = await fetchApiCountInRange(chk.url, chk.filterRange.from, chk.filterRange.to, signal);
+                } else {
+                    apiCount = fullCount;
+                }
+            }
+            
+            checkResults.push({ ...chk, dbCount, apiCount });
+        } catch (error) {
+            console.warn(`[Verify] Error checking ${chk.label}:`, error);
+            checkResults.push({ ...chk, dbCount: dbStats[chk.table] || 0, apiCount: -1 });
+        }
+    }
+
+    if (onProgress) onProgress(70, 'Analizuję wyniki sprawdzenia');
 
     for (const chk of checkResults) {
         if (chk.apiCount < 0) {
@@ -657,8 +675,88 @@ export async function verifyDatabase(db, { signal } = {}) {
         freshness = { lastUpdate, days };
     }
 
+    if (onProgress) onProgress(100, 'Sprawdzanie zakończone');
+
     console.log('[Verify] Complete:', results);
-    return { kadencja, typ, results, freshness };
+    return { kadencja, typ, results, freshness, hasNewRecords: results.some(r => r.status === 'new') };
+}
+
+/**
+ * Sprawdza czy zmieniły się wartości pól w API (trzecia lampka)
+ * Porównuje losowe rekordy z bazy z aktualnymi danymi z API
+ */
+export async function detectDataChanges(db, { signal } = {}) {
+    console.log('[Detect Changes] Starting data integrity check...');
+
+    // Read config from DB
+    let kadencja = 10, typ = 'sejm';
+    try {
+        const raw = db.getMetadata('last_fetch_config');
+        if (raw) {
+            const cfg = JSON.parse(raw);
+            kadencja = cfg.kadencja || 10;
+            typ = cfg.typ || 'sejm';
+        }
+    } catch { /* defaults */ }
+
+    const base = typ === 'sejm' ? 'sejm' : 'senat';
+    const apiBase = `https://api.sejm.gov.pl/${base}/term${kadencja}`;
+    const changes = [];
+
+    try {
+        // Check posłowie - porównaj losowych 3 posłów
+        const poslowieInDb = db.database.exec('SELECT id_osoby, imie, nazwisko, klub FROM poslowie ORDER BY RANDOM() LIMIT 3');
+        if (poslowieInDb.length > 0 && poslowieInDb[0].values.length > 0) {
+            const apiPoslowie = await safeFetch(`${apiBase}/MP`);
+            for (const [id, imie, nazwisko, klubDb] of poslowieInDb[0].values) {
+                const apiPosel = apiPoslowie.find(p => p.id === id);
+                if (apiPosel) {
+                    const klubApi = apiPosel.club || '';
+                    if (klubDb !== klubApi) {
+                        changes.push({ table: 'poslowie', id, field: 'klub', oldValue: klubDb, newValue: klubApi });
+                    }
+                }
+            }
+        }
+
+        // Check posiedzenia - sprawdź ostatnie 2
+        const posiedzeniaInDb = db.database.exec('SELECT numer, data_start, data_koniec FROM posiedzenia ORDER BY numer DESC LIMIT 2');
+        if (posiedzeniaInDb.length > 0 && posiedzeniaInDb[0].values.length > 0) {
+            const apiProceedings = await safeFetch(`${apiBase}/proceedings`);
+            for (const [numer, dataStartDb, dataKoniecDb] of posiedzeniaInDb[0].values) {
+                const apiProc = apiProceedings.find(p => p.num === numer || p.number === numer);
+                if (apiProc && apiProc.dates && apiProc.dates.length > 0) {
+                    const dataStartApi = apiProc.dates[0];
+                    const dataKoniecApi = apiProc.dates[apiProc.dates.length - 1];
+                    if (dataStartDb !== dataStartApi) {
+                        changes.push({ table: 'posiedzenia', id: numer, field: 'data_start', oldValue: dataStartDb, newValue: dataStartApi });
+                    }
+                    if (dataKoniecDb !== dataKoniecApi) {
+                        changes.push({ table: 'posiedzenia', id: numer, field: 'data_koniec', oldValue: dataKoniecDb, newValue: dataKoniecApi });
+                    }
+                }
+            }
+        }
+    } catch (error) {
+        console.error('[Detect Changes] Error:', error);
+        return { hasChanges: false, changes: [], error: error.message };
+    }
+
+    console.log('[Detect Changes] Complete:', changes);
+    return { hasChanges: changes.length > 0, changes };
+}
+
+/**
+ * Uproszczona weryfikacja dla tła (bez progress callbacków)
+ */
+export async function backgroundVerify(db) {
+    try {
+        const result = await verifyDatabase(db, {});
+        return result;
+    } catch (error) {
+        console.error('[Background Verify] Error:', error);
+        return null;
+    }
 }
 
 // ===== CACHE STATUS =====
