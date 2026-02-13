@@ -1922,7 +1922,15 @@
     </script>
     <script type="module">
         import { initDbButtons } from './modules/db-buttons.js';
-        initDbButtons();
+        
+        // Inicjalizuj przyciski bazy po załadowaniu DOM
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                initDbButtons();
+            });
+        } else {
+            initDbButtons();
+        }
     </script>
     <script type="module">
         import { renderAllCharts } from './modules/charts.js';
