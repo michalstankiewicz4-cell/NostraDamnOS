@@ -62,7 +62,12 @@ const predictionLoaders = {
     'votePredictor': analyzeVotePredictor,
     'tensionBarometer': analyzeTensionBarometer,
     'coalitionForecast': analyzeCoalitionForecast,
-    'activityForecast': analyzeActivityForecast
+    'activityForecast': analyzeActivityForecast,
+    'sessionSummary': analyzeSessionSummary,
+    'topicClassification': analyzeTopicClassification,
+    'mpContradictions': analyzeMpContradictions,
+    'aiReport': generateAiReport,
+    'webllmChat': loadWebLLMChat
 };
 
 /**
@@ -3001,6 +3006,988 @@ function analyzeActivityForecast() {
     } catch (err) {
         console.error('[Predictions] analyzeActivityForecast error:', err);
         container.innerHTML = '<div class="prediction-error">Błąd predykcji aktywności: ' + err.message + '</div>';
+    }
+}
+
+// =====================================================
+// AI-POWERED MODULES
+// =====================================================
+
+/**
+ * Helper: pobierz klucz API z localStorage (wspólny z ai-chat.js)
+ */
+function getApiKey() {
+    try {
+        return localStorage.getItem('aiChatApiKey') || '';
+    } catch { return ''; }
+}
+
+/**
+ * Helper: pobierz wybrany model z localStorage
+ */
+function getSelectedModel() {
+    try {
+        return localStorage.getItem('aiChatModel') || 'gemini-2.0-flash';
+    } catch { return 'gemini-2.0-flash'; }
+}
+
+/**
+ * Helper: wywołaj Gemini API bezpośrednio
+ */
+async function callGeminiForPrediction(prompt, maxTokens = 2000) {
+    const apiKey = getApiKey();
+    if (!apiKey) throw new Error('NO_API_KEY');
+
+    const model = getSelectedModel();
+    // Buduj URL na podstawie nazwy modelu
+    let apiUrl;
+    if (model.startsWith('gemini-') || model.startsWith('gemma-')) {
+        apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+    } else {
+        // Fallback do gemini-2.0-flash
+        apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+    }
+
+    const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { temperature: 0.4, maxOutputTokens: maxTokens }
+        })
+    });
+
+    if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error?.message || `HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+}
+
+/**
+ * 22. Auto-podsumowanie posiedzeń — AI generuje streszczenia
+ */
+async function analyzeSessionSummary() {
+    const container = document.getElementById('sessionSummaryContent');
+    if (!container) return;
+
+    console.log('[Predictions] Loading session summary...');
+
+    try {
+        // Pobierz listę posiedzeń
+        const sessions = db2.database.exec(`
+            SELECT DISTINCT id_posiedzenia, numer, data_start, data_koniec
+            FROM posiedzenia
+            WHERE data_start IS NOT NULL
+            ORDER BY data_start DESC
+            LIMIT 50
+        `);
+
+        if (!sessions.length || !sessions[0].values.length) {
+            container.innerHTML = '<div class="prediction-no-data">Brak danych posiedzeń w bazie</div>';
+            return;
+        }
+
+        const sessionList = sessions[0].values;
+        const hasApiKey = !!getApiKey();
+
+        // Kombobox z posiedzeniami
+        let html = '<div class="session-summary-controls">';
+        html += '<label class="session-summary-label">Wybierz posiedzenie:</label>';
+        html += '<select id="sessionSummarySelect" class="profile-combobox">';
+        sessionList.forEach(row => {
+            const [id, numer, dataStart, dataKoniec] = row;
+            const label = `Posiedzenie ${numer || id} (${dataStart || '?'}${dataKoniec ? ' – ' + dataKoniec : ''})`;
+            html += `<option value="${id}">${label}</option>`;
+        });
+        html += '</select>';
+        html += `<button id="sessionSummaryBtn" class="session-summary-btn">${hasApiKey ? '🤖 Generuj podsumowanie AI' : '📊 Generuj podsumowanie'}</button>`;
+        if (!hasApiKey) {
+            html += '<div class="session-summary-hint">💡 Dodaj klucz API Gemini w czacie AI, aby uzyskać streszczenie generowane przez AI</div>';
+        }
+        html += '</div>';
+        html += '<div id="sessionSummaryResult"></div>';
+
+        container.innerHTML = html;
+
+        // Event listener
+        document.getElementById('sessionSummaryBtn').addEventListener('click', async () => {
+            const sessionId = document.getElementById('sessionSummarySelect').value;
+            const resultDiv = document.getElementById('sessionSummaryResult');
+            resultDiv.innerHTML = '<div class="prediction-loading"><div class="prediction-spinner"></div><p>Analizuję posiedzenie...</p></div>';
+
+            try {
+                // Pobierz wypowiedzi z posiedzenia
+                const speeches = db2.database.exec(`
+                    SELECT w.mowca, w.tekst, w.data, p.klub
+                    FROM wypowiedzi w
+                    LEFT JOIN poslowie p ON w.id_osoby = p.id_osoby
+                    WHERE w.id_posiedzenia = ?
+                    AND w.tekst IS NOT NULL AND LENGTH(w.tekst) > 20
+                    ORDER BY w.id_wypowiedzi
+                    LIMIT 200
+                `, [sessionId]);
+
+                if (!speeches.length || !speeches[0].values.length) {
+                    resultDiv.innerHTML = '<div class="prediction-no-data">Brak wypowiedzi dla tego posiedzenia</div>';
+                    return;
+                }
+
+                const speechData = speeches[0].values;
+                const totalSpeeches = speechData.length;
+
+                // Statystyki lokalne
+                const speakers = {};
+                const parties = {};
+                let totalChars = 0;
+                const sentimentResults = [];
+
+                speechData.forEach(row => {
+                    const [mowca, tekst, data, klub] = row;
+                    const speaker = mowca || 'Nieznany';
+                    const party = klub || 'niez.';
+                    speakers[speaker] = (speakers[speaker] || 0) + 1;
+                    parties[party] = (parties[party] || 0) + 1;
+                    totalChars += (tekst || '').length;
+
+                    const sent = analyzeSentiment(tekst || '');
+                    sentimentResults.push({ speaker, party, score: sent.score, label: sent.label });
+                });
+
+                const topSpeakers = Object.entries(speakers).sort((a, b) => b[1] - a[1]).slice(0, 10);
+                const avgSentiment = sentimentResults.reduce((s, r) => s + r.score, 0) / sentimentResults.length;
+                const negCount = sentimentResults.filter(r => r.label === 'negative').length;
+                const posCount = sentimentResults.filter(r => r.label === 'positive').length;
+
+                let rhtml = '';
+
+                // Statystyki posiedzenia
+                rhtml += '<div class="session-stats">';
+                rhtml += `<div class="session-stat"><div class="session-stat-value">${totalSpeeches}</div><div class="session-stat-label">Wypowiedzi</div></div>`;
+                rhtml += `<div class="session-stat"><div class="session-stat-value">${Object.keys(speakers).length}</div><div class="session-stat-label">Mówców</div></div>`;
+                rhtml += `<div class="session-stat"><div class="session-stat-value">${Math.round(totalChars / 1000)}k</div><div class="session-stat-label">Znaków</div></div>`;
+                const sentColor = avgSentiment < -0.1 ? '#e74c3c' : avgSentiment > 0.1 ? '#27ae60' : '#f39c12';
+                rhtml += `<div class="session-stat"><div class="session-stat-value" style="color:${sentColor};">${avgSentiment.toFixed(3)}</div><div class="session-stat-label">Śr. sentyment</div></div>`;
+                rhtml += '</div>';
+
+                // Top mówcy
+                rhtml += '<h4 style="margin:12px 0 6px;">🎤 Najczęstsi mówcy</h4>';
+                rhtml += '<div class="session-speakers">';
+                topSpeakers.forEach(([name, count]) => {
+                    const pct = Math.round((count / totalSpeeches) * 100);
+                    rhtml += `<div class="session-speaker-row">
+                        <span class="session-speaker-name">${name}</span>
+                        <div class="session-speaker-bar-bg"><div class="session-speaker-bar" style="width:${pct}%;"></div></div>
+                        <span class="session-speaker-count">${count} (${pct}%)</span>
+                    </div>`;
+                });
+                rhtml += '</div>';
+
+                // Rozkład partyjny
+                rhtml += '<h4 style="margin:12px 0 6px;">🏛️ Wypowiedzi wg klubów</h4>';
+                rhtml += '<div class="session-parties">';
+                Object.entries(parties).sort((a, b) => b[1] - a[1]).forEach(([party, cnt]) => {
+                    rhtml += `<span class="session-party-tag">${party}: ${cnt}</span>`;
+                });
+                rhtml += '</div>';
+
+                // Sentyment
+                rhtml += '<h4 style="margin:12px 0 6px;">😊 Sentyment debaty</h4>';
+                rhtml += `<div class="session-sentiment-bar">
+                    <div class="session-sent-pos" style="width:${Math.round(posCount / totalSpeeches * 100)}%;" title="Pozytywne: ${posCount}">🟢 ${Math.round(posCount / totalSpeeches * 100)}%</div>
+                    <div class="session-sent-neu" style="width:${Math.round((totalSpeeches - posCount - negCount) / totalSpeeches * 100)}%;" title="Neutralne">⚪</div>
+                    <div class="session-sent-neg" style="width:${Math.round(negCount / totalSpeeches * 100)}%;" title="Negatywne: ${negCount}">🔴 ${Math.round(negCount / totalSpeeches * 100)}%</div>
+                </div>`;
+
+                // AI Summary (jeśli jest klucz API)
+                if (getApiKey()) {
+                    rhtml += '<h4 style="margin:16px 0 6px;">🤖 Streszczenie AI</h4>';
+                    rhtml += '<div id="aiSummaryBox" class="session-ai-summary"><div class="prediction-loading"><div class="prediction-spinner"></div><p>AI generuje streszczenie...</p></div></div>';
+                    resultDiv.innerHTML = rhtml;
+
+                    // Wyślij do AI
+                    const speechExcerpts = speechData.slice(0, 50).map(r => {
+                        const txt = (r[1] || '').substring(0, 300);
+                        return `[${r[0] || 'Mówca'}] ${txt}`;
+                    }).join('\n\n');
+
+                    try {
+                        const aiPrompt = `Jesteś analitykiem parlamentarnym. Przeanalizuj poniższe wypowiedzi z posiedzenia Sejmu i napisz zwięzłe podsumowanie (max 500 słów) w języku polskim. Uwzględnij: 1) Główne tematy debaty, 2) Kluczowe stanowiska partii/posłów, 3) Ton dyskusji, 4) Wnioski.
+
+Statystyki: ${totalSpeeches} wypowiedzi, ${Object.keys(speakers).length} mówców, średni sentyment: ${avgSentiment.toFixed(3)}
+
+Wypowiedzi:
+${speechExcerpts}`;
+
+                        const aiSummary = await callGeminiForPrediction(aiPrompt, 1500);
+                        document.getElementById('aiSummaryBox').innerHTML = `<div class="session-ai-text">${aiSummary.replace(/\n/g, '<br>')}</div>`;
+                    } catch (aiErr) {
+                        document.getElementById('aiSummaryBox').innerHTML = `<div class="prediction-error">Błąd AI: ${aiErr.message}</div>`;
+                    }
+                } else {
+                    resultDiv.innerHTML = rhtml;
+                }
+            } catch (err) {
+                resultDiv.innerHTML = '<div class="prediction-error">Błąd: ' + err.message + '</div>';
+            }
+        });
+
+    } catch (err) {
+        console.error('[Predictions] analyzeSessionSummary error:', err);
+        container.innerHTML = '<div class="prediction-error">Błąd: ' + err.message + '</div>';
+    }
+}
+
+/**
+ * 23. Klasyfikacja tematyczna — tagowanie wypowiedzi wg tematu
+ */
+function analyzeTopicClassification() {
+    const container = document.getElementById('topicClassificationContent');
+    if (!container) return;
+
+    console.log('[Predictions] Analyzing topic classification...');
+
+    try {
+        // Słowniki tematyczne (polskie słowa kluczowe)
+        const topicDictionaries = {
+            'Gospodarka': ['gospodar', 'ekonom', 'budżet', 'podatek', 'podatkow', 'inflac', 'wzrost', 'PKB', 'przedsiębiorc', 'firma', 'biznes', 'inwestycj', 'rynek', 'handel', 'eksport', 'import', 'cena', 'koszt', 'pieniąd', 'kredyt', 'bank', 'finansow', 'fiskaln'],
+            'Edukacja': ['edukac', 'szkoł', 'nauczyc', 'uczeń', 'student', 'uczelni', 'uniwersyte', 'kształc', 'program nauczania', 'matura', 'egzamin', 'oświat', 'dydaktyk', 'akademick'],
+            'Zdrowie': ['zdrow', 'szpital', 'lekar', 'pacjent', 'medycy', 'leczeni', 'chorob', 'szczepion', 'farmaceut', 'NFZ', 'służba zdrowia', 'pielęgniar', 'apteka', 'diagnoz'],
+            'Obronność': ['obron', 'wojsk', 'armia', 'NATO', 'żołnierz', 'bezpieczeń', 'militarn', 'zbrojeni', 'missile', 'czołg', 'samolot bojow', 'sojusz', 'granica'],
+            'Prawo': ['praw', 'ustaw', 'sąd', 'sędzi', 'prokurat', 'kodeks', 'regulac', 'przepis', 'konstytuc', 'trybunał', 'orzeczen', 'wyrok', 'adwokat', 'sprawiedliw'],
+            'Polityka zagraniczna': ['zagranicz', 'dyplomac', 'ambasad', 'Unia Europejska', 'UE', 'Bruksel', 'ONZ', 'traktat', 'sankcj', 'sojusznik', 'stosunki międzynarodow', 'NATO'],
+            'Energia': ['energ', 'elektrow', 'atom', 'jądrow', 'OZE', 'wiatrow', 'fotowoltai', 'solar', 'węgiel', 'gaz', 'ciepło', 'paliw', 'ropa', 'transformac energetycz', 'klimat'],
+            'Transport': ['transport', 'drog', 'autostrad', 'kolej', 'pociąg', 'lotnisk', 'port', 'infrastruktur', 'most', 'tunel', 'komunikac', 'CPK'],
+            'Rolnictwo': ['rolni', 'rolnik', 'agricult', 'upraw', 'hodowl', 'zboż', 'dopłat', 'KRUS', 'żywnoś', 'wieś', 'agrotech'],
+            'Społeczne': ['społecz', 'emerytur', 'rent', 'zasiłek', '500+', '800+', 'socjaln', 'pomoc społeczn', 'ubóstw', 'bezdomn', 'niepełnospraw', 'senior', 'opieka']
+        };
+
+        const topicColors = {
+            'Gospodarka': '#3498db', 'Edukacja': '#9b59b6', 'Zdrowie': '#e74c3c',
+            'Obronność': '#2c3e50', 'Prawo': '#e67e22', 'Polityka zagraniczna': '#1abc9c',
+            'Energia': '#f1c40f', 'Transport': '#95a5a6', 'Rolnictwo': '#27ae60', 'Społeczne': '#e91e63'
+        };
+
+        // Pobierz wypowiedzi
+        const rows = db2.database.exec(`
+            SELECT w.tekst, w.data, p.klub, w.mowca
+            FROM wypowiedzi w
+            LEFT JOIN poslowie p ON w.id_osoby = p.id_osoby
+            WHERE w.tekst IS NOT NULL AND LENGTH(w.tekst) > 80
+            ORDER BY w.data DESC
+            LIMIT 3000
+        `);
+
+        if (!rows.length || !rows[0].values.length) {
+            container.innerHTML = '<div class="prediction-no-data">Brak danych wypowiedzi</div>';
+            return;
+        }
+
+        const speeches = rows[0].values;
+        const topicCounts = {};
+        const topicByParty = {};
+        const topicExamples = {};
+        let classified = 0;
+
+        // Klasyfikacja
+        speeches.forEach(row => {
+            const [tekst, data, klub, mowca] = row;
+            const lower = (tekst || '').toLowerCase();
+            const party = klub || 'niez.';
+
+            let bestTopic = null;
+            let bestScore = 0;
+
+            for (const [topic, keywords] of Object.entries(topicDictionaries)) {
+                let score = 0;
+                keywords.forEach(kw => {
+                    if (lower.includes(kw.toLowerCase())) score++;
+                });
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestTopic = topic;
+                }
+            }
+
+            if (bestTopic && bestScore >= 2) {
+                classified++;
+                topicCounts[bestTopic] = (topicCounts[bestTopic] || 0) + 1;
+
+                if (!topicByParty[bestTopic]) topicByParty[bestTopic] = {};
+                topicByParty[bestTopic][party] = (topicByParty[bestTopic][party] || 0) + 1;
+
+                if (!topicExamples[bestTopic]) topicExamples[bestTopic] = [];
+                if (topicExamples[bestTopic].length < 3) {
+                    topicExamples[bestTopic].push({
+                        speaker: mowca || 'Nieznany',
+                        party,
+                        excerpt: (tekst || '').substring(0, 150) + '...',
+                        date: data
+                    });
+                }
+            }
+        });
+
+        const sortedTopics = Object.entries(topicCounts).sort((a, b) => b[1] - a[1]);
+        const maxCount = sortedTopics.length ? sortedTopics[0][1] : 1;
+
+        let html = '';
+
+        // Podsumowanie
+        html += '<div class="topic-summary">';
+        html += `<div class="topic-stat"><div class="topic-stat-value">${speeches.length}</div><div class="topic-stat-label">Przeanalizowanych</div></div>`;
+        html += `<div class="topic-stat"><div class="topic-stat-value">${classified}</div><div class="topic-stat-label">Sklasyfikowanych</div></div>`;
+        html += `<div class="topic-stat"><div class="topic-stat-value">${sortedTopics.length}</div><div class="topic-stat-label">Tematów</div></div>`;
+        html += `<div class="topic-stat"><div class="topic-stat-value">${speeches.length ? Math.round(classified / speeches.length * 100) : 0}%</div><div class="topic-stat-label">Pokrycie</div></div>`;
+        html += '</div>';
+
+        // Rozkład tematów
+        html += '<h4 style="margin:12px 0 6px;">📊 Rozkład tematów</h4>';
+        html += '<div class="topic-chart">';
+        sortedTopics.forEach(([topic, count]) => {
+            const pct = Math.round((count / maxCount) * 100);
+            const color = topicColors[topic] || '#888';
+            html += `<div class="topic-chart-row">
+                <span class="topic-chart-name">${topic}</span>
+                <div class="topic-chart-bar-bg"><div class="topic-chart-bar" style="width:${pct}%;background:${color};"></div></div>
+                <span class="topic-chart-count">${count}</span>
+            </div>`;
+        });
+        html += '</div>';
+
+        // Tematy wg klubów (top 5 tematów)
+        html += '<h4 style="margin:16px 0 6px;">🏛️ Tematy wg klubów</h4>';
+        html += '<div class="topic-party-grid">';
+        sortedTopics.slice(0, 5).forEach(([topic]) => {
+            const partyData = topicByParty[topic] || {};
+            const sorted = Object.entries(partyData).sort((a, b) => b[1] - a[1]);
+            const color = topicColors[topic] || '#888';
+            html += `<div class="topic-party-card">
+                <div class="topic-party-title" style="border-left:3px solid ${color};">${topic}</div>
+                <div class="topic-party-list">
+                    ${sorted.map(([party, cnt]) => `<span class="topic-party-item">${party}: ${cnt}</span>`).join('')}
+                </div>
+            </div>`;
+        });
+        html += '</div>';
+
+        // Przykłady per temat
+        html += '<h4 style="margin:16px 0 6px;">📝 Przykładowe wypowiedzi</h4>';
+        html += '<div class="topic-examples">';
+        sortedTopics.slice(0, 5).forEach(([topic]) => {
+            const examples = topicExamples[topic] || [];
+            const color = topicColors[topic] || '#888';
+            html += `<div class="topic-example-group">
+                <div class="topic-example-title" style="color:${color};">🏷️ ${topic}</div>`;
+            examples.forEach(ex => {
+                html += `<div class="topic-example-item">
+                    <div class="topic-example-header"><span>${ex.speaker}</span> <span class="topic-example-party">${ex.party}</span> <span class="topic-example-date">${ex.date || ''}</span></div>
+                    <div class="topic-example-text">${ex.excerpt}</div>
+                </div>`;
+            });
+            html += '</div>';
+        });
+        html += '</div>';
+
+        container.innerHTML = html;
+        console.log('[Predictions] Topic classification done:', classified, 'classified out of', speeches.length);
+
+    } catch (err) {
+        console.error('[Predictions] analyzeTopicClassification error:', err);
+        container.innerHTML = '<div class="prediction-error">Błąd klasyfikacji: ' + err.message + '</div>';
+    }
+}
+
+/**
+ * 24. Wykrywanie sprzeczności posła — zmiany stanowiska w czasie
+ */
+function analyzeMpContradictions() {
+    const container = document.getElementById('mpContradictionsContent');
+    if (!container) return;
+
+    console.log('[Predictions] Analyzing MP contradictions...');
+
+    try {
+        // Znajdź posłów którzy głosowali na dwa sposoby na podobne tematy
+        // Metoda: szukaj par głosowań o podobnych tytułach gdzie poseł zmienił zdanie
+        const rebelFlips = db2.database.exec(`
+            WITH vote_pairs AS (
+                SELECT 
+                    g1.id_osoby,
+                    gl1.id_glosowania as id1,
+                    gl2.id_glosowania as id2,
+                    gl1.tytul as tytul1,
+                    gl2.tytul as tytul2,
+                    g1.glos as glos1,
+                    g2.glos as glos2,
+                    gl1.data as data1,
+                    gl2.data as data2
+                FROM glosy g1
+                JOIN glosy g2 ON g1.id_osoby = g2.id_osoby AND g1.id_glosowania < g2.id_glosowania
+                JOIN glosowania gl1 ON gl1.id_glosowania = g1.id_glosowania
+                JOIN glosowania gl2 ON gl2.id_glosowania = g2.id_glosowania
+                WHERE g1.glos IN ('YES','NO') AND g2.glos IN ('YES','NO')
+                  AND g1.glos != g2.glos
+                  AND gl1.tytul IS NOT NULL AND gl2.tytul IS NOT NULL
+                  AND SUBSTR(gl1.tytul, 1, 30) = SUBSTR(gl2.tytul, 1, 30)
+                  AND gl1.data != gl2.data
+            )
+            SELECT 
+                p.imie || ' ' || p.nazwisko as name,
+                p.klub,
+                COUNT(*) as flip_count,
+                GROUP_CONCAT(DISTINCT tytul1) as titles
+            FROM vote_pairs vp
+            JOIN poslowie p ON vp.id_osoby = p.id_osoby
+            WHERE p.klub IS NOT NULL AND p.klub != ''
+            GROUP BY vp.id_osoby
+            HAVING flip_count >= 1
+            ORDER BY flip_count DESC
+            LIMIT 30
+        `);
+
+        // Porównaj sentyment tego samego posła w różnych miesiącach
+        const sentimentShifts = db2.database.exec(`
+            SELECT 
+                p.id_osoby,
+                p.imie || ' ' || p.nazwisko as name,
+                p.klub,
+                SUBSTR(w.data, 1, 7) as month,
+                w.tekst
+            FROM wypowiedzi w
+            JOIN poslowie p ON w.id_osoby = p.id_osoby
+            WHERE w.tekst IS NOT NULL AND LENGTH(w.tekst) > 100
+              AND w.data IS NOT NULL AND LENGTH(w.data) >= 7
+              AND p.klub IS NOT NULL AND p.klub != ''
+            ORDER BY p.id_osoby, w.data
+        `);
+
+        let html = '';
+
+        // 1. Głosowania — zmiana zdania na ten sam temat
+        if (rebelFlips.length && rebelFlips[0].values.length) {
+            html += '<h4 style="margin:0 0 8px;">🔄 Zmiana głosu na ten sam temat</h4>';
+            html += '<div class="contradiction-info">Posłowie, którzy głosowali ZA i PRZECIW na głosowania o tym samym tytule</div>';
+            html += '<div class="contradiction-list">';
+            rebelFlips[0].values.forEach((row, i) => {
+                const [name, klub, flipCount, titles] = row;
+                const titleList = titles ? titles.split(',').slice(0, 3) : [];
+                html += `<div class="contradiction-item">
+                    <div class="contradiction-header">
+                        <span class="contradiction-rank">#${i + 1}</span>
+                        <span class="contradiction-name">${name}</span>
+                        <span class="contradiction-party">${klub}</span>
+                        <span class="contradiction-count">${flipCount}× zmiana</span>
+                    </div>
+                    ${titleList.length ? `<div class="contradiction-titles">${titleList.map(t => {
+                        const short = t.length > 100 ? t.substring(0, 100) + '...' : t;
+                        return `<div class="contradiction-title-text">${short}</div>`;
+                    }).join('')}</div>` : ''}
+                </div>`;
+            });
+            html += '</div>';
+        }
+
+        // 2. Sentyment — wahania sentymentu tego samego posła w czasie
+        if (sentimentShifts.length && sentimentShifts[0].values.length) {
+            const mpSent = {};
+            sentimentShifts[0].values.forEach(row => {
+                const [id, name, klub, month, tekst] = row;
+                if (!mpSent[id]) mpSent[id] = { name, klub, months: {} };
+                if (!mpSent[id].months[month]) mpSent[id].months[month] = { sum: 0, count: 0 };
+                const s = analyzeSentiment(tekst);
+                mpSent[id].months[month].sum += s.score;
+                mpSent[id].months[month].count++;
+            });
+
+            // Znajdź posłów z największą zmianą sentymentu
+            const shiftResults = Object.entries(mpSent)
+                .filter(([, mp]) => Object.keys(mp.months).length >= 3)
+                .map(([id, mp]) => {
+                    const monthData = Object.entries(mp.months)
+                        .map(([m, d]) => ({ month: m, avg: d.sum / d.count }))
+                        .sort((a, b) => a.month.localeCompare(b.month));
+
+                    let maxSwing = 0;
+                    let swingFrom = null, swingTo = null;
+                    for (let i = 1; i < monthData.length; i++) {
+                        const diff = Math.abs(monthData[i].avg - monthData[i - 1].avg);
+                        if (diff > maxSwing) {
+                            maxSwing = diff;
+                            swingFrom = monthData[i - 1];
+                            swingTo = monthData[i];
+                        }
+                    }
+
+                    return {
+                        id, name: mp.name, klub: mp.klub,
+                        maxSwing: Math.round(maxSwing * 1000) / 1000,
+                        swingFrom, swingTo,
+                        monthCount: monthData.length
+                    };
+                })
+                .filter(r => r.maxSwing > 0.15)
+                .sort((a, b) => b.maxSwing - a.maxSwing)
+                .slice(0, 15);
+
+            if (shiftResults.length) {
+                html += '<h4 style="margin:16px 0 8px;">📊 Największe wahania sentymentu</h4>';
+                html += '<div class="contradiction-info">Posłowie, których ton wypowiedzi drastycznie się zmienił między miesiącami</div>';
+                html += '<div class="contradiction-list">';
+                shiftResults.forEach((mp, i) => {
+                    const fromColor = mp.swingFrom.avg < -0.1 ? '#e74c3c' : mp.swingFrom.avg > 0.1 ? '#27ae60' : '#f39c12';
+                    const toColor = mp.swingTo.avg < -0.1 ? '#e74c3c' : mp.swingTo.avg > 0.1 ? '#27ae60' : '#f39c12';
+                    html += `<div class="contradiction-item">
+                        <div class="contradiction-header">
+                            <span class="contradiction-rank">#${i + 1}</span>
+                            <span class="contradiction-name">${mp.name}</span>
+                            <span class="contradiction-party">${mp.klub}</span>
+                            <span class="contradiction-swing">Δ ${mp.maxSwing}</span>
+                        </div>
+                        <div class="contradiction-shift">
+                            <span style="color:${fromColor};">${mp.swingFrom.month}: ${mp.swingFrom.avg.toFixed(3)}</span>
+                            <span class="contradiction-arrow">→</span>
+                            <span style="color:${toColor};">${mp.swingTo.month}: ${mp.swingTo.avg.toFixed(3)}</span>
+                        </div>
+                    </div>`;
+                });
+                html += '</div>';
+            }
+        }
+
+        if (!html) {
+            html = '<div class="prediction-no-data">Brak wystarczających danych do wykrycia sprzeczności</div>';
+        }
+
+        container.innerHTML = html;
+        console.log('[Predictions] MP contradictions done');
+
+    } catch (err) {
+        console.error('[Predictions] analyzeMpContradictions error:', err);
+        container.innerHTML = '<div class="prediction-error">Błąd analizy sprzeczności: ' + err.message + '</div>';
+    }
+}
+
+/**
+ * 25. Raport AI — jednym kliknięciem generuje pełen raport
+ */
+async function generateAiReport() {
+    const container = document.getElementById('aiReportContent');
+    if (!container) return;
+
+    console.log('[Predictions] Generating AI report...');
+
+    try {
+        const hasApiKey = !!getApiKey();
+
+        // Zebranie danych
+        container.innerHTML = '<div class="prediction-loading"><div class="prediction-spinner"></div><p>Zbieram dane do raportu...</p></div>';
+
+        // Stats
+        const stats = {};
+
+        // Posłowie
+        const mpResult = db2.database.exec(`SELECT COUNT(*) FROM poslowie WHERE aktywny = 1`);
+        stats.mps = mpResult.length ? mpResult[0].values[0][0] : 0;
+
+        // Kluby
+        const clubResult = db2.database.exec(`SELECT klub, COUNT(*) as cnt FROM poslowie WHERE aktywny = 1 AND klub IS NOT NULL GROUP BY klub ORDER BY cnt DESC`);
+        stats.clubs = clubResult.length ? clubResult[0].values : [];
+
+        // Głosowania
+        const voteResult = db2.database.exec(`SELECT COUNT(*) FROM glosowania`);
+        stats.votings = voteResult.length ? voteResult[0].values[0][0] : 0;
+
+        // Wypowiedzi
+        const speechResult = db2.database.exec(`SELECT COUNT(*) FROM wypowiedzi WHERE tekst IS NOT NULL`);
+        stats.speeches = speechResult.length ? speechResult[0].values[0][0] : 0;
+
+        // Interpelacje
+        const interpResult = db2.database.exec(`SELECT COUNT(*) FROM interpelacje`);
+        stats.interpellations = interpResult.length ? interpResult[0].values[0][0] : 0;
+
+        // Projekty ustaw
+        const billResult = db2.database.exec(`SELECT COUNT(*) FROM projekty_ustaw`);
+        stats.bills = billResult.length ? billResult[0].values[0][0] : 0;
+
+        // Top mówcy
+        const topSpeakers = db2.database.exec(`
+            SELECT p.imie || ' ' || p.nazwisko, p.klub, COUNT(*) as cnt
+            FROM wypowiedzi w JOIN poslowie p ON w.id_osoby = p.id_osoby
+            WHERE p.klub IS NOT NULL GROUP BY p.id_osoby ORDER BY cnt DESC LIMIT 5
+        `);
+
+        // Dyscyplina klubowa
+        const disciplineResult = db2.database.exec(`
+            WITH cm AS (
+                SELECT g.id_glosowania, p.klub, g.glos, COUNT(*) as cnt,
+                    ROW_NUMBER() OVER (PARTITION BY g.id_glosowania, p.klub ORDER BY COUNT(*) DESC) as rn
+                FROM glosy g JOIN poslowie p ON g.id_osoby = p.id_osoby
+                WHERE g.glos IN ('YES','NO','ABSTAIN') AND p.klub IS NOT NULL AND p.klub != ''
+                GROUP BY g.id_glosowania, p.klub, g.glos
+            ),
+            dom AS (SELECT id_glosowania, klub, glos as dom_glos FROM cm WHERE rn = 1)
+            SELECT p.klub,
+                ROUND(100.0 * SUM(CASE WHEN g.glos = d.dom_glos THEN 1 ELSE 0 END) / COUNT(*), 1) as discipline
+            FROM glosy g JOIN poslowie p ON g.id_osoby = p.id_osoby
+            JOIN dom d ON d.id_glosowania = g.id_glosowania AND d.klub = p.klub
+            WHERE g.glos IN ('YES','NO','ABSTAIN')
+            GROUP BY p.klub ORDER BY discipline DESC
+        `);
+        stats.discipline = disciplineResult.length ? disciplineResult[0].values : [];
+
+        // Frekwencja
+        const attendanceResult = db2.database.exec(`
+            SELECT p.klub,
+                ROUND(100.0 * SUM(CASE WHEN g.glos != 'ABSENT' THEN 1 ELSE 0 END) / COUNT(*), 1) as attendance
+            FROM glosy g JOIN poslowie p ON g.id_osoby = p.id_osoby
+            WHERE p.klub IS NOT NULL AND p.klub != ''
+            GROUP BY p.klub ORDER BY attendance DESC
+        `);
+        stats.attendance = attendanceResult.length ? attendanceResult[0].values : [];
+
+        // Sentyment ogólny (sample)
+        const sentSample = db2.database.exec(`
+            SELECT tekst FROM wypowiedzi WHERE tekst IS NOT NULL AND LENGTH(tekst) > 100 ORDER BY RANDOM() LIMIT 200
+        `);
+        let avgSent = 0;
+        let sentCnt = 0;
+        if (sentSample.length) {
+            sentSample[0].values.forEach(row => {
+                const s = analyzeSentiment(row[0]);
+                avgSent += s.score;
+                sentCnt++;
+            });
+        }
+        stats.avgSentiment = sentCnt ? Math.round((avgSent / sentCnt) * 1000) / 1000 : 0;
+
+        // Render raport
+        let html = '<div class="ai-report">';
+
+        // Nagłówek
+        html += `<div class="report-header">
+            <div class="report-title">📊 Raport analityczny — Sejm RP</div>
+            <div class="report-date">Wygenerowano: ${new Date().toLocaleDateString('pl-PL')} ${new Date().toLocaleTimeString('pl-PL')}</div>
+        </div>`;
+
+        // Dane ogólne
+        html += '<div class="report-section"><div class="report-section-title">📋 Dane ogólne</div>';
+        html += '<div class="report-stats-grid">';
+        html += `<div class="report-stat"><span class="report-stat-val">${stats.mps}</span><span class="report-stat-lbl">Posłów</span></div>`;
+        html += `<div class="report-stat"><span class="report-stat-val">${stats.votings}</span><span class="report-stat-lbl">Głosowań</span></div>`;
+        html += `<div class="report-stat"><span class="report-stat-val">${stats.speeches}</span><span class="report-stat-lbl">Wypowiedzi</span></div>`;
+        html += `<div class="report-stat"><span class="report-stat-val">${stats.interpellations}</span><span class="report-stat-lbl">Interpelacji</span></div>`;
+        html += `<div class="report-stat"><span class="report-stat-val">${stats.bills}</span><span class="report-stat-lbl">Projektów ustaw</span></div>`;
+        html += '</div></div>';
+
+        // Kluby
+        if (stats.clubs.length) {
+            html += '<div class="report-section"><div class="report-section-title">🏛️ Struktura klubowa</div>';
+            html += '<div class="report-club-list">';
+            stats.clubs.forEach(([club, count]) => {
+                const pct = stats.mps ? Math.round((count / stats.mps) * 100) : 0;
+                html += `<div class="report-club-row"><span class="report-club-name">${club}</span><span class="report-club-count">${count} posłów (${pct}%)</span></div>`;
+            });
+            html += '</div></div>';
+        }
+
+        // Top mówcy
+        if (topSpeakers.length && topSpeakers[0].values.length) {
+            html += '<div class="report-section"><div class="report-section-title">🎤 Najaktywniejszy mówcy</div>';
+            html += '<div class="report-speakers">';
+            topSpeakers[0].values.forEach(([name, klub, cnt]) => {
+                html += `<div class="report-speaker-row"><span>${name}</span> <span class="report-speaker-party">${klub}</span> <span class="report-speaker-count">${cnt} wypowiedzi</span></div>`;
+            });
+            html += '</div></div>';
+        }
+
+        // Dyscyplina
+        if (stats.discipline.length) {
+            html += '<div class="report-section"><div class="report-section-title">🎯 Dyscyplina klubowa</div>';
+            html += '<div class="report-discipline">';
+            stats.discipline.forEach(([klub, disc]) => {
+                const color = disc >= 90 ? '#27ae60' : disc >= 75 ? '#f39c12' : '#e74c3c';
+                html += `<div class="report-disc-row"><span>${klub}</span><span style="color:${color};font-weight:700;">${disc}%</span></div>`;
+            });
+            html += '</div></div>';
+        }
+
+        // Frekwencja
+        if (stats.attendance.length) {
+            html += '<div class="report-section"><div class="report-section-title">📍 Frekwencja</div>';
+            html += '<div class="report-discipline">';
+            stats.attendance.forEach(([klub, att]) => {
+                const color = att >= 80 ? '#27ae60' : att >= 60 ? '#f39c12' : '#e74c3c';
+                html += `<div class="report-disc-row"><span>${klub}</span><span style="color:${color};font-weight:700;">${att}%</span></div>`;
+            });
+            html += '</div></div>';
+        }
+
+        // Sentyment
+        const sentColor = stats.avgSentiment < -0.1 ? '#e74c3c' : stats.avgSentiment > 0.1 ? '#27ae60' : '#f39c12';
+        html += `<div class="report-section"><div class="report-section-title">😊 Ogólny sentyment debaty</div>
+            <div class="report-sentiment">
+                <span class="report-sent-score" style="color:${sentColor};">${stats.avgSentiment > 0 ? '+' : ''}${stats.avgSentiment}</span>
+                <span class="report-sent-label">${stats.avgSentiment > 0.1 ? 'Pozytywny' : stats.avgSentiment < -0.1 ? 'Negatywny' : 'Neutralny'}</span>
+            </div>
+        </div>`;
+
+        // AI wzbogacenie
+        if (hasApiKey) {
+            html += '<div class="report-section"><div class="report-section-title">🤖 Komentarz AI</div>';
+            html += '<div id="aiReportCommentary" class="report-ai-box"><div class="prediction-loading"><div class="prediction-spinner"></div><p>AI generuje komentarz...</p></div></div>';
+            html += '</div>';
+        }
+
+        html += '</div>';
+        container.innerHTML = html;
+
+        // Wyślij do AI
+        if (hasApiKey) {
+            try {
+                const dataForAi = `Sejm RP: ${stats.mps} posłów, ${stats.votings} głosowań, ${stats.speeches} wypowiedzi, ${stats.interpellations} interpelacji, ${stats.bills} projektów ustaw.
+Kluby: ${stats.clubs.map(c => `${c[0]}(${c[1]})`).join(', ')}.
+Dyscyplina: ${stats.discipline.map(d => `${d[0]}:${d[1]}%`).join(', ')}.
+Frekwencja: ${stats.attendance.map(a => `${a[0]}:${a[1]}%`).join(', ')}.
+Sentyment: ${stats.avgSentiment}.
+Top mówcy: ${topSpeakers.length ? topSpeakers[0].values.map(r => `${r[0]}(${r[2]})`).join(', ') : 'n/a'}.`;
+
+                const aiPrompt = `Jesteś analitykiem parlamentarnym. Na podstawie poniższych danych, napisz zwięzły komentarz ekspercki (max 400 słów) po polsku. Wyciągnij wnioski, wskaż ciekawe trendy, sformułuj rekomendacje.
+
+${dataForAi}`;
+
+                const aiComment = await callGeminiForPrediction(aiPrompt, 1200);
+                document.getElementById('aiReportCommentary').innerHTML = `<div class="report-ai-text">${aiComment.replace(/\n/g, '<br>')}</div>`;
+            } catch (aiErr) {
+                document.getElementById('aiReportCommentary').innerHTML = `<div class="prediction-error">Błąd AI: ${aiErr.message}</div>`;
+            }
+        }
+
+        console.log('[Predictions] AI Report generated');
+
+    } catch (err) {
+        console.error('[Predictions] generateAiReport error:', err);
+        container.innerHTML = '<div class="prediction-error">Błąd generowania raportu: ' + err.message + '</div>';
+    }
+}
+
+/**
+ * 26. WebLLM Chat — lokalny model AI w przeglądarce
+ */
+async function loadWebLLMChat() {
+    const container = document.getElementById('webllmChatContent');
+    if (!container) return;
+
+    console.log('[Predictions] Loading WebLLM chat...');
+
+    try {
+        let html = '<div class="webllm-panel">';
+
+        // Status panel
+        html += '<div class="webllm-status">';
+        html += '<div class="webllm-status-icon" id="webllmStatusIcon">⚪</div>';
+        html += '<div class="webllm-status-text">';
+        html += '<div class="webllm-status-title" id="webllmStatusTitle">Model nie załadowany</div>';
+        html += '<div class="webllm-status-detail" id="webllmStatusDetail">Kliknij "Załaduj model" aby rozpocząć</div>';
+        html += '</div></div>';
+
+        // Progress bar
+        html += '<div class="webllm-progress" id="webllmProgress" style="display:none;">';
+        html += '<div class="webllm-progress-bar" id="webllmProgressBar" style="width:0%;"></div>';
+        html += '</div>';
+        html += '<div class="webllm-progress-text" id="webllmProgressText" style="display:none;"></div>';
+
+        // Model select
+        html += '<div class="webllm-controls">';
+        html += '<select id="webllmModelSelect" class="profile-combobox">';
+        html += '<option value="SmolLM2-360M-Instruct-q4f16_1-MLC">SmolLM2 360M (nano, ~200MB)</option>';
+        html += '<option value="SmolLM2-1.7B-Instruct-q4f16_1-MLC" selected>SmolLM2 1.7B (mały, ~1GB)</option>';
+        html += '<option value="Llama-3.2-1B-Instruct-q4f16_1-MLC">Llama 3.2 1B (mały, ~700MB)</option>';
+        html += '<option value="Llama-3.2-3B-Instruct-q4f16_1-MLC">Llama 3.2 3B (średni, ~1.8GB)</option>';
+        html += '<option value="Phi-3.5-mini-instruct-q4f16_1-MLC">Phi 3.5 Mini 3.8B (średni, ~2.2GB)</option>';
+        html += '<option value="gemma-2-2b-it-q4f16_1-MLC">Gemma 2 2B (nie, ~1.3GB)</option>';
+        html += '<option value="Qwen2.5-1.5B-Instruct-q4f16_1-MLC">Qwen 2.5 1.5B (mały, ~1GB)</option>';
+        html += '</select>';
+        html += '<button id="webllmLoadBtn" class="webllm-btn webllm-btn-load">🚀 Załaduj model</button>';
+        html += '</div>';
+
+        // Info
+        html += '<div class="webllm-info">';
+        html += '💡 Model zostanie pobrany do cache przeglądarki (jednorazowo). ';
+        html += 'Wymaga WebGPU — działa w Chrome 113+, Edge 113+. ';
+        html += 'Całkowicie offline — dane nie opuszczają przeglądarki.';
+        html += '</div>';
+
+        // Chat area
+        html += '<div class="webllm-chat" id="webllmChatArea" style="display:none;">';
+        html += '<div class="webllm-messages" id="webllmMessages"></div>';
+        html += '<div class="webllm-input-area">';
+        html += '<textarea id="webllmInput" class="webllm-input" placeholder="Zadaj pytanie o danych parlamentarnych..." rows="2"></textarea>';
+        html += '<button id="webllmSendBtn" class="webllm-btn webllm-btn-send" disabled>Wyślij</button>';
+        html += '</div></div>';
+
+        // Quick actions
+        html += '<div class="webllm-quick" id="webllmQuickActions" style="display:none;">';
+        html += '<div class="webllm-quick-title">⚡ Szybkie akcje:</div>';
+        html += '<button class="webllm-quick-btn" data-action="summarize">📝 Podsumuj ostatnie posiedzenie</button>';
+        html += '<button class="webllm-quick-btn" data-action="analyze">📊 Analizuj aktywność</button>';
+        html += '<button class="webllm-quick-btn" data-action="compare">🔍 Porównaj kluby</button>';
+        html += '</div>';
+
+        html += '</div>'; // /webllm-panel
+
+        container.innerHTML = html;
+
+        // Event listeners
+        let webllmEngine = null;
+
+        document.getElementById('webllmLoadBtn').addEventListener('click', async () => {
+            const modelId = document.getElementById('webllmModelSelect').value;
+            const statusIcon = document.getElementById('webllmStatusIcon');
+            const statusTitle = document.getElementById('webllmStatusTitle');
+            const statusDetail = document.getElementById('webllmStatusDetail');
+            const progress = document.getElementById('webllmProgress');
+            const progressBar = document.getElementById('webllmProgressBar');
+            const progressText = document.getElementById('webllmProgressText');
+            const loadBtn = document.getElementById('webllmLoadBtn');
+            const chatArea = document.getElementById('webllmChatArea');
+            const quickActions = document.getElementById('webllmQuickActions');
+
+            loadBtn.disabled = true;
+            loadBtn.textContent = '⏳ Ładowanie...';
+            statusIcon.textContent = '🔄';
+            statusTitle.textContent = 'Ładowanie modelu...';
+            statusDetail.textContent = `Model: ${modelId}`;
+            progress.style.display = 'block';
+            progressText.style.display = 'block';
+
+            try {
+                // Dynamiczny import WebLLM
+                const webllm = await import('https://esm.run/@anthropic-ai/sdk@latest').catch(() => null) ||
+                               await import('https://esm.run/@anthropic-ai/webllm').catch(() => null);
+
+                // Próba użycia @mlc-ai/web-llm (prawdziwa biblioteka)
+                const { CreateMLCEngine } = await import('https://esm.run/@mlc-ai/web-llm');
+
+                webllmEngine = await CreateMLCEngine(modelId, {
+                    initProgressCallback: (info) => {
+                        const pct = Math.round((info.progress || 0) * 100);
+                        progressBar.style.width = `${pct}%`;
+                        progressText.textContent = info.text || `${pct}%`;
+                        statusDetail.textContent = info.text || `Pobieranie... ${pct}%`;
+                    }
+                });
+
+                // Success
+                statusIcon.textContent = '🟢';
+                statusTitle.textContent = 'Model gotowy!';
+                statusDetail.textContent = `${modelId} — gotowy do użycia`;
+                progress.style.display = 'none';
+                progressText.style.display = 'none';
+                loadBtn.textContent = '✅ Załadowany';
+                chatArea.style.display = 'block';
+                quickActions.style.display = 'block';
+                document.getElementById('webllmSendBtn').disabled = false;
+
+            } catch (err) {
+                console.error('[WebLLM] Load error:', err);
+                statusIcon.textContent = '🔴';
+                statusTitle.textContent = 'Błąd ładowania';
+
+                let errorMsg = err.message;
+                if (err.message.includes('WebGPU') || err.message.includes('gpu')) {
+                    errorMsg = 'Twoja przeglądarka nie obsługuje WebGPU. Użyj Chrome 113+ lub Edge 113+.';
+                } else if (err.message.includes('fetch') || err.message.includes('network')) {
+                    errorMsg = 'Błąd pobierania modelu. Sprawdź połączenie internetowe.';
+                }
+
+                statusDetail.textContent = errorMsg;
+                progress.style.display = 'none';
+                progressText.style.display = 'none';
+                loadBtn.disabled = false;
+                loadBtn.textContent = '🔄 Spróbuj ponownie';
+            }
+        });
+
+        // Send message
+        const sendWebLLMMessage = async () => {
+            if (!webllmEngine) return;
+
+            const input = document.getElementById('webllmInput');
+            const messages = document.getElementById('webllmMessages');
+            const sendBtn = document.getElementById('webllmSendBtn');
+            const userText = input.value.trim();
+            if (!userText) return;
+
+            // User message
+            messages.innerHTML += `<div class="webllm-msg webllm-msg-user"><div class="webllm-msg-icon">👤</div><div class="webllm-msg-text">${userText}</div></div>`;
+            input.value = '';
+            sendBtn.disabled = true;
+
+            // Zbierz kontekst z bazy
+            let dbContext = '';
+            try {
+                const mpCount = db2.database.exec(`SELECT COUNT(*) FROM poslowie WHERE aktywny = 1`);
+                const voteCount = db2.database.exec(`SELECT COUNT(*) FROM glosowania`);
+                const speechCount = db2.database.exec(`SELECT COUNT(*) FROM wypowiedzi`);
+                dbContext = `Kontekst bazy danych Sejmu RP: ${mpCount[0]?.values[0][0] || 0} posłów, ${voteCount[0]?.values[0][0] || 0} głosowań, ${speechCount[0]?.values[0][0] || 0} wypowiedzi.`;
+            } catch { /* ignore */ }
+
+            // AI message (streaming)
+            const aiMsgDiv = document.createElement('div');
+            aiMsgDiv.className = 'webllm-msg webllm-msg-ai';
+            aiMsgDiv.innerHTML = `<div class="webllm-msg-icon">🧠</div><div class="webllm-msg-text" id="webllmCurrentResponse">⏳ Myślę...</div>`;
+            messages.appendChild(aiMsgDiv);
+            messages.scrollTop = messages.scrollHeight;
+
+            try {
+                const reply = await webllmEngine.chat.completions.create({
+                    messages: [
+                        { role: 'system', content: `Jesteś ekspertem od polskiej polityki parlamentarnej. Odpowiadaj po polsku, zwięźle i merytorycznie. ${dbContext}` },
+                        { role: 'user', content: userText }
+                    ],
+                    temperature: 0.5,
+                    max_tokens: 800
+                });
+
+                const responseText = reply.choices[0]?.message?.content || 'Brak odpowiedzi';
+                document.getElementById('webllmCurrentResponse').innerHTML = responseText.replace(/\n/g, '<br>');
+            } catch (err) {
+                document.getElementById('webllmCurrentResponse').innerHTML = `<span style="color:#e74c3c;">Błąd: ${err.message}</span>`;
+            }
+
+            sendBtn.disabled = false;
+            messages.scrollTop = messages.scrollHeight;
+        };
+
+        document.getElementById('webllmSendBtn').addEventListener('click', sendWebLLMMessage);
+        document.getElementById('webllmInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendWebLLMMessage();
+            }
+        });
+
+        // Quick actions
+        document.querySelectorAll('.webllm-quick-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const action = btn.dataset.action;
+                const input = document.getElementById('webllmInput');
+                const prompts = {
+                    summarize: 'Podsumuj w 5 zdaniach najważniejsze wydarzenia z ostatniego posiedzenia Sejmu.',
+                    analyze: 'Które kluby poselskie są najaktywniejsze? Jakie wskaźniki aktywności warto śledzić?',
+                    compare: 'Porównaj dyscyplinę głosowania i frekwencję między głównymi klubami parlamentarnymi.'
+                };
+                input.value = prompts[action] || '';
+                sendWebLLMMessage();
+            });
+        });
+
+    } catch (err) {
+        console.error('[Predictions] loadWebLLMChat error:', err);
+        container.innerHTML = '<div class="prediction-error">Błąd WebLLM: ' + err.message + '</div>';
     }
 }
 
