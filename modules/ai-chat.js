@@ -622,15 +622,23 @@ Odpowiadaj zawsze po polsku. Jeśli generujesz SQL, umieść go w bloku kodu.`;
     // Check if response contains SQL query
     const sqlMatch = response.match(/```sql\n([\s\S]*?)\n```/);
     if (sqlMatch) {
-        const sql = sqlMatch[1];
+        const sql = sqlMatch[1].trim();
         console.log('[AI Chat] Executing SQL:', sql);
         
-        try {
-            const results = db2.database.exec(sql);
-            const formattedResults = formatSQLResults(results);
-            response += '\n\n**Wyniki zapytania:**\n' + formattedResults;
-        } catch (error) {
-            response += `\n\n❌ Błąd wykonania SQL: ${error.message}`;
+        // Walidacja: tylko SELECT jest dozwolony (bezpieczeństwo bazy)
+        const sqlUpper = sql.replace(/--.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '').trim().toUpperCase();
+        const forbidden = /^\s*(INSERT|UPDATE|DELETE|DROP|ALTER|CREATE|TRUNCATE|REPLACE|ATTACH|DETACH|PRAGMA|REINDEX|VACUUM)\b/i;
+        if (forbidden.test(sql.trim())) {
+            console.warn('[AI Chat] Blocked dangerous SQL:', sql);
+            response += '\n\n⛔ Zablokowano zapytanie SQL — dozwolone są tylko operacje odczytu (SELECT).';
+        } else {
+            try {
+                const results = db2.database.exec(sql);
+                const formattedResults = formatSQLResults(results);
+                response += '\n\n**Wyniki zapytania:**\n' + formattedResults;
+            } catch (error) {
+                response += `\n\n❌ Błąd wykonania SQL: ${error.message}`;
+            }
         }
     }
     

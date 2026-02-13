@@ -350,14 +350,14 @@ function renderHeatmap() {
     const colorSel = document.getElementById('heatmapColor')?.value || 'obecnosc';
 
     // Build query based on selections
-    const xCol = xSel === 'glosowania' ? 'g.id_glosowania' : 'g.id_posiedzenia';
-    const xLabel = xSel === 'glosowania' ? 'gl.numer' : 'g.id_posiedzenia';
+    const xCol = xSel === 'glosowania' ? 'g.id_glosowania' : 'gl.id_posiedzenia';
+    const xLabel = xSel === 'glosowania' ? 'gl.numer' : 'gl.id_posiedzenia';
     const yCol = ySel === 'kluby' ? 'p.klub' : "p.nazwisko || ' ' || SUBSTR(p.imie,1,1) || '.'";
 
     let valueSql;
-    if (colorSel === 'za') valueSql = "SUM(CASE WHEN g.glos = 'Za' THEN 1 ELSE 0 END)";
-    else if (colorSel === 'przeciw') valueSql = "SUM(CASE WHEN g.glos = 'Przeciw' THEN 1 ELSE 0 END)";
-    else if (colorSel === 'wstrzymal') valueSql = "SUM(CASE WHEN g.glos LIKE 'Wstrzyma%' THEN 1 ELSE 0 END)";
+    if (colorSel === 'za') valueSql = "SUM(CASE WHEN g.glos = 'YES' THEN 1 ELSE 0 END)";
+    else if (colorSel === 'przeciw') valueSql = "SUM(CASE WHEN g.glos = 'NO' THEN 1 ELSE 0 END)";
+    else if (colorSel === 'wstrzymal') valueSql = "SUM(CASE WHEN g.glos = 'ABSTAIN' THEN 1 ELSE 0 END)";
     else valueSql = "COUNT(g.id_glosu)";
 
     let sql;
@@ -373,12 +373,12 @@ function renderHeatmap() {
         `;
     } else {
         sql = `
-            SELECT g.id_posiedzenia as x_label, ${yCol} as y_label, ${valueSql} as val
+            SELECT gl.id_posiedzenia as x_label, ${yCol} as y_label, ${valueSql} as val
             FROM glosy g
             JOIN glosowania gl ON g.id_glosowania = gl.id_glosowania
             JOIN poslowie p ON g.id_osoby = p.id_osoby
-            GROUP BY g.id_posiedzenia, ${yCol}
-            ORDER BY g.id_posiedzenia, ${yCol}
+            GROUP BY gl.id_posiedzenia, ${yCol}
+            ORDER BY gl.id_posiedzenia, ${yCol}
             LIMIT 2000
         `;
     }

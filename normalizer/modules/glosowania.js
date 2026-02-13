@@ -6,7 +6,7 @@ export function normalizeGlosowania(raw) {
         id_posiedzenia: g.id_posiedzenia || g.sitting || null,
         numer: g.numer || g.votingNumber || null,
         data: g.data || g.date || null,
-        wynik: g.wynik || null,
+        wynik: g.wynik || (g.yes != null && g.no != null ? (g.yes > g.no ? 'przyjęto' : 'odrzucono') : null),
         tytul: g.tytul || g.topic || g.description || null,
         za: g.za ?? g.yes ?? 0,
         przeciw: g.przeciw ?? g.no ?? 0,

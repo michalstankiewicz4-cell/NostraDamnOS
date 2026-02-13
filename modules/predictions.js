@@ -83,24 +83,21 @@ function calculateDiscipline() {
     console.log('[Predictions] Calculating club discipline...');
     
     try {
-        // Pobierz głosowania z wynikiem klubowym
+        // Sprawdź czy istnieją dane głosowań
         const votings = db2.database.exec(`
-            SELECT 
-                g.id_glosowania,
-                g.wynik_glosowania,
-                g.data
-            FROM glosowania g
-            WHERE g.wynik_glosowania IS NOT NULL
-            LIMIT 1000
+            SELECT COUNT(*) as cnt
+            FROM glosy
+            LIMIT 1
         `);
         
-        if (!votings.length || !votings[0].values.length) {
+        const voteCount = votings.length ? votings[0].values[0][0] : 0;
+        if (!voteCount) {
             console.warn('[Predictions] No voting data found');
             container.innerHTML = '<div class="prediction-no-data">Brak danych głosowań</div>';
             return;
         }
         
-        console.log(`[Predictions] Found ${votings[0].values.length} votings`);
+        console.log(`[Predictions] Found ${voteCount} individual votes`);
         
         // Pobierz kluby
         const clubs = db2.database.exec(`
@@ -132,7 +129,7 @@ function calculateDiscipline() {
                     FROM glosy gl
                     JOIN poslowie p ON gl.id_osoby = p.id_osoby
                     WHERE p.klub = ?
-                    AND gl.glos IN ('Za', 'Przeciw', 'Wstrzymał się', 'Wstrzymał')
+                    AND gl.glos IN ('YES', 'NO', 'ABSTAIN')
                     GROUP BY gl.id_glosowania, gl.glos
                 ),
                 club_majority AS (
@@ -150,7 +147,7 @@ function calculateDiscipline() {
                 JOIN poslowie p ON gl.id_osoby = p.id_osoby
                 JOIN club_majority cm ON gl.id_glosowania = cm.id_glosowania
                 WHERE p.klub = ?
-                AND gl.glos IN ('Za', 'Przeciw', 'Wstrzymał się', 'Wstrzymał')
+                AND gl.glos IN ('YES', 'NO', 'ABSTAIN')
             `, [club, club]);
             
             if (!result.length || !result[0].values.length) {
@@ -226,7 +223,7 @@ function detectRebels() {
                         COUNT(*) as vote_count
                     FROM glosy gl
                     JOIN poslowie p ON gl.id_osoby = p.id_osoby
-                    WHERE gl.glos IN ('Za', 'Przeciw', 'Wstrzymał się', 'Wstrzymał')
+                    WHERE gl.glos IN ('YES', 'NO', 'ABSTAIN')
                     AND p.klub IS NOT NULL AND p.klub != ''
                     GROUP BY gl.id_glosowania, p.klub, gl.glos
                 ) cv
@@ -238,7 +235,7 @@ function detectRebels() {
                         JOIN poslowie p2 ON gl2.id_osoby = p2.id_osoby
                         WHERE gl2.id_glosowania = cv.id_glosowania 
                         AND p2.klub = cv.klub
-                        AND gl2.glos IN ('Za', 'Przeciw', 'Wstrzymał się', 'Wstrzymał')
+                        AND gl2.glos IN ('YES', 'NO', 'ABSTAIN')
                         GROUP BY gl2.glos
                     )
                 )
@@ -251,7 +248,7 @@ function detectRebels() {
             FROM poslowie p
             JOIN glosy gl ON p.id_osoby = gl.id_osoby
             JOIN club_majority cm ON gl.id_glosowania = cm.id_glosowania AND p.klub = cm.klub
-            WHERE gl.glos IN ('Za', 'Przeciw', 'Wstrzymał się', 'Wstrzymał')
+            WHERE gl.glos IN ('YES', 'NO', 'ABSTAIN')
             AND p.klub IS NOT NULL AND p.klub != ''
             GROUP BY p.id_osoby, p.imie, p.nazwisko, p.klub
             HAVING COUNT(*) >= 10
@@ -331,37 +328,58 @@ function calculateCoalition() {
         
         const clubList = clubs[0].values.map(row => row[0]);
         
-        // Oblicz macierz podobieństwa
-        const matrix = [];
+        // Oblicz macierz podobieństwa — porównanie głosu większościowego każdego klubu
+        // Jedno zapytanie zamiast N² osobnych — ogromna różnica wydajności
+        const pairsResult = db2.database.exec(`
+            WITH club_direction AS (
+                SELECT 
+                    gl.id_glosowania,
+                    p.klub,
+                    CASE 
+                        WHEN SUM(CASE WHEN gl.glos = 'YES' THEN 1 ELSE 0 END) >=
+                             SUM(CASE WHEN gl.glos = 'NO' THEN 1 ELSE 0 END)
+                        THEN 'YES' ELSE 'NO'
+                    END as majority_vote
+                FROM glosy gl
+                JOIN poslowie p ON gl.id_osoby = p.id_osoby
+                WHERE p.klub IS NOT NULL AND p.klub != ''
+                AND gl.glos IN ('YES', 'NO')
+                GROUP BY gl.id_glosowania, p.klub
+            )
+            SELECT 
+                cd1.klub as klub1,
+                cd2.klub as klub2,
+                COUNT(*) as total,
+                SUM(CASE WHEN cd1.majority_vote = cd2.majority_vote THEN 1 ELSE 0 END) as matching
+            FROM club_direction cd1
+            JOIN club_direction cd2 ON cd1.id_glosowania = cd2.id_glosowania
+            WHERE cd1.klub < cd2.klub
+            GROUP BY cd1.klub, cd2.klub
+        `);
         
+        // Zbuduj lookup z wyników
+        const pairMap = {};
+        if (pairsResult.length && pairsResult[0].values.length) {
+            for (const row of pairsResult[0].values) {
+                const [klub1, klub2, total, matching] = row;
+                const similarity = total > 0 ? (matching / total * 100).toFixed(0) : '0';
+                const key1 = `${klub1}|${klub2}`;
+                const key2 = `${klub2}|${klub1}`;
+                pairMap[key1] = similarity;
+                pairMap[key2] = similarity;
+            }
+        }
+        
+        // Zbuduj macierz z lookup
+        const matrix = [];
         for (let i = 0; i < clubList.length; i++) {
             const row = [];
             for (let j = 0; j < clubList.length; j++) {
                 if (i === j) {
                     row.push(100);
                 } else {
-                    // Oblicz % zgodnych głosowań między klubami
-                    const result = db2.database.exec(`
-                        SELECT 
-                            COUNT(*) as total,
-                            SUM(CASE WHEN gl1.glos = gl2.glos THEN 1 ELSE 0 END) as matching
-                        FROM glosy gl1
-                        JOIN poslowie p1 ON gl1.id_osoby = p1.id_osoby
-                        JOIN glosy gl2 ON gl1.id_glosowania = gl2.id_glosowania
-                        JOIN poslowie p2 ON gl2.id_osoby = p2.id_osoby
-                        WHERE p1.klub = ? AND p2.klub = ?
-                        AND gl1.glos IN ('Za', 'Przeciw')
-                        AND gl2.glos IN ('Za', 'Przeciw')
-                        LIMIT 1000
-                    `, [clubList[i], clubList[j]]);
-                    
-                    if (result.length && result[0].values.length) {
-                        const [total, matching] = result[0].values[0];
-                        const similarity = total > 0 ? (matching / total * 100) : 0;
-                        row.push(similarity.toFixed(0));
-                    } else {
-                        row.push(0);
-                    }
+                    const key = `${clubList[i]}|${clubList[j]}`;
+                    row.push(pairMap[key] || 0);
                 }
             }
             matrix.push(row);
