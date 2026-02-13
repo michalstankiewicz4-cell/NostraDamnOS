@@ -7,9 +7,11 @@ import { HELP_DATA } from './help-data.js';
 let isActive = false;
 let tooltip = null;
 let shield = null;
+let exitBtn = null;
 let highlightedEl = null;
 let highlightedRect = null; // cached bounding rect at highlight time
 let rafPending = false;
+const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 
 // Wszystkie eventy do przechwycenia i zablokowania
 const BLOCKED_EVENTS = [
@@ -109,10 +111,14 @@ function findHelpTarget(el) {
 // Event blockers
 // ================================
 
-/** Block every event except tooltip close button */
+/** Block every event except help UI elements (shield, tooltip, exit button) */
 function blockEvent(e) {
-    // Allow tooltip close button through
-    if (e.target && e.target.closest && e.target.closest('#helpTooltipClose')) return;
+    if (!e.target || !e.target.closest) return;
+    // Allow interactions on help UI elements
+    if (e.target.closest('#helpTooltipClose')) return;
+    if (e.target.closest('#helpShield')) return;
+    if (e.target.closest('#helpTooltip')) return;
+    if (e.target.closest('#helpExitBtn')) return;
     e.preventDefault();
     e.stopPropagation();
     e.stopImmediatePropagation();
@@ -172,19 +178,17 @@ function onMouseMove(e) {
     });
 }
 
-/** Click on shield: find element underneath, show help — or exit if helpBtn clicked */
-function onShieldClick(e) {
-    e.preventDefault();
-    e.stopPropagation();
-
-    // Find what's below
+/** Find help target under given coordinates and show tooltip */
+function helpAtPoint(cx, cy) {
     shield.style.pointerEvents = 'none';
     if (tooltip) tooltip.style.pointerEvents = 'none';
-    const elUnder = document.elementFromPoint(e.clientX, e.clientY);
+    if (exitBtn) exitBtn.style.pointerEvents = 'none';
+    const elUnder = document.elementFromPoint(cx, cy);
     shield.style.pointerEvents = '';
     if (tooltip) tooltip.style.pointerEvents = '';
+    if (exitBtn) exitBtn.style.pointerEvents = '';
 
-    // If user clicked the help button (❓) — toggle off
+    // If user tapped the help button (❓) — toggle off
     if (elUnder && elUnder.closest && elUnder.closest('#helpBtn')) {
         stopHelp();
         return;
@@ -198,6 +202,22 @@ function onShieldClick(e) {
         hideTooltip();
         clearHighlight();
     }
+}
+
+/** Click on shield: find element underneath, show help */
+function onShieldClick(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    helpAtPoint(e.clientX, e.clientY);
+}
+
+/** Touch on shield: find element underneath, show help */
+function onShieldTouchEnd(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    const touch = e.changedTouches && e.changedTouches[0];
+    if (!touch) return;
+    helpAtPoint(touch.clientX, touch.clientY);
 }
 
 /** Right-click anywhere — exit help mode */
@@ -220,10 +240,15 @@ function startHelp() {
     createTooltip();
     shield.style.display = 'block';
 
-    // Shield intercepts clicks and right-click
+    // Shield intercepts clicks, touch, and right-click
     shield.addEventListener('click', onShieldClick);
     shield.addEventListener('mousemove', onMouseMove);
     shield.addEventListener('contextmenu', onContextMenu);
+    shield.addEventListener('touchend', onShieldTouchEnd, { passive: false });
+    shield.addEventListener('touchstart', (e) => e.preventDefault(), { passive: false });
+
+    // Widoczny przycisk wyjścia (ważny na urządzeniach dotykowych bez ESC)
+    createExitButton();
 
     // Block ALL events on document (capture phase = before anything else)
     for (const evt of BLOCKED_EVENTS) {
@@ -250,6 +275,9 @@ function stopHelp() {
         shield.style.display = 'none';
     }
 
+    // Remove exit button
+    removeExitButton();
+
     // Unblock all events
     for (const evt of BLOCKED_EVENTS) {
         document.removeEventListener(evt, blockEvent, true);
@@ -263,6 +291,34 @@ function stopHelp() {
     hideTooltip();
 
     console.log('[Help] Mode OFF');
+}
+
+// ================================
+// EXIT BUTTON (mobile / touch)
+// ================================
+function createExitButton() {
+    if (exitBtn) return;
+    exitBtn = document.createElement('button');
+    exitBtn.id = 'helpExitBtn';
+    exitBtn.className = 'help-exit-btn';
+    exitBtn.innerHTML = '✕ Zamknij pomoc';
+    exitBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        stopHelp();
+    });
+    exitBtn.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        stopHelp();
+    }, { passive: false });
+    document.body.appendChild(exitBtn);
+}
+
+function removeExitButton() {
+    if (exitBtn) {
+        exitBtn.remove();
+        exitBtn = null;
+    }
 }
 
 // ================================

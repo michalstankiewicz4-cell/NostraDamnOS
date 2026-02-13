@@ -5129,3 +5129,29 @@ input:disabled {
     .help-tooltip-title { font-size: 1rem; }
     .help-tooltip-desc { font-size: 0.85rem; }
 }
+
+/* === Help Exit Button (mobile / touch) === */
+.help-exit-btn {
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    z-index: 1000020;
+    background: #ef4444;
+    color: #fff;
+    border: 2px solid #fca5a5;
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(239, 68, 68, 0.4);
+    animation: helpExitIn 0.3s ease;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+.help-exit-btn:hover { background: #dc2626; }
+.help-exit-btn:active { transform: scale(0.95); }
+@keyframes helpExitIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
