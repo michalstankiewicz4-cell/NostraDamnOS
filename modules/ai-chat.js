@@ -1,7 +1,8 @@
 // AI Chat Assistant - Client-side chat with database queries
-// Supports: OpenAI, Anthropic Claude, Google Gemini
+// Supports: OpenAI, Anthropic Claude, Google Gemini, WebLLM (local)
 
 import { db2 } from './database-v2.js';
+import { WEBLLM_MODELS, initWebLLM, chatCompletion as webllmChatCompletion, isReady as webllmIsReady, getCurrentModel as webllmGetCurrentModel, isWebGPUAvailable } from './webllm.js';
 
 // State
 const chatState = {
@@ -170,6 +171,21 @@ const MODEL_CONFIG = {
     }
 };
 
+// Dynamically add WebLLM local models to MODEL_CONFIG
+WEBLLM_MODELS.forEach(m => {
+    const key = `webllm-${m.id}`;
+    MODEL_CONFIG[key] = {
+        name: `🧠 ${m.name} (${m.size})`,
+        apiUrl: '',
+        model: m.id,
+        keyLink: '',
+        keyPlaceholder: 'Nie wymaga klucza API',
+        provider: 'webllm',
+        localSize: m.size,
+        localCategory: m.category
+    };
+});
+
 /**
  * Initialize AI Chat
  */
@@ -277,16 +293,29 @@ function setupChatEventListeners() {
  */
 function updateModelUI() {
     const config = MODEL_CONFIG[chatState.selectedModel];
+    if (!config) return;
+    
     const apiKeyLink = document.getElementById('apiKeyLink');
     const apiKeyInput = document.getElementById('aiApiKey');
+    const apiKeyRow = document.getElementById('apiKeyRow');
     
-    if (apiKeyLink) {
-        apiKeyLink.href = config.keyLink;
-        apiKeyLink.textContent = `Wygeneruj klucz dla ${config.name}`;
-    }
-    
-    if (apiKeyInput) {
-        apiKeyInput.placeholder = config.keyPlaceholder;
+    if (config.provider === 'webllm') {
+        // Local model — hide API key row, show info
+        if (apiKeyRow) apiKeyRow.style.display = 'none';
+        if (apiKeyLink) {
+            apiKeyLink.href = '#';
+            apiKeyLink.textContent = `🧠 ${config.name} — model lokalny (WebGPU)`;
+        }
+    } else {
+        // Cloud model — show API key row
+        if (apiKeyRow) apiKeyRow.style.display = '';
+        if (apiKeyLink) {
+            apiKeyLink.href = config.keyLink;
+            apiKeyLink.textContent = `Wygeneruj klucz dla ${config.name}`;
+        }
+        if (apiKeyInput) {
+            apiKeyInput.placeholder = config.keyPlaceholder;
+        }
     }
 }
 
@@ -336,6 +365,7 @@ function rebuildModelSelect() {
     const geminiLatest = [];
     const geminiSpecial = [];
     const gemmaModels = [];
+    const webllmModels = [];
     
     Object.keys(MODEL_CONFIG).forEach(key => {
         const config = MODEL_CONFIG[key];
@@ -350,6 +380,8 @@ function rebuildModelSelect() {
         
         if (isFavorite) {
             favoriteModels.push(option);
+        } else if (config.provider === 'webllm') {
+            webllmModels.push(option);
         } else if (key === 'openai') {
             openaiModel.push(option);
         } else if (key === 'claude') {
@@ -413,6 +445,7 @@ function rebuildModelSelect() {
     addGroup('📌 Latest', geminiLatest);
     addGroup('🎨 Image & Specjalne', geminiSpecial);
     addGroup('🤖 Gemma (Open Models)', gemmaModels);
+    addGroup('🧠 Modele Lokalne (WebLLM)', webllmModels);
     
     // Restore selected value
     if (currentValue && MODEL_CONFIG[currentValue]) {
@@ -547,7 +580,8 @@ async function sendMessage() {
     const message = input.value.trim();
     if (!message) return;
     
-    if (!chatState.apiKey) {
+    const selectedConfig = MODEL_CONFIG[chatState.selectedModel];
+    if (!chatState.apiKey && selectedConfig?.provider !== 'webllm') {
         addMessageToChat('system', '⚠️ Proszę podać klucz API');
         return;
     }
@@ -611,7 +645,9 @@ Odpowiadaj zawsze po polsku. Jeśli generujesz SQL, umieść go w bloku kodu.`;
 
     let response;
     
-    if (chatState.selectedModel === 'openai') {
+    if (config.provider === 'webllm') {
+        response = await callWebLLM(systemPrompt, userMessage, config);
+    } else if (chatState.selectedModel === 'openai') {
         response = await callOpenAI(systemPrompt, userMessage, config);
     } else if (chatState.selectedModel === 'claude') {
         response = await callClaude(systemPrompt, userMessage, config);
@@ -643,6 +679,45 @@ Odpowiadaj zawsze po polsku. Jeśli generujesz SQL, umieść go w bloku kodu.`;
     }
     
     return response;
+}
+
+/**
+ * Call WebLLM (local model in browser)
+ */
+async function callWebLLM(systemPrompt, userMessage, config) {
+    const modelId = config.model;
+
+    // Check WebGPU availability
+    if (!isWebGPUAvailable()) {
+        throw new Error('WebGPU niedostępne. Potrzebujesz Chrome 113+ lub Edge 113+ z obsługą WebGPU.');
+    }
+
+    // Load model if not ready or different model selected
+    if (!webllmIsReady() || webllmGetCurrentModel() !== modelId) {
+        // Show loading progress in chat
+        const loadingId = addMessageToChat('system', `⏳ Ładowanie modelu ${config.name}... (0%)`);
+        
+        try {
+            await initWebLLM(modelId, (info) => {
+                const pct = Math.round((info.progress || 0) * 100);
+                const text = info.text || '';
+                updateMessage(loadingId, `⏳ ${text} (${pct}%)`);
+            });
+            removeMessage(loadingId);
+            addMessageToChat('system', `✅ Model ${config.name} załadowany i gotowy!`);
+        } catch (error) {
+            removeMessage(loadingId);
+            throw new Error(`Nie udało się załadować modelu: ${error.message}`);
+        }
+    }
+
+    // Call local model
+    const result = await webllmChatCompletion(userMessage, systemPrompt, {
+        temperature: 0.7,
+        maxTokens: 2000
+    });
+
+    return result;
 }
 
 /**
@@ -833,6 +908,16 @@ function removeMessage(messageId) {
 }
 
 /**
+ * Update message content in chat (for progress updates)
+ */
+function updateMessage(messageId, content) {
+    const messageDiv = document.getElementById(messageId);
+    if (!messageDiv) return;
+    const contentEl = messageDiv.querySelector('.chat-message-content');
+    if (contentEl) contentEl.innerHTML = formatMessage(content);
+}
+
+/**
  * Format message content
  */
 function formatMessage(content) {
@@ -982,6 +1067,21 @@ async function pingModelAPI(modelKey) {
     // Set checking state
     lamp.className = 'status-lamp checking';
     if (window.clog) window.clog('yellow', `[AI Ping] → ${config.name} (${config.provider})...`);
+
+    // WebLLM local models — check WebGPU availability
+    if (config.provider === 'webllm') {
+        if (isWebGPUAvailable()) {
+            const isLoaded = webllmIsReady() && webllmGetCurrentModel() === config.model;
+            lamp.className = isLoaded ? 'status-lamp success' : 'status-lamp warning';
+            lamp.title = isLoaded ? `${config.name} — załadowany` : `${config.name} — WebGPU OK, model niezaładowany`;
+            if (window.clog) window.clog('yellow', `[AI Ping] ← ${config.name}: ${isLoaded ? 'loaded' : 'WebGPU OK'}`);
+        } else {
+            lamp.className = 'status-lamp error';
+            lamp.title = `${config.name} — WebGPU niedostępne`;
+            if (window.clog) window.clog('yellow', `[AI Ping] ← ${config.name}: WebGPU unavailable`);
+        }
+        return;
+    }
 
     try {
         // Test with a minimal request
