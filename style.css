@@ -3136,6 +3136,141 @@ input:disabled {
     background: var(--border-color);
 }
 
+/* Online Analysis Styles */
+.prediction-load-btn {
+    background: #10b981;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: background 0.2s;
+}
+
+.prediction-load-btn:hover {
+    background: #059669;
+}
+
+.prediction-load-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.online-analyzer-intro {
+    text-align: center;
+    padding: 2rem 1rem;
+}
+
+.online-analyzer-intro p {
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+}
+
+.online-sources {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+}
+
+.online-source-tag {
+    background: rgba(102, 126, 234, 0.1);
+    color: #667eea;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.online-articles-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.online-article-item {
+    padding: 1rem;
+    background: var(--bg-color);
+    border-radius: 8px;
+    border-left: 3px solid #667eea;
+    transition: transform 0.2s;
+}
+
+.online-article-item:hover {
+    transform: translateX(4px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.online-article-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.online-article-source {
+    font-weight: 600;
+    color: #667eea;
+    font-size: 0.85rem;
+}
+
+.online-article-date {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.online-article-title {
+    font-size: 1rem;
+    color: var(--text-primary);
+    margin-bottom: 0.75rem;
+    line-height: 1.4;
+}
+
+.online-article-meta {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    font-size: 0.85rem;
+}
+
+.online-sentiment {
+    font-weight: 600;
+}
+
+.online-relevance {
+    color: var(--text-secondary);
+}
+
+.online-keywords {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.online-keyword-tag {
+    background: rgba(102, 126, 234, 0.1);
+    color: #667eea;
+    padding: 0.2rem 0.6rem;
+    border-radius: 10px;
+    font-size: 0.75rem;
+}
+
+.online-summary {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    background: rgba(16, 185, 129, 0.05);
+    border-radius: 8px;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.6;
+}
+
+.online-summary strong {
+    color: var(--text-primary);
+}
+
 /* Mobile Responsive */
 @media (max-width: 768px) {
     .predictions-grid {
