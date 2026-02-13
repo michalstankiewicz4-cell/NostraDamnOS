@@ -221,6 +221,6 @@ export const HELP_DATA = {
     // ── Panel informacyjny (prawy górny) ─────────
     detailPanel: {
         title: "📋 Panel informacyjny",
-        desc: "Rozwijany panel informacyjny w prawym górnym rogu. Zawiera szczegóły pobierania danych (postęp ETL) oraz informacje o transmisji LIVE z Sejmu."
+        desc: "Panel informacyjny w prawym górnym rogu. Wyświetla szczegóły pobierania danych (postęp ETL) gdy trwa ściąganie."
     }
 };

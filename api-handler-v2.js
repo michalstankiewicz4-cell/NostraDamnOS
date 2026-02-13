@@ -3,7 +3,7 @@ import { runPipeline, buildConfigFromUI, getCacheStatus, verifyDatabase, detectD
 import { fetchCounter, setFetchAbortController } from './fetcher/fetcher.js';
 import { db2 } from './modules/database-v2.js';
 import ToastModule from './modules/toast.js';
-import { startLivePolling, stopLivePolling, getLastLiveData } from './modules/sejm-live-checker.js';
+import { startLivePolling, stopLivePolling } from './modules/sejm-live-checker.js';
 import { refreshChartsManager } from './modules/charts-manager.js';
 import { refreshPredictions } from './modules/predictions.js';
 
@@ -1007,10 +1007,6 @@ function updateEtlDetailPanel(percent, stage, details = {}) {
     let showFetchSection = true;
     try {
         const vis = JSON.parse(localStorage.getItem('uiVisibility') || '{}');
-        if (vis.infoPanel === false) { 
-            panel.style.display = 'none'; 
-            return; 
-        }
         if (vis.infoFetch === false) {
             showFetchSection = false;
         }
@@ -1029,12 +1025,6 @@ function updateEtlDetailPanel(percent, stage, details = {}) {
     if (statsEl && details.module) statsEl.textContent = details.module;
     if (linksEl && details.linksLabel) linksEl.textContent = details.linksLabel;
     
-    // Automatycznie rozwiń panel jeśli jest zwinięty i rozpoczyna się pobieranie
-    if (panel.classList.contains('collapsed') && showFetchSection) {
-        panel.classList.remove('collapsed');
-        localStorage.setItem('infoPanelCollapsed', 'false');
-    }
-    
     // Pokaż/ukryj sekcję fetch na podstawie ustawienia
     fetchSection.style.display = showFetchSection ? '' : 'none';
     
@@ -1043,153 +1033,46 @@ function updateEtlDetailPanel(percent, stage, details = {}) {
 }
 
 /**
- * Aktualizuje widoczność sekcji live Sejmu
+ * Aktualizuje lampkę statusu live Sejmu na pasku
  * @param {Object|boolean} liveData - dane live lub false
  */
 function updateLiveSection(liveData) {
     window.clog('blue', '[Update Live Section] Called with:', liveData);
     
-    const liveSection = document.getElementById('etlDetailLiveSection');
     const liveLamp = document.getElementById('liveLamp');
-    
-    if (!liveSection) return;
+    if (!liveLamp) return;
 
     try {
-        const vis = JSON.parse(localStorage.getItem('uiVisibility') || '{}');
-        
-        // Jeśli panel wyłączony lub opcja live wyłączona - ukryj sekcję
-        if (vis.infoPanel === false || vis.infoLive === false) {
-            liveSection.style.display = 'none';
-            updatePanelVisibility();
-            return;
-        }
-
-        // Sprawdź czy są dane live
         const isLive = !!liveData && liveData.isLive;
         
         if (isLive) {
-            liveSection.style.display = '';
-            console.log('[Info Panel] 🔴 Trwa transmisja Sejmu');
-            
-            // Renderuj szczegóły live
-            renderLiveDetails(liveData);
-            
-            // Aktualizuj lampkę na pasku dolnym (jeśli widoczna)
-            if (liveLamp) {
-                liveLamp.className = 'floating-lamp floating-lamp-live-blink';
-                liveLamp.title = 'Trwa transmisja Sejmu';
-            }
+            liveLamp.className = 'floating-lamp floating-lamp-live-blink';
+            liveLamp.title = 'Trwa transmisja Sejmu';
         } else {
-            liveSection.style.display = 'none';
-            
-            // Przywróć domyślny stan lampki
-            if (liveLamp) {
-                liveLamp.className = 'floating-lamp floating-lamp-idle';
-                liveLamp.title = 'Brak transmisji';
-            }
+            liveLamp.className = 'floating-lamp floating-lamp-idle';
+            liveLamp.title = 'Brak transmisji';
         }
-        
-        updatePanelVisibility();
     } catch (error) {
         console.error('[updateLiveSection] Error:', error);
     }
 }
 
 /**
- * Renderuje szczegóły transmisji live
- * @param {Object} data - dane live
- */
-function renderLiveDetails(data) {
-    window.clog('blue', '[Live Details] Rendering with data:', data);
-    
-    // Posiedzenie
-    const titleEl = document.getElementById('liveProceedingTitle');
-    const dayEl = document.getElementById('liveProceedingDay');
-    if (titleEl) titleEl.textContent = data.proceeding?.title || 'Posiedzenie Sejmu';
-    if (dayEl) dayEl.textContent = `Dzień ${data.proceeding?.currentDay || 1} / ${data.proceeding?.totalDays || 1}`;
-    
-    // Ostatni mówcy
-    const speakersList = document.getElementById('liveSpeakersList');
-    const speakersSection = document.getElementById('liveSpeakersSection');
-    window.clog('blue', '[Live Details] Speakers:', data.recentSpeakers?.length || 0);
-    if (speakersList && speakersSection) {
-        speakersSection.style.display = '';
-        if (data.recentSpeakers && data.recentSpeakers.length > 0) {
-            speakersList.innerHTML = data.recentSpeakers.map(speaker => `
-                <div class="etl-live-speaker-item">
-                    <div class="etl-live-speaker-name">${speaker.name}</div>
-                    <div class="etl-live-speaker-role">${speaker.role}</div>
-                </div>
-            `).join('');
-        } else {
-            speakersList.innerHTML = '<div class="etl-live-empty-message">⏳ Transkrypcje będą dostępne po zakończeniu obrad</div>';
-        }
-    }
-    
-    // Ostatnie głosowania
-    const votingsList = document.getElementById('liveVotingsList');
-    const votingsSection = document.getElementById('liveVotingsSection');
-    window.clog('blue', '[Live Details] Votings:', data.recentVotings?.length || 0);
-    if (votingsList && votingsSection) {
-        votingsSection.style.display = '';
-        if (data.recentVotings && data.recentVotings.length > 0) {
-            votingsList.innerHTML = data.recentVotings.map(voting => `
-                <div class="etl-live-voting-item">
-                    <div class="etl-live-voting-topic">${voting.topic}</div>
-                    <div class="etl-live-voting-results">
-                        <span class="etl-live-voting-yes">Za: ${voting.yes}</span>
-                        <span class="etl-live-voting-no">Przeciw: ${voting.no}</span>
-                        <span class="etl-live-voting-abstain">Wstrz.: ${voting.abstain}</span>
-                    </div>
-                </div>
-            `).join('');
-        } else {
-            votingsList.innerHTML = '<div class="etl-live-empty-message">⏳ Wyniki głosowań będą dostępne po zakończeniu obrad</div>';
-        }
-    }
-    
-    // Porządek obrad
-    const agendaList = document.getElementById('liveAgendaList');
-    const agendaSection = document.getElementById('liveAgendaSection');
-    if (agendaList && agendaSection) {
-        agendaSection.style.display = '';
-        if (data.agenda && data.agenda.length > 0) {
-            agendaList.innerHTML = data.agenda.slice(0, 10).map(item => `
-                <div class="etl-live-agenda-item">${item.title || item}</div>
-            `).join('');
-        } else {
-            agendaList.innerHTML = '<div class="etl-live-empty-message">⏳ Porządek obrad będzie dostępny wkrótce</div>';
-        }
-    }
-}
-
-/**
- * Aktualizuje widoczność całego panelu na podstawie widoczności sekcji
+ * Aktualizuje widoczność całego panelu na podstawie widoczności sekcji fetch
  */
 function updatePanelVisibility() {
     const panel = document.getElementById('etlDetailPanel');
     const fetchSection = document.getElementById('etlDetailFetchSection');
-    const liveSection = document.getElementById('etlDetailLiveSection');
     
     if (!panel) return;
 
     try {
-        const vis = JSON.parse(localStorage.getItem('uiVisibility') || '{}');
-        
-        // Jeśli panel całkowicie wyłączony - ukryj
-        if (vis.infoPanel === false) {
-            panel.style.display = 'none';
-            return;
-        }
-
-        // Sprawdź czy któraś sekcja jest widoczna
+        // Sprawdź czy sekcja fetch jest widoczna
         const fetchVisible = fetchSection && 
             getComputedStyle(fetchSection).display !== 'none';
-        const liveVisible = liveSection && 
-            getComputedStyle(liveSection).display !== 'none';
 
-        // Pokaż panel tylko jeśli przynajmniej jedna sekcja jest widoczna
-        if (fetchVisible || liveVisible) {
+        // Pokaż panel tylko jeśli sekcja fetch jest widoczna
+        if (fetchVisible) {
             panel.style.display = '';
         } else {
             panel.style.display = 'none';
@@ -1209,19 +1092,6 @@ window.db2 = db2;
 function refreshInfoPanelSections() {
     try {
         const vis = JSON.parse(localStorage.getItem('uiVisibility') || '{}');
-        
-        // Odśwież sekcję Live - wywołaj updateLiveSection z ostatnimi danymi
-        const lastLive = getLastLiveData();
-        if (lastLive !== null) {
-            updateLiveSection(lastLive);
-        } else {
-            // Brak danych live - ukryj sekcję jeśli infoLive wyłączone
-            const liveSection = document.getElementById('etlDetailLiveSection');
-            if (liveSection && vis.infoLive === false) {
-                liveSection.style.display = 'none';
-                updatePanelVisibility();
-            }
-        }
         
         // Sekcja Fetch: sprawdź czy trwa pobieranie (pasek postępu > 0%)
         const fetchSection = document.getElementById('etlDetailFetchSection');

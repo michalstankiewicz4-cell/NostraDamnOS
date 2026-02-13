@@ -1665,44 +1665,12 @@ input:disabled {
     transition: width 0.3s ease, box-shadow 0.3s ease;
 }
 
-.etl-detail-panel.collapsed {
-    width: 280px;
-}
 
 .etl-detail-header {
     font-weight: 700;
     font-size: 0.8rem;
     margin-bottom: 6px;
     color: #90cdf4;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    cursor: pointer;
-    user-select: none;
-}
-
-.etl-detail-panel.collapsed .etl-detail-header {
-    margin-bottom: 0;
-}
-
-.etl-detail-toggle {
-    background: none;
-    border: none;
-    color: #90cdf4;
-    font-size: 0.7rem;
-    cursor: pointer;
-    padding: 2px 6px;
-    border-radius: 3px;
-    transition: all 0.2s;
-    line-height: 1;
-}
-
-.etl-detail-toggle:hover {
-    background: rgba(144, 205, 244, 0.1);
-}
-
-.etl-detail-panel.collapsed .etl-detail-toggle {
-    transform: rotate(-90deg);
 }
 
 .etl-detail-content {
@@ -1729,11 +1697,6 @@ input:disabled {
     background: rgba(144, 205, 244, 0.5);
 }
 
-.etl-detail-panel.collapsed .etl-detail-content {
-    max-height: 0;
-    opacity: 0;
-    overflow: hidden;
-}
 
 .etl-detail-stage {
     margin-bottom: 6px;
@@ -1785,202 +1748,6 @@ input:disabled {
 
 .etl-detail-section-hidden {
     display: none !important;
-}
-
-/* Live Sejmu Indicator */
-.etl-detail-live-indicator {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 0;
-}
-
-.etl-detail-live-dot {
-    font-size: 0.9rem;
-    line-height: 1;
-    animation: pulse-red 2s ease-in-out infinite;
-}
-
-.etl-detail-live-text {
-    color: #fc8181;
-    font-weight: 600;
-    font-size: 0.75rem;
-}
-
-@keyframes pulse-red {
-    0%, 100% {
-        opacity: 1;
-    }
-    50% {
-        opacity: 0.5;
-    }
-}
-
-/* Live Content Details */
-.etl-detail-live-content {
-    padding-top: 8px;
-    color: #e2e8f0;
-}
-
-.etl-live-proceeding {
-    padding: 6px 0;
-    border-bottom: 1px solid #4a5568;
-    margin-bottom: 8px;
-}
-
-.etl-live-proceeding strong {
-    font-size: 0.8rem;
-    color: #90cdf4;
-    display: block;
-    margin-bottom: 2px;
-}
-
-.etl-live-subtitle {
-    font-size: 0.7rem;
-    color: #cbd5e0;
-}
-
-.etl-live-section {
-    margin-bottom: 10px;
-}
-
-.etl-live-section-header {
-    font-size: 0.7rem;
-    font-weight: 600;
-    color: #90cdf4;
-    margin-bottom: 4px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-/* Speakers */
-.etl-live-speakers {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-}
-
-.etl-live-speaker-item {
-    font-size: 0.7rem;
-    padding: 4px 6px;
-    background: #1a202c;
-    border-radius: 4px;
-    border-left: 2px solid #0891b2;
-}
-
-.etl-live-speaker-name {
-    font-weight: 600;
-    color: #e2e8f0;
-}
-
-.etl-live-speaker-role {
-    color: #a0aec0;
-    font-size: 0.65rem;
-}
-
-/* Votings */
-.etl-live-votings {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.etl-live-voting-item {
-    font-size: 0.7rem;
-    padding: 5px 6px;
-    background: #1a202c;
-    border-radius: 4px;
-}
-
-.etl-live-voting-topic {
-    font-weight: 600;
-    color: #e2e8f0;
-    margin-bottom: 2px;
-    line-height: 1.3;
-}
-
-.etl-live-voting-results {
-    display: flex;
-    gap: 8px;
-    font-size: 0.65rem;
-}
-
-.etl-live-voting-yes {
-    color: #68d391;
-}
-
-.etl-live-voting-no {
-    color: #fc8181;
-}
-
-.etl-live-voting-abstain {
-    color: #f6ad55;
-}
-
-/* Agenda */
-.etl-live-agenda {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    max-height: 150px;
-    overflow-y: auto;
-}
-
-.etl-live-agenda-item {
-    font-size: 0.7rem;
-    padding: 3px 6px;
-    color: #cbd5e0;
-    line-height: 1.4;
-}
-
-.etl-live-agenda-item::before {
-    content: "•";
-    margin-right: 4px;
-    color: #0891b2;
-}
-
-.etl-live-empty {
-    font-size: 0.7rem;
-    color: #a0aec0;
-    font-style: italic;
-    padding: 4px 0;
-}
-
-.etl-live-empty-message {
-    font-size: 0.75rem;
-    color: #90cdf4;
-    font-style: italic;
-    padding: 8px 10px;
-    text-align: center;
-    background: rgba(26, 32, 44, 0.3);
-    border-radius: 4px;
-    margin: 4px 0;
-}
-
-/* Live Link Section */
-.etl-live-link-section {
-    margin-bottom: 10px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid #4a5568;
-}
-
-.etl-live-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 0.75rem;
-    color: #90cdf4;
-    text-decoration: none;
-    padding: 4px 8px;
-    border-radius: 4px;
-    transition: all 0.2s;
-    background: #1a202c;
-}
-
-.etl-live-link:hover {
-    background: #2d3748;
-    color: #63b3ed;
-    text-decoration: none;
 }
 
 /* ============================================

@@ -1012,16 +1012,8 @@
                             </label>
                             <p style="font-size:0.85rem;color:var(--text-secondary);margin-top:10px;margin-bottom:6px">Inne:</p>
                             <label class="settings-checkbox-label">
-                                <input type="checkbox" id="toggleInfoPanel" checked>
-                                <span>Panel informacyjny (prawy górny róg)</span>
-                            </label>
-                            <label class="settings-checkbox-label" style="margin-left:20px;">
                                 <input type="checkbox" id="toggleInfoFetch" checked>
                                 <span>Informuj o ściąganiu danych</span>
-                            </label>
-                            <label class="settings-checkbox-label" style="margin-left:20px;">
-                                <input type="checkbox" id="toggleInfoLive" checked>
-                                <span>Informuj o live Sejmu</span>
                             </label>
                             <label class="settings-checkbox-label">
                                 <input type="checkbox" id="toggleRememberEtl">
@@ -1354,7 +1346,6 @@
         data-help-id="detailPanel">
         <div class="etl-detail-header">
             <span>Panel informacyjny</span>
-            <button id="etlDetailPanelToggle" class="etl-detail-toggle" title="Zwiń/rozwiń panel">▼</button>
         </div>
         <div id="etlDetailContent" class="etl-detail-content">
         
@@ -1372,80 +1363,11 @@
             <div id="etlDetailLinks" class="etl-detail-links"></div>
         </div>
 
-        <!-- Sekcja: Live Sejmu -->
-        <div id="etlDetailLiveSection" class="etl-detail-section" style="display:none;">
-            <div class="etl-detail-live-indicator">
-                <span class="etl-detail-live-dot">🔴</span>
-                <span class="etl-detail-live-text">Trwa transmisja Sejmu</span>
-            </div>
-            
-            <div class="etl-detail-live-content">
-                <!-- Link do planu obrad -->
-                <div class="etl-live-link-section">
-                    <a id="livePlanLink" href="https://www.sejm.gov.pl/sejm10.nsf/transmisje.xsp#" target="_blank" class="etl-live-link">
-                        📅 Plan obrad Sejmu →
-                    </a>
-                </div>
-                
-                <!-- Posiedzenie -->
-                <div class="etl-live-proceeding">
-                    <strong id="liveProceedingTitle">Ładowanie...</strong>
-                    <div id="liveProceedingDay" class="etl-live-subtitle"></div>
-                </div>
-                
-                <!-- Ostatni mówcy -->
-                <div id="liveSpeakersSection" class="etl-live-section">
-                    <div class="etl-live-section-header">👤 Ostatni mówcy</div>
-                    <div id="liveSpeakersList" class="etl-live-speakers"></div>
-                </div>
-                
-                <!-- Ostatnie głosowania -->
-                <div id="liveVotingsSection" class="etl-live-section">
-                    <div class="etl-live-section-header">🗳️ Ostatnie głosowania</div>
-                    <div id="liveVotingsList" class="etl-live-votings"></div>
-                </div>
-                
-                <!-- Porządek obrad -->
-                <div id="liveAgendaSection" class="etl-live-section">
-                    <div class="etl-live-section-header">📋 Porządek obrad</div>
-                    <div id="liveAgendaList" class="etl-live-agenda"></div>
-                </div>
-            </div>
-        </div>
+
         </div><!-- /etlDetailContent -->
     </div>
 
-    <!-- Info Panel Toggle Script -->
-    <script>
-    (function() {
-        const panel = document.getElementById('etlDetailPanel');
-        const toggleBtn = document.getElementById('etlDetailPanelToggle');
-        const header = panel?.querySelector('.etl-detail-header');
-        const STORAGE_KEY = 'infoPanelCollapsed';
-        
-        if (!panel || !toggleBtn) return;
-        
-        // Load saved state
-        const savedState = localStorage.getItem(STORAGE_KEY);
-        if (savedState === 'true') {
-            panel.classList.add('collapsed');
-        }
-        
-        // Toggle on button or header click
-        function toggle() {
-            panel.classList.toggle('collapsed');
-            const isCollapsed = panel.classList.contains('collapsed');
-            localStorage.setItem(STORAGE_KEY, isCollapsed);
-        }
-        
-        toggleBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            toggle();
-        });
-        
-        header?.addEventListener('click', toggle);
-    })();
-    </script>
+
 
     <!-- Live Stream Modal -->
     <div id="liveStreamModal" class="live-stream-modal" style="display:none;">
@@ -2341,9 +2263,7 @@
             dbCheckNewRecordsInterval: 5,
             dbCheckDataChanges: true,
             dbCheckDataChangesInterval: 11,
-            infoPanel: true,
             infoFetch: true,
-            infoLive: true,
             rememberEtl: false
         };
 
@@ -2406,13 +2326,7 @@
                 }
             }
 
-            // Info panel (floating panel, top-right)
-            const infoPanel = document.getElementById('etlDetailPanel');
-            if (infoPanel && !state.infoPanel) {
-                infoPanel.style.display = 'none';
-            }
-            
-            // Refresh info panel sections visibility (live/fetch)
+            // Refresh info panel sections visibility
             if (window.refreshInfoPanelSections) {
                 window.refreshInfoPanelSections();
             }
@@ -2478,12 +2392,8 @@
         }
 
         // Info panel toggles
-        const chkInfoPanel = document.getElementById('toggleInfoPanel');
-        if (chkInfoPanel) chkInfoPanel.checked = !!state.infoPanel;
         const chkInfoFetch = document.getElementById('toggleInfoFetch');
         if (chkInfoFetch) chkInfoFetch.checked = !!state.infoFetch;
-        const chkInfoLive = document.getElementById('toggleInfoLive');
-        if (chkInfoLive) chkInfoLive.checked = !!state.infoLive;
 
         // Database monitoring toggles
         const chkDbCheckNewRecords = document.getElementById('toggleDbCheckNewRecords');
@@ -2521,9 +2431,7 @@
         for (const { key, id } of barToggles) {
             onToggle(key, document.getElementById(id));
         }
-        onToggle('infoPanel', chkInfoPanel);
         onToggle('infoFetch', chkInfoFetch);
-        onToggle('infoLive', chkInfoLive);
 
         // Database monitoring toggles with restart callback
         if (chkDbCheckNewRecords) {
