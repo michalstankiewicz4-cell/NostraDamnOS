@@ -121,7 +121,7 @@ export const db2 = {
                 id_glosu TEXT PRIMARY KEY,      -- hash: id_glosowania + id_osoby
                 id_glosowania TEXT,
                 id_osoby TEXT,
-                glos TEXT,                      -- za/przeciw/wstrzymał/nieobecny
+                glos TEXT,                      -- YES/NO/ABSTAIN/ABSENT/VOTE_VALID
                 FOREIGN KEY(id_glosowania) REFERENCES glosowania(id_glosowania),
                 FOREIGN KEY(id_osoby) REFERENCES poslowie(id_osoby)
             );

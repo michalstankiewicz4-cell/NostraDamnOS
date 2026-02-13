@@ -210,41 +210,32 @@ function detectRebels() {
         // Znajdź posłów z niską dyscypliną klubową
         // Dla każdego posła: ile razy głosował zgodnie z większością swojego klubu
         const result = db2.database.exec(`
-            WITH club_majority AS (
+            WITH club_votes AS (
                 SELECT 
-                    cv.id_glosowania,
-                    cv.klub,
-                    cv.glos
-                FROM (
-                    SELECT 
-                        gl.id_glosowania,
-                        p.klub,
-                        gl.glos,
-                        COUNT(*) as vote_count
-                    FROM glosy gl
-                    JOIN poslowie p ON gl.id_osoby = p.id_osoby
-                    WHERE gl.glos IN ('YES', 'NO', 'ABSTAIN')
-                    AND p.klub IS NOT NULL AND p.klub != ''
-                    GROUP BY gl.id_glosowania, p.klub, gl.glos
-                ) cv
-                WHERE cv.vote_count = (
-                    SELECT MAX(vote_count) 
-                    FROM (
-                        SELECT COUNT(*) as vote_count
-                        FROM glosy gl2
-                        JOIN poslowie p2 ON gl2.id_osoby = p2.id_osoby
-                        WHERE gl2.id_glosowania = cv.id_glosowania 
-                        AND p2.klub = cv.klub
-                        AND gl2.glos IN ('YES', 'NO', 'ABSTAIN')
-                        GROUP BY gl2.glos
-                    )
-                )
+                    gl.id_glosowania,
+                    p.klub,
+                    gl.glos,
+                    COUNT(*) as vote_count
+                FROM glosy gl
+                JOIN poslowie p ON gl.id_osoby = p.id_osoby
+                WHERE gl.glos IN ('YES', 'NO', 'ABSTAIN')
+                AND p.klub IS NOT NULL AND p.klub != ''
+                GROUP BY gl.id_glosowania, p.klub, gl.glos
+            ),
+            club_majority AS (
+                SELECT 
+                    id_glosowania,
+                    klub,
+                    glos as majority_vote,
+                    MAX(vote_count) as max_count
+                FROM club_votes
+                GROUP BY id_glosowania, klub
             )
             SELECT 
                 p.imie || ' ' || p.nazwisko as name,
                 p.klub,
                 COUNT(*) as total_votes,
-                SUM(CASE WHEN gl.glos = cm.glos THEN 1 ELSE 0 END) as aligned_votes
+                SUM(CASE WHEN gl.glos = cm.majority_vote THEN 1 ELSE 0 END) as aligned_votes
             FROM poslowie p
             JOIN glosy gl ON p.id_osoby = gl.id_osoby
             JOIN club_majority cm ON gl.id_glosowania = cm.id_glosowania AND p.klub = cm.klub
