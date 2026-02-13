@@ -4301,63 +4301,104 @@ function analyzeGhostVoting() {
     console.log('[Predictions] Analyzing ghost voting patterns...');
 
     try {
-        // Dla każdego dnia i posła: czy był ABSENT w jednym głosowaniu
-        // a jednocześnie głosował w innym tego samego dnia?
-        const result = db2.database.exec(`
-            WITH daily_votes AS (
-                SELECT 
-                    g.id_osoby,
-                    gl.data,
-                    gl.numer,
-                    gl.id_glosowania,
-                    g.glos,
-                    gl.tytul
-                FROM glosy g
-                JOIN glosowania gl ON g.id_glosowania = gl.id_glosowania
-                WHERE gl.data IS NOT NULL AND gl.numer IS NOT NULL
-            ),
-            suspicious AS (
-                SELECT
-                    a.id_osoby,
-                    a.data,
-                    a.numer as absent_numer,
-                    a.id_glosowania as absent_glosowanie,
-                    a.tytul as absent_tytul,
-                    v.numer as vote_numer,
-                    v.id_glosowania as vote_glosowanie,
-                    v.glos as actual_vote,
-                    v.tytul as vote_tytul,
-                    ABS(v.numer - a.numer) as distance
-                FROM daily_votes a
-                JOIN daily_votes v ON a.id_osoby = v.id_osoby 
-                    AND a.data = v.data 
-                    AND a.id_glosowania != v.id_glosowania
-                WHERE a.glos = 'ABSENT'
-                  AND v.glos IN ('YES', 'NO', 'ABSTAIN')
-                  AND ABS(v.numer - a.numer) <= 3
-            )
-            SELECT
-                p.imie || ' ' || p.nazwisko as name,
-                p.klub,
-                s.data,
-                s.absent_numer,
-                s.absent_tytul,
-                s.vote_numer,
-                s.actual_vote,
-                s.vote_tytul,
-                s.distance
-            FROM suspicious s
-            JOIN poslowie p ON s.id_osoby = p.id_osoby
-            WHERE p.klub IS NOT NULL AND p.klub != ''
-            ORDER BY s.distance ASC, s.data DESC
+        // Krok 1: Pobierz głosy ABSENT (tylko te) — mała lista
+        const absentResult = db2.database.exec(`
+            SELECT g.id_osoby, gl.data, gl.numer, gl.id_glosowania, gl.tytul
+            FROM glosy g
+            JOIN glosowania gl ON g.id_glosowania = gl.id_glosowania
+            WHERE g.glos = 'ABSENT' AND gl.data IS NOT NULL AND gl.numer IS NOT NULL
         `);
 
-        if (!result.length || !result[0].values.length) {
-            container.innerHTML = '<div class="prediction-no-data">Brak podejrzanych wzorców głosowania — żaden poseł nie był ABSENT w jednym głosowaniu i obecny w sąsiednim tego samego dnia.</div>';
+        if (!absentResult.length || !absentResult[0].values.length) {
+            container.innerHTML = '<div class="prediction-no-data">Brak danych o nieobecnościach</div>';
             return;
         }
 
-        const rows = result[0].values;
+        // Krok 2: Buduj mapę absent per (osoba, dzień) → [numery głosowań]
+        const absentMap = new Map(); // key: "id_osoby|data" → [{numer, id_glosowania, tytul}]
+        for (const [id_osoby, data, numer, id_glosowania, tytul] of absentResult[0].values) {
+            const key = `${id_osoby}|${data}`;
+            if (!absentMap.has(key)) absentMap.set(key, []);
+            absentMap.get(key).push({ numer, id_glosowania, tytul });
+        }
+
+        // Krok 3: Pobierz głosy obecne (YES/NO/ABSTAIN) tylko dla osób+dni które mają ABSENT
+        const personDays = [...absentMap.keys()];
+        // Buduj warunek SQL — grupuj po osobach
+        const personIds = [...new Set(personDays.map(k => k.split('|')[0]))];
+        const dates = [...new Set(personDays.map(k => k.split('|')[1]))];
+
+        // Użyj filtru z podzbiorami zamiast pełnego self-joina
+        const presentResult = db2.database.exec(`
+            SELECT g.id_osoby, gl.data, gl.numer, g.glos, gl.tytul, gl.id_glosowania
+            FROM glosy g
+            JOIN glosowania gl ON g.id_glosowania = gl.id_glosowania
+            WHERE g.glos IN ('YES', 'NO', 'ABSTAIN')
+              AND gl.data IS NOT NULL AND gl.numer IS NOT NULL
+        `);
+
+        if (!presentResult.length) {
+            container.innerHTML = '<div class="prediction-no-data">Brak danych głosowań</div>';
+            return;
+        }
+
+        // Krok 4: Buduj mapę obecnych per (osoba, dzień) → [{numer, glos, tytul}]
+        const presentMap = new Map();
+        for (const [id_osoby, data, numer, glos, tytul, id_glosowania] of presentResult[0].values) {
+            const key = `${id_osoby}|${data}`;
+            if (!absentMap.has(key)) continue; // pomijamy dni bez ABSENT
+            if (!presentMap.has(key)) presentMap.set(key, []);
+            presentMap.get(key).push({ numer, glos, tytul, id_glosowania });
+        }
+
+        // Krok 5: Znajdź podejrzane pary (ABSENT ↔ głos w odstępie ≤3)
+        const suspiciousRaw = [];
+        for (const [key, absents] of absentMap) {
+            const presents = presentMap.get(key);
+            if (!presents) continue;
+            const id_osoby = key.split('|')[0];
+            const data = key.split('|')[1];
+
+            for (const a of absents) {
+                for (const v of presents) {
+                    const dist = Math.abs(v.numer - a.numer);
+                    if (dist >= 1 && dist <= 3) {
+                        suspiciousRaw.push({
+                            id_osoby, data,
+                            absentNr: a.numer, absentTitle: a.tytul,
+                            voteNr: v.numer, vote: v.glos, voteTitle: v.tytul,
+                            dist
+                        });
+                    }
+                }
+            }
+        }
+
+        // Krok 6: Doładuj nazwy posłów
+        const mpResult = db2.database.exec(`
+            SELECT id_osoby, imie || ' ' || nazwisko as name, klub
+            FROM poslowie WHERE klub IS NOT NULL AND klub != ''
+        `);
+        const mpMap = new Map();
+        if (mpResult.length) {
+            for (const [id, name, klub] of mpResult[0].values) {
+                mpMap.set(String(id), { name, klub });
+            }
+        }
+
+        // Zamień id_osoby na name+klub
+        const rows = suspiciousRaw
+            .filter(s => mpMap.has(String(s.id_osoby)))
+            .map(s => {
+                const mp = mpMap.get(String(s.id_osoby));
+                return [mp.name, mp.klub, s.data, s.absentNr, s.absentTitle, s.voteNr, s.vote, s.voteTitle, s.dist];
+            })
+            .sort((a, b) => a[8] - b[8] || b[2].localeCompare(a[2]));
+
+        if (!rows.length) {
+            container.innerHTML = '<div class="prediction-no-data">Brak podejrzanych wzorców głosowania — żaden poseł nie był ABSENT w jednym głosowaniu i obecny w sąsiednim tego samego dnia.</div>';
+            return;
+        }
 
         // === Statystyki ===
         const byMp = {};
@@ -4399,7 +4440,7 @@ function analyzeGhostVoting() {
 
                 <div class="ghost-stats">
                     <div class="ghost-stat">
-                        <span class="ghost-stat-val">${events.size || uniqueEvents.size}</span>
+                        <span class="ghost-stat-val">${uniqueEvents.size}</span>
                         <span class="ghost-stat-label">📍 Podejrzanych zdarzeń</span>
                     </div>
                     <div class="ghost-stat ghost-stat-critical">
