@@ -1,5 +1,12 @@
 // Charts module — generuje wykresy Chart.js z danych w db2
 import { db2 } from './database-v2.js';
+import { 
+    analyzeSpeechesSentiment, 
+    aggregateByParty, 
+    aggregateByTime, 
+    getTopSpeakers,
+    getSentimentDistribution 
+} from './sentiment-analysis.js';
 
 const chartInstances = {};
 const COLORS = [
@@ -476,7 +483,11 @@ const renderers = {
     custom: renderCustomChart,
     najmniejAktywni: renderNajmniejAktywni,
     najmniejAktywneKluby: renderNajmniejAktywneKluby,
-    heatmap: renderHeatmap
+    heatmap: renderHeatmap,
+    sentimentDist: renderSentimentDistribution,
+    sentimentTime: renderSentimentOverTime,
+    sentimentParty: renderSentimentByParty,
+    topSpeakers: renderTopSpeakersSentiment
 };
 
 // Główna funkcja — renderuje wszystkie wykresy
@@ -489,6 +500,8 @@ export function renderAllCharts() {
     renderNajmniejAktywni();
     renderNajmniejAktywneKluby();
     renderHeatmap();
+    // Wykresy sentymentu (asynchroniczne)
+    refreshSentimentCharts().catch(err => console.error('[Charts] Sentiment error:', err));
     sortChartsByData();
 }
 
@@ -536,3 +549,306 @@ document.getElementById('customChartSelect')?.addEventListener('change', () => {
         if (db2.database) renderHeatmap();
     });
 });
+
+// === SENTIMENT ANALYSIS CHARTS ===
+
+let sentimentCache = null;
+
+/**
+ * Analizuje sentyment (z cache dla wydajności)
+ */
+async function getSentimentData(forceRefresh = false) {
+    if (sentimentCache && !forceRefresh) {
+        return sentimentCache;
+    }
+    
+    console.log('[Charts] Analyzing sentiment...');
+    sentimentCache = await analyzeSpeechesSentiment({ limit: 1000 });
+    console.log(`[Charts] Sentiment data ready: ${sentimentCache.length} speeches`);
+    return sentimentCache;
+}
+
+/**
+ * Rozkład sentymentu (doughnut)
+ */
+async function renderSentimentDistribution() {
+    try {
+        const sentimentData = await getSentimentData();
+        if (!sentimentData.length) { setCardState('chartSentimentDist', false); return; }
+        
+        const dist = getSentimentDistribution(sentimentData);
+        
+        setCardState('chartSentimentDist', true);
+        destroyChart('sentimentDist');
+        
+        chartInstances['sentimentDist'] = new Chart(document.getElementById('canvasSentimentDist'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Pozytywne', 'Neutralne', 'Negatywne'],
+                datasets: [{
+                    data: [dist.positive, dist.neutral, dist.negative],
+                    backgroundColor: ['#10b981', '#94a3b8', '#ef4444']
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'right', labels: { color: '#ccc', font: { size: 12 } } },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = Math.round((context.parsed / total) * 100);
+                                return ` ${context.label}: ${context.parsed} (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    } catch (error) {
+        console.error('[Charts] Error rendering sentiment distribution:', error);
+        setCardState('chartSentimentDist', false);
+    }
+}
+
+/**
+ * Sentyment w czasie (line chart)
+ */
+async function renderSentimentOverTime() {
+    try {
+        const sentimentData = await getSentimentData();
+        if (!sentimentData.length) { setCardState('chartSentimentTime', false); return; }
+        
+        const timeData = aggregateByTime(sentimentData);
+        if (!timeData.length) { setCardState('chartSentimentTime', false); return; }
+        
+        setCardState('chartSentimentTime', true);
+        destroyChart('sentimentTime');
+        
+        chartInstances['sentimentTime'] = new Chart(document.getElementById('canvasSentimentTime'), {
+            type: 'line',
+            data: {
+                labels: timeData.map(d => d.month),
+                datasets: [
+                    {
+                        label: 'Średni sentyment',
+                        data: timeData.map(d => d.avgScore),
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const data = timeData[context.dataIndex];
+                                return [
+                                    `Średni sentyment: ${context.parsed.y.toFixed(3)}`,
+                                    `Pozytywne: ${data.positive}`,
+                                    `Negatywne: ${data.negative}`,
+                                    `Neutralne: ${data.neutral}`,
+                                    `Wypowiedzi: ${data.count}`
+                                ];
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: { 
+                        ticks: { color: '#aaa', maxRotation: 45 }, 
+                        grid: { color: 'rgba(255,255,255,0.05)' } 
+                    },
+                    y: { 
+                        ticks: { color: '#aaa' }, 
+                        grid: { color: 'rgba(255,255,255,0.05)' },
+                        min: -1,
+                        max: 1
+                    }
+                }
+            }
+        });
+    } catch (error) {
+        console.error('[Charts] Error rendering sentiment over time:', error);
+        setCardState('chartSentimentTime', false);
+    }
+}
+
+/**
+ * Sentyment per klub (bar chart)
+ */
+async function renderSentimentByParty() {
+    try {
+        const sentimentData = await getSentimentData();
+        if (!sentimentData.length) { setCardState('chartSentimentParty', false); return; }
+        
+        const partyData = aggregateByParty(sentimentData);
+        if (!partyData.length) { setCardState('chartSentimentParty', false); return; }
+        
+        setCardState('chartSentimentParty', true);
+        destroyChart('sentimentParty');
+        
+        chartInstances['sentimentParty'] = new Chart(document.getElementById('canvasSentimentParty'), {
+            type: 'bar',
+            data: {
+                labels: partyData.map(d => d.party),
+                datasets: [{
+                    label: 'Średni sentyment',
+                    data: partyData.map(d => d.avgScore),
+                    backgroundColor: partyData.map(d => {
+                        if (d.avgScore > 0.1) return '#10b981';
+                        if (d.avgScore < -0.1) return '#ef4444';
+                        return '#94a3b8';
+                    })
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const data = partyData[context.dataIndex];
+                                return [
+                                    `Średni sentyment: ${context.parsed.y.toFixed(3)}`,
+                                    `Pozytywne: ${data.positive}`,
+                                    `Negatywne: ${data.negative}`,
+                                    `Neutralne: ${data.neutral}`,
+                                    `Wypowiedzi: ${data.count}`
+                                ];
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: { 
+                        ticks: { color: '#ccc', font: { size: 10 }, maxRotation: 45 }, 
+                        grid: { display: false } 
+                    },
+                    y: { 
+                        ticks: { color: '#aaa' }, 
+                        grid: { color: 'rgba(255,255,255,0.05)' },
+                        min: -1,
+                        max: 1
+                    }
+                }
+            }
+        });
+    } catch (error) {
+        console.error('[Charts] Error rendering sentiment by party:', error);
+        setCardState('chartSentimentParty', false);
+    }
+}
+
+/**
+ * Top mówcy - najbardziej pozytywni i negatywni (grouped bar)
+ */
+async function renderTopSpeakersSentiment() {
+    try {
+        const sentimentData = await getSentimentData();
+        if (!sentimentData.length) { setCardState('chartTopSpeakers', false); return; }
+        
+        const topSpeakers = getTopSpeakers(sentimentData, 8);
+        
+        const positiveSpeakers = topSpeakers.positive.slice(0, 8);
+        const negativeSpeakers = topSpeakers.negative.slice(0, 8);
+        
+        if (!positiveSpeakers.length && !negativeSpeakers.length) {
+            setCardState('chartTopSpeakers', false);
+            return;
+        }
+        
+        setCardState('chartTopSpeakers', true);
+        destroyChart('topSpeakers');
+        
+        // Formatuj nazwy (skróć długie)
+        const formatName = name => name.length > 20 ? name.slice(0, 20) + '...' : name;
+        
+        chartInstances['topSpeakers'] = new Chart(document.getElementById('canvasTopSpeakers'), {
+            type: 'bar',
+            data: {
+                labels: [
+                    ...positiveSpeakers.map(s => '✅ ' + formatName(s.speaker)),
+                    ...negativeSpeakers.map(s => '❌ ' + formatName(s.speaker))
+                ],
+                datasets: [{
+                    label: 'Sentyment',
+                    data: [
+                        ...positiveSpeakers.map(s => s.avgScore),
+                        ...negativeSpeakers.map(s => s.avgScore)
+                    ],
+                    backgroundColor: [
+                        ...positiveSpeakers.map(() => '#10b981'),
+                        ...negativeSpeakers.map(() => '#ef4444')
+                    ]
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const isPositive = context.dataIndex < positiveSpeakers.length;
+                                const data = isPositive 
+                                    ? positiveSpeakers[context.dataIndex]
+                                    : negativeSpeakers[context.dataIndex - positiveSpeakers.length];
+                                return [
+                                    `${data.speaker}`,
+                                    `Sentyment: ${context.parsed.x.toFixed(3)}`,
+                                    `Klub: ${data.party || 'Niez.'}`,
+                                    `Wypowiedzi: ${data.count}`
+                                ];
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: { 
+                        ticks: { color: '#aaa' }, 
+                        grid: { color: 'rgba(255,255,255,0.05)' },
+                        min: -1,
+                        max: 1
+                    },
+                    y: { 
+                        ticks: { color: '#ccc', font: { size: 10 } }, 
+                        grid: { display: false } 
+                    }
+                }
+            }
+        });
+    } catch (error) {
+        console.error('[Charts] Error rendering top speakers sentiment:', error);
+        setCardState('chartTopSpeakers', false);
+    }
+}
+
+/**
+ * Odśwież cache sentymentu i przerenderuj wszystkie wykresy
+ */
+async function refreshSentimentCharts() {
+    console.log('[Charts] Refreshing sentiment analysis...');
+    sentimentCache = null;
+    await Promise.all([
+        renderSentimentDistribution(),
+        renderSentimentOverTime(),
+        renderSentimentByParty(),
+        renderTopSpeakersSentiment()
+    ]);
+    console.log('[Charts] Sentiment charts refreshed');
+}
+
+// Export funkcji odświeżania sentymentu
+window.refreshSentimentCharts = refreshSentimentCharts;
+

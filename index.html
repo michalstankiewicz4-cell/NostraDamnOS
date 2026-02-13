@@ -705,6 +705,44 @@
                         <canvas id="canvasHeatmap"></canvas>
                         <div class="chart-no-data">Brak danych — pobierz głosy i posłów w ETL</div>
                     </div>
+                    
+                    <!-- WYKRESY ANALIZY SENTYMENTU -->
+                    <div class="chart-card" id="chartSentimentDist">
+                        <div class="chart-card-header">
+                            <h4>📊 Rozkład sentymentu wypowiedzi</h4>
+                            <button class="chart-refresh-btn" onclick="window.refreshSentimentCharts()" title="Analizuj ponownie">🔄</button>
+                        </div>
+                        <canvas id="canvasSentimentDist"></canvas>
+                        <div class="chart-no-data">Brak danych — pobierz wypowiedzi w ETL</div>
+                    </div>
+                    
+                    <div class="chart-card chart-card-wide" id="chartSentimentTime">
+                        <div class="chart-card-header">
+                            <h4>📈 Sentyment w czasie</h4>
+                            <button class="chart-refresh-btn" onclick="window.refreshSentimentCharts()" title="Analizuj ponownie">🔄</button>
+                        </div>
+                        <canvas id="canvasSentimentTime"></canvas>
+                        <div class="chart-no-data">Brak danych — pobierz wypowiedzi w ETL</div>
+                    </div>
+                    
+                    <div class="chart-card" id="chartSentimentParty">
+                        <div class="chart-card-header">
+                            <h4>🎭 Sentyment per klub</h4>
+                            <button class="chart-refresh-btn" onclick="window.refreshSentimentCharts()" title="Analizuj ponownie">🔄</button>
+                        </div>
+                        <canvas id="canvasSentimentParty"></canvas>
+                        <div class="chart-no-data">Brak danych — pobierz wypowiedzi w ETL</div>
+                    </div>
+                    
+                    <div class="chart-card chart-card-wide" id="chartTopSpeakers">
+                        <div class="chart-card-header">
+                            <h4>🎤 Top mówcy - najbardziej pozytywni i negatywni</h4>
+                            <button class="chart-refresh-btn" onclick="window.refreshSentimentCharts()" title="Analizuj ponownie">🔄</button>
+                        </div>
+                        <canvas id="canvasTopSpeakers"></canvas>
+                        <div class="chart-no-data">Brak danych — pobierz wypowiedzi w ETL</div>
+                    </div>
+                    
                 </div>
             </section>
             <!-- SEKCJA 5: Ustawienia programu -->
