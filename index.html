@@ -1045,7 +1045,7 @@
 
                 <div class="predictions-grid">
                     <!-- Card 1: Dyscyplina klubowa -->
-                    <div class="prediction-card"
+                    <div class="prediction-card" data-prediction="discipline"
                         data-help-id="predDiscipline">
                         <div class="prediction-card-header">
                             <div class="prediction-card-icon">🎯</div>
@@ -1054,21 +1054,13 @@
                                 <p>Zgodność głosowań z linią partyjną</p>
                             </div>
                         </div>
-                        <div class="prediction-card-body">
-                            <div id="disciplineContent" class="prediction-content">
-                                <div class="prediction-loading">
-                                    <div class="prediction-spinner"></div>
-                                    <p>Analizuję dane głosowań...</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="prediction-card-footer">
-                            <button class="prediction-refresh-btn" data-prediction="discipline">🔄 Odśwież</button>
+                        <div class="prediction-card-body" style="display:none;">
+                            <div id="disciplineContent" class="prediction-content"></div>
                         </div>
                     </div>
 
                     <!-- Card 2: Wykrywanie buntowników -->
-                    <div class="prediction-card"
+                    <div class="prediction-card" data-prediction="rebels"
                         data-help-id="predRebels">
                         <div class="prediction-card-header">
                             <div class="prediction-card-icon">⚠️</div>
@@ -1077,21 +1069,13 @@
                                 <p>Posłowie głosujący wbrew klubowi</p>
                             </div>
                         </div>
-                        <div class="prediction-card-body">
-                            <div id="rebelsContent" class="prediction-content">
-                                <div class="prediction-loading">
-                                    <div class="prediction-spinner"></div>
-                                    <p>Szukam anomalii...</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="prediction-card-footer">
-                            <button class="prediction-refresh-btn" data-prediction="rebels">🔄 Odśwież</button>
+                        <div class="prediction-card-body" style="display:none;">
+                            <div id="rebelsContent" class="prediction-content"></div>
                         </div>
                     </div>
 
                     <!-- Card 3: Macierz koalicyjna -->
-                    <div class="prediction-card"
+                    <div class="prediction-card" data-prediction="coalition"
                         data-help-id="predCoalitions">
                         <div class="prediction-card-header">
                             <div class="prediction-card-icon">🤝</div>
@@ -1100,21 +1084,13 @@
                                 <p>Podobieństwo głosowania między klubami</p>
                             </div>
                         </div>
-                        <div class="prediction-card-body">
-                            <div id="coalitionContent" class="prediction-content">
-                                <div class="prediction-loading">
-                                    <div class="prediction-spinner"></div>
-                                    <p>Obliczam podobieństwa...</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="prediction-card-footer">
-                            <button class="prediction-refresh-btn" data-prediction="coalition">🔄 Odśwież</button>
+                        <div class="prediction-card-body" style="display:none;">
+                            <div id="coalitionContent" class="prediction-content"></div>
                         </div>
                     </div>
 
                     <!-- Card 4: Predykcja aktywności -->
-                    <div class="prediction-card"
+                    <div class="prediction-card" data-prediction="activity"
                         data-help-id="predTrend">
                         <div class="prediction-card-header">
                             <div class="prediction-card-icon">📈</div>
@@ -1123,21 +1099,13 @@
                                 <p>Przewidywanie przyszłej aktywności</p>
                             </div>
                         </div>
-                        <div class="prediction-card-body">
-                            <div id="activityContent" class="prediction-content">
-                                <div class="prediction-loading">
-                                    <div class="prediction-spinner"></div>
-                                    <p>Analizuję trendy...</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="prediction-card-footer">
-                            <button class="prediction-refresh-btn" data-prediction="activity">🔄 Odśwież</button>
+                        <div class="prediction-card-body" style="display:none;">
+                            <div id="activityContent" class="prediction-content"></div>
                         </div>
                     </div>
 
                     <!-- Card 5: Analiza online -->
-                    <div class="prediction-card"
+                    <div class="prediction-card" data-prediction="online"
                         data-help-id="predSentiment">
                         <div class="prediction-card-header">
                             <div class="prediction-card-icon">📰</div>
@@ -1146,21 +1114,143 @@
                                 <p>Analizuj treści gazet</p>
                             </div>
                         </div>
-                        <div class="prediction-card-body">
-                            <div id="onlineContent" class="prediction-content">
-                                <div class="online-analyzer-intro">
-                                    <p>🌐 Pobierz i analizuj artykuły z polskich serwisów informacyjnych</p>
-                                    <div class="online-sources">
-                                        <span class="online-source-tag">Onet.pl</span>
-                                        <span class="online-source-tag">Interia.pl</span>
-                                        <span class="online-source-tag">WP.pl</span>
-                                        <span class="online-source-tag">Gazeta.pl</span>
-                                    </div>
-                                </div>
+                        <div class="prediction-card-body" style="display:none;">
+                            <div id="onlineContent" class="prediction-content"></div>
+                        </div>
+                    </div>
+
+                    <!-- Card 6: Frekwencja & Absencja -->
+                    <div class="prediction-card" data-prediction="attendance"
+                        data-help-id="predAttendance">
+                        <div class="prediction-card-header">
+                            <div class="prediction-card-icon">📊</div>
+                            <div>
+                                <h3>Frekwencja & Absencja</h3>
+                                <p>Ranking obecności posłów na głosowaniach</p>
                             </div>
                         </div>
-                        <div class="prediction-card-footer">
-                            <button class="prediction-load-btn" data-prediction="online">📰 Wczytaj art.</button>
+                        <div class="prediction-card-body" style="display:none;">
+                            <div id="attendanceContent" class="prediction-content"></div>
+                        </div>
+                    </div>
+
+                    <!-- Card 7: Polaryzacja głosowań -->
+                    <div class="prediction-card" data-prediction="polarization"
+                        data-help-id="predPolarization">
+                        <div class="prediction-card-header">
+                            <div class="prediction-card-icon">⚡</div>
+                            <div>
+                                <h3>Polaryzacja głosowań</h3>
+                                <p>Jak podzielone są głosowania?</p>
+                            </div>
+                        </div>
+                        <div class="prediction-card-body" style="display:none;">
+                            <div id="polarizationContent" class="prediction-content"></div>
+                        </div>
+                    </div>
+
+                    <!-- Card 8: Ranking aktywności posłów -->
+                    <div class="prediction-card" data-prediction="activityRank"
+                        data-help-id="predActivityRank">
+                        <div class="prediction-card-header">
+                            <div class="prediction-card-icon">🏆</div>
+                            <div>
+                                <h3>Ranking aktywności</h3>
+                                <p>Composite score aktywności posłów</p>
+                            </div>
+                        </div>
+                        <div class="prediction-card-body" style="display:none;">
+                            <div id="activityRankContent" class="prediction-content"></div>
+                        </div>
+                    </div>
+
+                    <!-- Card 9: Tempo legislacyjne -->
+                    <div class="prediction-card" data-prediction="legislation"
+                        data-help-id="predLegislation">
+                        <div class="prediction-card-header">
+                            <div class="prediction-card-icon">⏱️</div>
+                            <div>
+                                <h3>Tempo legislacyjne</h3>
+                                <p>Szybkość procedowania ustaw</p>
+                            </div>
+                        </div>
+                        <div class="prediction-card-body" style="display:none;">
+                            <div id="legislationContent" class="prediction-content"></div>
+                        </div>
+                    </div>
+
+                    <!-- Card 10: Analiza interpelacji -->
+                    <div class="prediction-card" data-prediction="interpellations"
+                        data-help-id="predInterpellations">
+                        <div class="prediction-card-header">
+                            <div class="prediction-card-icon">📬</div>
+                            <div>
+                                <h3>Analiza interpelacji</h3>
+                                <p>Tematy i aktywność interpelacyjna</p>
+                            </div>
+                        </div>
+                        <div class="prediction-card-body" style="display:none;">
+                            <div id="interpellationsContent" class="prediction-content"></div>
+                        </div>
+                    </div>
+
+                    <!-- Card 11: Sieć komisji -->
+                    <div class="prediction-card" data-prediction="committees"
+                        data-help-id="predCommittees">
+                        <div class="prediction-card-header">
+                            <div class="prediction-card-icon">🔗</div>
+                            <div>
+                                <h3>Sieć komisji</h3>
+                                <p>Współpraca międzykomisyjna posłów</p>
+                            </div>
+                        </div>
+                        <div class="prediction-card-body" style="display:none;">
+                            <div id="committeesContent" class="prediction-content"></div>
+                        </div>
+                    </div>
+
+                    <!-- Card 12: Profil parlamentarzysty -->
+                    <div class="prediction-card" data-prediction="mpProfile"
+                        data-help-id="predMpProfile">
+                        <div class="prediction-card-header">
+                            <div class="prediction-card-icon">👤</div>
+                            <div>
+                                <h3>Profil parlamentarzysty</h3>
+                                <p>Szczegółowy profil wybranego posła</p>
+                            </div>
+                        </div>
+                        <div class="prediction-card-body" style="display:none;">
+                            <div id="mpProfileContent" class="prediction-content"></div>
+                        </div>
+                    </div>
+
+                    <!-- Card 13: Profil klubu/partii -->
+                    <div class="prediction-card" data-prediction="clubProfile"
+                        data-help-id="predClubProfile">
+                        <div class="prediction-card-header">
+                            <div class="prediction-card-icon">🏛️</div>
+                            <div>
+                                <h3>Profil klubu / partii</h3>
+                                <p>Statystyki wybranego klubu</p>
+                            </div>
+                        </div>
+                        <div class="prediction-card-body" style="display:none;">
+                            <div id="clubProfileContent" class="prediction-content"></div>
+                        </div>
+                    </div>
+
+                    <!-- Card 14: Profil komisji -->
+                    <div class="prediction-card" data-prediction="committeeProfile"
+                        data-help-id="predCommitteeProfile">
+                        <div class="prediction-card-header">
+                            <div class="prediction-card-icon">📋</div>
+                            <div>
+                                <h3>Profil komisji</h3>
+                                <p>Szczegóły wybranej komisji</p>
+                            </div>
+                        </div>
+                        <div class="prediction-card-body" style="display:none;">
+                            <div id="committeeProfileContent" class="prediction-content"></div>
                         </div>
                     </div>
                 </div>
