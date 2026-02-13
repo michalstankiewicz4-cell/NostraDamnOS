@@ -1040,6 +1040,8 @@ function updateEtlDetailPanel(percent, stage, details = {}) {
  * @param {Object|boolean} liveData - dane live lub false
  */
 function updateLiveSection(liveData) {
+    console.log('[Update Live Section] Called with:', liveData);
+    
     const liveSection = document.getElementById('etlDetailLiveSection');
     const liveLamp = document.getElementById('liveLamp');
     
@@ -1092,6 +1094,8 @@ function updateLiveSection(liveData) {
  * @param {Object} data - dane live
  */
 function renderLiveDetails(data) {
+    console.log('[Live Details] Rendering with data:', data);
+    
     // Posiedzenie
     const titleEl = document.getElementById('liveProceedingTitle');
     const dayEl = document.getElementById('liveProceedingDay');
@@ -1101,6 +1105,7 @@ function renderLiveDetails(data) {
     // Ostatni mówcy
     const speakersList = document.getElementById('liveSpeakersList');
     const speakersSection = document.getElementById('liveSpeakersSection');
+    console.log('[Live Details] Speakers:', data.recentSpeakers?.length || 0);
     if (speakersList && speakersSection) {
         if (data.recentSpeakers && data.recentSpeakers.length > 0) {
             speakersSection.style.display = '';
@@ -1118,6 +1123,7 @@ function renderLiveDetails(data) {
     // Ostatnie głosowania
     const votingsList = document.getElementById('liveVotingsList');
     const votingsSection = document.getElementById('liveVotingsSection');
+    console.log('[Live Details] Votings:', data.recentVotings?.length || 0);
     if (votingsList && votingsSection) {
         if (data.recentVotings && data.recentVotings.length > 0) {
             votingsSection.style.display = '';
