@@ -3467,166 +3467,190 @@ function analyzeMpContradictions() {
     if (!container) return;
 
     console.log('[Predictions] Analyzing MP contradictions...');
+    container.innerHTML = '<div class="prediction-loading">Analizuję sprzeczności…</div>';
 
-    try {
-        // Znajdź posłów którzy głosowali na dwa sposoby na podobne tematy
-        // Metoda: szukaj par głosowań o podobnych tytułach gdzie poseł zmienił zdanie
-        const rebelFlips = db2.database.exec(`
-            WITH vote_pairs AS (
-                SELECT 
-                    g1.id_osoby,
-                    gl1.id_glosowania as id1,
-                    gl2.id_glosowania as id2,
-                    gl1.tytul as tytul1,
-                    gl2.tytul as tytul2,
-                    g1.glos as glos1,
-                    g2.glos as glos2,
-                    gl1.data as data1,
-                    gl2.data as data2
-                FROM glosy g1
-                JOIN glosy g2 ON g1.id_osoby = g2.id_osoby AND g1.id_glosowania < g2.id_glosowania
-                JOIN glosowania gl1 ON gl1.id_glosowania = g1.id_glosowania
-                JOIN glosowania gl2 ON gl2.id_glosowania = g2.id_glosowania
-                WHERE g1.glos IN ('YES','NO') AND g2.glos IN ('YES','NO')
-                  AND g1.glos != g2.glos
-                  AND gl1.tytul IS NOT NULL AND gl2.tytul IS NOT NULL
-                  AND SUBSTR(gl1.tytul, 1, 30) = SUBSTR(gl2.tytul, 1, 30)
-                  AND gl1.data != gl2.data
-            )
+    // Użyj setTimeout, żeby nie blokować UI
+    setTimeout(() => {
+        try {
+            _analyzeMpContradictionsSync(container);
+        } catch (err) {
+            console.error('[Predictions] analyzeMpContradictions error:', err);
+            container.innerHTML = '<div class="prediction-error">Błąd analizy sprzeczności: ' + err.message + '</div>';
+        }
+    }, 50);
+}
+
+/**
+ * Wewnętrzna synchroniczna logika sprzeczności — zoptymalizowana.
+ * Zamiast katastrofalnego self-join O(n²) na tabeli glosy,
+ * grupujemy głosy wg (id_osoby, prefiks tytułu) i szukamy tych grup,
+ * w których poseł głosował zarówno YES jak i NO.
+ */
+function _analyzeMpContradictionsSync(container) {
+    // ── 1. Głosowania — zmiana zdania na ten sam temat ──
+    // Wydajne podejście: grupujemy po (id_osoby, prefiks tytułu 30 znaków)
+    // i szukamy grup, w których pojawiły się zarówno YES jak i NO.
+    const rebelFlips = db2.database.exec(`
+        WITH tagged AS (
             SELECT 
-                p.imie || ' ' || p.nazwisko as name,
-                p.klub,
-                COUNT(*) as flip_count,
-                GROUP_CONCAT(DISTINCT tytul1) as titles
-            FROM vote_pairs vp
-            JOIN poslowie p ON vp.id_osoby = p.id_osoby
-            WHERE p.klub IS NOT NULL AND p.klub != ''
-            GROUP BY vp.id_osoby
-            HAVING flip_count >= 1
-            ORDER BY flip_count DESC
-            LIMIT 30
-        `);
-
-        // Porównaj sentyment tego samego posła w różnych miesiącach
-        const sentimentShifts = db2.database.exec(`
+                g.id_osoby,
+                SUBSTR(gl.tytul, 1, 30) AS prefix,
+                g.glos,
+                gl.tytul
+            FROM glosy g
+            JOIN glosowania gl ON gl.id_glosowania = g.id_glosowania
+            WHERE g.glos IN ('YES','NO')
+              AND gl.tytul IS NOT NULL
+        ),
+        flips AS (
             SELECT 
-                p.id_osoby,
-                p.imie || ' ' || p.nazwisko as name,
-                p.klub,
-                SUBSTR(w.data, 1, 7) as month,
-                w.tekst
-            FROM wypowiedzi w
-            JOIN poslowie p ON w.id_osoby = p.id_osoby
-            WHERE w.tekst IS NOT NULL AND LENGTH(w.tekst) > 100
-              AND w.data IS NOT NULL AND LENGTH(w.data) >= 7
-              AND p.klub IS NOT NULL AND p.klub != ''
-            ORDER BY p.id_osoby, w.data
-        `);
+                id_osoby,
+                prefix,
+                COUNT(DISTINCT CASE WHEN glos = 'YES' THEN 1 END) AS has_yes,
+                COUNT(DISTINCT CASE WHEN glos = 'NO' THEN 1 END) AS has_no,
+                GROUP_CONCAT(DISTINCT tytul) AS titles
+            FROM tagged
+            GROUP BY id_osoby, prefix
+            HAVING has_yes > 0 AND has_no > 0
+        )
+        SELECT 
+            p.imie || ' ' || p.nazwisko AS name,
+            p.klub,
+            COUNT(*) AS flip_count,
+            GROUP_CONCAT(DISTINCT titles) AS titles
+        FROM flips f
+        JOIN poslowie p ON f.id_osoby = p.id_osoby
+        WHERE p.klub IS NOT NULL AND p.klub != ''
+        GROUP BY f.id_osoby
+        ORDER BY flip_count DESC
+        LIMIT 30
+    `);
 
-        let html = '';
+    // ── 2. Sentyment — wahania sentymentu ──
+    // Zamiast pobierać WSZYSTKIE wypowiedzi i analizować w JS,
+    // pobieramy już zagregowane dane z limitem na posła
+    const sentimentShifts = db2.database.exec(`
+        SELECT 
+            p.id_osoby,
+            p.imie || ' ' || p.nazwisko AS name,
+            p.klub,
+            SUBSTR(w.data, 1, 7) AS month,
+            w.tekst
+        FROM wypowiedzi w
+        JOIN poslowie p ON w.id_osoby = p.id_osoby
+        WHERE w.tekst IS NOT NULL AND LENGTH(w.tekst) > 100
+          AND w.data IS NOT NULL AND LENGTH(w.data) >= 7
+          AND p.klub IS NOT NULL AND p.klub != ''
+          AND p.id_osoby IN (
+              SELECT id_osoby FROM wypowiedzi
+              WHERE tekst IS NOT NULL AND LENGTH(tekst) > 100
+                AND data IS NOT NULL AND LENGTH(data) >= 7
+              GROUP BY id_osoby
+              HAVING COUNT(DISTINCT SUBSTR(data, 1, 7)) >= 3
+          )
+        ORDER BY p.id_osoby, w.data
+        LIMIT 5000
+    `);
 
-        // 1. Głosowania — zmiana zdania na ten sam temat
-        if (rebelFlips.length && rebelFlips[0].values.length) {
-            html += '<h4 style="margin:0 0 8px;">🔄 Zmiana głosu na ten sam temat</h4>';
-            html += '<div class="contradiction-info">Posłowie, którzy głosowali ZA i PRZECIW na głosowania o tym samym tytule</div>';
+    let html = '';
+
+    // 1. Głosowania — zmiana zdania na ten sam temat
+    if (rebelFlips.length && rebelFlips[0].values.length) {
+        html += '<h4 style="margin:0 0 8px;">🔄 Zmiana głosu na ten sam temat</h4>';
+        html += '<div class="contradiction-info">Posłowie, którzy głosowali ZA i PRZECIW na głosowania o tym samym tytule</div>';
+        html += '<div class="contradiction-list">';
+        rebelFlips[0].values.forEach((row, i) => {
+            const [name, klub, flipCount, titles] = row;
+            const titleList = titles ? titles.split(',').slice(0, 3) : [];
+            html += `<div class="contradiction-item">
+                <div class="contradiction-header">
+                    <span class="contradiction-rank">#${i + 1}</span>
+                    <span class="contradiction-name">${name}</span>
+                    <span class="contradiction-party">${klub}</span>
+                    <span class="contradiction-count">${flipCount}× zmiana</span>
+                </div>
+                ${titleList.length ? `<div class="contradiction-titles">${titleList.map(t => {
+                    const short = t.length > 100 ? t.substring(0, 100) + '...' : t;
+                    return `<div class="contradiction-title-text">${short}</div>`;
+                }).join('')}</div>` : ''}
+            </div>`;
+        });
+        html += '</div>';
+    }
+
+    // 2. Sentyment — wahania sentymentu tego samego posła w czasie
+    if (sentimentShifts.length && sentimentShifts[0].values.length) {
+        const mpSent = {};
+        sentimentShifts[0].values.forEach(row => {
+            const [id, name, klub, month, tekst] = row;
+            if (!mpSent[id]) mpSent[id] = { name, klub, months: {} };
+            if (!mpSent[id].months[month]) mpSent[id].months[month] = { sum: 0, count: 0 };
+            const s = analyzeSentiment(tekst);
+            mpSent[id].months[month].sum += s.score;
+            mpSent[id].months[month].count++;
+        });
+
+        // Znajdź posłów z największą zmianą sentymentu
+        const shiftResults = Object.entries(mpSent)
+            .filter(([, mp]) => Object.keys(mp.months).length >= 3)
+            .map(([id, mp]) => {
+                const monthData = Object.entries(mp.months)
+                    .map(([m, d]) => ({ month: m, avg: d.sum / d.count }))
+                    .sort((a, b) => a.month.localeCompare(b.month));
+
+                let maxSwing = 0;
+                let swingFrom = null, swingTo = null;
+                for (let i = 1; i < monthData.length; i++) {
+                    const diff = Math.abs(monthData[i].avg - monthData[i - 1].avg);
+                    if (diff > maxSwing) {
+                        maxSwing = diff;
+                        swingFrom = monthData[i - 1];
+                        swingTo = monthData[i];
+                    }
+                }
+
+                return {
+                    id, name: mp.name, klub: mp.klub,
+                    maxSwing: Math.round(maxSwing * 1000) / 1000,
+                    swingFrom, swingTo,
+                    monthCount: monthData.length
+                };
+            })
+            .filter(r => r.maxSwing > 0.15)
+            .sort((a, b) => b.maxSwing - a.maxSwing)
+            .slice(0, 15);
+
+        if (shiftResults.length) {
+            html += '<h4 style="margin:16px 0 8px;">📊 Największe wahania sentymentu</h4>';
+            html += '<div class="contradiction-info">Posłowie, których ton wypowiedzi drastycznie się zmienił między miesiącami</div>';
             html += '<div class="contradiction-list">';
-            rebelFlips[0].values.forEach((row, i) => {
-                const [name, klub, flipCount, titles] = row;
-                const titleList = titles ? titles.split(',').slice(0, 3) : [];
+            shiftResults.forEach((mp, i) => {
+                const fromColor = mp.swingFrom.avg < -0.1 ? '#e74c3c' : mp.swingFrom.avg > 0.1 ? '#27ae60' : '#f39c12';
+                const toColor = mp.swingTo.avg < -0.1 ? '#e74c3c' : mp.swingTo.avg > 0.1 ? '#27ae60' : '#f39c12';
                 html += `<div class="contradiction-item">
                     <div class="contradiction-header">
                         <span class="contradiction-rank">#${i + 1}</span>
-                        <span class="contradiction-name">${name}</span>
-                        <span class="contradiction-party">${klub}</span>
-                        <span class="contradiction-count">${flipCount}× zmiana</span>
+                        <span class="contradiction-name">${mp.name}</span>
+                        <span class="contradiction-party">${mp.klub}</span>
+                        <span class="contradiction-swing">Δ ${mp.maxSwing}</span>
                     </div>
-                    ${titleList.length ? `<div class="contradiction-titles">${titleList.map(t => {
-                        const short = t.length > 100 ? t.substring(0, 100) + '...' : t;
-                        return `<div class="contradiction-title-text">${short}</div>`;
-                    }).join('')}</div>` : ''}
+                    <div class="contradiction-shift">
+                        <span style="color:${fromColor};">${mp.swingFrom.month}: ${mp.swingFrom.avg.toFixed(3)}</span>
+                        <span class="contradiction-arrow">→</span>
+                        <span style="color:${toColor};">${mp.swingTo.month}: ${mp.swingTo.avg.toFixed(3)}</span>
+                    </div>
                 </div>`;
             });
             html += '</div>';
         }
-
-        // 2. Sentyment — wahania sentymentu tego samego posła w czasie
-        if (sentimentShifts.length && sentimentShifts[0].values.length) {
-            const mpSent = {};
-            sentimentShifts[0].values.forEach(row => {
-                const [id, name, klub, month, tekst] = row;
-                if (!mpSent[id]) mpSent[id] = { name, klub, months: {} };
-                if (!mpSent[id].months[month]) mpSent[id].months[month] = { sum: 0, count: 0 };
-                const s = analyzeSentiment(tekst);
-                mpSent[id].months[month].sum += s.score;
-                mpSent[id].months[month].count++;
-            });
-
-            // Znajdź posłów z największą zmianą sentymentu
-            const shiftResults = Object.entries(mpSent)
-                .filter(([, mp]) => Object.keys(mp.months).length >= 3)
-                .map(([id, mp]) => {
-                    const monthData = Object.entries(mp.months)
-                        .map(([m, d]) => ({ month: m, avg: d.sum / d.count }))
-                        .sort((a, b) => a.month.localeCompare(b.month));
-
-                    let maxSwing = 0;
-                    let swingFrom = null, swingTo = null;
-                    for (let i = 1; i < monthData.length; i++) {
-                        const diff = Math.abs(monthData[i].avg - monthData[i - 1].avg);
-                        if (diff > maxSwing) {
-                            maxSwing = diff;
-                            swingFrom = monthData[i - 1];
-                            swingTo = monthData[i];
-                        }
-                    }
-
-                    return {
-                        id, name: mp.name, klub: mp.klub,
-                        maxSwing: Math.round(maxSwing * 1000) / 1000,
-                        swingFrom, swingTo,
-                        monthCount: monthData.length
-                    };
-                })
-                .filter(r => r.maxSwing > 0.15)
-                .sort((a, b) => b.maxSwing - a.maxSwing)
-                .slice(0, 15);
-
-            if (shiftResults.length) {
-                html += '<h4 style="margin:16px 0 8px;">📊 Największe wahania sentymentu</h4>';
-                html += '<div class="contradiction-info">Posłowie, których ton wypowiedzi drastycznie się zmienił między miesiącami</div>';
-                html += '<div class="contradiction-list">';
-                shiftResults.forEach((mp, i) => {
-                    const fromColor = mp.swingFrom.avg < -0.1 ? '#e74c3c' : mp.swingFrom.avg > 0.1 ? '#27ae60' : '#f39c12';
-                    const toColor = mp.swingTo.avg < -0.1 ? '#e74c3c' : mp.swingTo.avg > 0.1 ? '#27ae60' : '#f39c12';
-                    html += `<div class="contradiction-item">
-                        <div class="contradiction-header">
-                            <span class="contradiction-rank">#${i + 1}</span>
-                            <span class="contradiction-name">${mp.name}</span>
-                            <span class="contradiction-party">${mp.klub}</span>
-                            <span class="contradiction-swing">Δ ${mp.maxSwing}</span>
-                        </div>
-                        <div class="contradiction-shift">
-                            <span style="color:${fromColor};">${mp.swingFrom.month}: ${mp.swingFrom.avg.toFixed(3)}</span>
-                            <span class="contradiction-arrow">→</span>
-                            <span style="color:${toColor};">${mp.swingTo.month}: ${mp.swingTo.avg.toFixed(3)}</span>
-                        </div>
-                    </div>`;
-                });
-                html += '</div>';
-            }
-        }
-
-        if (!html) {
-            html = '<div class="prediction-no-data">Brak wystarczających danych do wykrycia sprzeczności</div>';
-        }
-
-        container.innerHTML = html;
-        console.log('[Predictions] MP contradictions done');
-
-    } catch (err) {
-        console.error('[Predictions] analyzeMpContradictions error:', err);
-        container.innerHTML = '<div class="prediction-error">Błąd analizy sprzeczności: ' + err.message + '</div>';
     }
+
+    if (!html) {
+        html = '<div class="prediction-no-data">Brak wystarczających danych do wykrycia sprzeczności</div>';
+    }
+
+    container.innerHTML = html;
+    console.log('[Predictions] MP contradictions done');
 }
 
 /**
