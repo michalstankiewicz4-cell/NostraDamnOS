@@ -1577,6 +1577,18 @@ input:disabled {
     background: rgba(255, 255, 255, 0.1);
 }
 
+/* Live — klikalny element */
+.status-bar-live {
+    cursor: pointer;
+    padding: 0 8px;
+    border-radius: 3px;
+    transition: background 0.2s;
+}
+
+.status-bar-live:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
 /* Pasek progresu — zunifikowany (Load + Memory) */
 .progress-track {
     flex: 1;
@@ -1650,6 +1662,12 @@ input:disabled {
     font-size: 0.75rem;
     color: #e2e8f0;
     box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    transition: all 0.3s ease;
+}
+
+.etl-detail-panel.collapsed {
+    width: auto;
+    min-width: 180px;
 }
 
 .etl-detail-header {
@@ -1657,6 +1675,65 @@ input:disabled {
     font-size: 0.8rem;
     margin-bottom: 6px;
     color: #90cdf4;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+}
+
+.etl-detail-panel.collapsed .etl-detail-header {
+    margin-bottom: 0;
+}
+
+.etl-detail-toggle {
+    background: none;
+    border: none;
+    color: #90cdf4;
+    font-size: 0.7rem;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 3px;
+    transition: all 0.2s;
+    line-height: 1;
+}
+
+.etl-detail-toggle:hover {
+    background: rgba(144, 205, 244, 0.1);
+}
+
+.etl-detail-panel.collapsed .etl-detail-toggle {
+    transform: rotate(-90deg);
+}
+
+.etl-detail-content {
+    max-height: 80vh;
+    overflow-y: auto;
+    transition: max-height 0.3s ease, opacity 0.3s ease;
+}
+
+.etl-detail-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.etl-detail-content::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+}
+
+.etl-detail-content::-webkit-scrollbar-thumb {
+    background: rgba(144, 205, 244, 0.3);
+    border-radius: 3px;
+}
+
+.etl-detail-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(144, 205, 244, 0.5);
+}
+
+.etl-detail-panel.collapsed .etl-detail-content {
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
 }
 
 .etl-detail-stage {
@@ -1868,6 +1945,17 @@ input:disabled {
     color: #a0aec0;
     font-style: italic;
     padding: 4px 0;
+}
+
+.etl-live-empty-message {
+    font-size: 0.75rem;
+    color: #90cdf4;
+    font-style: italic;
+    padding: 8px 10px;
+    text-align: center;
+    background: rgba(26, 32, 44, 0.3);
+    border-radius: 4px;
+    margin: 4px 0;
 }
 
 /* Live Link Section */

@@ -127,15 +127,15 @@ export async function checkSejmLive() {
 
         // Pobierz szczegóły posiedzenia
         const details = await getProceedingDetails(currentProceeding.num);
-        console.log('[Sejm Live] Proceeding details:', details);
+        window.clog('blue', '[Sejm Live] Proceeding details:', details);
         
         // Pobierz najnowsze głosowania
         const recentVotings = await getRecentVotings(currentProceeding.num);
-        console.log('[Sejm Live] Recent votings:', recentVotings.length, 'votes');
+        window.clog('blue', '[Sejm Live] Recent votings:', recentVotings.length, 'votes');
         
         // Pobierz ostatnich mówców
         const recentSpeakers = await getRecentSpeakers(currentProceeding.num, today, dayNumber);
-        console.log('[Sejm Live] Recent speakers:', recentSpeakers.length, 'speakers');
+        window.clog('blue', '[Sejm Live] Recent speakers:', recentSpeakers.length, 'speakers');
         
         // Zwróć pełny obiekt z danymi
         const liveData = {
@@ -160,7 +160,7 @@ export async function checkSejmLive() {
             lastUpdate: new Date().toISOString()
         };
         
-        console.log('[Sejm Live] Full live data:', liveData);
+        window.clog('blue', '[Sejm Live] Full live data:', liveData);
         lastLiveData = liveData;
         return liveData;
         

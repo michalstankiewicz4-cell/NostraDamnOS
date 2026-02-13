@@ -1318,7 +1318,7 @@
         <div class="status-bar-separator"></div>
 
         <!-- [Live] -->
-        <div id="liveSection" class="status-bar-section" title="Status transmisji Sejmu" style="display:none;">
+        <div id="liveSection" class="status-bar-section status-bar-live" title="Status transmisji Sejmu - kliknij aby obejrzeć" style="display:none;">
             <div id="liveLamp" class="floating-lamp floating-lamp-idle" title="Brak transmisji"></div>
             <span class="status-bar-label">LIVE</span>
         </div>
@@ -1334,7 +1334,11 @@
 
     <!-- Info Detail Panel (top-right corner) -->
     <div id="etlDetailPanel" class="etl-detail-panel" style="display:none;">
-        <div class="etl-detail-header">Panel informacyjny</div>
+        <div class="etl-detail-header">
+            <span>Panel informacyjny</span>
+            <button id="etlDetailPanelToggle" class="etl-detail-toggle" title="Zwiń/rozwiń panel">▼</button>
+        </div>
+        <div id="etlDetailContent" class="etl-detail-content">
         
         <!-- Sekcja: Ściąganie danych -->
         <div id="etlDetailFetchSection" class="etl-detail-section" style="display:none;">
@@ -1390,7 +1394,40 @@
                 </div>
             </div>
         </div>
+        </div><!-- /etlDetailContent -->
     </div>
+
+    <!-- Info Panel Toggle Script -->
+    <script>
+    (function() {
+        const panel = document.getElementById('etlDetailPanel');
+        const toggleBtn = document.getElementById('etlDetailPanelToggle');
+        const header = panel?.querySelector('.etl-detail-header');
+        const STORAGE_KEY = 'infoPanelCollapsed';
+        
+        if (!panel || !toggleBtn) return;
+        
+        // Load saved state
+        const savedState = localStorage.getItem(STORAGE_KEY);
+        if (savedState === 'true') {
+            panel.classList.add('collapsed');
+        }
+        
+        // Toggle on button or header click
+        function toggle() {
+            panel.classList.toggle('collapsed');
+            const isCollapsed = panel.classList.contains('collapsed');
+            localStorage.setItem(STORAGE_KEY, isCollapsed);
+        }
+        
+        toggleBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggle();
+        });
+        
+        header?.addEventListener('click', toggle);
+    })();
+    </script>
 
     <!-- Live Stream Modal -->
     <div id="liveStreamModal" class="live-stream-modal" style="display:none;">
@@ -2355,6 +2392,11 @@
             const infoPanel = document.getElementById('etlDetailPanel');
             if (infoPanel && !state.infoPanel) {
                 infoPanel.style.display = 'none';
+            }
+            
+            // Refresh info panel sections visibility (live/fetch)
+            if (window.refreshInfoPanelSections) {
+                window.refreshInfoPanelSections();
             }
         }
 

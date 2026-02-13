@@ -3,7 +3,7 @@ import { runPipeline, buildConfigFromUI, getCacheStatus, verifyDatabase, detectD
 import { fetchCounter, setFetchAbortController } from './fetcher/fetcher.js';
 import { db2 } from './modules/database-v2.js';
 import ToastModule from './modules/toast.js';
-import { startLivePolling, stopLivePolling } from './modules/sejm-live-checker.js';
+import { startLivePolling, stopLivePolling, getLastLiveData } from './modules/sejm-live-checker.js';
 import { refreshChartsManager } from './modules/charts-manager.js';
 import { refreshPredictions } from './modules/predictions.js';
 
@@ -1003,7 +1003,8 @@ function updateEtlDetailPanel(percent, stage, details = {}) {
     const fetchSection = document.getElementById('etlDetailFetchSection');
     if (!panel || !fetchSection) return;
 
-    // Sprawdź czy panel i sekcja fetch są włączone w ustawieniach
+    // Sprawdź ustawienia widoczności
+    let showFetchSection = true;
     try {
         const vis = JSON.parse(localStorage.getItem('uiVisibility') || '{}');
         if (vis.infoPanel === false) { 
@@ -1011,9 +1012,7 @@ function updateEtlDetailPanel(percent, stage, details = {}) {
             return; 
         }
         if (vis.infoFetch === false) {
-            fetchSection.style.display = 'none';
-            updatePanelVisibility();
-            return;
+            showFetchSection = false;
         }
     } catch { /* ignore */ }
 
@@ -1023,13 +1022,15 @@ function updateEtlDetailPanel(percent, stage, details = {}) {
     const statsEl = document.getElementById('etlDetailStats');
     const linksEl = document.getElementById('etlDetailLinks');
 
-    // Pokazuj sekcję fetch podczas ściągania
-    fetchSection.style.display = '';
+    // Aktualizuj zawartość sekcji fetch
     if (stageEl && stage) stageEl.textContent = stage;
     if (detailBar) detailBar.style.width = percent + '%';
     if (pctEl) pctEl.textContent = Math.round(percent) + '%';
     if (statsEl && details.module) statsEl.textContent = details.module;
     if (linksEl && details.linksLabel) linksEl.textContent = details.linksLabel;
+    
+    // Pokaż/ukryj sekcję fetch na podstawie ustawienia
+    fetchSection.style.display = showFetchSection ? '' : 'none';
     
     // Pokazuj cały panel
     updatePanelVisibility();
@@ -1040,7 +1041,7 @@ function updateEtlDetailPanel(percent, stage, details = {}) {
  * @param {Object|boolean} liveData - dane live lub false
  */
 function updateLiveSection(liveData) {
-    console.log('[Update Live Section] Called with:', liveData);
+    window.clog('blue', '[Update Live Section] Called with:', liveData);
     
     const liveSection = document.getElementById('etlDetailLiveSection');
     const liveLamp = document.getElementById('liveLamp');
@@ -1070,8 +1071,7 @@ function updateLiveSection(liveData) {
             // Aktualizuj lampkę na pasku dolnym (jeśli widoczna)
             if (liveLamp) {
                 liveLamp.className = 'floating-lamp floating-lamp-live-blink';
-                liveLamp.title = 'Trwa transmisja Sejmu - kliknij aby obejrzeć';
-                liveLamp.style.cursor = 'pointer';
+                liveLamp.title = 'Trwa transmisja Sejmu';
             }
         } else {
             liveSection.style.display = 'none';
@@ -1094,7 +1094,7 @@ function updateLiveSection(liveData) {
  * @param {Object} data - dane live
  */
 function renderLiveDetails(data) {
-    console.log('[Live Details] Rendering with data:', data);
+    window.clog('blue', '[Live Details] Rendering with data:', data);
     
     // Posiedzenie
     const titleEl = document.getElementById('liveProceedingTitle');
@@ -1105,10 +1105,10 @@ function renderLiveDetails(data) {
     // Ostatni mówcy
     const speakersList = document.getElementById('liveSpeakersList');
     const speakersSection = document.getElementById('liveSpeakersSection');
-    console.log('[Live Details] Speakers:', data.recentSpeakers?.length || 0);
+    window.clog('blue', '[Live Details] Speakers:', data.recentSpeakers?.length || 0);
     if (speakersList && speakersSection) {
+        speakersSection.style.display = '';
         if (data.recentSpeakers && data.recentSpeakers.length > 0) {
-            speakersSection.style.display = '';
             speakersList.innerHTML = data.recentSpeakers.map(speaker => `
                 <div class="etl-live-speaker-item">
                     <div class="etl-live-speaker-name">${speaker.name}</div>
@@ -1116,17 +1116,17 @@ function renderLiveDetails(data) {
                 </div>
             `).join('');
         } else {
-            speakersSection.style.display = 'none';
+            speakersList.innerHTML = '<div class="etl-live-empty-message">⏳ Transkrypcje będą dostępne po zakończeniu obrad</div>';
         }
     }
     
     // Ostatnie głosowania
     const votingsList = document.getElementById('liveVotingsList');
     const votingsSection = document.getElementById('liveVotingsSection');
-    console.log('[Live Details] Votings:', data.recentVotings?.length || 0);
+    window.clog('blue', '[Live Details] Votings:', data.recentVotings?.length || 0);
     if (votingsList && votingsSection) {
+        votingsSection.style.display = '';
         if (data.recentVotings && data.recentVotings.length > 0) {
-            votingsSection.style.display = '';
             votingsList.innerHTML = data.recentVotings.map(voting => `
                 <div class="etl-live-voting-item">
                     <div class="etl-live-voting-topic">${voting.topic}</div>
@@ -1138,7 +1138,7 @@ function renderLiveDetails(data) {
                 </div>
             `).join('');
         } else {
-            votingsSection.style.display = 'none';
+            votingsList.innerHTML = '<div class="etl-live-empty-message">⏳ Wyniki głosowań będą dostępne po zakończeniu obrad</div>';
         }
     }
     
@@ -1146,13 +1146,13 @@ function renderLiveDetails(data) {
     const agendaList = document.getElementById('liveAgendaList');
     const agendaSection = document.getElementById('liveAgendaSection');
     if (agendaList && agendaSection) {
+        agendaSection.style.display = '';
         if (data.agenda && data.agenda.length > 0) {
-            agendaSection.style.display = '';
             agendaList.innerHTML = data.agenda.slice(0, 10).map(item => `
                 <div class="etl-live-agenda-item">${item.title || item}</div>
             `).join('');
         } else {
-            agendaSection.style.display = 'none';
+            agendaList.innerHTML = '<div class="etl-live-empty-message">⏳ Porządek obrad będzie dostępny wkrótce</div>';
         }
     }
 }
@@ -1197,6 +1197,50 @@ function updatePanelVisibility() {
 window.db2 = db2;
 
 // Export status functions globally for etl-bridge.js and db-buttons.js
+/**
+ * Odświeża widoczność sekcji info panelu na podstawie ustawień
+ */
+function refreshInfoPanelSections() {
+    try {
+        const vis = JSON.parse(localStorage.getItem('uiVisibility') || '{}');
+        
+        // Odśwież sekcję Live - wywołaj updateLiveSection z ostatnimi danymi
+        const lastLive = getLastLiveData();
+        if (lastLive !== null) {
+            updateLiveSection(lastLive);
+        } else {
+            // Brak danych live - ukryj sekcję jeśli infoLive wyłączone
+            const liveSection = document.getElementById('etlDetailLiveSection');
+            if (liveSection && vis.infoLive === false) {
+                liveSection.style.display = 'none';
+                updatePanelVisibility();
+            }
+        }
+        
+        // Sekcja Fetch: sprawdź czy trwa pobieranie (pasek postępu > 0%)
+        const fetchSection = document.getElementById('etlDetailFetchSection');
+        const detailBar = document.getElementById('etlDetailBar');
+        if (fetchSection && detailBar) {
+            const progress = parseFloat(detailBar.style.width) || 0;
+            const isDownloading = progress > 0 && progress < 100;
+            
+            if (isDownloading) {
+                // Podczas pobierania: pokaż/ukryj zgodnie z ustawieniem
+                fetchSection.style.display = (vis.infoFetch === false) ? 'none' : '';
+            } else {
+                // Nie ma pobierania: ukryj zawsze
+                if (fetchSection.style.display !== 'none') {
+                    fetchSection.style.display = 'none';
+                }
+            }
+            updatePanelVisibility();
+        }
+        
+    } catch (error) {
+        console.error('[refreshInfoPanelSections] Error:', error);
+    }
+}
+
 window.updateStatusIndicators = updateStatusIndicators;
 window.updateLampsVisibility = updateLampsVisibility;
 window.setRecordsStatus = setRecordsStatus;
@@ -1206,6 +1250,7 @@ window.updateSummaryTab = updateSummaryTab;
 // Export info panel functions globally
 window.updateLiveSection = updateLiveSection;
 window.updatePanelVisibility = updatePanelVisibility;
+window.refreshInfoPanelSections = refreshInfoPanelSections;
 
 // === DATABASE MONITORING ===
 
@@ -1827,12 +1872,13 @@ document.getElementById('etlClearBtn')?.addEventListener('click', async () => {
 
 // Live Stream Modal Handler
 const liveLamp = document.getElementById('liveLamp');
+const liveSection = document.getElementById('liveSection');
 const liveStreamModal = document.getElementById('liveStreamModal');
 const closeLiveStream = document.getElementById('closeLiveStream');
 const liveStreamIframe = document.getElementById('liveStreamIframe');
 
-if (liveLamp && liveStreamModal) {
-    liveLamp.addEventListener('click', () => {
+if (liveSection && liveLamp && liveStreamModal) {
+    liveSection.addEventListener('click', () => {
         // Sprawdź czy trwa transmisja (czy lampka miga)
         if (liveLamp.classList.contains('floating-lamp-live-blink')) {
             // Oficjalny kanał YouTube Sejmu RP - na żywo
