@@ -4099,11 +4099,11 @@ function analyzeAntiPolish() {
     try {
         // Pobierz wypowiedzi
         const speechResult = db2.database.exec(`
-            SELECT w.id, w.tresc, w.data, p.imie || ' ' || p.nazwisko as speaker,
+            SELECT w.id_wypowiedzi, w.tekst, w.data, p.imie || ' ' || p.nazwisko as speaker,
                    p.klub as club
             FROM wypowiedzi w
-            LEFT JOIN poslowie p ON w.posel_id = p.id
-            WHERE w.tresc IS NOT NULL AND length(w.tresc) > 50
+            LEFT JOIN poslowie p ON w.id_osoby = p.id_osoby
+            WHERE w.tekst IS NOT NULL AND length(w.tekst) > 50
             ORDER BY w.data DESC
             LIMIT 5000
         `);
