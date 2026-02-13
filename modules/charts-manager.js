@@ -197,12 +197,9 @@ function applyChartsVisibility() {
     chartsState.forEach(chart => {
         const card = allCards.find(c => c.id === chart.id);
         if (card) {
-            if (chart.enabled) {
-                card.style.display = '';
-                grid.appendChild(card);
-            } else {
-                card.style.display = 'none';
-            }
+            // Zawsze dodaj kartę do grida, ale ustaw odpowiednią widoczność
+            card.style.display = chart.enabled ? '' : 'none';
+            grid.appendChild(card);
         }
     });
 }
