@@ -90,6 +90,14 @@ let fetchBtnMode = 'fetch'; // 'fetch' | 'abort' | 'verify'
 let currentAbortController = null;
 let verifyAbortController = null;
 
+// Globalna funkcja sprawdzająca czy coś się dzieje (kolejka lub pobieranie)
+function isAnyOperationRunning() {
+    return taskQueue.isRunning() || isFetching;
+}
+
+// Export dla innych modułów (np. db-buttons.js)
+window.isAnyOperationRunning = isAnyOperationRunning;
+
 // === BUTTON STATE MANAGEMENT ===
 // Blokuje/odblokuje przyciski podczas operacji w kolejce
 
@@ -101,15 +109,20 @@ function updateButtonStates(isQueueRunning, currentTask) {
     const dbExportBtn = document.getElementById('exportDbBtn');
     const dbImportBtn = document.getElementById('importDbBtn');
     
-    // Jeśli kolejka działa, blokuj wszystkie przyciski oprócz abort
-    if (isQueueRunning) {
+    // Sprawdź czy jakakolwiek operacja jest w toku
+    const anyOperationRunning = isAnyOperationRunning();
+    
+    // Jeśli cokolwiek działa, blokuj wszystkie przyciski oprócz abort
+    if (anyOperationRunning) {
         // Pokaż info w konsoli dla user-a
-        console.log(`[TaskQueue] Running: ${currentTask} - przyciski zablokowane`);
+        if (isQueueRunning) {
+            console.log(`[TaskQueue] Running: ${currentTask} - przyciski zablokowane`);
+        }
         
         // ETL Clear button
         if (etlClearBtn && !isFetching) {
             etlClearBtn.disabled = true;
-            etlClearBtn.title = `Oczekuj - ${currentTask}...`;
+            etlClearBtn.title = currentTask ? `Oczekuj - ${currentTask}...` : 'Trwa operacja...';
         }
         
         // Force check buttons (jeśli to nie one działają)
@@ -123,7 +136,7 @@ function updateButtonStates(isQueueRunning, currentTask) {
         // Import/Export buttons
         if (dbExportBtn) {
             dbExportBtn.disabled = true;
-            dbExportBtn.title = `Oczekuj - ${currentTask}...`;
+            dbExportBtn.title = currentTask ? `Oczekuj - ${currentTask}...` : 'Trwa operacja...';
         }
         if (dbImportBtn) {
             dbImportBtn.disabled = true;
