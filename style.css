@@ -1870,6 +1870,102 @@ input:disabled {
     padding: 4px 0;
 }
 
+/* ============================================
+   LIVE STREAM MODAL
+   ============================================ */
+
+.live-stream-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.live-stream-modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(4px);
+}
+
+.live-stream-modal-content {
+    position: relative;
+    width: 90%;
+    max-width: 800px;
+    background: #2d3748;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    border: 1px solid #4a5568;
+    overflow: hidden;
+    z-index: 10001;
+}
+
+.live-stream-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: #1a202c;
+    border-bottom: 1px solid #4a5568;
+}
+
+.live-stream-modal-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #90cdf4;
+}
+
+.live-stream-modal-close {
+    background: transparent;
+    border: none;
+    color: #e2e8f0;
+    font-size: 1.5rem;
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.live-stream-modal-close:hover {
+    background: rgba(239, 68, 68, 0.2);
+    color: #fc8181;
+}
+
+.live-stream-modal-body {
+    position: relative;
+    width: 100%;
+    padding-top: 56.25%; /* 16:9 aspect ratio */
+    background: #000;
+}
+
+.live-stream-modal-body iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .live-stream-modal-content {
+        width: 95%;
+        max-width: none;
+    }
+}
+
 #sendChatBtn:disabled {
     opacity: 0.5;
     cursor: not-allowed;

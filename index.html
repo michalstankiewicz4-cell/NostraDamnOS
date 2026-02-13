@@ -1385,6 +1385,26 @@
         </div>
     </div>
 
+    <!-- Live Stream Modal -->
+    <div id="liveStreamModal" class="live-stream-modal" style="display:none;">
+        <div class="live-stream-modal-overlay"></div>
+        <div class="live-stream-modal-content">
+            <div class="live-stream-modal-header">
+                <span class="live-stream-modal-title">🔴 Transmisja Sejmu na żywo</span>
+                <button id="closeLiveStream" class="live-stream-modal-close">×</button>
+            </div>
+            <div class="live-stream-modal-body">
+                <iframe 
+                    id="liveStreamIframe"
+                    src=""
+                    frameborder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowfullscreen>
+                </iframe>
+            </div>
+        </div>
+    </div>
+
     <!-- Floating Console Panel -->
     <div id="floatingConsolePanel" class="floating-console-panel">
         <div class="floating-console-header">

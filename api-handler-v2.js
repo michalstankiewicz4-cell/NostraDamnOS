@@ -1068,7 +1068,8 @@ function updateLiveSection(liveData) {
             // Aktualizuj lampkę na pasku dolnym (jeśli widoczna)
             if (liveLamp) {
                 liveLamp.className = 'floating-lamp floating-lamp-live-blink';
-                liveLamp.title = 'Trwa transmisja Sejmu';
+                liveLamp.title = 'Trwa transmisja Sejmu - kliknij aby obejrzeć';
+                liveLamp.style.cursor = 'pointer';
             }
         } else {
             liveSection.style.display = 'none';
@@ -1817,6 +1818,49 @@ document.getElementById('etlClearBtn')?.addEventListener('click', async () => {
         }
     }
 });
+
+// Live Stream Modal Handler
+const liveLamp = document.getElementById('liveLamp');
+const liveStreamModal = document.getElementById('liveStreamModal');
+const closeLiveStream = document.getElementById('closeLiveStream');
+const liveStreamIframe = document.getElementById('liveStreamIframe');
+
+if (liveLamp && liveStreamModal) {
+    liveLamp.addEventListener('click', () => {
+        // Sprawdź czy trwa transmisja (czy lampka miga)
+        if (liveLamp.classList.contains('floating-lamp-live-blink')) {
+            // URL streamu Sejmu - kanał YouTube Sejmu RP
+            const streamUrl = 'https://www.youtube.com/embed/live_stream?channel=UC53qNTweet9Ilm3Hh_UGGqqQ&autoplay=1';
+            
+            liveStreamIframe.src = streamUrl;
+            liveStreamModal.style.display = 'flex';
+            console.log('[Live Stream] Opened');
+        }
+    });
+}
+
+if (closeLiveStream && liveStreamModal) {
+    const closeModal = () => {
+        liveStreamModal.style.display = 'none';
+        liveStreamIframe.src = ''; // Stop stream
+        console.log('[Live Stream] Closed');
+    };
+    
+    closeLiveStream.addEventListener('click', closeModal);
+    
+    // Zamknij po kliknięciu w overlay
+    const overlay = liveStreamModal.querySelector('.live-stream-modal-overlay');
+    if (overlay) {
+        overlay.addEventListener('click', closeModal);
+    }
+    
+    // Zamknij na ESC
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && liveStreamModal.style.display === 'flex') {
+            closeModal();
+        }
+    });
+}
 
 console.log('[API Handler v2] Loaded - using Pipeline ETL');
 
