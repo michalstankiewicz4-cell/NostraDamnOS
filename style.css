@@ -2212,8 +2212,58 @@ input:disabled {
     flex: 1;
 }
 
-.ai-column-models {
+.ai-column-modules {
     flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.ai-modules-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+    flex: 1;
+}
+
+.ai-modules-grid .prediction-card {
+    min-height: auto;
+}
+
+.ai-modules-grid .prediction-card-header {
+    padding: 1rem;
+}
+
+.ai-modules-grid .prediction-card-icon {
+    font-size: 1.5rem;
+}
+
+.ai-modules-grid .prediction-card-header h3 {
+    font-size: 0.9rem;
+}
+
+.ai-modules-grid .prediction-card-header p {
+    font-size: 0.75rem;
+}
+
+.ai-modules-grid.predictions-grid--has-expanded {
+    display: flex;
+    flex-direction: column;
+}
+
+.ai-modules-grid .prediction-card--expanded {
+    flex: 1;
+}
+
+.ai-modules-grid .prediction-card--expanded .prediction-card-header {
+    padding: 1.2rem;
+}
+
+.ai-modules-grid .prediction-card--expanded .prediction-card-icon {
+    font-size: 2rem;
+}
+
+.ai-modules-grid .prediction-card--expanded .prediction-card-header h3 {
+    font-size: 1.1rem;
 }
 
 @media (max-width: 768px) {

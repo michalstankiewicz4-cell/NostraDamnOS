@@ -613,30 +613,118 @@
                 </div>
                 </div><!-- /ai-column-chat -->
 
-                <!-- KOLUMNA 2: Modele Lokalne -->
-                <div class="ai-column ai-column-models">
-                <h3>🔧 Modele Lokalne</h3>
-                <section class="models-section">
-                    <div class="model-status">
-                        <div class="model-item">
-                            <span class="model-name">WebLLM (4B)</span>
-                            <span id="webllmStatus" class="status">⏳ Nieaktywny</span>
+                <!-- KOLUMNA 2: Moduły AI -->
+                <div class="ai-column ai-column-modules">
+                <h3>✨ Moduły AI</h3>
+                <div class="ai-modules-grid predictions-grid">
+
+                    <!-- AI: Auto-podsumowanie posiedzeń -->
+                    <div class="prediction-card" data-prediction="sessionSummary"
+                        data-help-id="predSessionSummary">
+                        <div class="prediction-card-header">
+                            <div class="prediction-card-icon">🤖</div>
+                            <div>
+                                <h3>Auto-podsumowanie posiedzeń <span class="ai-badge">✨ AI</span></h3>
+                                <p>AI generuje streszczenia sesji parlamentarnych</p>
+                            </div>
                         </div>
-                        <div class="model-item">
-                            <span class="model-name">Transformers.js</span>
-                            <span id="transformersStatus" class="status">⏳ Nieaktywny</span>
+                        <div class="prediction-card-body" style="display:none;">
+                            <div id="sessionSummaryContent" class="prediction-content"></div>
                         </div>
                     </div>
-                    <button id="loadModels" class="btn btn-primary">Załaduj modele lokalne</button>
-                    <div class="analysis-buttons" style="margin-top: 10px;">
-                        <button id="analyzeSentiment" class="btn" disabled>Analiza sentymentu</button>
-                        <button id="analyzeTopics" class="btn" disabled>Analiza tematów</button>
-                        <button id="generateSummary" class="btn" disabled>Generuj podsumowanie</button>
-                        <button id="compareSpeeches" class="btn" disabled>Porównaj wypowiedzi</button>
+
+                    <!-- AI: Klasyfikacja tematyczna -->
+                    <div class="prediction-card" data-prediction="topicClassification"
+                        data-help-id="predTopicClassification">
+                        <div class="prediction-card-header">
+                            <div class="prediction-card-icon">🏷️</div>
+                            <div>
+                                <h3>Klasyfikacja tematyczna <span class="ai-badge">✨ AI</span></h3>
+                                <p>Automatyczne tagowanie wypowiedzi wg tematu</p>
+                            </div>
+                        </div>
+                        <div class="prediction-card-body" style="display:none;">
+                            <div id="topicClassificationContent" class="prediction-content"></div>
+                        </div>
                     </div>
-                    <div id="results" style="margin-top: 10px;"></div>
-                </section>
-                </div><!-- /ai-column-models -->
+
+                    <!-- AI: Sprzeczności posła -->
+                    <div class="prediction-card" data-prediction="mpContradictions"
+                        data-help-id="predMpContradictions">
+                        <div class="prediction-card-header">
+                            <div class="prediction-card-icon">🔄</div>
+                            <div>
+                                <h3>Sprzeczności posła <span class="ai-badge">✨ AI</span></h3>
+                                <p>Zmiany stanowiska tego samego posła w czasie</p>
+                            </div>
+                        </div>
+                        <div class="prediction-card-body" style="display:none;">
+                            <div id="mpContradictionsContent" class="prediction-content"></div>
+                        </div>
+                    </div>
+
+                    <!-- AI: Raport AI -->
+                    <div class="prediction-card" data-prediction="aiReport"
+                        data-help-id="predAiReport">
+                        <div class="prediction-card-header">
+                            <div class="prediction-card-icon">📊</div>
+                            <div>
+                                <h3>Raport AI <span class="ai-badge">✨ AI</span></h3>
+                                <p>Jednym kliknięciem — pełny raport analityczny</p>
+                            </div>
+                        </div>
+                        <div class="prediction-card-body" style="display:none;">
+                            <div id="aiReportContent" class="prediction-content"></div>
+                        </div>
+                    </div>
+
+                    <!-- AI: WebLLM -->
+                    <div class="prediction-card" data-prediction="webllmChat"
+                        data-help-id="predWebllmChat">
+                        <div class="prediction-card-header">
+                            <div class="prediction-card-icon">🧠</div>
+                            <div>
+                                <h3>WebLLM — AI lokalne <span class="ai-badge">✨ AI</span></h3>
+                                <p>Model AI w przeglądarce, bez klucza API</p>
+                            </div>
+                        </div>
+                        <div class="prediction-card-body" style="display:none;">
+                            <div id="webllmChatContent" class="prediction-content"></div>
+                        </div>
+                    </div>
+
+                    <!-- AI: Wykrywanie zachowań antypolskich -->
+                    <div class="prediction-card" data-prediction="antiPolish"
+                        data-help-id="predAntiPolish">
+                        <div class="prediction-card-header">
+                            <div class="prediction-card-icon">🛡️</div>
+                            <div>
+                                <h3>Wykrywanie zachowań antypolskich <span class="ai-badge">✨ AI</span></h3>
+                                <p>Analiza prorosyjskich i antypaństwowych wypowiedzi</p>
+                            </div>
+                        </div>
+                        <div class="prediction-card-body" style="display:none;">
+                            <div id="antiPolishContent" class="prediction-content"></div>
+                        </div>
+                    </div>
+
+                    <!-- AI: Wywiad sieciowy -->
+                    <div class="prediction-card" data-prediction="webIntel"
+                        data-help-id="predWebIntel">
+                        <div class="prediction-card-header">
+                            <div class="prediction-card-icon">🌐</div>
+                            <div>
+                                <h3>Wywiad sieciowy <span class="ai-badge">✨ AI</span></h3>
+                                <p>AI przeszukuje internet w kontekście parlamentarnym</p>
+                            </div>
+                        </div>
+                        <div class="prediction-card-body" style="display:none;">
+                            <div id="webIntelContent" class="prediction-content"></div>
+                        </div>
+                    </div>
+
+                </div><!-- /ai-modules-grid -->
+                </div><!-- /ai-column-modules -->
 
                 </div><!-- /ai-two-columns -->
             </section>
@@ -1359,97 +1447,7 @@
                         </div>
                     </div>
 
-                    <!-- Card 19: Auto-podsumowanie posiedzeń -->
-                    <div class="prediction-card" data-prediction="sessionSummary"
-                        data-help-id="predSessionSummary">
-                        <div class="prediction-card-header">
-                            <div class="prediction-card-icon">🤖</div>
-                            <div>
-                                <h3>Auto-podsumowanie posiedzeń <span class="ai-badge">✨ AI</span></h3>
-                                <p>AI generuje streszczenia sesji parlamentarnych</p>
-                            </div>
-                        </div>
-                        <div class="prediction-card-body" style="display:none;">
-                            <div id="sessionSummaryContent" class="prediction-content"></div>
-                        </div>
-                    </div>
-
-                    <!-- Card 20: Klasyfikacja tematyczna -->
-                    <div class="prediction-card" data-prediction="topicClassification"
-                        data-help-id="predTopicClassification">
-                        <div class="prediction-card-header">
-                            <div class="prediction-card-icon">🏷️</div>
-                            <div>
-                                <h3>Klasyfikacja tematyczna <span class="ai-badge">✨ AI</span></h3>
-                                <p>Automatyczne tagowanie wypowiedzi wg tematu</p>
-                            </div>
-                        </div>
-                        <div class="prediction-card-body" style="display:none;">
-                            <div id="topicClassificationContent" class="prediction-content"></div>
-                        </div>
-                    </div>
-
-                    <!-- Card 21: Wykrywanie sprzeczności posła -->
-                    <div class="prediction-card" data-prediction="mpContradictions"
-                        data-help-id="predMpContradictions">
-                        <div class="prediction-card-header">
-                            <div class="prediction-card-icon">🔄</div>
-                            <div>
-                                <h3>Sprzeczności posła <span class="ai-badge">✨ AI</span></h3>
-                                <p>Zmiany stanowiska tego samego posła w czasie</p>
-                            </div>
-                        </div>
-                        <div class="prediction-card-body" style="display:none;">
-                            <div id="mpContradictionsContent" class="prediction-content"></div>
-                        </div>
-                    </div>
-
-                    <!-- Card 22: Raport AI -->
-                    <div class="prediction-card" data-prediction="aiReport"
-                        data-help-id="predAiReport">
-                        <div class="prediction-card-header">
-                            <div class="prediction-card-icon">📊</div>
-                            <div>
-                                <h3>Raport AI <span class="ai-badge">✨ AI</span></h3>
-                                <p>Jednym kliknięciem — pełny raport analityczny</p>
-                            </div>
-                        </div>
-                        <div class="prediction-card-body" style="display:none;">
-                            <div id="aiReportContent" class="prediction-content"></div>
-                        </div>
-                    </div>
-
-                    <!-- Card 23: WebLLM (offline AI) -->
-                    <div class="prediction-card" data-prediction="webllmChat"
-                        data-help-id="predWebllmChat">
-                        <div class="prediction-card-header">
-                            <div class="prediction-card-icon">🧠</div>
-                            <div>
-                                <h3>WebLLM — AI lokalne <span class="ai-badge">✨ AI</span></h3>
-                                <p>Model AI w przeglądarce, bez klucza API</p>
-                            </div>
-                        </div>
-                        <div class="prediction-card-body" style="display:none;">
-                            <div id="webllmChatContent" class="prediction-content"></div>
-                        </div>
-                    </div>
-
-                    <!-- Card 24: Wykrywanie zachowań antypolskich -->
-                    <div class="prediction-card" data-prediction="antiPolish"
-                        data-help-id="predAntiPolish">
-                        <div class="prediction-card-header">
-                            <div class="prediction-card-icon">🛡️</div>
-                            <div>
-                                <h3>Wykrywanie zachowań antypolskich <span class="ai-badge">✨ AI</span></h3>
-                                <p>Analiza prorosyjskich i antypaństwowych wypowiedzi</p>
-                            </div>
-                        </div>
-                        <div class="prediction-card-body" style="display:none;">
-                            <div id="antiPolishContent" class="prediction-content"></div>
-                        </div>
-                    </div>
-
-                    <!-- Card 25: Ghost Voting -->
+                    <!-- Card 19: Ghost Voting -->
                     <div class="prediction-card" data-prediction="ghostVoting"
                         data-help-id="predGhostVoting">
                         <div class="prediction-card-header">
@@ -1461,21 +1459,6 @@
                         </div>
                         <div class="prediction-card-body" style="display:none;">
                             <div id="ghostVotingContent" class="prediction-content"></div>
-                        </div>
-                    </div>
-
-                    <!-- Card 26: Wywiad sieciowy -->
-                    <div class="prediction-card" data-prediction="webIntel"
-                        data-help-id="predWebIntel">
-                        <div class="prediction-card-header">
-                            <div class="prediction-card-icon">🌐</div>
-                            <div>
-                                <h3>Wywiad sieciowy <span class="ai-badge">✨ AI</span></h3>
-                                <p>AI przeszukuje internet w kontekście parlamentarnym</p>
-                            </div>
-                        </div>
-                        <div class="prediction-card-body" style="display:none;">
-                            <div id="webIntelContent" class="prediction-content"></div>
                         </div>
                     </div>
                 </div>

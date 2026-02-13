@@ -1382,15 +1382,16 @@ function hideEmptyState() {
  * Inicjalizacja expand/collapse kart predykcji
  */
 function initPredictionCardExpand() {
-    const grid = document.querySelector('.predictions-grid');
-    if (!grid) return;
-
-    const cards = grid.querySelectorAll('.prediction-card');
-    cards.forEach(card => {
-        card.addEventListener('click', (e) => {
-            // Nie rozwijaj jeśli kliknięto przycisk lub select
-            if (e.target.closest('button') || e.target.closest('select')) return;
-            expandPredictionCard(card);
+    // Obsługuj karty w obu gridach: predykcje i moduły AI
+    const grids = document.querySelectorAll('.predictions-grid');
+    grids.forEach(grid => {
+        const cards = grid.querySelectorAll('.prediction-card');
+        cards.forEach(card => {
+            card.addEventListener('click', (e) => {
+                // Nie rozwijaj jeśli kliknięto przycisk lub select
+                if (e.target.closest('button') || e.target.closest('select') || e.target.closest('textarea') || e.target.closest('input')) return;
+                expandPredictionCard(card);
+            });
         });
     });
 }
@@ -1399,7 +1400,7 @@ function initPredictionCardExpand() {
  * Rozwiń kartę - ukryj pozostałe, pokaż body, załaduj dane lazy
  */
 function expandPredictionCard(card) {
-    const grid = document.querySelector('.predictions-grid');
+    const grid = card.closest('.predictions-grid');
     if (!grid || card.classList.contains('prediction-card--expanded')) return;
 
     // Zapamiętaj stan
@@ -1463,19 +1464,22 @@ function expandPredictionCard(card) {
  * Zwiń wszystko - przywróć widok siatki, ukryj body
  */
 function collapsePredictionCards() {
-    const grid = document.querySelector('.predictions-grid');
-    if (!grid) return;
+    // Znajdź grid z rozwiniętą kartą
+    const grids = document.querySelectorAll('.predictions-grid');
+    grids.forEach(grid => {
+        if (!grid.classList.contains('predictions-grid--has-expanded')) return;
 
-    grid.classList.remove('predictions-grid--has-expanded');
+        grid.classList.remove('predictions-grid--has-expanded');
 
-    const cards = grid.querySelectorAll('.prediction-card');
-    cards.forEach(c => {
-        c.classList.remove('prediction-card--hidden', 'prediction-card--expanded');
-        const backBtn = c.querySelector('.prediction-back-btn');
-        if (backBtn) backBtn.remove();
-        // Ukryj body z powrotem
-        const body = c.querySelector('.prediction-card-body');
-        if (body) body.style.display = 'none';
+        const cards = grid.querySelectorAll('.prediction-card');
+        cards.forEach(c => {
+            c.classList.remove('prediction-card--hidden', 'prediction-card--expanded');
+            const backBtn = c.querySelector('.prediction-back-btn');
+            if (backBtn) backBtn.remove();
+            // Ukryj body z powrotem
+            const body = c.querySelector('.prediction-card-body');
+            if (body) body.style.display = 'none';
+        });
     });
 }
 
