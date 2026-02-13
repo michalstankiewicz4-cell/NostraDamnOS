@@ -1,4 +1,5 @@
 // Charts Manager - zarządzanie widocznością i kolejnością wykresów
+import { db2 } from './database-v2.js';
 
 const CHARTS_CONFIG = [
     { id: 'chartKluby', name: 'Rozkład klubów parlamentarnych', icon: '🏛️', enabled: true },
@@ -75,6 +76,34 @@ function saveChartsState() {
 }
 
 /**
+ * Sprawdza czy dane dla wykresu są dostępne
+ */
+function checkDataAvailability(chartId) {
+    if (!db2.database) return false;
+    
+    try {
+        const dataChecks = {
+            'chartKluby': () => db2.database.exec("SELECT COUNT(*) as cnt FROM poslowie WHERE klub IS NOT NULL")[0]?.values[0][0] > 0,
+            'chartTopPoslowie': () => db2.database.exec("SELECT COUNT(*) as cnt FROM wypowiedzi")[0]?.values[0][0] > 0,
+            'chartGlosowania': () => db2.database.exec("SELECT COUNT(*) as cnt FROM glosowania")[0]?.values[0][0] > 0,
+            'chartCustom': () => db2.database.exec("SELECT COUNT(*) as cnt FROM poslowie")[0]?.values[0][0] > 0,
+            'chartNajmniejAktywni': () => db2.database.exec("SELECT COUNT(*) as cnt FROM wypowiedzi")[0]?.values[0][0] > 0,
+            'chartNajmniejAktywneKluby': () => db2.database.exec("SELECT COUNT(*) as cnt FROM wypowiedzi")[0]?.values[0][0] > 0,
+            'chartHeatmap': () => db2.database.exec("SELECT COUNT(*) as cnt FROM posiedzenia")[0]?.values[0][0] > 0,
+            'chartSentimentDist': () => db2.database.exec("SELECT COUNT(*) as cnt FROM wypowiedzi")[0]?.values[0][0] > 0,
+            'chartSentimentTime': () => db2.database.exec("SELECT COUNT(*) as cnt FROM wypowiedzi")[0]?.values[0][0] > 0,
+            'chartSentimentParty': () => db2.database.exec("SELECT COUNT(*) as cnt FROM wypowiedzi")[0]?.values[0][0] > 0,
+            'chartTopSpeakers': () => db2.database.exec("SELECT COUNT(*) as cnt FROM wypowiedzi")[0]?.values[0][0] > 0
+        };
+        
+        const checkFn = dataChecks[chartId];
+        return checkFn ? checkFn() : false;
+    } catch (error) {
+        return false;
+    }
+}
+
+/**
  * Renderuj panel kontrolny z listą wykresów
  */
 function renderControlPanel() {
@@ -90,8 +119,13 @@ function renderControlPanel() {
         item.dataset.chartId = chart.id;
         item.dataset.index = index;
         
+        const hasData = checkDataAvailability(chart.id);
+        const lampClass = hasData ? 'chart-data-lamp-ok' : 'chart-data-lamp-error';
+        const lampTitle = hasData ? 'Dane dostępne' : 'Brak danych';
+        
         item.innerHTML = `
             <span class="charts-order-drag-handle" title="Przeciągnij aby zmienić kolejność">⋮⋮</span>
+            <span class="${lampClass}" title="${lampTitle}">●</span>
             <input type="checkbox" 
                    id="chart-toggle-${chart.id}" 
                    class="charts-order-checkbox" 
