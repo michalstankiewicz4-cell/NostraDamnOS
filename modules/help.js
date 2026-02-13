@@ -11,7 +11,7 @@ let rafPending = false;
 
 // Wszystkie eventy do przechwycenia i zablokowania
 const BLOCKED_EVENTS = [
-    'mousedown', 'mouseup', 'click', 'dblclick', 'contextmenu',
+    'mousedown', 'mouseup', 'click', 'dblclick',
     'wheel', 'scroll', 'touchstart', 'touchmove', 'touchend',
     'input', 'change', 'focus', 'focusin', 'blur',
     'dragstart', 'drop', 'selectstart'
@@ -79,6 +79,8 @@ function highlightElement(el) {
     // Cache rect BEFORE adding class (outline/box-shadow don't affect getBoundingClientRect)
     highlightedRect = el.getBoundingClientRect();
     el.classList.add('help-highlighted');
+    // Auto-show tooltip on hover
+    showTooltip(el);
 }
 
 function clearHighlight() {
@@ -87,6 +89,7 @@ function clearHighlight() {
         highlightedEl = null;
         highlightedRect = null;
     }
+    hideTooltip();
 }
 
 function findHelpTarget(el) {
@@ -165,7 +168,7 @@ function onMouseMove(e) {
     });
 }
 
-/** Click on shield: find element underneath, show help */
+/** Click on shield: find element underneath, show help — or exit if helpBtn clicked */
 function onShieldClick(e) {
     e.preventDefault();
     e.stopPropagation();
@@ -177,6 +180,12 @@ function onShieldClick(e) {
     shield.style.pointerEvents = '';
     if (tooltip) tooltip.style.pointerEvents = '';
 
+    // If user clicked the help button (❓) — toggle off
+    if (elUnder && elUnder.closest && elUnder.closest('#helpBtn')) {
+        stopHelp();
+        return;
+    }
+
     const target = elUnder ? findHelpTarget(elUnder) : null;
     if (target) {
         highlightElement(target);
@@ -185,6 +194,13 @@ function onShieldClick(e) {
         hideTooltip();
         clearHighlight();
     }
+}
+
+/** Right-click anywhere — exit help mode */
+function onContextMenu(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    stopHelp();
 }
 
 // ================================
@@ -200,9 +216,10 @@ function startHelp() {
     createTooltip();
     shield.style.display = 'block';
 
-    // Shield intercepts clicks
+    // Shield intercepts clicks and right-click
     shield.addEventListener('click', onShieldClick);
     shield.addEventListener('mousemove', onMouseMove);
+    shield.addEventListener('contextmenu', onContextMenu);
 
     // Block ALL events on document (capture phase = before anything else)
     for (const evt of BLOCKED_EVENTS) {
@@ -225,6 +242,7 @@ function stopHelp() {
     if (shield) {
         shield.removeEventListener('click', onShieldClick);
         shield.removeEventListener('mousemove', onMouseMove);
+        shield.removeEventListener('contextmenu', onContextMenu);
         shield.style.display = 'none';
     }
 
