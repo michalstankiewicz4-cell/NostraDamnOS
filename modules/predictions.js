@@ -3488,36 +3488,29 @@ function analyzeMpContradictions() {
  */
 function _analyzeMpContradictionsSync(container) {
     // ── 1. Głosowania — zmiana zdania na ten sam temat ──
-    // Wydajne podejście: grupujemy po (id_osoby, prefiks tytułu 30 znaków)
-    // i szukamy grup, w których pojawiły się zarówno YES jak i NO.
+    // Grupujemy po (id_osoby, DOKŁADNY tytul głosowania) i szukamy grup,
+    // w których poseł głosował zarówno YES jak i NO na to samo głosowanie
+    // (np. ustawa wraca do ponownego głosowania).
+    // NIE porównujemy prefiksów — różne poprawki to różne głosowania.
     const rebelFlips = db2.database.exec(`
-        WITH tagged AS (
+        WITH flips AS (
             SELECT 
                 g.id_osoby,
-                SUBSTR(gl.tytul, 1, 30) AS prefix,
-                g.glos,
-                gl.tytul
+                gl.tytul,
+                COUNT(DISTINCT CASE WHEN g.glos = 'YES' THEN gl.id_glosowania END) AS yes_count,
+                COUNT(DISTINCT CASE WHEN g.glos = 'NO' THEN gl.id_glosowania END) AS no_count
             FROM glosy g
             JOIN glosowania gl ON gl.id_glosowania = g.id_glosowania
             WHERE g.glos IN ('YES','NO')
               AND gl.tytul IS NOT NULL
-        ),
-        flips AS (
-            SELECT 
-                id_osoby,
-                prefix,
-                COUNT(DISTINCT CASE WHEN glos = 'YES' THEN 1 END) AS has_yes,
-                COUNT(DISTINCT CASE WHEN glos = 'NO' THEN 1 END) AS has_no,
-                GROUP_CONCAT(DISTINCT tytul) AS titles
-            FROM tagged
-            GROUP BY id_osoby, prefix
-            HAVING has_yes > 0 AND has_no > 0
+            GROUP BY g.id_osoby, gl.tytul
+            HAVING yes_count > 0 AND no_count > 0
         )
         SELECT 
             p.imie || ' ' || p.nazwisko AS name,
             p.klub,
             COUNT(*) AS flip_count,
-            GROUP_CONCAT(DISTINCT titles) AS titles
+            GROUP_CONCAT(DISTINCT f.tytul) AS titles
         FROM flips f
         JOIN poslowie p ON f.id_osoby = p.id_osoby
         WHERE p.klub IS NOT NULL AND p.klub != ''
@@ -3526,30 +3519,27 @@ function _analyzeMpContradictionsSync(container) {
         LIMIT 30
     `);
 
-    // ── 2. Sentyment — wahania sentymentu ──
-    // Zamiast pobierać WSZYSTKIE wypowiedzi i analizować w JS,
-    // pobieramy już zagregowane dane z limitem na posła
+    // ── 2. Sentyment — wahania sentymentu NA TEN SAM TEMAT ──
+    // Grupujemy po (poseł, temat komisji) i szukamy zmian sentymentu
+    // w ramach tego samego tematu. Komisje mają pole "opis" — to jest temat.
+    // Dla wypowiedzi sejmowych grupujemy po id_posiedzenia (ten sam punkt obrad).
     const sentimentShifts = db2.database.exec(`
         SELECT 
             p.id_osoby,
             p.imie || ' ' || p.nazwisko AS name,
             p.klub,
-            SUBSTR(w.data, 1, 7) AS month,
-            w.tekst
-        FROM wypowiedzi w
-        JOIN poslowie p ON w.id_osoby = p.id_osoby
-        WHERE w.tekst IS NOT NULL AND LENGTH(w.tekst) > 100
-          AND w.data IS NOT NULL AND LENGTH(w.data) >= 7
+            COALESCE(kp.opis, 'Posiedzenie ' || w.id_posiedzenia) AS temat,
+            SUBSTR(COALESCE(kw.data, w.data), 1, 7) AS month,
+            COALESCE(kw.tekst, w.tekst) AS tekst
+        FROM poslowie p
+        LEFT JOIN komisje_wypowiedzi kw ON kw.id_osoby = p.id_osoby
+        LEFT JOIN komisje_posiedzenia kp ON kp.id_posiedzenia_komisji = kw.id_posiedzenia_komisji
+        LEFT JOIN wypowiedzi w ON w.id_osoby = p.id_osoby AND kw.id_wypowiedzi_komisji IS NULL
+        WHERE COALESCE(kw.tekst, w.tekst) IS NOT NULL 
+          AND LENGTH(COALESCE(kw.tekst, w.tekst)) > 100
           AND p.klub IS NOT NULL AND p.klub != ''
-          AND p.id_osoby IN (
-              SELECT id_osoby FROM wypowiedzi
-              WHERE tekst IS NOT NULL AND LENGTH(tekst) > 100
-                AND data IS NOT NULL AND LENGTH(data) >= 7
-              GROUP BY id_osoby
-              HAVING COUNT(DISTINCT SUBSTR(data, 1, 7)) >= 3
-          )
-        ORDER BY p.id_osoby, w.data
-        LIMIT 5000
+        ORDER BY p.id_osoby
+        LIMIT 6000
     `);
 
     let html = '';
@@ -3578,23 +3568,26 @@ function _analyzeMpContradictionsSync(container) {
         html += '</div>';
     }
 
-    // 2. Sentyment — wahania sentymentu tego samego posła w czasie
+    // 2. Sentyment — wahania sentymentu na ten sam temat
     if (sentimentShifts.length && sentimentShifts[0].values.length) {
-        const mpSent = {};
+        // Grupuj po (poseł, temat) → miesiąc → sentyment
+        const mpTopicSent = {};
         sentimentShifts[0].values.forEach(row => {
-            const [id, name, klub, month, tekst] = row;
-            if (!mpSent[id]) mpSent[id] = { name, klub, months: {} };
-            if (!mpSent[id].months[month]) mpSent[id].months[month] = { sum: 0, count: 0 };
+            const [id, name, klub, temat, month, tekst] = row;
+            if (!temat || !month || !tekst) return;
+            const key = `${id}|||${temat}`;
+            if (!mpTopicSent[key]) mpTopicSent[key] = { id, name, klub, temat, months: {} };
+            if (!mpTopicSent[key].months[month]) mpTopicSent[key].months[month] = { sum: 0, count: 0 };
             const s = analyzeSentiment(tekst);
-            mpSent[id].months[month].sum += s.score;
-            mpSent[id].months[month].count++;
+            mpTopicSent[key].months[month].sum += s.score;
+            mpTopicSent[key].months[month].count++;
         });
 
-        // Znajdź posłów z największą zmianą sentymentu
-        const shiftResults = Object.entries(mpSent)
-            .filter(([, mp]) => Object.keys(mp.months).length >= 3)
-            .map(([id, mp]) => {
-                const monthData = Object.entries(mp.months)
+        // Znajdź pary (poseł, temat) z największą zmianą sentymentu
+        const shiftResults = Object.values(mpTopicSent)
+            .filter(entry => Object.keys(entry.months).length >= 2)
+            .map(entry => {
+                const monthData = Object.entries(entry.months)
                     .map(([m, d]) => ({ month: m, avg: d.sum / d.count }))
                     .sort((a, b) => a.month.localeCompare(b.month));
 
@@ -3610,23 +3603,23 @@ function _analyzeMpContradictionsSync(container) {
                 }
 
                 return {
-                    id, name: mp.name, klub: mp.klub,
+                    name: entry.name, klub: entry.klub, temat: entry.temat,
                     maxSwing: Math.round(maxSwing * 1000) / 1000,
-                    swingFrom, swingTo,
-                    monthCount: monthData.length
+                    swingFrom, swingTo
                 };
             })
-            .filter(r => r.maxSwing > 0.15)
+            .filter(r => r.maxSwing > 0.2)
             .sort((a, b) => b.maxSwing - a.maxSwing)
             .slice(0, 15);
 
         if (shiftResults.length) {
-            html += '<h4 style="margin:16px 0 8px;">📊 Największe wahania sentymentu</h4>';
-            html += '<div class="contradiction-info">Posłowie, których ton wypowiedzi drastycznie się zmienił między miesiącami</div>';
+            html += '<h4 style="margin:16px 0 8px;">📊 Największe wahania sentymentu na ten sam temat</h4>';
+            html += '<div class="contradiction-info">Posłowie, których ton wypowiedzi drastycznie się zmienił w ramach tego samego tematu</div>';
             html += '<div class="contradiction-list">';
             shiftResults.forEach((mp, i) => {
                 const fromColor = mp.swingFrom.avg < -0.1 ? '#e74c3c' : mp.swingFrom.avg > 0.1 ? '#27ae60' : '#f39c12';
                 const toColor = mp.swingTo.avg < -0.1 ? '#e74c3c' : mp.swingTo.avg > 0.1 ? '#27ae60' : '#f39c12';
+                const shortTopic = mp.temat.length > 80 ? mp.temat.substring(0, 80) + '…' : mp.temat;
                 html += `<div class="contradiction-item">
                     <div class="contradiction-header">
                         <span class="contradiction-rank">#${i + 1}</span>
@@ -3634,6 +3627,7 @@ function _analyzeMpContradictionsSync(container) {
                         <span class="contradiction-party">${mp.klub}</span>
                         <span class="contradiction-swing">Δ ${mp.maxSwing}</span>
                     </div>
+                    <div class="contradiction-topic">📌 ${shortTopic}</div>
                     <div class="contradiction-shift">
                         <span style="color:${fromColor};">${mp.swingFrom.month}: ${mp.swingFrom.avg.toFixed(3)}</span>
                         <span class="contradiction-arrow">→</span>
