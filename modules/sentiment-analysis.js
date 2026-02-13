@@ -279,8 +279,8 @@ export function getTopSpeakers(sentimentData, limit = 10) {
         }));
     
     return {
-        positive: speakers.sort((a, b) => b.avgScore - a.avgScore).slice(0, limit),
-        negative: speakers.sort((a, b) => a.avgScore - b.avgScore).slice(0, limit)
+        positive: [...speakers].sort((a, b) => b.avgScore - a.avgScore).slice(0, limit),
+        negative: [...speakers].sort((a, b) => a.avgScore - b.avgScore).slice(0, limit)
     };
 }
 

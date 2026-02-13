@@ -236,6 +236,7 @@ function renderInterpelacje() {
 }
 
 function renderFrekwencja() {
+    const TOTAL_POSLOW = 460; // Sejm X kadencja
     const data = query("SELECT id_posiedzenia as pos, AVG(za + przeciw + wstrzymalo) as avg_total FROM glosowania GROUP BY id_posiedzenia ORDER BY id_posiedzenia");
     if (data.length < 2) { setCardState(cardId, false); return; }
 
@@ -247,8 +248,8 @@ function renderFrekwencja() {
         data: {
             labels: data.map(d => 'Pos. ' + d.pos),
             datasets: [{
-                label: 'Śr. głosujących',
-                data: data.map(d => Math.round(d.avg_total)),
+                label: 'Frekwencja %',
+                data: data.map(d => Math.round(d.avg_total / TOTAL_POSLOW * 100)),
                 borderColor: '#43e97b',
                 backgroundColor: 'rgba(67,233,123,0.1)',
                 fill: true,
@@ -258,10 +259,12 @@ function renderFrekwencja() {
         },
         options: {
             responsive: true,
-            plugins: { legend: { display: false } },
+            plugins: { legend: { display: false },
+                tooltip: { callbacks: { label: ctx => `Frekwencja: ${ctx.parsed.y}%` } }
+            },
             scales: {
                 x: { ticks: { color: '#aaa', maxRotation: 45 }, grid: { color: 'rgba(255,255,255,0.05)' } },
-                y: { ticks: { color: '#aaa' }, grid: { color: 'rgba(255,255,255,0.05)' }, beginAtZero: true }
+                y: { ticks: { color: '#aaa', callback: v => v + '%' }, grid: { color: 'rgba(255,255,255,0.05)' }, min: 0, max: 100 }
             }
         }
     });
@@ -305,13 +308,14 @@ function renderNajmniejAktywni() {
     });
 }
 
-// 6. Top 20 najmniej aktywnych klubów (bar)
+// 6. Aktywność klubów per capita (bar)
 function renderNajmniejAktywneKluby() {
     const data = query(`
-        SELECT p.klub, COUNT(w.id_wypowiedzi) as cnt
+        SELECT p.klub,
+               ROUND(CAST(COUNT(w.id_wypowiedzi) AS REAL) / COUNT(DISTINCT p.id_osoby), 1) as cnt
         FROM poslowie p
         LEFT JOIN wypowiedzi w ON p.id_osoby = w.id_osoby
-        WHERE p.klub IS NOT NULL
+        WHERE p.klub IS NOT NULL AND p.klub != ''
         GROUP BY p.klub
         ORDER BY cnt ASC
         LIMIT 20
@@ -326,7 +330,7 @@ function renderNajmniejAktywneKluby() {
         data: {
             labels: data.map(d => d.klub || 'Brak'),
             datasets: [{
-                label: 'Wypowiedzi',
+                label: 'Śr. wypowiedzi/poseł',
                 data: data.map(d => d.cnt),
                 backgroundColor: '#f6ad55'
             }]
@@ -351,7 +355,7 @@ function renderHeatmap() {
 
     // Build query based on selections
     const xCol = xSel === 'glosowania' ? 'g.id_glosowania' : 'gl.id_posiedzenia';
-    const xLabel = xSel === 'glosowania' ? 'gl.numer' : 'gl.id_posiedzenia';
+    const xLabel = xSel === 'glosowania' ? "gl.id_posiedzenia || '/' || gl.numer" : 'gl.id_posiedzenia';
     const yCol = ySel === 'kluby' ? 'p.klub' : "p.nazwisko || ' ' || SUBSTR(p.imie,1,1) || '.'";
 
     let valueSql;
@@ -363,12 +367,12 @@ function renderHeatmap() {
     let sql;
     if (xSel === 'glosowania') {
         sql = `
-            SELECT gl.numer as x_label, ${yCol} as y_label, ${valueSql} as val
+            SELECT ${xLabel} as x_label, ${yCol} as y_label, ${valueSql} as val
             FROM glosy g
             JOIN glosowania gl ON g.id_glosowania = gl.id_glosowania
             JOIN poslowie p ON g.id_osoby = p.id_osoby
-            GROUP BY gl.numer, ${yCol}
-            ORDER BY gl.numer, ${yCol}
+            GROUP BY ${xLabel}, ${yCol}
+            ORDER BY gl.id_posiedzenia, gl.numer, ${yCol}
             LIMIT 2000
         `;
     } else {
@@ -839,7 +843,8 @@ async function renderTopSpeakersSentiment() {
  */
 async function refreshSentimentCharts() {
     console.log('[Charts] Refreshing sentiment analysis...');
-    sentimentCache = null;
+    // Pobierz dane raz — unikaj 4× równoległego zapytania do DB
+    await getSentimentData(true);
     await Promise.all([
         renderSentimentDistribution(),
         renderSentimentOverTime(),
