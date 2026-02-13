@@ -123,6 +123,10 @@ export const HELP_DATA = {
         title: "📰 Analiza online",
         desc: "Pobierz i analizuj artykuły z polskich serwisów informacyjnych. Analiza sentymentu treści o posłach."
     },
+    predAiCharts: {
+        title: "📊 Wykresy AI",
+        desc: "Opisz słownie jaki wykres chcesz — AI wygeneruje zapytanie SQL i narysuje wykres z danych w bazie. Obsługuje: kołowy, słupkowy, liniowy, radarowy."
+    },
 
     // ── Nawigacja dolna ──────────────────────────
     navDane: {

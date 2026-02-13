@@ -4575,6 +4575,38 @@ input:disabled {
 .webllm-quick-btn { padding: 4px 10px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; font-size: 0.72rem; color: var(--text-primary); cursor: pointer; transition: all 0.2s; }
 .webllm-quick-btn:hover { background: rgba(8, 145, 178, 0.13); border-color: var(--primary-color, #0891b2); }
 
+/* ===== AI Charts Module ===== */
+.aicharts-panel { display: flex; flex-direction: column; gap: 10px; }
+.aicharts-info { font-size: 0.78rem; color: var(--text-secondary, #999); background: var(--bg-secondary, #1e1e2e); padding: 10px 12px; border-radius: 8px; line-height: 1.5; border-left: 3px solid #3498db; }
+.aicharts-input-area { display: flex; gap: 8px; align-items: flex-start; }
+.aicharts-input { flex: 1; padding: 10px 14px; background: var(--bg-secondary, #1e1e2e); border: 1px solid var(--border-color, #333); border-radius: 8px; color: var(--text-primary, #e0e0e0); font-size: 0.85rem; resize: none; font-family: inherit; }
+.aicharts-input:focus { outline: none; border-color: #3498db; box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.15); }
+.aicharts-btn-gen { padding: 10px 20px; background: linear-gradient(135deg, #3498db, #2980b9); color: #fff; border: none; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+.aicharts-btn-gen:hover { background: linear-gradient(135deg, #2980b9, #2471a3); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3); }
+.aicharts-btn-gen:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+.aicharts-quick { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.aicharts-quick-title { font-size: 0.75rem; color: var(--text-secondary, #999); font-weight: 600; }
+.aicharts-quick-btn { padding: 5px 12px; background: var(--bg-secondary, #1e1e2e); border: 1px solid var(--border-color, #333); border-radius: 14px; font-size: 0.74rem; color: var(--text-primary, #e0e0e0); cursor: pointer; transition: all 0.2s; }
+.aicharts-quick-btn:hover { background: rgba(52, 152, 219, 0.13); border-color: #3498db; color: #3498db; }
+.aicharts-status { margin-top: 4px; }
+.aicharts-result { margin-top: 4px; }
+.aicharts-chart-wrap { background: var(--bg-secondary, #1e1e2e); border-radius: 10px; padding: 16px; border: 1px solid var(--border-color, #333); }
+.aicharts-chart-title { font-size: 1rem; font-weight: 700; color: var(--text-primary, #e0e0e0); text-align: center; margin-bottom: 12px; }
+.aicharts-chart-wrap canvas { max-height: 350px; }
+.aicharts-chart-desc { font-size: 0.82rem; color: var(--text-secondary, #999); text-align: center; margin-top: 10px; line-height: 1.5; }
+.aicharts-sql-details { margin-top: 10px; }
+.aicharts-sql-details summary { font-size: 0.75rem; color: var(--text-secondary, #999); cursor: pointer; user-select: none; }
+.aicharts-sql-details summary:hover { color: #3498db; }
+.aicharts-sql-code { font-size: 0.75rem; background: var(--bg-color, #121212); color: #7ec8e3; padding: 10px; border-radius: 6px; overflow-x: auto; white-space: pre-wrap; word-break: break-all; margin-top: 6px; border: 1px solid var(--border-color, #333); }
+.aicharts-chart-meta { font-size: 0.68rem; color: var(--text-secondary, #666); text-align: right; margin-top: 8px; }
+.aicharts-history { margin-top: 8px; }
+.aicharts-history-list { display: flex; flex-direction: column; gap: 4px; }
+.aicharts-history-item { display: flex; align-items: center; gap: 8px; padding: 6px 10px; background: var(--bg-secondary, #1e1e2e); border-radius: 6px; cursor: pointer; transition: all 0.2s; font-size: 0.78rem; }
+.aicharts-history-item:hover { background: rgba(52, 152, 219, 0.1); }
+.aicharts-history-icon { font-size: 1rem; }
+.aicharts-history-title { flex: 1; color: var(--text-primary, #e0e0e0); font-weight: 500; }
+.aicharts-history-meta { font-size: 0.68rem; color: var(--text-secondary, #666); }
+
 /* AI Badge */
 .ai-badge {
     display: inline-flex; align-items: center; gap: 2px;

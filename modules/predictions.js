@@ -70,7 +70,8 @@ const predictionLoaders = {
     'webllmChat': loadWebLLMChat,
     'antiPolish': analyzeAntiPolish,
     'ghostVoting': analyzeGhostVoting,
-    'webIntel': loadWebIntel
+    'webIntel': loadWebIntel,
+    'aiCharts': loadAiCharts
 };
 
 /**
@@ -4768,6 +4769,272 @@ Kluby: ${clubs.join(', ') || 'brak danych'}.`;
     // Quick action buttons
     container.querySelectorAll('.webintel-quick-btn').forEach(btn => {
         btn.addEventListener('click', () => doSearch(btn.dataset.query));
+    });
+}
+
+/**
+ * 29. AI Charts — AI rysuje dowolne wykresy z bazy na żądanie
+ */
+function loadAiCharts() {
+    const container = document.getElementById('aiChartsContent');
+    if (!container) return;
+
+    console.log('[Predictions] Loading AI Charts...');
+
+    // Check WebGPU chart.js availability via global
+    if (typeof Chart === 'undefined') {
+        container.innerHTML = '<div class="prediction-error">Chart.js niedostępny. Odśwież stronę.</div>';
+        return;
+    }
+
+    // Build schema info from database
+    let schemaInfo = '';
+    try {
+        const tables = db2.database.exec("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name");
+        if (tables.length) {
+            tables[0].values.forEach(([tbl]) => {
+                const cols = db2.database.exec(`PRAGMA table_info(${tbl})`);
+                schemaInfo += `\nTabela: ${tbl}\n`;
+                if (cols.length) {
+                    cols[0].values.forEach(c => { schemaInfo += `  - ${c[1]} (${c[2]})\n`; });
+                }
+            });
+        }
+    } catch (e) { schemaInfo = '(Brak schematu)'; }
+
+    // Quick prompt ideas
+    const quickPrompts = [
+        { icon: '🥧', label: 'Podział na partie', query: 'Wykres kołowy podziału posłów na kluby parlamentarne' },
+        { icon: '📊', label: 'Frekwencja klubów', query: 'Wykres słupkowy średniej frekwencji głosowań wg klubu' },
+        { icon: '📈', label: 'Głosowania w czasie', query: 'Wykres liniowy liczby głosowań w poszczególnych miesiącach' },
+        { icon: '🗣️', label: 'Top mówcy', query: 'Wykres słupkowy 10 posłów z największą liczbą wypowiedzi' },
+        { icon: '⚖️', label: 'Za vs Przeciw', query: 'Wykres słupkowy liczby głosów ZA i PRZECIW w podziale na kluby' },
+        { icon: '📉', label: 'Interpelacje/miesiąc', query: 'Wykres liniowy liczby interpelacji złożonych w każdym miesiącu' }
+    ];
+
+    container.innerHTML = `
+        <div class="aicharts-panel">
+            <div class="aicharts-info">
+                💡 Opisz jaki wykres chcesz zobaczyć, a AI wygeneruje zapytanie SQL i automatycznie narysuje wykres z danych w bazie.
+            </div>
+            <div class="aicharts-input-area">
+                <textarea id="aiChartsQuery" class="aicharts-input" rows="2" placeholder="Np. Wykres kołowy podziału posłów na partie..."></textarea>
+                <button id="aiChartsGenBtn" class="aicharts-btn aicharts-btn-gen">📊 Generuj wykres</button>
+            </div>
+            <div class="aicharts-quick">
+                <span class="aicharts-quick-title">Szybkie pomysły:</span>
+                ${quickPrompts.map(q => `<button class="aicharts-quick-btn" data-query="${q.query}">${q.icon} ${q.label}</button>`).join('')}
+            </div>
+            <div id="aiChartsStatus" class="aicharts-status" style="display:none;"></div>
+            <div id="aiChartsResult" class="aicharts-result"></div>
+            <div id="aiChartsHistory" class="aicharts-history"></div>
+        </div>
+    `;
+
+    const queryInput = document.getElementById('aiChartsQuery');
+    const genBtn = document.getElementById('aiChartsGenBtn');
+    const statusDiv = document.getElementById('aiChartsStatus');
+    const resultDiv = document.getElementById('aiChartsResult');
+    const historyDiv = document.getElementById('aiChartsHistory');
+    let chartInstance = null;
+    const history = [];
+
+    async function generateChart(userPrompt) {
+        if (!userPrompt || !userPrompt.trim()) return;
+        userPrompt = userPrompt.trim();
+
+        const apiKey = getApiKey();
+        if (!apiKey) {
+            statusDiv.style.display = '';
+            statusDiv.innerHTML = '<div class="prediction-error">⚠️ Brak klucza API. Ustaw klucz w sekcji AI Asystent.</div>';
+            return;
+        }
+
+        statusDiv.style.display = '';
+        statusDiv.innerHTML = '<div class="prediction-loading"><div class="prediction-spinner"></div><p>AI generuje wykres...</p></div>';
+        genBtn.disabled = true;
+
+        try {
+            const aiPrompt = `Jesteś ekspertem od analizy danych parlamentarnych i wizualizacji. Masz dostęp do bazy SQLite z następującym schematem:
+${schemaInfo}
+
+Użytkownik chce wykres: "${userPrompt}"
+
+Zwróć odpowiedź WYŁĄCZNIE jako JSON (bez markdown, bez komentarzy) w formacie:
+{
+  "sql": "SELECT ... ",
+  "chartType": "bar|line|pie|doughnut|polarArea|radar",
+  "title": "Tytuł wykresu",
+  "labelColumn": 0,
+  "dataColumns": [1],
+  "datasetLabels": ["Nazwa serii"],
+  "colors": ["#3498db", "#e74c3c", "#2ecc71", "#f39c12", "#9b59b6", "#1abc9c", "#e67e22", "#34495e", "#16a085", "#c0392b"],
+  "description": "Krótki opis wyników"
+}
+
+WAŻNE:
+- sql MUSI być poprawnym zapytaniem SELECT do podanego schematu
+- labelColumn = indeks kolumny z etykietami (oś X lub nazwy segmentów)
+- dataColumns = indeksy kolumn z wartościami liczbowymi
+- datasetLabels = nazwy serii danych (po jednej na każdy element dataColumns)
+- Użyj sensownych kolorów pasujących do tematu
+- Jeśli dane dotyczą partii, użyj kolorów partyjnych (PiS=#1e3a5f, KO=#f5a623, Lewica=#e74c3c, PSL=#4a7c59, Konfederacja=#1a1a2e, PL2050=#00a9e0)
+- Odpowiedz PO POLSKU w polu description`;
+
+            const aiResponse = await callGeminiForPrediction(aiPrompt, 1500);
+
+            // Parse JSON from response
+            let config;
+            try {
+                const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+                if (!jsonMatch) throw new Error('AI nie zwróciło poprawnego JSON');
+                config = JSON.parse(jsonMatch[0]);
+            } catch (parseErr) {
+                throw new Error(`Nie udało się sparsować odpowiedzi AI: ${parseErr.message}`);
+            }
+
+            if (!config.sql || !config.chartType) {
+                throw new Error('AI nie wygenerowało kompletnej konfiguracji (brak sql lub chartType)');
+            }
+
+            // Validate: only SELECT
+            const sqlTrimmed = config.sql.trim();
+            if (!/^SELECT/i.test(sqlTrimmed)) {
+                throw new Error('AI wygenerowało niedozwolone zapytanie SQL (tylko SELECT)');
+            }
+
+            // Execute SQL
+            statusDiv.innerHTML = '<div class="prediction-loading"><div class="prediction-spinner"></div><p>Wykonuję SQL...</p></div>';
+            const results = db2.database.exec(config.sql);
+
+            if (!results.length || !results[0].values.length) {
+                throw new Error('Zapytanie SQL nie zwróciło wyników. Spróbuj innego opisu.');
+            }
+
+            const rows = results[0].values;
+            const columns = results[0].columns;
+
+            // Extract labels and datasets
+            const labelCol = config.labelColumn || 0;
+            const dataCols = config.dataColumns || [1];
+            const labels = rows.map(r => String(r[labelCol] || ''));
+
+            const datasets = dataCols.map((colIdx, i) => {
+                const data = rows.map(r => Number(r[colIdx]) || 0);
+                const isPie = ['pie', 'doughnut', 'polarArea'].includes(config.chartType);
+                return {
+                    label: (config.datasetLabels && config.datasetLabels[i]) || columns[colIdx] || `Seria ${i + 1}`,
+                    data: data,
+                    backgroundColor: isPie
+                        ? data.map((_, j) => (config.colors || [])[j % (config.colors || []).length] || `hsl(${(j * 360) / data.length}, 70%, 55%)`)
+                        : ((config.colors || [])[i] || `hsl(${i * 120}, 70%, 55%)`) + '99',
+                    borderColor: isPie
+                        ? data.map((_, j) => (config.colors || [])[j % (config.colors || []).length] || `hsl(${(j * 360) / data.length}, 70%, 55%)`)
+                        : (config.colors || [])[i] || `hsl(${i * 120}, 70%, 55%)`,
+                    borderWidth: isPie ? 2 : 2,
+                    tension: config.chartType === 'line' ? 0.3 : undefined,
+                    fill: config.chartType === 'line' ? false : undefined
+                };
+            });
+
+            // Render chart
+            statusDiv.style.display = 'none';
+            resultDiv.innerHTML = `
+                <div class="aicharts-chart-wrap">
+                    <div class="aicharts-chart-title">${config.title || 'Wykres'}</div>
+                    <canvas id="aiChartCanvas"></canvas>
+                    <div class="aicharts-chart-desc">${config.description || ''}</div>
+                    <details class="aicharts-sql-details">
+                        <summary>📋 Pokaż SQL</summary>
+                        <pre class="aicharts-sql-code">${config.sql}</pre>
+                    </details>
+                    <div class="aicharts-chart-meta">${rows.length} wierszy · ${config.chartType} · ${new Date().toLocaleTimeString('pl-PL')}</div>
+                </div>
+            `;
+
+            // Destroy old chart
+            if (chartInstance) {
+                chartInstance.destroy();
+                chartInstance = null;
+            }
+
+            const ctx = document.getElementById('aiChartCanvas');
+            chartInstance = new Chart(ctx, {
+                type: config.chartType,
+                data: { labels, datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        title: { display: false },
+                        legend: {
+                            display: datasets.length > 1 || ['pie', 'doughnut', 'polarArea'].includes(config.chartType),
+                            position: 'bottom',
+                            labels: { color: '#ccc', font: { size: 11 } }
+                        }
+                    },
+                    scales: ['pie', 'doughnut', 'polarArea', 'radar'].includes(config.chartType) ? {} : {
+                        x: {
+                            ticks: { color: '#999', maxRotation: 45, font: { size: 10 } },
+                            grid: { color: 'rgba(255,255,255,0.05)' }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            ticks: { color: '#999', font: { size: 10 } },
+                            grid: { color: 'rgba(255,255,255,0.08)' }
+                        }
+                    }
+                }
+            });
+
+            // Save to history
+            history.unshift({
+                query: userPrompt,
+                title: config.title,
+                type: config.chartType,
+                time: new Date().toLocaleTimeString('pl-PL'),
+                rows: rows.length
+            });
+            renderHistory();
+
+        } catch (err) {
+            console.error('[AI Charts] Error:', err);
+            statusDiv.style.display = '';
+            statusDiv.innerHTML = `<div class="prediction-error">❌ ${err.message}</div>`;
+        } finally {
+            genBtn.disabled = false;
+        }
+    }
+
+    function renderHistory() {
+        if (history.length === 0) return;
+        historyDiv.innerHTML = `
+            <div class="pred-subtitle">📜 Historia wykresów (${history.length})</div>
+            <div class="aicharts-history-list">
+                ${history.map(h => `
+                    <div class="aicharts-history-item" data-query="${h.query.replace(/"/g, '&quot;')}">
+                        <span class="aicharts-history-icon">${h.type === 'pie' || h.type === 'doughnut' ? '🥧' : h.type === 'line' ? '📈' : '📊'}</span>
+                        <span class="aicharts-history-title">${h.title}</span>
+                        <span class="aicharts-history-meta">${h.rows} wierszy · ${h.time}</span>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+        historyDiv.querySelectorAll('.aicharts-history-item').forEach(item => {
+            item.addEventListener('click', () => generateChart(item.dataset.query));
+        });
+    }
+
+    // Event listeners
+    genBtn?.addEventListener('click', () => generateChart(queryInput.value));
+    queryInput?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); generateChart(queryInput.value); }
+    });
+    container.querySelectorAll('.aicharts-quick-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            queryInput.value = btn.dataset.query;
+            generateChart(btn.dataset.query);
+        });
     });
 }
 
