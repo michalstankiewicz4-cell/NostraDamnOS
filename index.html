@@ -806,12 +806,14 @@
                                     <span>Monitoruj nowe rekordy co</span>
                                     <input type="number" id="dbCheckNewRecordsInterval" min="1" max="60" value="5" style="width:50px;margin:0 5px;padding:2px 5px;">
                                     <span>min</span>
+                                    <button id="btnCheckNewRecords" class="console-style-btn" style="margin-left:8px;padding:4px 10px;font-size:0.8rem;" title="Sprawdź teraz">🔄</button>
                                 </label>
                                 <label class="settings-checkbox-label" style="font-size:0.9rem;">
                                     <input type="checkbox" id="toggleDbCheckDataChanges">
                                     <span>Monitoruj zmiany danych co</span>
                                     <input type="number" id="dbCheckDataChangesInterval" min="1" max="60" value="11" style="width:50px;margin:0 5px;padding:2px 5px;">
                                     <span>min</span>
+                                    <button id="btnCheckDataChanges" class="console-style-btn" style="margin-left:8px;padding:4px 10px;font-size:0.8rem;" title="Sprawdź teraz">🔄</button>
                                 </label>
                             </div>
                             <label class="settings-checkbox-label">
@@ -2032,6 +2034,20 @@
                 state.dbCheckDataChangesInterval = parseInt(this.value) || 11;
                 save(state);
                 if (window.restartDbMonitoring) window.restartDbMonitoring();
+            });
+        }
+
+        // Force check buttons
+        const btnCheckNewRecords = document.getElementById('btnCheckNewRecords');
+        if (btnCheckNewRecords) {
+            btnCheckNewRecords.addEventListener('click', function() {
+                if (window.checkNewRecords) window.checkNewRecords();
+            });
+        }
+        const btnCheckDataChanges = document.getElementById('btnCheckDataChanges');
+        if (btnCheckDataChanges) {
+            btnCheckDataChanges.addEventListener('click', function() {
+                if (window.checkDataChanges) window.checkDataChanges();
             });
         }
 

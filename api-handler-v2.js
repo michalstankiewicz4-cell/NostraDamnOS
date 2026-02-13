@@ -1,5 +1,5 @@
 // API Handler v2.0 - Uses Pipeline ETL
-import { runPipeline, buildConfigFromUI, getCacheStatus, verifyDatabase, backgroundVerify, detectDataChanges } from './pipeline.js';
+import { runPipeline, buildConfigFromUI, getCacheStatus, verifyDatabase, detectDataChanges } from './pipeline.js';
 import { fetchCounter, setFetchAbortController } from './fetcher/fetcher.js';
 import { db2 } from './modules/database-v2.js';
 import ToastModule from './modules/toast.js';
@@ -897,6 +897,7 @@ let dataChangesInterval = null;
 
 /**
  * Sprawdza nowe rekordy (druga lampka)
+ * Używa tej samej logiki co przycisk "Sprawdź nowe dane" - verifyDatabase()
  */
 async function checkNewRecords() {
     if (!db2.database) return;
@@ -909,7 +910,8 @@ async function checkNewRecords() {
     
     console.log('[DB Monitor] Checking for new records...');
     try {
-        const result = await backgroundVerify(db2);
+        // Używamy dokładnie tej samej funkcji co przycisk sprawdzania
+        const result = await verifyDatabase(db2, {});
         if (result && result.hasNewRecords) {
             setRecordsStatus(true);
             console.log('[DB Monitor] 🆕 New records detected');
@@ -957,8 +959,9 @@ async function checkDataChanges() {
 
 /**
  * Uruchamia monitorowanie bazy według ustawień
+ * @param {boolean} skipInitialCheck - Jeśli true, nie wykonuje pierwszego sprawdzenia od razu
  */
-function startDbMonitoring() {
+function startDbMonitoring(skipInitialCheck = false) {
     stopDbMonitoring(); // Clear existing intervals
     
     const saved = JSON.parse(localStorage.getItem('uiVisibility') || '{}');
@@ -976,8 +979,10 @@ function startDbMonitoring() {
         const interval = settings.dbCheckNewRecordsInterval * 60 * 1000;
         console.log(`[DB Monitor] Starting new records check (every ${settings.dbCheckNewRecordsInterval} min)`);
         
-        // Pierwsze sprawdzenie od razu
-        checkNewRecords();
+        // Pierwsze sprawdzenie od razu (tylko jeśli nie skipujemy)
+        if (!skipInitialCheck) {
+            checkNewRecords();
+        }
         
         // Póżniejsze co N minut
         newRecordsInterval = setInterval(checkNewRecords, interval);
@@ -988,8 +993,10 @@ function startDbMonitoring() {
         const interval = settings.dbCheckDataChangesInterval * 60 * 1000;
         console.log(`[DB Monitor] Starting data changes check (every ${settings.dbCheckDataChangesInterval} min)`);
         
-        // Pierwsze sprawdzenie od razu
-        checkDataChanges();
+        // Pierwsze sprawdzenie od razu (tylko jeśli nie skipujemy)
+        if (!skipInitialCheck) {
+            checkDataChanges();
+        }
         
         // Późniejsze co N minut
         dataChangesInterval = setInterval(checkDataChanges, interval);
@@ -1014,16 +1021,19 @@ function stopDbMonitoring() {
 
 /**
  * Restartuje monitorowanie (gdy zmieniają się ustawienia)
+ * Nie wykonuje natychmiastowego sprawdzenia - tylko restartuje timery
  */
 function restartDbMonitoring() {
     console.log('[DB Monitor] Restarting monitoring...');
-    startDbMonitoring();
+    startDbMonitoring(true); // Skip initial check
 }
 
 // Export monitoring functions globally
 window.startDbMonitoring = startDbMonitoring;
 window.stopDbMonitoring = stopDbMonitoring;
 window.restartDbMonitoring = restartDbMonitoring;
+window.checkNewRecords = checkNewRecords;
+window.checkDataChanges = checkDataChanges;
 
 // Initialize database on load
 db2.init().then(() => {
