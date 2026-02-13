@@ -136,9 +136,6 @@ function isInsideCachedRect(x, y) {
 function onMouseMove(e) {
     const cx = e.clientX, cy = e.clientY;
 
-    // If already highlighting something and cursor is still inside it — keep it, no DOM queries
-    if (highlightedEl && isInsideCachedRect(cx, cy)) return;
-
     // Throttle via rAF to avoid excessive DOM queries
     if (rafPending) return;
     rafPending = true;
@@ -160,8 +157,9 @@ function onMouseMove(e) {
 
         const target = elUnder ? findHelpTarget(elUnder) : null;
         if (target) {
-            highlightElement(target);
-        } else {
+            highlightElement(target); // no-op if same element (no flicker)
+        } else if (!isInsideCachedRect(cx, cy)) {
+            // Only clear if cursor is truly outside the highlighted element's zone
             clearHighlight();
         }
     });
