@@ -1829,8 +1829,8 @@ if (liveLamp && liveStreamModal) {
     liveLamp.addEventListener('click', () => {
         // Sprawdź czy trwa transmisja (czy lampka miga)
         if (liveLamp.classList.contains('floating-lamp-live-blink')) {
-            // URL streamu Sejmu - kanał YouTube Sejmu RP
-            const streamUrl = 'https://www.youtube.com/embed/live_stream?channel=UC53qNTweet9Ilm3Hh_UGGqqQ&autoplay=1';
+            // URL streamu - oficjalna strona transmisji Sejmu
+            const streamUrl = 'https://www.sejm.gov.pl/Sejm10.nsf/transmisje.xsp';
             
             liveStreamIframe.src = streamUrl;
             liveStreamModal.style.display = 'flex';
