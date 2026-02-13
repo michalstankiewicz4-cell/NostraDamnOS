@@ -2310,12 +2310,12 @@ input:disabled {
 }
 
 /* ============================================
-   SEKCJA 4: WYKRESY
+   SEKCJA 4: WYKRESY (tile → expand pattern)
    ============================================ */
 
 .charts-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
     gap: 16px;
 }
 
@@ -2323,7 +2323,37 @@ input:disabled {
     background: rgba(255,255,255,0.04);
     border: 1px solid rgba(255,255,255,0.08);
     border-radius: 12px;
-    padding: 16px;
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: pointer;
+}
+
+.chart-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.2);
+}
+
+/* Tile mode (collapsed): icon + title centered */
+.chart-card:not(.chart-card--expanded) .chart-card-header {
+    flex-direction: column;
+    text-align: center;
+    padding: 2rem 1rem 1.5rem;
+}
+
+.chart-card:not(.chart-card--expanded) .chart-card-icon {
+    font-size: 3rem;
+    margin-bottom: 0.25rem;
+}
+
+.chart-card:not(.chart-card--expanded) .chart-card-header h4 {
+    font-size: 0.95rem;
+}
+
+.chart-card:not(.chart-card--expanded) .chart-card-header p {
+    font-size: 0.75rem;
+    opacity: 0.7;
+    margin: 4px 0 0;
+    color: #94a3b8;
 }
 
 .chart-card-header {
@@ -2331,7 +2361,7 @@ input:disabled {
     justify-content: center;
     align-items: center;
     gap: 12px;
-    margin-bottom: 12px;
+    margin-bottom: 0;
 }
 
 .chart-card-header h4 {
@@ -2339,6 +2369,96 @@ input:disabled {
     color: #ccc;
     font-size: 0.9rem;
     font-weight: 500;
+}
+
+.chart-card-header p {
+    margin: 0;
+    color: #94a3b8;
+    font-size: 0.8rem;
+}
+
+.chart-card-icon {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+/* Expand / Collapse states */
+.chart-card--hidden {
+    display: none !important;
+}
+
+.chart-card--expanded {
+    grid-column: 1 / -1;
+    cursor: default;
+    min-height: 400px;
+    padding: 16px;
+}
+
+.chart-card--expanded:hover {
+    transform: none;
+}
+
+.chart-card--expanded .chart-card-header {
+    flex-direction: row;
+    text-align: left;
+    padding: 0 0 12px;
+    justify-content: flex-start;
+}
+
+.chart-card--expanded .chart-card-icon {
+    font-size: 2rem;
+}
+
+.chart-card--expanded .chart-card-header h4 {
+    font-size: 1.1rem;
+}
+
+.charts-grid--has-expanded {
+    grid-template-columns: 1fr;
+}
+
+/* Back button for charts */
+.chart-back-btn {
+    background: rgba(102, 126, 234, 0.15);
+    color: #667eea;
+    border: 1px solid rgba(102, 126, 234, 0.3);
+    padding: 0.4rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 600;
+    transition: all 0.2s;
+    margin-right: 0.75rem;
+    flex-shrink: 0;
+}
+
+.chart-back-btn:hover {
+    background: rgba(102, 126, 234, 0.25);
+    color: #a5b4fc;
+}
+
+/* Chart body (hidden in tile mode) */
+.chart-card-body {
+    padding: 0;
+}
+
+.chart-card--expanded .chart-card-body {
+    min-height: 350px;
+}
+
+/* Controls row inside expanded chart */
+.chart-card-controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+}
+
+.heatmap-controls {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
 }
 
 .chart-refresh-btn {
@@ -2358,7 +2478,8 @@ input:disabled {
 }
 
 .chart-card canvas {
-    max-height: 300px;
+    max-height: 500px;
+    width: 100% !important;
 }
 
 .chart-no-data {
@@ -2431,26 +2552,9 @@ input:disabled {
     border-color: #667eea;
 }
 
-.chart-card-wide {
-    grid-column: 1 / -1;
-}
-
-.chart-card-wide canvas {
-    max-height: 500px;
-}
-
-.heatmap-controls {
-    display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
-}
-
 @media (max-width: 768px) {
     .charts-grid {
-        grid-template-columns: 1fr;
-    }
-    .chart-card-wide {
-        grid-column: auto;
+        grid-template-columns: repeat(2, 1fr);
     }
 }
 

@@ -819,209 +819,278 @@
 
                 <div id="chartsGrid" class="charts-grid"
                     data-help-id="chartsGrid">
-                    <div class="chart-card" id="chartKluby">
+
+                    <div class="chart-card" id="chartKluby" data-chart-type="kluby">
                         <div class="chart-card-header">
-                            <h4>Rozkład klubów parlamentarnych</h4>
-                            <button class="chart-refresh-btn" data-chart="kluby" title="Aktualizuj">🔄</button>
+                            <div class="chart-card-icon">🏛️</div>
+                            <div>
+                                <h4>Rozkład klubów parlamentarnych</h4>
+                                <p>Doughnut — liczba posłów per klub</p>
+                            </div>
                         </div>
-                        <canvas id="canvasKluby"></canvas>
-                        <div class="chart-no-data">
-                            <div class="chart-no-data-icon">📊</div>
-                            <div class="chart-no-data-title">Brak danych</div>
-                            <div class="chart-no-data-hint">Pobierz posłów aby wyświetlić ten wykres</div>
-                            <div class="chart-no-data-actions">
-                                <button class="chart-no-data-btn" data-action="goto-etl">📥 Pobierz dane</button>
-                                <button class="chart-no-data-btn" data-action="import-db">📂 Importuj bazę</button>
+                        <div class="chart-card-body" style="display:none;">
+                            <canvas id="canvasKluby"></canvas>
+                            <div class="chart-no-data">
+                                <div class="chart-no-data-icon">📊</div>
+                                <div class="chart-no-data-title">Brak danych</div>
+                                <div class="chart-no-data-hint">Pobierz posłów aby wyświetlić ten wykres</div>
+                                <div class="chart-no-data-actions">
+                                    <button class="chart-no-data-btn" data-action="goto-etl">📥 Pobierz dane</button>
+                                    <button class="chart-no-data-btn" data-action="import-db">📂 Importuj bazę</button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <div class="chart-card" id="chartTopPoslowie">
+
+                    <div class="chart-card" id="chartTopPoslowie" data-chart-type="topPoslowie">
                         <div class="chart-card-header">
-                            <h4>Top 10 najaktywniejszych posłów</h4>
-                            <button class="chart-refresh-btn" data-chart="topPoslowie" title="Aktualizuj">🔄</button>
+                            <div class="chart-card-icon">👥</div>
+                            <div>
+                                <h4>Top 10 najaktywniejszych posłów</h4>
+                                <p>Bar — ranking wg liczby wypowiedzi</p>
+                            </div>
                         </div>
-                        <canvas id="canvasTopPoslowie"></canvas>
-                        <div class="chart-no-data">
-                            <div class="chart-no-data-icon">📊</div>
-                            <div class="chart-no-data-title">Brak danych</div>
-                            <div class="chart-no-data-hint">Pobierz wypowiedzi aby wyświetlić ten wykres</div>
-                            <div class="chart-no-data-actions">
-                                <button class="chart-no-data-btn" data-action="goto-etl">📥 Pobierz dane</button>
-                                <button class="chart-no-data-btn" data-action="import-db">📂 Importuj bazę</button>
+                        <div class="chart-card-body" style="display:none;">
+                            <canvas id="canvasTopPoslowie"></canvas>
+                            <div class="chart-no-data">
+                                <div class="chart-no-data-icon">📊</div>
+                                <div class="chart-no-data-title">Brak danych</div>
+                                <div class="chart-no-data-hint">Pobierz wypowiedzi aby wyświetlić ten wykres</div>
+                                <div class="chart-no-data-actions">
+                                    <button class="chart-no-data-btn" data-action="goto-etl">📥 Pobierz dane</button>
+                                    <button class="chart-no-data-btn" data-action="import-db">📂 Importuj bazę</button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <div class="chart-card" id="chartGlosowania">
+
+                    <div class="chart-card" id="chartGlosowania" data-chart-type="glosowania">
                         <div class="chart-card-header">
-                            <h4>Wyniki głosowań</h4>
-                            <button class="chart-refresh-btn" data-chart="glosowania" title="Aktualizuj">🔄</button>
+                            <div class="chart-card-icon">🗳️</div>
+                            <div>
+                                <h4>Wyniki głosowań</h4>
+                                <p>Doughnut — za / przeciw / wstrzymał się</p>
+                            </div>
                         </div>
-                        <canvas id="canvasGlosowania"></canvas>
-                        <div class="chart-no-data">
-                            <div class="chart-no-data-icon">📊</div>
-                            <div class="chart-no-data-title">Brak danych</div>
-                            <div class="chart-no-data-hint">Pobierz głosowania aby wyświetlić ten wykres</div>
-                            <div class="chart-no-data-actions">
-                                <button class="chart-no-data-btn" data-action="goto-etl">📥 Pobierz dane</button>
-                                <button class="chart-no-data-btn" data-action="import-db">📂 Importuj bazę</button>
+                        <div class="chart-card-body" style="display:none;">
+                            <canvas id="canvasGlosowania"></canvas>
+                            <div class="chart-no-data">
+                                <div class="chart-no-data-icon">📊</div>
+                                <div class="chart-no-data-title">Brak danych</div>
+                                <div class="chart-no-data-hint">Pobierz głosowania aby wyświetlić ten wykres</div>
+                                <div class="chart-no-data-actions">
+                                    <button class="chart-no-data-btn" data-action="goto-etl">📥 Pobierz dane</button>
+                                    <button class="chart-no-data-btn" data-action="import-db">📂 Importuj bazę</button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <div class="chart-card" id="chartCustom">
+
+                    <div class="chart-card" id="chartCustom" data-chart-type="custom">
                         <div class="chart-card-header">
-                            <select id="customChartSelect" class="chart-select">
-                                <option value="glosowaniaTime">Głosowania w czasie</option>
-                                <option value="komisje">Aktywność komisji</option>
-                                <option value="interpelacje">Interpelacje wg posłów</option>
-                                <option value="frekwencja">Frekwencja głosowań</option>
-                            </select>
-                            <button class="chart-refresh-btn" data-chart="custom" title="Aktualizuj">🔄</button>
-                        </div>
-                        <canvas id="canvasCustom"></canvas>
-                        <div class="chart-no-data">
-                            <div class="chart-no-data-icon">📊</div>
-                            <div class="chart-no-data-title">Brak danych</div>
-                            <div class="chart-no-data-hint">Pobierz dane aby wyświetlić ten wykres</div>
-                            <div class="chart-no-data-actions">
-                                <button class="chart-no-data-btn" data-action="goto-etl">📥 Pobierz dane</button>
-                                <button class="chart-no-data-btn" data-action="import-db">📂 Importuj bazę</button>
+                            <div class="chart-card-icon">📊</div>
+                            <div>
+                                <h4>Wykres niestandardowy</h4>
+                                <p>Głosowania w czasie, komisje, interpelacje, frekwencja</p>
                             </div>
                         </div>
-                    </div>
-                    <div class="chart-card" id="chartNajmniejAktywni">
-                        <div class="chart-card-header">
-                            <h4>Top 20 najmniej aktywnych posłów</h4>
-                            <button class="chart-refresh-btn" data-chart="najmniejAktywni" title="Aktualizuj">🔄</button>
-                        </div>
-                        <canvas id="canvasNajmniejAktywni"></canvas>
-                        <div class="chart-no-data">
-                            <div class="chart-no-data-icon">📊</div>
-                            <div class="chart-no-data-title">Brak danych</div>
-                            <div class="chart-no-data-hint">Pobierz wypowiedzi i posłów aby wyświetlić ten wykres</div>
-                            <div class="chart-no-data-actions">
-                                <button class="chart-no-data-btn" data-action="goto-etl">📥 Pobierz dane</button>
-                                <button class="chart-no-data-btn" data-action="import-db">📂 Importuj bazę</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="chart-card" id="chartNajmniejAktywneKluby">
-                        <div class="chart-card-header">
-                            <h4>Top 20 najmniej aktywnych klubów</h4>
-                            <button class="chart-refresh-btn" data-chart="najmniejAktywneKluby" title="Aktualizuj">🔄</button>
-                        </div>
-                        <canvas id="canvasNajmniejAktywneKluby"></canvas>
-                        <div class="chart-no-data">
-                            <div class="chart-no-data-icon">📊</div>
-                            <div class="chart-no-data-title">Brak danych</div>
-                            <div class="chart-no-data-hint">Pobierz wypowiedzi i posłów aby wyświetlić ten wykres</div>
-                            <div class="chart-no-data-actions">
-                                <button class="chart-no-data-btn" data-action="goto-etl">📥 Pobierz dane</button>
-                                <button class="chart-no-data-btn" data-action="import-db">📂 Importuj bazę</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="chart-card chart-card-wide" id="chartHeatmap">
-                        <div class="chart-card-header">
-                            <h4>Heatmapa frekwencji</h4>
-                            <div class="heatmap-controls">
-                                <select id="heatmapXAxis" class="chart-select">
-                                    <option value="posiedzenia">Oś X: Posiedzenia</option>
-                                    <option value="glosowania">Oś X: Głosowania</option>
+                        <div class="chart-card-body" style="display:none;">
+                            <div class="chart-card-controls">
+                                <select id="customChartSelect" class="chart-select">
+                                    <option value="glosowaniaTime">Głosowania w czasie</option>
+                                    <option value="komisje">Aktywność komisji</option>
+                                    <option value="interpelacje">Interpelacje wg posłów</option>
+                                    <option value="frekwencja">Frekwencja głosowań</option>
                                 </select>
-                                <select id="heatmapYAxis" class="chart-select">
-                                    <option value="poslowie">Oś Y: Posłowie</option>
-                                    <option value="kluby">Oś Y: Kluby</option>
-                                </select>
-                                <select id="heatmapColor" class="chart-select">
-                                    <option value="obecnosc">Kolor: Obecność</option>
-                                    <option value="za">Kolor: Głosy Za</option>
-                                    <option value="przeciw">Kolor: Głosy Przeciw</option>
-                                    <option value="wstrzymal">Kolor: Wstrzymał się</option>
-                                </select>
+                                <button class="chart-refresh-btn" data-chart="custom" title="Aktualizuj">🔄</button>
                             </div>
-                            <button class="chart-refresh-btn" data-chart="heatmap" title="Aktualizuj">🔄</button>
-                        </div>
-                        <canvas id="canvasHeatmap"></canvas>
-                        <div class="chart-no-data">
-                            <div class="chart-no-data-icon">📊</div>
-                            <div class="chart-no-data-title">Brak danych</div>
-                            <div class="chart-no-data-hint">Pobierz głosy i posłów aby wyświetlić heatmapę</div>
-                            <div class="chart-no-data-actions">
-                                <button class="chart-no-data-btn" data-action="goto-etl">📥 Pobierz dane</button>
-                                <button class="chart-no-data-btn" data-action="import-db">📂 Importuj bazę</button>
+                            <canvas id="canvasCustom"></canvas>
+                            <div class="chart-no-data">
+                                <div class="chart-no-data-icon">📊</div>
+                                <div class="chart-no-data-title">Brak danych</div>
+                                <div class="chart-no-data-hint">Pobierz dane aby wyświetlić ten wykres</div>
+                                <div class="chart-no-data-actions">
+                                    <button class="chart-no-data-btn" data-action="goto-etl">📥 Pobierz dane</button>
+                                    <button class="chart-no-data-btn" data-action="import-db">📂 Importuj bazę</button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    
+
+                    <div class="chart-card" id="chartNajmniejAktywni" data-chart-type="najmniejAktywni">
+                        <div class="chart-card-header">
+                            <div class="chart-card-icon">😴</div>
+                            <div>
+                                <h4>Top 20 najmniej aktywnych posłów</h4>
+                                <p>Bar — posłowie z najmniejszą liczbą wypowiedzi</p>
+                            </div>
+                        </div>
+                        <div class="chart-card-body" style="display:none;">
+                            <canvas id="canvasNajmniejAktywni"></canvas>
+                            <div class="chart-no-data">
+                                <div class="chart-no-data-icon">📊</div>
+                                <div class="chart-no-data-title">Brak danych</div>
+                                <div class="chart-no-data-hint">Pobierz wypowiedzi i posłów aby wyświetlić ten wykres</div>
+                                <div class="chart-no-data-actions">
+                                    <button class="chart-no-data-btn" data-action="goto-etl">📥 Pobierz dane</button>
+                                    <button class="chart-no-data-btn" data-action="import-db">📂 Importuj bazę</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="chart-card" id="chartNajmniejAktywneKluby" data-chart-type="najmniejAktywneKluby">
+                        <div class="chart-card-header">
+                            <div class="chart-card-icon">🔻</div>
+                            <div>
+                                <h4>Najmniej aktywne kluby</h4>
+                                <p>Bar — aktywność klubów per capita</p>
+                            </div>
+                        </div>
+                        <div class="chart-card-body" style="display:none;">
+                            <canvas id="canvasNajmniejAktywneKluby"></canvas>
+                            <div class="chart-no-data">
+                                <div class="chart-no-data-icon">📊</div>
+                                <div class="chart-no-data-title">Brak danych</div>
+                                <div class="chart-no-data-hint">Pobierz wypowiedzi i posłów aby wyświetlić ten wykres</div>
+                                <div class="chart-no-data-actions">
+                                    <button class="chart-no-data-btn" data-action="goto-etl">📥 Pobierz dane</button>
+                                    <button class="chart-no-data-btn" data-action="import-db">📂 Importuj bazę</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="chart-card" id="chartHeatmap" data-chart-type="heatmap">
+                        <div class="chart-card-header">
+                            <div class="chart-card-icon">🔥</div>
+                            <div>
+                                <h4>Heatmapa frekwencji</h4>
+                                <p>Macierz obecności posłów / klubów na głosowaniach</p>
+                            </div>
+                        </div>
+                        <div class="chart-card-body" style="display:none;">
+                            <div class="chart-card-controls">
+                                <div class="heatmap-controls">
+                                    <select id="heatmapXAxis" class="chart-select">
+                                        <option value="posiedzenia">Oś X: Posiedzenia</option>
+                                        <option value="glosowania">Oś X: Głosowania</option>
+                                    </select>
+                                    <select id="heatmapYAxis" class="chart-select">
+                                        <option value="poslowie">Oś Y: Posłowie</option>
+                                        <option value="kluby">Oś Y: Kluby</option>
+                                    </select>
+                                    <select id="heatmapColor" class="chart-select">
+                                        <option value="obecnosc">Kolor: Obecność</option>
+                                        <option value="za">Kolor: Głosy Za</option>
+                                        <option value="przeciw">Kolor: Głosy Przeciw</option>
+                                        <option value="wstrzymal">Kolor: Wstrzymał się</option>
+                                    </select>
+                                </div>
+                                <button class="chart-refresh-btn" data-chart="heatmap" title="Aktualizuj">🔄</button>
+                            </div>
+                            <canvas id="canvasHeatmap"></canvas>
+                            <div class="chart-no-data">
+                                <div class="chart-no-data-icon">📊</div>
+                                <div class="chart-no-data-title">Brak danych</div>
+                                <div class="chart-no-data-hint">Pobierz głosy i posłów aby wyświetlić heatmapę</div>
+                                <div class="chart-no-data-actions">
+                                    <button class="chart-no-data-btn" data-action="goto-etl">📥 Pobierz dane</button>
+                                    <button class="chart-no-data-btn" data-action="import-db">📂 Importuj bazę</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- WYKRESY ANALIZY SENTYMENTU -->
-                    <div class="chart-card" id="chartSentimentDist">
+                    <div class="chart-card" id="chartSentimentDist" data-chart-type="sentimentDist">
                         <div class="chart-card-header">
-                            <h4>📊 Rozkład sentymentu wypowiedzi</h4>
-                            <button class="chart-refresh-btn" onclick="window.refreshSentimentCharts()" title="Analizuj ponownie">🔄</button>
+                            <div class="chart-card-icon">📊</div>
+                            <div>
+                                <h4>Rozkład sentymentu wypowiedzi</h4>
+                                <p>Doughnut — pozytywne / neutralne / negatywne</p>
+                            </div>
                         </div>
-                        <canvas id="canvasSentimentDist"></canvas>
-                        <div class="chart-no-data">
-                            <div class="chart-no-data-icon">📊</div>
-                            <div class="chart-no-data-title">Brak danych</div>
-                            <div class="chart-no-data-hint">Pobierz wypowiedzi aby analizować sentyment</div>
-                            <div class="chart-no-data-actions">
-                                <button class="chart-no-data-btn" data-action="goto-etl">📥 Pobierz dane</button>
-                                <button class="chart-no-data-btn" data-action="import-db">📂 Importuj bazę</button>
+                        <div class="chart-card-body" style="display:none;">
+                            <canvas id="canvasSentimentDist"></canvas>
+                            <div class="chart-no-data">
+                                <div class="chart-no-data-icon">📊</div>
+                                <div class="chart-no-data-title">Brak danych</div>
+                                <div class="chart-no-data-hint">Pobierz wypowiedzi aby analizować sentyment</div>
+                                <div class="chart-no-data-actions">
+                                    <button class="chart-no-data-btn" data-action="goto-etl">📥 Pobierz dane</button>
+                                    <button class="chart-no-data-btn" data-action="import-db">📂 Importuj bazę</button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    
-                    <div class="chart-card chart-card-wide" id="chartSentimentTime">
+
+                    <div class="chart-card" id="chartSentimentTime" data-chart-type="sentimentTime">
                         <div class="chart-card-header">
-                            <h4>📈 Sentyment w czasie</h4>
-                            <button class="chart-refresh-btn" onclick="window.refreshSentimentCharts()" title="Analizuj ponownie">🔄</button>
+                            <div class="chart-card-icon">📈</div>
+                            <div>
+                                <h4>Sentyment w czasie</h4>
+                                <p>Line — średni sentyment wg miesięcy</p>
+                            </div>
                         </div>
-                        <canvas id="canvasSentimentTime"></canvas>
-                        <div class="chart-no-data">
-                            <div class="chart-no-data-icon">📊</div>
-                            <div class="chart-no-data-title">Brak danych</div>
-                            <div class="chart-no-data-hint">Pobierz wypowiedzi aby analizować sentyment w czasie</div>
-                            <div class="chart-no-data-actions">
-                                <button class="chart-no-data-btn" data-action="goto-etl">📥 Pobierz dane</button>
-                                <button class="chart-no-data-btn" data-action="import-db">📂 Importuj bazę</button>
+                        <div class="chart-card-body" style="display:none;">
+                            <canvas id="canvasSentimentTime"></canvas>
+                            <div class="chart-no-data">
+                                <div class="chart-no-data-icon">📊</div>
+                                <div class="chart-no-data-title">Brak danych</div>
+                                <div class="chart-no-data-hint">Pobierz wypowiedzi aby analizować sentyment w czasie</div>
+                                <div class="chart-no-data-actions">
+                                    <button class="chart-no-data-btn" data-action="goto-etl">📥 Pobierz dane</button>
+                                    <button class="chart-no-data-btn" data-action="import-db">📂 Importuj bazę</button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    
-                    <div class="chart-card" id="chartSentimentParty">
+
+                    <div class="chart-card" id="chartSentimentParty" data-chart-type="sentimentParty">
                         <div class="chart-card-header">
-                            <h4>🎭 Sentyment per klub</h4>
-                            <button class="chart-refresh-btn" onclick="window.refreshSentimentCharts()" title="Analizuj ponownie">🔄</button>
+                            <div class="chart-card-icon">🎭</div>
+                            <div>
+                                <h4>Sentyment per klub</h4>
+                                <p>Bar — średni sentyment wypowiedzi per klub</p>
+                            </div>
                         </div>
-                        <canvas id="canvasSentimentParty"></canvas>
-                        <div class="chart-no-data">
-                            <div class="chart-no-data-icon">📊</div>
-                            <div class="chart-no-data-title">Brak danych</div>
-                            <div class="chart-no-data-hint">Pobierz wypowiedzi aby analizować sentyment per klub</div>
-                            <div class="chart-no-data-actions">
-                                <button class="chart-no-data-btn" data-action="goto-etl">📥 Pobierz dane</button>
-                                <button class="chart-no-data-btn" data-action="import-db">📂 Importuj bazę</button>
+                        <div class="chart-card-body" style="display:none;">
+                            <canvas id="canvasSentimentParty"></canvas>
+                            <div class="chart-no-data">
+                                <div class="chart-no-data-icon">📊</div>
+                                <div class="chart-no-data-title">Brak danych</div>
+                                <div class="chart-no-data-hint">Pobierz wypowiedzi aby analizować sentyment per klub</div>
+                                <div class="chart-no-data-actions">
+                                    <button class="chart-no-data-btn" data-action="goto-etl">📥 Pobierz dane</button>
+                                    <button class="chart-no-data-btn" data-action="import-db">📂 Importuj bazę</button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    
-                    <div class="chart-card chart-card-wide" id="chartTopSpeakers">
+
+                    <div class="chart-card" id="chartTopSpeakers" data-chart-type="topSpeakers">
                         <div class="chart-card-header">
-                            <h4>🎤 Top mówcy - najbardziej pozytywni i negatywni</h4>
-                            <button class="chart-refresh-btn" onclick="window.refreshSentimentCharts()" title="Analizuj ponownie">🔄</button>
+                            <div class="chart-card-icon">🎤</div>
+                            <div>
+                                <h4>Top mówcy - sentyment</h4>
+                                <p>Bar — najbardziej pozytywni i negatywni mówcy</p>
+                            </div>
                         </div>
-                        <canvas id="canvasTopSpeakers"></canvas>
-                        <div class="chart-no-data">
-                            <div class="chart-no-data-icon">📊</div>
-                            <div class="chart-no-data-title">Brak danych</div>
-                            <div class="chart-no-data-hint">Pobierz wypowiedzi aby analizować top mówców</div>
-                            <div class="chart-no-data-actions">
-                                <button class="chart-no-data-btn" data-action="goto-etl">📥 Pobierz dane</button>
-                                <button class="chart-no-data-btn" data-action="import-db">📂 Importuj bazę</button>
+                        <div class="chart-card-body" style="display:none;">
+                            <canvas id="canvasTopSpeakers"></canvas>
+                            <div class="chart-no-data">
+                                <div class="chart-no-data-icon">📊</div>
+                                <div class="chart-no-data-title">Brak danych</div>
+                                <div class="chart-no-data-hint">Pobierz wypowiedzi aby analizować top mówców</div>
+                                <div class="chart-no-data-actions">
+                                    <button class="chart-no-data-btn" data-action="goto-etl">📥 Pobierz dane</button>
+                                    <button class="chart-no-data-btn" data-action="import-db">📂 Importuj bazę</button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    
+
                 </div>
             </section>
             <!-- SEKCJA 5: Ustawienia programu -->
@@ -2542,7 +2611,7 @@
         }
     </script>
     <script type="module">
-        import { renderAllCharts } from './modules/charts.js';
+        import { renderAllCharts, initChartCards } from './modules/charts.js';
         import { initChartsManager } from './modules/charts-manager.js';
         import { initPredictions } from './modules/predictions.js';
         import { initHelp } from './modules/help.js';
@@ -2555,6 +2624,7 @@
                 // Daj czas aby wykresy zostały dodane do DOM
                 setTimeout(() => {
                     initChartsManager();
+                    initChartCards();
                     initPredictions();
                     initHelp();
                 }, 100);
@@ -2562,6 +2632,7 @@
         } else {
             setTimeout(() => {
                 initChartsManager();
+                initChartCards();
                 initPredictions();
                 initHelp();
             }, 100);

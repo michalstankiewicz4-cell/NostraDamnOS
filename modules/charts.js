@@ -495,37 +495,123 @@ const renderers = {
     topSpeakers: renderTopSpeakersSentiment
 };
 
-// Główna funkcja — renderuje wszystkie wykresy
-export function renderAllCharts() {
-    if (!db2.database) return;
-    renderKluby();
-    renderTopPoslowie();
-    renderGlosowania();
-    renderCustomChart();
-    renderNajmniejAktywni();
-    renderNajmniejAktywneKluby();
-    renderHeatmap();
-    // Wykresy sentymentu (asynchroniczne)
-    refreshSentimentCharts().catch(err => console.error('[Charts] Sentiment error:', err));
-    sortChartsByData();
-}
+// =====================================================
+// TILE → EXPAND / COLLAPSE
+// =====================================================
 
-// Sortuj karty — te bez danych na koniec
-function sortChartsByData() {
+/**
+ * Inicjalizacja kart wykresów — kliknięcie = rozwiń
+ */
+export function initChartCards() {
     const grid = document.getElementById('chartsGrid');
     if (!grid) return;
-    const cards = Array.from(grid.querySelectorAll('.chart-card'));
-    const withData = [];
-    const noData = [];
+
+    const cards = grid.querySelectorAll('.chart-card');
     cards.forEach(card => {
-        const nd = card.querySelector('.chart-no-data');
-        if (nd && nd.style.display !== 'none') {
-            noData.push(card);
-        } else {
-            withData.push(card);
-        }
+        card.addEventListener('click', (e) => {
+            // Nie rozwijaj jeśli kliknięto button, select, input
+            if (e.target.closest('button') || e.target.closest('select') || e.target.closest('input')) return;
+            expandChartCard(card);
+        });
     });
-    withData.concat(noData).forEach(card => grid.appendChild(card));
+}
+
+/**
+ * Rozwiń kartę wykresu — ukryj pozostałe, pokaż body, renderuj wykres lazy
+ */
+function expandChartCard(card) {
+    const grid = card.closest('.charts-grid');
+    if (!grid || card.classList.contains('chart-card--expanded')) return;
+
+    grid.classList.add('charts-grid--has-expanded');
+
+    const cards = grid.querySelectorAll('.chart-card');
+    cards.forEach(c => {
+        if (c !== card) c.classList.add('chart-card--hidden');
+    });
+
+    card.classList.add('chart-card--expanded');
+
+    // Pokaż body
+    const body = card.querySelector('.chart-card-body');
+    if (body) body.style.display = '';
+
+    // Lazy-render: oblicz wykres dopiero teraz
+    const chartType = card.dataset.chartType;
+    if (chartType && !card.hasAttribute('data-loaded')) {
+        if (!db2.database) {
+            // Pokaż "brak danych" — setCardState obsłuży
+            const cardId = card.id;
+            setCardState(cardId, false);
+        } else {
+            setTimeout(() => {
+                const fn = renderers[chartType];
+                if (fn) {
+                    fn();
+                    card.setAttribute('data-loaded', '1');
+                }
+            }, 50);
+        }
+    }
+
+    // Dodaj przycisk cofnij
+    if (!card.querySelector('.chart-back-btn')) {
+        const backBtn = document.createElement('button');
+        backBtn.className = 'chart-back-btn';
+        backBtn.innerHTML = '← Cofnij';
+        backBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            collapseChartCards();
+        });
+        card.querySelector('.chart-card-header').prepend(backBtn);
+    }
+
+    // Scroll do karty
+    card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/**
+ * Zwiń wszystkie karty — przywróć widok siatki kafelków
+ */
+function collapseChartCards() {
+    const grid = document.getElementById('chartsGrid');
+    if (!grid) return;
+
+    grid.classList.remove('charts-grid--has-expanded');
+
+    const cards = grid.querySelectorAll('.chart-card');
+    cards.forEach(c => {
+        c.classList.remove('chart-card--hidden', 'chart-card--expanded');
+        const backBtn = c.querySelector('.chart-back-btn');
+        if (backBtn) backBtn.remove();
+        // Ukryj body z powrotem
+        const body = c.querySelector('.chart-card-body');
+        if (body) body.style.display = 'none';
+    });
+}
+
+/**
+ * Główna funkcja — renderuje wszystkie wykresy (używana przy ręcznym "renderuj wszystkie")
+ * W nowym trybie lazy — nie renderuje z automatu, karty czekają na kliknięcie.
+ * Wywoływana po imporcie bazy — resetuje flagi data-loaded żeby przeładować przy ponownym otwarciu.
+ */
+export function renderAllCharts() {
+    if (!db2.database) return;
+    // Resetuj flagi lazy-load, bo dane się mogły zmienić
+    const grid = document.getElementById('chartsGrid');
+    if (grid) {
+        grid.querySelectorAll('.chart-card[data-loaded]').forEach(c => c.removeAttribute('data-loaded'));
+    }
+    // Jeśli jakaś karta jest rozwinięta — przerenderuj ją
+    const expanded = grid?.querySelector('.chart-card--expanded');
+    if (expanded) {
+        const chartType = expanded.dataset.chartType;
+        const fn = renderers[chartType];
+        if (fn) {
+            fn();
+            expanded.setAttribute('data-loaded', '1');
+        }
+    }
 }
 
 // Pojedynczy wykres (dla przycisku aktualizuj)
