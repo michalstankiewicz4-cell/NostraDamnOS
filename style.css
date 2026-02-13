@@ -2330,6 +2330,21 @@ input:disabled {
     cursor: grabbing;
 }
 
+.chart-data-lamp-ok,
+.chart-data-lamp-error {
+    font-size: 0.75rem;
+    line-height: 1;
+    margin-left: 4px;
+}
+
+.chart-data-lamp-ok {
+    color: #10b981;
+}
+
+.chart-data-lamp-error {
+    color: #ef4444;
+}
+
 .charts-order-checkbox {
     width: 18px;
     height: 18px;
