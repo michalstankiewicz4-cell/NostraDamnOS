@@ -1196,6 +1196,23 @@
     <button id="languageBtn" class="floating-btn btn-language" title="Zmień język (TODO)">🇵🇱</button>
     <button id="resetMemoryBtn" class="floating-btn btn-reset-memory" title="Reset pamięci" style="display:none">🗑️</button>
 
+    <!-- Interactive Tour Overlay -->
+    <div id="tourOverlay" class="tour-overlay" style="display: none;">
+        <div class="tour-spotlight"></div>
+        <div class="tour-tooltip">
+            <button class="tour-close" id="tourClose" title="Zamknij (Esc)">✕</button>
+            <div class="tour-content">
+                <h3 class="tour-title" id="tourTitle">Tytuł</h3>
+                <p class="tour-description" id="tourDescription">Opis elementu</p>
+            </div>
+            <div class="tour-navigation">
+                <button class="tour-nav-btn tour-prev" id="tourPrev" title="Poprzedni (←)">← Wstecz</button>
+                <span class="tour-counter" id="tourCounter">1 / 10</span>
+                <button class="tour-nav-btn tour-next" id="tourNext" title="Następny (→)">Dalej →</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Floating Status Bar (Bottom) -->
     <div id="floatingStatusBar" class="floating-status-bar">
 
@@ -1999,8 +2016,12 @@
             });
             
             addButtonAnimation(helpBtn, () => {
-                console.log('❓ TODO: Podpowiedzi');
-                ToastModule.info('System podpowiedzi w przygotowaniu (TODO v5.0)', { title: '❓ Podpowiedzi' });
+                console.log('❓ Starting interactive tour...');
+                if (window.startInteractiveTour) {
+                    window.startInteractiveTour();
+                } else {
+                    ToastModule.warning('Tour system not loaded yet', { title: 'Please wait...' });
+                }
             });
 
             const resetMemoryBtn = document.getElementById('resetMemoryBtn');
@@ -2090,6 +2111,7 @@
         import { renderAllCharts } from './modules/charts.js';
         import { initChartsManager } from './modules/charts-manager.js';
         import { initPredictions } from './modules/predictions.js';
+        import { initHelp } from './modules/help.js';
         
         window._renderCharts = renderAllCharts;
         
@@ -2100,12 +2122,14 @@
                 setTimeout(() => {
                     initChartsManager();
                     initPredictions();
+                    initHelp();
                 }, 100);
             });
         } else {
             setTimeout(() => {
                 initChartsManager();
                 initPredictions();
+                initHelp();
             }, 100);
         }
     </script>
