@@ -2443,7 +2443,16 @@ input:disabled {
 }
 
 .chart-card--expanded .chart-card-body {
-    min-height: 350px;
+    position: relative;
+    width: 100%;
+    min-height: 400px;
+}
+
+/* Kontener canvasa — wymuszony rozmiar */
+.chart-card--expanded .chart-card-body canvas {
+    display: block;
+    width: 100% !important;
+    height: 400px !important;
 }
 
 /* Controls row inside expanded chart */
@@ -2475,11 +2484,6 @@ input:disabled {
 .chart-refresh-btn:hover {
     background: rgba(255,255,255,0.08);
     color: #fff;
-}
-
-.chart-card canvas {
-    max-height: 500px;
-    width: 100% !important;
 }
 
 .chart-no-data {

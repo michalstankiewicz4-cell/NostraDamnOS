@@ -13,7 +13,8 @@ const chartInstances = {};
 // Wspólne opcje Chart.js — wyłączamy animację (lazy-render z display:none)
 const CHART_DEFAULTS = {
     animation: false,
-    maintainAspectRatio: true
+    responsive: true,
+    maintainAspectRatio: false
 };
 
 const COLORS = [
