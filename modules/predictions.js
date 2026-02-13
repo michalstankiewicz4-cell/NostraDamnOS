@@ -68,7 +68,8 @@ const predictionLoaders = {
     'mpContradictions': analyzeMpContradictions,
     'aiReport': generateAiReport,
     'webllmChat': loadWebLLMChat,
-    'antiPolish': analyzeAntiPolish
+    'antiPolish': analyzeAntiPolish,
+    'ghostVoting': analyzeGhostVoting
 };
 
 /**
@@ -4283,6 +4284,220 @@ Wypowiedzi:\n${excerpts}\n\nOdpowiedz po polsku, zwięźle, strukturalnie.`;
 
     } catch (err) {
         console.error('[Predictions] analyzeAntiPolish error:', err);
+        container.innerHTML = '<div class="prediction-error">Błąd analizy: ' + err.message + '</div>';
+    }
+}
+
+/**
+ * 28. Ghost Voting — wykrywanie głosowania przy nieobecności
+ * Szuka posłów którzy w tym samym dniu byli ABSENT w jednym głosowaniu
+ * a głosowali YES/NO/ABSTAIN w sąsiednim (bliskim numerze) głosowaniu.
+ * Wzorzec: ABSENT ↔ głos w odstępie 1-3 głosowań → podejrzane.
+ */
+function analyzeGhostVoting() {
+    const container = document.getElementById('ghostVotingContent');
+    if (!container) return;
+
+    console.log('[Predictions] Analyzing ghost voting patterns...');
+
+    try {
+        // Dla każdego dnia i posła: czy był ABSENT w jednym głosowaniu
+        // a jednocześnie głosował w innym tego samego dnia?
+        const result = db2.database.exec(`
+            WITH daily_votes AS (
+                SELECT 
+                    g.id_osoby,
+                    gl.data,
+                    gl.numer,
+                    gl.id_glosowania,
+                    g.glos,
+                    gl.tytul
+                FROM glosy g
+                JOIN glosowania gl ON g.id_glosowania = gl.id_glosowania
+                WHERE gl.data IS NOT NULL AND gl.numer IS NOT NULL
+            ),
+            suspicious AS (
+                SELECT
+                    a.id_osoby,
+                    a.data,
+                    a.numer as absent_numer,
+                    a.id_glosowania as absent_glosowanie,
+                    a.tytul as absent_tytul,
+                    v.numer as vote_numer,
+                    v.id_glosowania as vote_glosowanie,
+                    v.glos as actual_vote,
+                    v.tytul as vote_tytul,
+                    ABS(v.numer - a.numer) as distance
+                FROM daily_votes a
+                JOIN daily_votes v ON a.id_osoby = v.id_osoby 
+                    AND a.data = v.data 
+                    AND a.id_glosowania != v.id_glosowania
+                WHERE a.glos = 'ABSENT'
+                  AND v.glos IN ('YES', 'NO', 'ABSTAIN')
+                  AND ABS(v.numer - a.numer) <= 3
+            )
+            SELECT
+                p.imie || ' ' || p.nazwisko as name,
+                p.klub,
+                s.data,
+                s.absent_numer,
+                s.absent_tytul,
+                s.vote_numer,
+                s.actual_vote,
+                s.vote_tytul,
+                s.distance
+            FROM suspicious s
+            JOIN poslowie p ON s.id_osoby = p.id_osoby
+            WHERE p.klub IS NOT NULL AND p.klub != ''
+            ORDER BY s.distance ASC, s.data DESC
+        `);
+
+        if (!result.length || !result[0].values.length) {
+            container.innerHTML = '<div class="prediction-no-data">Brak podejrzanych wzorców głosowania — żaden poseł nie był ABSENT w jednym głosowaniu i obecny w sąsiednim tego samego dnia.</div>';
+            return;
+        }
+
+        const rows = result[0].values;
+
+        // === Statystyki ===
+        const byMp = {};
+        const byClub = {};
+        const byDistance = { 1: 0, 2: 0, 3: 0 };
+
+        for (const [name, club, date, absentNr, absentTitle, voteNr, vote, voteTitle, dist] of rows) {
+            if (!byMp[name]) byMp[name] = { club, count: 0, dist1: 0 };
+            byMp[name].count++;
+            if (dist === 1) byMp[name].dist1++;
+
+            byClub[club] = (byClub[club] || 0) + 1;
+            byDistance[dist] = (byDistance[dist] || 0) + 1;
+        }
+
+        const topMps = Object.entries(byMp)
+            .sort((a, b) => b[1].count - a[1].count)
+            .slice(0, 20);
+
+        const clubEntries = Object.entries(byClub).sort((a, b) => b[1] - a[1]);
+
+        // Unikalne podejrzane zdarzenia (deduplikacja po posłu + dniu)
+        const uniqueEvents = new Map();
+        for (const row of rows) {
+            const [name, club, date, absentNr, absentTitle, voteNr, vote, voteTitle, dist] = row;
+            const key = `${name}_${date}_${absentNr}_${voteNr}`;
+            if (!uniqueEvents.has(key) || dist < uniqueEvents.get(key).dist) {
+                uniqueEvents.set(key, { name, club, date, absentNr, absentTitle, voteNr, vote, voteTitle, dist });
+            }
+        }
+
+        const events = [...uniqueEvents.values()].sort((a, b) => a.dist - b.dist || b.date.localeCompare(a.date));
+
+        // === Render ===
+        container.innerHTML = `
+            <div class="ghost-summary">
+                <h4>👻 Analiza podejrzanych głosowań</h4>
+                <p class="ghost-subtitle">Wykrywanie przypadków gdy poseł był ABSENT w jednym głosowaniu, ale głosował w sąsiednim (odstęp 1–3 głosowań tego samego dnia)</p>
+
+                <div class="ghost-stats">
+                    <div class="ghost-stat">
+                        <span class="ghost-stat-val">${events.size || uniqueEvents.size}</span>
+                        <span class="ghost-stat-label">📍 Podejrzanych zdarzeń</span>
+                    </div>
+                    <div class="ghost-stat ghost-stat-critical">
+                        <span class="ghost-stat-val">${byDistance[1] || 0}</span>
+                        <span class="ghost-stat-label">🔴 Odstęp 1 (krytyczne)</span>
+                    </div>
+                    <div class="ghost-stat">
+                        <span class="ghost-stat-val">${byDistance[2] || 0}</span>
+                        <span class="ghost-stat-label">🟠 Odstęp 2</span>
+                    </div>
+                    <div class="ghost-stat">
+                        <span class="ghost-stat-val">${byDistance[3] || 0}</span>
+                        <span class="ghost-stat-label">🟡 Odstęp 3</span>
+                    </div>
+                </div>
+
+                <div class="ghost-explanation">
+                    <strong>Jak czytać wyniki:</strong>
+                    <ul>
+                        <li><strong>Odstęp 1</strong> — poseł był ABSENT w głosowaniu nr N, ale głosował w nr N±1. Najbardziej podejrzane.</li>
+                        <li><strong>Odstęp 2–3</strong> — możliwe spóźnianie się / wyjście na chwilę. Mniej podejrzane, ale warte uwagi przy dużej skali.</li>
+                    </ul>
+                </div>
+
+                ${clubEntries.length ? `
+                <div class="ghost-clubs">
+                    <h5>Rozkład wg klubu</h5>
+                    <div class="ghost-club-list">
+                        ${clubEntries.map(([club, cnt]) => {
+                            const pct = Math.round(cnt / rows.length * 100);
+                            return `<div class="ghost-club-row">
+                                <span class="ghost-club-name">${club}</span>
+                                <div class="ghost-club-bar"><div class="ghost-club-fill" style="width:${pct}%"></div></div>
+                                <span class="ghost-club-cnt">${cnt}</span>
+                            </div>`;
+                        }).join('')}
+                    </div>
+                </div>` : ''}
+
+                ${topMps.length ? `
+                <div class="ghost-mps">
+                    <h5>Najczęściej podejrzani posłowie</h5>
+                    <div class="ghost-mp-list">
+                        ${topMps.map(([name, data], i) => {
+                            const pct1 = data.count > 0 ? Math.round(data.dist1 / data.count * 100) : 0;
+                            return `<div class="ghost-mp-row">
+                                <span class="ghost-mp-rank">#${i + 1}</span>
+                                <span class="ghost-mp-name">${name}</span>
+                                <span class="ghost-mp-club">${data.club}</span>
+                                <span class="ghost-mp-count">${data.count}×</span>
+                                <span class="ghost-mp-crit" title="${pct1}% to odstęp 1">${data.dist1 > 0 ? `🔴 ${data.dist1}` : ''}</span>
+                            </div>`;
+                        }).join('')}
+                    </div>
+                </div>` : ''}
+
+                <div class="ghost-events">
+                    <h5>Szczegóły zdarzeń (top ${Math.min(events.length, 40)})</h5>
+                    <div class="ghost-event-list">
+                        ${events.slice(0, 40).map(e => {
+                            const distClass = e.dist === 1 ? 'ghost-critical' : e.dist === 2 ? 'ghost-warning' : 'ghost-info';
+                            const distLabel = e.dist === 1 ? '🔴' : e.dist === 2 ? '🟠' : '🟡';
+                            const voteIcon = e.vote === 'YES' ? '✅' : e.vote === 'NO' ? '❌' : '⭕';
+                            const absentShort = (e.absentTitle || '').length > 80 ? e.absentTitle.substring(0, 80) + '…' : (e.absentTitle || 'b/d');
+                            const voteShort = (e.voteTitle || '').length > 80 ? e.voteTitle.substring(0, 80) + '…' : (e.voteTitle || 'b/d');
+                            return `<div class="ghost-event ${distClass}">
+                                <div class="ghost-event-header">
+                                    <span class="ghost-event-mp">${e.name}</span>
+                                    <span class="ghost-event-club">${e.club}</span>
+                                    <span class="ghost-event-date">${e.date}</span>
+                                    <span class="ghost-event-dist">${distLabel} odstęp ${e.dist}</span>
+                                </div>
+                                <div class="ghost-event-detail">
+                                    <div class="ghost-event-absent">
+                                        <span class="ghost-label-absent">❌ ABSENT</span>
+                                        <span class="ghost-event-nr">gł. #${e.absentNr}</span>
+                                        <span class="ghost-event-title">${absentShort}</span>
+                                    </div>
+                                    <div class="ghost-event-arrow">↔️</div>
+                                    <div class="ghost-event-voted">
+                                        <span class="ghost-label-voted">${voteIcon} ${e.vote}</span>
+                                        <span class="ghost-event-nr">gł. #${e.voteNr}</span>
+                                        <span class="ghost-event-title">${voteShort}</span>
+                                    </div>
+                                </div>
+                            </div>`;
+                        }).join('')}
+                    </div>
+                </div>
+
+                <p class="ghost-disclaimer">⚠️ Analiza statystyczna — nie jest to dowód na nieprawidłowości. ABSENT może wynikać z błędu rejestracji, spóźnienia lub chwilowego wyjścia. Wyniki wymagają weryfikacji.</p>
+            </div>
+        `;
+
+        console.log('[Predictions] Ghost voting analysis done, found', uniqueEvents.size, 'events');
+
+    } catch (err) {
+        console.error('[Predictions] analyzeGhostVoting error:', err);
         container.innerHTML = '<div class="prediction-error">Błąd analizy: ' + err.message + '</div>';
     }
 }
