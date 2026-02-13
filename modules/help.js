@@ -2,61 +2,184 @@
 // Interaktywny przewodnik po aplikacji z spotlight effect
 
 /**
- * Tour steps - kroki przewodnika
- * Każdy krok pokazuje konkretny element interfejsu
+ * Tour steps - kroki przewodnika dla każdej sekcji
+ * Kontekstowa pomoc wykrywa aktywną sekcję i pokazuje tylko jej elementy
  */
-const TOUR_STEPS = [
-    {
-        selector: '[data-section="1"]',
-        title: '📥 Sekcja: Dane',
-        description: 'Tutaj pobierasz dane z API Sejmu RP. Wybierz instytucję, kadencję, zakres posiedzeń i zaznacz interesujące Cię dane.'
-    },
-    {
-        selector: '#etlFetchBtn',
-        title: '🚀 Przycisk pobierania',
-        description: 'Kliknij ten przycisk aby rozpocząć pobieranie danych. Pipeline ETL automatycznie pobierze, przetworzy i zapisze dane do lokalnej bazy SQLite.'
-    },
-    {
-        selector: '[data-section="2"]',
-        title: '📊 Sekcja: Podsumowanie',
-        description: 'Sprawdź statystyki pobranych danych - liczbę posłów, wypowiedzi, głosowań i innych rekordów. Zobacz co znajduje się w bazie danych.'
-    },
-    {
-        selector: '[data-section="3"]',
-        title: '🤖 Sekcja: AI Asystent',
-        description: 'Rozmawiaj z lokalnym modelem AI o danych parlamentarnych. Model działa w przeglądarce (WebLLM) - wszystko pozostaje prywatne!'
-    },
-    {
-        selector: '[data-section="4"]',
-        title: '📈 Sekcja: Wykresy',
-        description: 'Przeglądaj interaktywne wykresy i wizualizacje danych. Możesz zmieniać kolejność, ukrywać niepotrzebne i odświeżać wykresy.'
-    },
-    {
-        selector: '.charts-control-panel',
-        title: '🎛️ Panel zarządzania wykresami',
-        description: 'Przeciągnij wykresy aby zmienić kolejność, zaznacz/odznacz aby pokazać/ukryć. Twoja konfiguracja jest automatycznie zapisywana!'
-    },
-    {
-        selector: '[data-section="6"]',
-        title: '🔮 Sekcja: Predykcja',
-        description: 'Modele predykcyjne analizują wzorce i przewidują zachowania: dyscyplina klubowa, potencjalni buntownicy, koalicje i trends aktywności.'
-    },
-    {
-        selector: '#importDbBtn',
-        title: '📥 Import bazy',
-        description: 'Możesz zaimportować wcześniej zapisaną bazę danych SQLite. Przydatne gdy chcesz załadować backup lub dane z innego komputera.'
-    },
-    {
-        selector: '#exportDbBtn',
-        title: '📤 Export bazy',
-        description: 'Zapisz całą bazę danych do pliku .sqlite na dysku. Tworzenie backupów, przenoszenie danych lub analiza w zewnętrznych narzędziach.'
-    },
-    {
-        selector: '[data-section="5"]',
-        title: '⚙️ Sekcja: Ustawienia',
-        description: 'Dostosuj interfejs: zmień styl konsoli, język, zarządzaj pamięcią przeglądarki i widocznością elementów UI.'
-    }
-];
+const SECTION_TOUR_STEPS = {
+    // Sekcja 1: ETL - Dane
+    '1': [
+        {
+            selector: '.console-style-panel:nth-child(1)',
+            title: '🏛️ Wybór instytucji',
+            description: 'Wybierz Sejm lub Senat (obecnie Senat jest wyłączony). Każda instytucja ma własne API i strukturę danych.'
+        },
+        {
+            selector: '#kadencjaSelect',
+            title: '📅 Wybór kadencji',
+            description: 'Kadencja to okres działania parlamentu (np. Kadencja X = 2023-2027). Wybierz którą kadencję chcesz analizować.'
+        },
+        {
+            selector: '#zakresInput',
+            title: '🔢 Zakres posiedzeń',
+            description: 'Określ zakres numerów posiedzeń do pobrania (np. "1-5" pobierze posiedzenia od 1 do 5). Możesz też podać pojedyncze numery oddzielone przecinkami.'
+        },
+        {
+            selector: '.data-options',
+            title: '✅ Wybór danych',
+            description: 'Zaznacz jakie dane chcesz pobrać: posłowie, wypowiedzi, głosowania, kluby, komisje itp. Im więcej zaznaczyłeś, tym dłużej potrwa pobieranie.'
+        },
+        {
+            selector: '#etlFetchBtn',
+            title: '🚀 Przycisk pobierania',
+            description: 'Kliknij aby rozpocząć pobieranie! Pipeline ETL automatycznie pobierze dane z API, przetworzy je i zapisze do lokalnej bazy SQLite.'
+        },
+        {
+            selector: '.etl-status',
+            title: '📊 Pasek postępu',
+            description: 'Obserwuj postęp pobierania: aktualna operacja, procent ukończenia, liczba pobranych rekordów. Możesz anulować proces w każdej chwili.'
+        }
+    ],
+    
+    // Sekcja 2: Podsumowanie
+    '2': [
+        {
+            selector: '.stats-grid',
+            title: '📊 Statystyki bazy danych',
+            description: 'Zobacz ile rekordów znajduje się w bazie: posłowie, wypowiedzi, głosowania, komisje i inne. Kliknij w kartę aby zobaczyć szczegóły.'
+        },
+        {
+            selector: '.table-list',
+            title: '🗂️ Lista tabel',
+            description: 'Wszystkie tabele w bazie danych SQLite. Kliknij w tabelę aby zobaczyć jej zawartość i strukturę.'
+        },
+        {
+            selector: '#refreshStatsBtn',
+            title: '🔄 Odświeżanie statystyk',
+            description: 'Kliknij aby zaktualizować statystyki po dodaniu nowych danych lub zmianie bazy.'
+        }
+    ],
+    
+    // Sekcja 3: AI Asystent
+    '3': [
+        {
+            selector: '#modelSelect',
+            title: '🤖 Wybór modelu AI',
+            description: 'Wybierz model językowy: Llama, Qwen, Phi lub inny. Każdy model ma inne możliwości i wymagania pamięciowe.'
+        },
+        {
+            selector: '#loadModelBtn',
+            title: '⚡ Ładowanie modelu',
+            description: 'Kliknij aby pobrać i załadować model AI. Model działa lokalnie w przeglądarce - wszystko pozostaje prywatne!'
+        },
+        {
+            selector: '#chatMessages',
+            title: '💬 Historia czatu',
+            description: 'Twoje rozmowy z AI. Model odpowiada na pytania o dane parlamentarne, analizuje wzorce i wyjaśnia kontekst.'
+        },
+        {
+            selector: '#userInput',
+            title: '✍️ Pole tekstowe',
+            description: 'Wpisz pytanie lub polecenie dla AI. Możesz pytać o konkretnych posłów, głosowania, statystyki czy wzorce zachowań.'
+        },
+        {
+            selector: '#sendBtn',
+            title: '📤 Wyślij wiadomość',
+            description: 'Kliknij lub naciśnij Enter aby wysłać wiadomość do AI.'
+        }
+    ],
+    
+    // Sekcja 4: Wykresy
+    '4': [
+        {
+            selector: '.charts-control-panel',
+            title: '🎛️ Panel zarządzania wykresami',
+            description: 'Przeciągnij wykresy aby zmienić kolejność, zaznacz/odznacz aby pokazać/ukryć. Twoja konfiguracja jest automatycznie zapisywana!'
+        },
+        {
+            selector: '.chart-item:first-child input[type="checkbox"]',
+            title: '✅ Widoczność wykresu',
+            description: 'Zaznacz/odznacz aby pokazać/ukryć wykres. Ukryte wykresy nie są renderowane, co przyspiesza działanie aplikacji.'
+        },
+        {
+            selector: '.chart-item:first-child .chart-drag-handle',
+            title: '↕️ Przeciąganie',
+            description: 'Chwyć za ikonę ⋮⋮ i przeciągnij aby zmienić kolejność wykresów. Kolejność jest zachowywana w localStorage.'
+        },
+        {
+            selector: '#refreshChartsBtn',
+            title: '🔄 Odświeżanie wykresów',
+            description: 'Kliknij aby przeładować wszystkie widoczne wykresy z aktualnymi danymi z bazy.'
+        },
+        {
+            selector: '.charts-container',
+            title: '📈 Wykresy',
+            description: 'Interaktywne wykresy Chart.js: aktywność posłów, frekwencja, wyniki głosowań, kluby parlamentarne i wiele więcej. Najedź na wykresy aby zobaczyć szczegóły.'
+        }
+    ],
+    
+    // Sekcja 5: Ustawienia
+    '5': [
+        {
+            selector: 'input[name="consoleStyle"]',
+            title: '🎨 Styl konsoli',
+            description: 'Wybierz wygląd aplikacji: Jasny, Ciemny lub Retro (terminal). Styl jest zapisywany w localStorage.'
+        },
+        {
+            selector: '#btnResetMemory',
+            title: '🗑️ Reset pamięci',
+            description: 'Usuwa wszystkie zapisane ustawienia z localStorage: pozycje przycisków, kolejność wykresów, preferencje UI.'
+        },
+        {
+            selector: '#toggleFloatingBtns',
+            title: '🔘 Widoczność przycisków',
+            description: 'Włącz/wyłącz pływające przyciski po lewej stronie: import, export, AI, pomoc, reset.'
+        },
+        {
+            selector: '#toggleTopBar',
+            title: '📊 Pasek górny',
+            description: 'Włącz/wyłącz pasek informacyjny u góry ekranu z wersją, statusem i informacjami.'
+        },
+        {
+            selector: '#toggleBottomBar',
+            title: '📊 Pasek dolny',
+            description: 'Włącz/wyłącz pasek statusu na dole ekranu z nawigacją między sekcjami.'
+        },
+        {
+            selector: 'input[name="helpMode"]',
+            title: '❓ Tryb pomocy',
+            description: 'Wybierz jak wyświetlać pomoc: Szklany (efekt rozmycia) lub Markerowy (żółte zaznaczenie).'
+        }
+    ],
+    
+    // Sekcja 6: Predykcja
+    '6': [
+        {
+            selector: '.prediction-card:nth-child(1)',
+            title: '🎯 Dyscyplina klubowa',
+            description: 'Analiza jak często posłowie głosują zgodnie z linią swojego klubu. Wyższy wskaźnik = większa dyscyplina partii.'
+        },
+        {
+            selector: '.prediction-card:nth-child(2)',
+            title: '🔴 Potencjalni buntownicy',
+            description: 'Wykrywa posłów którzy często głosują przeciwko większości swojego klubu. Identyfikuje anomalie i niezależnych myślicieli.'
+        },
+        {
+            selector: '.prediction-card:nth-child(3)',
+            title: '🤝 Podobieństwo klubów',
+            description: 'Macierz koalicji - pokazuje jak często różne kluby głosują tak samo. Pozwala przewidywać potencjalne sojusze.'
+        },
+        {
+            selector: '.prediction-card:nth-child(4)',
+            title: '📈 Trendy aktywności',
+            description: 'Analiza zmian aktywności posłów w czasie: kto zwiększa zaangażowanie, a kto je zmniejsza. Wykrywa wzorce i anomalie.'
+        },
+        {
+            selector: '.prediction-card:nth-child(5)',
+            title: '📰 Analiza online',
+            description: 'Analiza sentimentu w artykułach prasowych o posłach. Pozwala przewidywać zmiany w opinii publicznej.'
+        }
+    ]
+};
 
 /**
  * Tour Manager Class
@@ -69,6 +192,8 @@ class InteractiveTour {
         this.spotlight = null;
         this.tooltip = null;
         this.mode = localStorage.getItem('helpMode') || 'glass'; // 'glass' or 'marker'
+        this.currentSteps = []; // Dynamiczne kroki dla aktywnej sekcji
+        this.currentSection = null;
         
         // Bind methods
         this.start = this.start.bind(this);
@@ -78,6 +203,48 @@ class InteractiveTour {
         this.goToStep = this.goToStep.bind(this);
         this.handleKeyboard = this.handleKeyboard.bind(this);
         this.setMode = this.setMode.bind(this);
+    }
+    
+    /**
+     * Wykryj aktywną sekcję (która jest widoczna)
+     */
+    getActiveSection() {
+        const sections = document.querySelectorAll('[data-section]');
+        for (const section of sections) {
+            const sectionNum = section.getAttribute('data-section');
+            const isVisible = section.style.display !== 'none' && 
+                            window.getComputedStyle(section).display !== 'none';
+            if (isVisible) {
+                return sectionNum;
+            }
+        }
+        return '1'; // Domyślnie sekcja 1
+    }
+    
+    /**
+     * Zbuduj listę kroków dla danej sekcji
+     * Filtruje tylko widoczne elementy
+     */
+    buildStepsForSection(sectionId) {
+        const steps = SECTION_TOUR_STEPS[sectionId] || [];
+        const visibleSteps = [];
+        
+        for (const step of steps) {
+            const element = document.querySelector(step.selector);
+            if (element) {
+                // Sprawdź czy element jest widoczny
+                const style = window.getComputedStyle(element);
+                const isVisible = style.display !== 'none' && 
+                                style.visibility !== 'hidden' &&
+                                style.opacity !== '0';
+                
+                if (isVisible) {
+                    visibleSteps.push(step);
+                }
+            }
+        }
+        
+        return visibleSteps;
     }
     
     /**
@@ -128,6 +295,21 @@ class InteractiveTour {
     start() {
         if (this.isActive) return;
         
+        // Wykryj aktywną sekcję
+        this.currentSection = this.getActiveSection();
+        console.log(`[Tour] Detected active section: ${this.currentSection}`);
+        
+        // Zbuduj kroki dla aktywnej sekcji
+        this.currentSteps = this.buildStepsForSection(this.currentSection);
+        
+        if (this.currentSteps.length === 0) {
+            console.warn('[Tour] No visible steps found in current section');
+            alert('Brak widocznych elementów do pokazania w tej sekcji! Przejdź do innej sekcji i spróbuj ponownie.');
+            return;
+        }
+        
+        console.log(`[Tour] Built ${this.currentSteps.length} steps for section ${this.currentSection}`);
+        
         this.isActive = true;
         this.currentStep = 0;
         
@@ -142,7 +324,7 @@ class InteractiveTour {
         }
         
         this.goToStep(0);
-        console.log(`[Tour] Started in ${this.mode} mode`);
+        console.log(`[Tour] Started in ${this.mode} mode for section ${this.currentSection}`);
     }
     
     /**
@@ -168,7 +350,7 @@ class InteractiveTour {
      * Następny krok
      */
     next() {
-        if (this.currentStep < TOUR_STEPS.length - 1) {
+        if (this.currentStep < this.currentSteps.length - 1) {
             this.goToStep(this.currentStep + 1);
         }
     }
@@ -186,10 +368,10 @@ class InteractiveTour {
      * Przejdź do konkretnego kroku
      */
     goToStep(stepIndex) {
-        if (stepIndex < 0 || stepIndex >= TOUR_STEPS.length) return;
+        if (stepIndex < 0 || stepIndex >= this.currentSteps.length) return;
         
         this.currentStep = stepIndex;
-        const step = TOUR_STEPS[stepIndex];
+        const step = this.currentSteps[stepIndex];
         
         // Znajdź element
         const element = document.querySelector(step.selector);
@@ -237,7 +419,7 @@ class InteractiveTour {
         
         if (titleEl) titleEl.textContent = step.title;
         if (descEl) descEl.textContent = step.description;
-        if (counterEl) counterEl.textContent = `${stepIndex + 1} / ${TOUR_STEPS.length}`;
+        if (counterEl) counterEl.textContent = `${stepIndex + 1} / ${this.currentSteps.length}`;
         
         // Aktualizuj przyciski nawigacji
         const prevBtn = document.getElementById('tourPrev');
@@ -245,7 +427,7 @@ class InteractiveTour {
         
         if (prevBtn) prevBtn.disabled = stepIndex === 0;
         if (nextBtn) {
-            if (stepIndex === TOUR_STEPS.length - 1) {
+            if (stepIndex === this.currentSteps.length - 1) {
                 nextBtn.textContent = 'Zakończ ✓';
                 nextBtn.onclick = this.stop;
             } else {
@@ -257,7 +439,7 @@ class InteractiveTour {
         // Scroll do elementu jeśli nie jest widoczny
         element.scrollIntoView({ behavior: 'smooth', block: 'center' });
         
-        console.log(`[Tour] Step ${stepIndex + 1}/${TOUR_STEPS.length}: ${step.title}`);
+        console.log(`[Tour] Step ${stepIndex + 1}/${this.currentSteps.length}: ${step.title}`);
     }
     
     /**
