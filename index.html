@@ -1912,8 +1912,15 @@
                     }, 100);
                 } else if (action === 'import-db') {
                     // Kliknij przycisk importu bazy
+                    console.log('[Chart Action] Trying to trigger import...');
                     const importBtn = document.getElementById('importDbBtn');
-                    if (importBtn) importBtn.click();
+                    console.log('[Chart Action] importBtn found:', !!importBtn);
+                    if (importBtn) {
+                        console.log('[Chart Action] Clicking importBtn...');
+                        importBtn.click();
+                    } else {
+                        console.error('[Chart Action] importDbBtn not found in DOM!');
+                    }
                 }
             });
 
