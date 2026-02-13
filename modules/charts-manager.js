@@ -56,11 +56,22 @@ function loadChartsState() {
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
             const parsed = JSON.parse(saved);
-            // Merge z domyślną konfiguracją (na wypadek dodania nowych wykresów)
-            chartsState = CHARTS_CONFIG.map(chart => {
-                const savedChart = parsed.find(s => s.id === chart.id);
-                return savedChart || chart;
+            
+            // Zachowaj kolejność z zapisanego stanu, ale merge z domyślną konfiguracją
+            chartsState = parsed.map(savedChart => {
+                const defaultChart = CHARTS_CONFIG.find(c => c.id === savedChart.id);
+                // Merge zapisany stan z domyślną konfiguracją (priorytet dla zapisanego)
+                return defaultChart ? { ...defaultChart, ...savedChart } : savedChart;
             });
+            
+            // Dodaj nowe wykresy, których nie było w zapisanej konfiguracji (na końcu listy)
+            const savedIds = new Set(parsed.map(s => s.id));
+            CHARTS_CONFIG.forEach(chart => {
+                if (!savedIds.has(chart.id)) {
+                    chartsState.push({ ...chart });
+                }
+            });
+            
             console.log('[Charts Manager] Loaded saved state:', chartsState);
         } else {
             chartsState = [...CHARTS_CONFIG];
