@@ -8,6 +8,12 @@ export const db2 = {
     async init() {
         console.log('[DB v2] Initializing...');
         
+        // Zamknij starą bazę, jeśli istnieje (zapobiega wyciekowi pamięci WASM)
+        if (this.database) {
+            try { this.database.close(); } catch (e) { /* ignore */ }
+            this.database = null;
+        }
+        
         if (!window.initSqlJs) {
             throw new Error('sql.js not loaded');
         }
@@ -20,7 +26,18 @@ export const db2 = {
         const savedDb = localStorage.getItem('nostradamnos_db');
         if (savedDb) {
             try {
-                const uint8Array = new Uint8Array(JSON.parse(savedDb));
+                let uint8Array;
+                if (savedDb.startsWith('[')) {
+                    // Stary format: JSON array — kompatybilność wsteczna
+                    uint8Array = new Uint8Array(JSON.parse(savedDb));
+                } else {
+                    // Nowy format: base64
+                    const binaryStr = atob(savedDb);
+                    uint8Array = new Uint8Array(binaryStr.length);
+                    for (let i = 0; i < binaryStr.length; i++) {
+                        uint8Array[i] = binaryStr.charCodeAt(i);
+                    }
+                }
                 this.database = new this.sql.Database(uint8Array);
                 this.migrateSchema();
                 console.log('[DB v2] ✅ Loaded from localStorage');
@@ -522,22 +539,28 @@ export const db2 = {
             }
 
             const data = this.database.export();
-            const dataArray = Array.from(data);
-            const json = JSON.stringify(dataArray);
+            
+            // Koduj jako base64 (1.33x overhead zamiast 5x z JSON array)
+            const chunkSize = 8192;
+            let binaryStr = '';
+            for (let i = 0; i < data.length; i += chunkSize) {
+                binaryStr += String.fromCharCode.apply(null, data.subarray(i, i + chunkSize));
+            }
+            const base64 = btoa(binaryStr);
 
-            const sizeMB = (json.length / (1024 * 1024)).toFixed(2);
+            const sizeMB = (base64.length / (1024 * 1024)).toFixed(2);
 
             // localStorage limit ~5MB — sprawdź przed zapisem
-            if (json.length > 4.5 * 1024 * 1024) {
+            if (base64.length > 4.5 * 1024 * 1024) {
                 console.warn(`[DB v2] Database too large for localStorage (${sizeMB} MB). Data is available in memory but won't persist after refresh.`);
                 this._persistFailed = true;
                 return;
             }
 
-            localStorage.setItem('nostradamnos_db', json);
+            localStorage.setItem('nostradamnos_db', base64);
             this._persistFailed = false;
 
-            console.log(`[DB v2] 💾 Auto-saved to localStorage (${sizeMB} MB)`);
+            console.log(`[DB v2] 💾 Auto-saved to localStorage (${sizeMB} MB, base64)`);
         } catch (err) {
             if (err.name === 'QuotaExceededError' || err.code === 22) {
                 const data = this.database.export();
@@ -555,6 +578,10 @@ export const db2 = {
     },
     
     import(data) {
+        // Zamknij starą bazę przed importem (zapobiega wyciekowi pamięci WASM)
+        if (this.database) {
+            try { this.database.close(); } catch (e) { /* ignore */ }
+        }
         this.database = new this.sql.Database(data);
         console.log('[DB v2] Database imported');
     },

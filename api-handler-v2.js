@@ -97,8 +97,8 @@ function updateButtonStates(isQueueRunning, currentTask) {
     const etlClearBtn = document.getElementById('etlClearBtn');
     const btnCheckNewRecords = document.getElementById('btnCheckNewRecords');
     const btnCheckDataChanges = document.getElementById('btnCheckDataChanges');
-    const dbExportBtn = document.getElementById('dbExportBtn');
-    const dbImportBtn = document.getElementById('dbImportBtn');
+    const dbExportBtn = document.getElementById('exportDbBtn');
+    const dbImportBtn = document.getElementById('importDbBtn');
     
     // Jeśli kolejka działa, blokuj wszystkie przyciski oprócz abort
     if (isQueueRunning) {
@@ -1139,8 +1139,8 @@ async function checkNewRecords() {
         } catch (error) {
             console.error('[DB Monitor] Error checking new records:', error);
             if (lamp) {
-                lamp.className = 'floating-lamp floating-lamp-ok';
-                lamp.title = 'Błąd sprawdzania';
+                lamp.className = 'floating-lamp floating-lamp-error';
+                lamp.title = 'Błąd sprawdzania nowych rekordów';
             }
         }
     });
@@ -1173,8 +1173,8 @@ async function checkDataChanges() {
         } catch (error) {
             console.error('[DB Monitor] Error checking data changes:', error);
             if (lamp) {
-                lamp.className = 'floating-lamp floating-lamp-ok';
-                lamp.title = 'Błąd sprawdzania';
+                lamp.className = 'floating-lamp floating-lamp-error';
+                lamp.title = 'Błąd sprawdzania zmian danych';
             }
         }
     });
@@ -1616,6 +1616,7 @@ async function runVerification() {
 
     // Użyj kolejki zadań aby zapobiec jednoczesnym operacjom
     return taskQueue.add('runVerification', async () => {
+        let pipelineRanInside = false;
         // Switch to abort mode so user can cancel
         verifyAbortController = new AbortController();
         fetchBtnMode = 'abort';
@@ -1643,6 +1644,7 @@ async function runVerification() {
                     btn.classList.remove('etl-btn-abort', 'etl-btn-verify-mode');
                 }
                 // Nie wznawiamy monitoringu tutaj - startPipelineETL zrobi to sam
+                pipelineRanInside = true;
                 await startPipelineETL();
                 return;
             }
@@ -1672,7 +1674,10 @@ async function runVerification() {
         
         // Wznów monitorowanie bazy po weryfikacji
         // Skip initial check - użytkownik właśnie zakończył weryfikację, nie sprawdzaj od razu ponownie
-        startDbMonitoring(true);
+        // Nie wznawiaj jeśli startPipelineETL już to zrobił (unikamy podwójnego interwału)
+        if (!pipelineRanInside) {
+            startDbMonitoring(true);
+        }
     }
     }); // Zamknięcie taskQueue.add
 }
