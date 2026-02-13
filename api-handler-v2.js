@@ -1029,6 +1029,12 @@ function updateEtlDetailPanel(percent, stage, details = {}) {
     if (statsEl && details.module) statsEl.textContent = details.module;
     if (linksEl && details.linksLabel) linksEl.textContent = details.linksLabel;
     
+    // Automatycznie rozwiń panel jeśli jest zwinięty i rozpoczyna się pobieranie
+    if (panel.classList.contains('collapsed') && showFetchSection) {
+        panel.classList.remove('collapsed');
+        localStorage.setItem('infoPanelCollapsed', 'false');
+    }
+    
     // Pokaż/ukryj sekcję fetch na podstawie ustawienia
     fetchSection.style.display = showFetchSection ? '' : 'none';
     

@@ -1662,12 +1662,11 @@ input:disabled {
     font-size: 0.75rem;
     color: #e2e8f0;
     box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-    transition: all 0.3s ease;
+    transition: width 0.3s ease, box-shadow 0.3s ease;
 }
 
 .etl-detail-panel.collapsed {
-    width: auto;
-    min-width: 180px;
+    width: 280px;
 }
 
 .etl-detail-header {
