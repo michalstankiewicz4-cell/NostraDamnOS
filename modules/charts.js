@@ -271,17 +271,18 @@ function renderFrekwencja() {
 }
 
 // 5. Top 20 najmniej aktywnych posłów (bar)
+// Wzorowane na renderTopPoslowie — używa mowca z wypowiedzi, nie id_osoby
 function renderNajmniejAktywni() {
-    const data = query(`
-        SELECT p.nazwisko || ' ' || SUBSTR(p.imie, 1, 1) || '.' as nazwa, COUNT(w.id_wypowiedzi) as cnt
-        FROM poslowie p
-        LEFT JOIN wypowiedzi w ON p.id_osoby = w.id_osoby
-        WHERE p.aktywny = 1 OR p.aktywny IS NULL
-        GROUP BY p.id_osoby
+    // Wszyscy mówcy z liczbą wypowiedzi — rosnąco
+    const allSpeakers = query(`
+        SELECT mowca, COUNT(*) as cnt
+        FROM wypowiedzi
+        WHERE mowca IS NOT NULL
+        GROUP BY mowca
         ORDER BY cnt ASC
         LIMIT 20
     `);
-    if (!data.length) { setCardState('chartNajmniejAktywni', false); return; }
+    if (!allSpeakers.length) { setCardState('chartNajmniejAktywni', false); return; }
 
     setCardState('chartNajmniejAktywni', true);
     destroyChart('najmniejAktywni');
@@ -289,10 +290,10 @@ function renderNajmniejAktywni() {
     chartInstances['najmniejAktywni'] = new Chart(document.getElementById('canvasNajmniejAktywni'), {
         type: 'bar',
         data: {
-            labels: data.map(d => d.nazwa),
+            labels: allSpeakers.map(d => d.mowca.length > 30 ? d.mowca.slice(0, 30) + '...' : d.mowca),
             datasets: [{
                 label: 'Wypowiedzi',
-                data: data.map(d => d.cnt),
+                data: allSpeakers.map(d => d.cnt),
                 backgroundColor: '#f56565'
             }]
         },
@@ -301,7 +302,7 @@ function renderNajmniejAktywni() {
             responsive: true,
             plugins: { legend: { display: false } },
             scales: {
-                x: { ticks: { color: '#aaa' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                x: { ticks: { color: '#aaa' }, grid: { color: 'rgba(255,255,255,0.05)' }, beginAtZero: true },
                 y: { ticks: { color: '#ccc', font: { size: 10 } }, grid: { display: false } }
             }
         }
@@ -309,16 +310,16 @@ function renderNajmniejAktywni() {
 }
 
 // 6. Aktywność klubów per capita (bar)
+// Matchuje mowca z wypowiedzi do posłów po nazwisku, zlicza per klub
 function renderNajmniejAktywneKluby() {
     const data = query(`
         SELECT p.klub,
                ROUND(CAST(COUNT(w.id_wypowiedzi) AS REAL) / COUNT(DISTINCT p.id_osoby), 1) as cnt
         FROM poslowie p
-        LEFT JOIN wypowiedzi w ON p.id_osoby = w.id_osoby
+        LEFT JOIN wypowiedzi w ON w.mowca LIKE '%' || p.nazwisko || '%'
         WHERE p.klub IS NOT NULL AND p.klub != ''
         GROUP BY p.klub
         ORDER BY cnt ASC
-        LIMIT 20
     `);
     if (!data.length) { setCardState('chartNajmniejAktywneKluby', false); return; }
 
@@ -340,7 +341,7 @@ function renderNajmniejAktywneKluby() {
             responsive: true,
             plugins: { legend: { display: false } },
             scales: {
-                x: { ticks: { color: '#aaa' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                x: { ticks: { color: '#aaa' }, grid: { color: 'rgba(255,255,255,0.05)' }, beginAtZero: true },
                 y: { ticks: { color: '#ccc', font: { size: 11 } }, grid: { display: false } }
             }
         }
