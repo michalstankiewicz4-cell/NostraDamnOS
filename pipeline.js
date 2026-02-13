@@ -4,7 +4,12 @@
 import { runFetcher, safeFetch, fetchCounter, fetchAbortController } from './fetcher/fetcher.js';
 import { runNormalizer } from './normalizer/normalizer.js';
 import { db2 } from './modules/database-v2.js';
-import { applyRodo } from './modules/rodo.js';
+import { applyRodo, RODO_RULES } from './modules/rodo.js';
+import { fetchPosel } from './fetcher/modules/poslowie.js';
+import { fetchPosiedzenie } from './fetcher/modules/posiedzenia.js';
+import { fetchInterpelacja } from './fetcher/modules/interpelacje.js';
+import { fetchZapytanie } from './fetcher/modules/zapytania.js';
+import { fetchProjektUstawy } from './fetcher/modules/projekty_ustaw.js';
 
 function checkAbort() {
     if (fetchAbortController?.signal?.aborted) {
@@ -682,11 +687,28 @@ export async function verifyDatabase(db, { signal, onProgress } = {}) {
 }
 
 /**
+ * Czyści pojedynczy obiekt według reguł RODO (helper dla detectDataChanges)
+ * @param {Object} obj - Obiekt do oczyszczenia
+ * @param {string} module - Nazwa modułu (np. 'poslowie', 'interpelacje')
+ * @returns {Object} Oczyszczony obiekt
+ */
+function applyRodoToObject(obj, module) {
+    if (!obj) return obj;
+    const sensitiveFields = RODO_RULES[module] || [];
+    const cleaned = { ...obj };
+    sensitiveFields.forEach(field => {
+        if (field in cleaned) delete cleaned[field];
+    });
+    return cleaned;
+}
+
+/**
  * Sprawdza czy zmieniły się wartości pól w API (trzecia lampka)
  * Porównuje losowe rekordy z bazy z aktualnymi danymi z API
+ * OPTYMALIZACJA: Używa indywidualnych endpointów zamiast pobierania wszystkich danych
  */
 export async function detectDataChanges(db, { signal } = {}) {
-    console.log('[Detect Changes] Starting data integrity check...');
+    console.log('[Detect Changes] Starting optimized data integrity check...');
 
     // Read config from DB
     let kadencja = 10, typ = 'sejm';
@@ -699,32 +721,46 @@ export async function detectDataChanges(db, { signal } = {}) {
         }
     } catch { /* defaults */ }
 
-    const base = typ === 'sejm' ? 'sejm' : 'senat';
-    const apiBase = `https://api.sejm.gov.pl/${base}/term${kadencja}`;
     const changes = [];
 
     try {
-        // Check posłowie - porównaj losowych 3 posłów
-        const poslowieInDb = db.database.exec('SELECT id_osoby, imie, nazwisko, klub FROM poslowie ORDER BY RANDOM() LIMIT 3');
+        // 1. Check posłowie - porównaj 10 konkretnych posłów (spread evenly)
+        // Zamiast pobierać wszystkich 460 (~2 MB), pobierz tylko 10 indywidualnie (~10 KB)
+        // UWAGA: Nie sprawdzamy pól objętych RODO (email, telefon, adres, pesel, email_domowy)
+        const poslowieInDb = db.database.exec('SELECT id_osoby, klub, okreg, aktywny FROM poslowie WHERE id_osoby IN (1, 50, 100, 150, 200, 250, 300, 350, 400, 450)');
         if (poslowieInDb.length > 0 && poslowieInDb[0].values.length > 0) {
-            const apiPoslowie = await safeFetch(`${apiBase}/MP`);
-            for (const [id, imie, nazwisko, klubDb] of poslowieInDb[0].values) {
-                const apiPosel = apiPoslowie.find(p => p.id === id);
-                if (apiPosel) {
+            console.log(`[Detect Changes] Checking ${poslowieInDb[0].values.length} MPs...`);
+            for (const [id, klubDb, okregDb, aktywnyDb] of poslowieInDb[0].values) {
+                const apiPoselRaw = await fetchPosel(id, { kadencja, typ });
+                if (apiPoselRaw) {
+                    // Zastosuj RODO do danych z API aby porównać jak w bazie
+                    const apiPosel = applyRodoToObject(apiPoselRaw, 'poslowie');
+                    
                     const klubApi = apiPosel.club || '';
+                    const okregApi = apiPosel.districtNum || null;
+                    const aktywnyApi = apiPosel.active ? 1 : 0;
+                    
                     if (klubDb !== klubApi) {
                         changes.push({ table: 'poslowie', id, field: 'klub', oldValue: klubDb, newValue: klubApi });
+                    }
+                    if (okregDb !== okregApi) {
+                        changes.push({ table: 'poslowie', id, field: 'okreg', oldValue: okregDb, newValue: okregApi });
+                    }
+                    if (aktywnyDb !== aktywnyApi) {
+                        changes.push({ table: 'poslowie', id, field: 'aktywny', oldValue: aktywnyDb, newValue: aktywnyApi });
                     }
                 }
             }
         }
 
-        // Check posiedzenia - sprawdź ostatnie 2
-        const posiedzeniaInDb = db.database.exec('SELECT numer, data_start, data_koniec FROM posiedzenia ORDER BY numer DESC LIMIT 2');
+        // 2. Check posiedzenia - sprawdź ostatnie 10
+        // Zamiast pobierać wszystkie (~500 KB), pobierz tylko 10 indywidualnie (~50 KB)
+        // Posiedzenia nie mają reguł RODO
+        const posiedzeniaInDb = db.database.exec('SELECT numer, data_start, data_koniec FROM posiedzenia ORDER BY numer DESC LIMIT 10');
         if (posiedzeniaInDb.length > 0 && posiedzeniaInDb[0].values.length > 0) {
-            const apiProceedings = await safeFetch(`${apiBase}/proceedings`);
+            console.log(`[Detect Changes] Checking ${posiedzeniaInDb[0].values.length} proceedings...`);
             for (const [numer, dataStartDb, dataKoniecDb] of posiedzeniaInDb[0].values) {
-                const apiProc = apiProceedings.find(p => p.num === numer || p.number === numer);
+                const apiProc = await fetchPosiedzenie(numer, { kadencja, typ });
                 if (apiProc && apiProc.dates && apiProc.dates.length > 0) {
                     const dataStartApi = apiProc.dates[0];
                     const dataKoniecApi = apiProc.dates[apiProc.dates.length - 1];
@@ -737,12 +773,78 @@ export async function detectDataChanges(db, { signal } = {}) {
                 }
             }
         }
+
+        // 3. Check interpelacje - sprawdź ostatnie 5
+        // Nowa funkcjonalność: monitoruj interpelacje
+        // UWAGA: Interpelacje mają RODO dla pola 'adres' (ale nie sprawdzamy go tutaj)
+        const interpelacjeInDb = db.database.exec('SELECT id_interpelacji, tytul FROM interpelacje ORDER BY id_interpelacji DESC LIMIT 5');
+        if (interpelacjeInDb.length > 0 && interpelacjeInDb[0].values.length > 0) {
+            console.log(`[Detect Changes] Checking ${interpelacjeInDb[0].values.length} interpellations...`);
+            for (const [idInterpelacji, tytulDb] of interpelacjeInDb[0].values) {
+                // Extract numeric ID from format "10_12345"
+                const numericId = idInterpelacji.split('_')[1];
+                if (numericId) {
+                    const apiInterpRaw = await fetchInterpelacja(numericId, { kadencja, typ });
+                    if (apiInterpRaw) {
+                        // Zastosuj RODO (usuwa pole 'adres')
+                        const apiInterp = applyRodoToObject(apiInterpRaw, 'interpelacje');
+                        
+                        const tytulApi = apiInterp.title || '';
+                        if (tytulDb !== tytulApi) {
+                            changes.push({ table: 'interpelacje', id: idInterpelacji, field: 'tytul', oldValue: tytulDb, newValue: tytulApi });
+                        }
+                    }
+                }
+            }
+        }
+
+        // 4. Check zapytania - sprawdź ostatnie 5
+        // Zapytania pisemne: krótsza forma, odpowiedź w 7 dni
+        // UWAGA: Zapytania nie mają pól RODO w RODO_RULES
+        const zapytaniaInDb = db.database.exec('SELECT term, num, title FROM zapytania ORDER BY term DESC, num DESC LIMIT 5');
+        if (zapytaniaInDb.length > 0 && zapytaniaInDb[0].values.length > 0) {
+            console.log(`[Detect Changes] Checking ${zapytaniaInDb[0].values.length} written questions...`);
+            for (const [term, num, titleDb] of zapytaniaInDb[0].values) {
+                if (num) {
+                    const apiZap = await fetchZapytanie(num, { kadencja: term || kadencja, typ });
+                    if (apiZap) {
+                        const titleApi = apiZap.title || '';
+                        if (titleDb !== titleApi) {
+                            changes.push({ table: 'zapytania', id: `${term}_${num}`, field: 'title', oldValue: titleDb, newValue: titleApi });
+                        }
+                    }
+                }
+            }
+        }
+
+        // 5. Check projekty_ustaw - sprawdź ostatnie 5 druków
+        // Druki sejmowe: projekty ustaw w procesie legislacyjnym
+        // UWAGA: Projekty ustaw nie mają pól RODO
+        const projektyInDb = db.database.exec('SELECT id_projektu, tytul FROM projekty_ustaw ORDER BY id_projektu DESC LIMIT 5');
+        if (projektyInDb.length > 0 && projektyInDb[0].values.length > 0) {
+            console.log(`[Detect Changes] Checking ${projektyInDb[0].values.length} prints...`);
+            for (const [idProjektu, tytulDb] of projektyInDb[0].values) {
+                // Extract number from format "10_1234"
+                const parts = idProjektu.split('_');
+                const numerDruku = parts.length > 1 ? parts[1] : idProjektu;
+                if (numerDruku) {
+                    const apiProjekt = await fetchProjektUstawy(numerDruku, { kadencja, typ });
+                    if (apiProjekt) {
+                        const tytulApi = apiProjekt.title || '';
+                        if (tytulDb !== tytulApi) {
+                            changes.push({ table: 'projekty_ustaw', id: idProjektu, field: 'tytul', oldValue: tytulDb, newValue: tytulApi });
+                        }
+                    }
+                }
+            }
+        }
+
     } catch (error) {
         console.error('[Detect Changes] Error:', error);
         return { hasChanges: false, changes: [], error: error.message };
     }
 
-    console.log('[Detect Changes] Complete:', changes);
+    console.log(`[Detect Changes] Complete: ${changes.length} changes detected`);
     return { hasChanges: changes.length > 0, changes };
 }
 

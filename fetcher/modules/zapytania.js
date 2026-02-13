@@ -80,3 +80,10 @@ export async function fetchZapytanieDetails({ kadencja = 10, typ = 'sejm', num }
         return null;
     }
 }
+
+/**
+ * Alias dla spójności z innymi modułami
+ */
+export async function fetchZapytanie(num, { kadencja = 10, typ = 'sejm' } = {}) {
+    return fetchZapytanieDetails({ kadencja, typ, num });
+}

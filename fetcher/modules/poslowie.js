@@ -23,6 +23,28 @@ export async function fetchPoslowie({ kadencja = 10, typ = 'sejm' }) {
 }
 
 /**
+ * Pobiera pojedynczego posła po ID
+ * @param {number|string} id - ID posła
+ * @param {Object} config - Konfiguracja (kadencja, typ)
+ * @returns {Promise<Object|null>} Dane posła lub null
+ */
+export async function fetchPosel(id, { kadencja = 10, typ = 'sejm' } = {}) {
+    if (typ !== 'sejm') {
+        console.warn('[poslowie] Senators not implemented yet');
+        return null;
+    }
+
+    const url = `https://api.sejm.gov.pl/sejm/term${kadencja}/MP/${id}`;
+
+    try {
+        return await safeFetch(url);
+    } catch (e) {
+        console.warn(`[Poslowie] Failed to fetch MP ${id}:`, e.message);
+        return null;
+    }
+}
+
+/**
  * Pobiera interpelacje konkretnego posła
  * 
  * @param {number|string} poselId - ID posła

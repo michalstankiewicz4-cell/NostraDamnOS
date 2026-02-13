@@ -4,6 +4,25 @@
 import { safeFetch } from '../fetcher.js';
 
 /**
+ * Pobiera pojedynczą interpelację po numerze
+ * @param {number|string} num - Numer interpelacji
+ * @param {Object} config - Konfiguracja (kadencja, typ)
+ * @returns {Promise<Object|null>} Dane interpelacji lub null
+ */
+export async function fetchInterpelacja(num, { kadencja, typ = 'sejm' } = {}) {
+    const base = typ === 'sejm' ? 'sejm' : 'senat';
+    const url = `https://api.sejm.gov.pl/${base}/term${kadencja}/interpellations/${num}`;
+
+    try {
+        const data = await safeFetch(url);
+        return data || null;
+    } catch (e) {
+        console.warn(`[Interpelacje] Failed to fetch interpellation ${num}:`, e.message);
+        return null;
+    }
+}
+
+/**
  * Pobiera wszystkie interpelacje dla danej kadencji (z paginacją)
  */
 export async function fetchInterpelacje({ kadencja, typ = 'sejm' }) {
