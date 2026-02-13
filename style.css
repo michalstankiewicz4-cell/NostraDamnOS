@@ -2171,7 +2171,7 @@ input:disabled {
 .chart-no-data-btn {
     background: rgba(102, 126, 234, 0.1);
     border: 1px solid rgba(102, 126, 234, 0.3);
-    border-radius: 6px;
+    border-radius: 2px;
     padding: 8px 16px;
     color: #a5b4fc;
     font-size: 0.8rem;
