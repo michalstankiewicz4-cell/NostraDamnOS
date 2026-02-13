@@ -526,6 +526,17 @@
 
             <!-- SEKCJA 3: AI ASYSTENT -->
             <section class="app-section" data-section="3" style="display:none;">
+
+                <!-- Powiadomienie: sekcja w budowie -->
+                <div id="aiWipOverlay" class="wip-overlay">
+                    <div class="wip-modal">
+                        <div class="wip-icon">🚧</div>
+                        <h3 class="wip-title">Sekcja w trakcie budowy</h3>
+                        <p class="wip-text">Moduł <strong>AI Asystent</strong> jest aktualnie w fazie rozwoju.<br>Niektóre funkcje mogą działać niestabilnie lub być niekompletne.</p>
+                        <button id="aiWipCloseBtn" class="wip-close-btn">Rozumiem, kontynuuj</button>
+                    </div>
+                </div>
+
                 <div class="ai-two-columns">
 
                 <!-- KOLUMNA 1: Asystent AI -->
@@ -2236,6 +2247,12 @@
                 if (sectionNum === '4' && window._renderCharts) {
                     window._renderCharts();
                 }
+
+                // Sekcja AI Asystent — pokaż overlay "w budowie"
+                if (sectionNum === '3') {
+                    const overlay = document.getElementById('aiWipOverlay');
+                    if (overlay) overlay.classList.remove('hidden');
+                }
             }
 
             nav.addEventListener('click', (e) => {
@@ -2247,6 +2264,15 @@
 
             // Expose for AI button and external navigation
             window._navActivateSection = activateSection;
+
+            // WIP overlay — zamknij przyciskiem
+            const wipCloseBtn = document.getElementById('aiWipCloseBtn');
+            if (wipCloseBtn) {
+                wipCloseBtn.addEventListener('click', () => {
+                    const overlay = document.getElementById('aiWipOverlay');
+                    if (overlay) overlay.classList.add('hidden');
+                });
+            }
         });
     </script>
     
