@@ -69,7 +69,8 @@ const predictionLoaders = {
     'aiReport': generateAiReport,
     'webllmChat': loadWebLLMChat,
     'antiPolish': analyzeAntiPolish,
-    'ghostVoting': analyzeGhostVoting
+    'ghostVoting': analyzeGhostVoting,
+    'webIntel': loadWebIntel
 };
 
 /**
@@ -3069,6 +3070,57 @@ async function callGeminiForPrediction(prompt, maxTokens = 2000) {
 }
 
 /**
+ * Gemini z Google Search Grounding — AI przeszukuje sieć
+ * @param {string} prompt — zapytanie
+ * @param {number} maxTokens
+ * @returns {{text: string, sources: Array}}
+ */
+async function callGeminiWithSearch(prompt, maxTokens = 2000) {
+    const apiKey = getApiKey();
+    if (!apiKey) throw new Error('Brak klucza API. Ustaw go w sekcji AI Chat.');
+
+    const model = getSelectedModel();
+    const modelName = (model.startsWith('gemini-') || model.startsWith('gemma-')) ? model : 'gemini-2.0-flash';
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+
+    const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            tools: [{ google_search: {} }],
+            generationConfig: { temperature: 0.3, maxOutputTokens: maxTokens }
+        })
+    });
+
+    if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error?.message || `HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+    const candidate = data.candidates?.[0];
+    const text = candidate?.content?.parts?.map(p => p.text || '').join('') || '';
+
+    // Wyciągnij źródła z grounding metadata
+    const grounding = candidate?.groundingMetadata;
+    const sources = [];
+    if (grounding?.groundingChunks) {
+        for (const chunk of grounding.groundingChunks) {
+            if (chunk.web) {
+                sources.push({ title: chunk.web.title || '', uri: chunk.web.uri || '' });
+            }
+        }
+    }
+    if (grounding?.webSearchQueries) {
+        // Zapytania które AI wykonało
+        sources._queries = grounding.webSearchQueries;
+    }
+
+    return { text, sources };
+}
+
+/**
  * 22. Auto-podsumowanie posiedzeń — AI generuje streszczenia
  */
 async function analyzeSessionSummary() {
@@ -4541,6 +4593,178 @@ function analyzeGhostVoting() {
         console.error('[Predictions] analyzeGhostVoting error:', err);
         container.innerHTML = '<div class="prediction-error">Błąd analizy: ' + err.message + '</div>';
     }
+}
+
+/**
+ * 29. Wywiad sieciowy — AI + Google Search Grounding
+ * Przeszukuje sieć w kontekście danych parlamentarnych
+ */
+function loadWebIntel() {
+    const container = document.getElementById('webIntelContent');
+    if (!container) return;
+
+    console.log('[Predictions] Loading web intel module...');
+
+    const apiKey = getApiKey();
+
+    // Pobierz posłów i kluby do quick actions
+    let mpNames = [];
+    let clubs = [];
+    try {
+        const mpRes = db2.database.exec(`SELECT imie || ' ' || nazwisko FROM poslowie WHERE klub IS NOT NULL ORDER BY nazwisko LIMIT 100`);
+        if (mpRes.length) mpNames = mpRes[0].values.map(v => v[0]);
+        const clubRes = db2.database.exec(`SELECT DISTINCT klub FROM poslowie WHERE klub IS NOT NULL AND klub != '' ORDER BY klub`);
+        if (clubRes.length) clubs = clubRes[0].values.map(v => v[0]);
+    } catch { /* ignore */ }
+
+    // Pobierz ostatnie tematy głosowań
+    let recentTopics = [];
+    try {
+        const topRes = db2.database.exec(`SELECT DISTINCT tytul FROM glosowania WHERE tytul IS NOT NULL ORDER BY data DESC LIMIT 20`);
+        if (topRes.length) recentTopics = topRes[0].values.map(v => v[0]).filter(t => t.length > 10).slice(0, 8);
+    } catch { /* ignore */ }
+
+    container.innerHTML = `
+        <div class="webintel-panel">
+            <h4>🌐 Wywiad sieciowy — AI + Google Search</h4>
+            <p class="webintel-desc">Gemini przeszukuje internet w kontekście danych parlamentarnych. Wpisz pytanie lub użyj szybkich akcji.</p>
+
+            ${!apiKey ? '<div class="prediction-error" style="margin-bottom:12px;">⚠️ Ustaw klucz API Gemini w sekcji AI Chat, żeby korzystać z tego modułu.</div>' : ''}
+
+            <div class="webintel-input-area">
+                <textarea class="webintel-input" id="webIntelQuery" rows="2" placeholder="Np. Jakie kontrowersje budzi posłanka X? / Co media piszą o ustawie Y?"${!apiKey ? ' disabled' : ''}></textarea>
+                <button class="prediction-btn-primary" id="webIntelSearchBtn"${!apiKey ? ' disabled' : ''}>🔍 Szukaj</button>
+            </div>
+
+            <div class="webintel-quick">
+                <span class="webintel-quick-title">Szybkie akcje:</span>
+                ${mpNames.slice(0, 6).map(name => 
+                    `<button class="webintel-quick-btn" data-query="Co ostatnio media piszą o pośle/posłance ${name}? Jakie kontrowersje, osiągnięcia, wypowiedzi medialne?">👤 ${name.split(' ').pop()}</button>`
+                ).join('')}
+                ${clubs.slice(0, 4).map(club =>
+                    `<button class="webintel-quick-btn" data-query="Jaka jest aktualna sytuacja polityczna klubu ${club}? Sondaże, konflikty wewnętrzne, kluczowe głosowania.">🏢 ${club}</button>`
+                ).join('')}
+                ${recentTopics.slice(0, 3).map(topic => {
+                    const short = topic.length > 40 ? topic.substring(0, 40) + '…' : topic;
+                    return `<button class="webintel-quick-btn" data-query="Co wiadomo o tej sprawie głosowanej w Sejmie: ${topic}? Kontekst medialny, opinie ekspertów, skutki.">📜 ${short}</button>`;
+                }).join('')}
+            </div>
+
+            <div class="webintel-presets">
+                <span class="webintel-quick-title">Analizy kontekstowe:</span>
+                <button class="webintel-quick-btn" data-query="Jakie są najnowsze sondaże wyborcze w Polsce? Podaj wyniki dla każdej partii. Źródła.">📊 Sondaże</button>
+                <button class="webintel-quick-btn" data-query="Jakie ustawy są aktualnie procedowane w Sejmie RP? Co budzi kontrowersje?">📝 Legislacja</button>
+                <button class="webintel-quick-btn" data-query="Czy są aktualne doniesienia o dezinformacji lub wpływach rosyjskich w polskim parlamencie?">🛡️ Dezinformacja</button>
+                <button class="webintel-quick-btn" data-query="Jakie są ostatnie decyzje UE, które wpływają na Polskę? Reakcje polskich polityków.">🇪🇺 UE a Polska</button>
+                <button class="webintel-quick-btn" data-query="Jakie skandale polityczne były w Polsce w ostatnich tygodniach? Kto jest zamieszany?">💥 Skandale</button>
+            </div>
+
+            <div id="webIntelResults" class="webintel-results" style="display:none;"></div>
+            <div id="webIntelHistory" class="webintel-history"></div>
+        </div>
+    `;
+
+    // === Event handlers ===
+    const queryInput = document.getElementById('webIntelQuery');
+    const searchBtn = document.getElementById('webIntelSearchBtn');
+    const resultsDiv = document.getElementById('webIntelResults');
+    const historyDiv = document.getElementById('webIntelHistory');
+    let searchHistory = [];
+
+    async function doSearch(query) {
+        if (!query.trim()) return;
+        queryInput.value = query;
+        searchBtn.disabled = true;
+        searchBtn.textContent = '⏳ Szukam...';
+        resultsDiv.style.display = 'block';
+        resultsDiv.innerHTML = '<div class="prediction-loading">🌐 AI przeszukuje internet...</div>';
+
+        try {
+            const systemCtx = `Jesteś analitykiem parlamentarnym specjalizującym się w polskiej polityce.
+Odpowiadaj po polsku, zwięźle i merytorycznie. Podawaj źródła.
+Aktualna kadencja Sejmu: X (od 2023).
+Kluby: ${clubs.join(', ') || 'brak danych'}.`;
+
+            const fullPrompt = `${systemCtx}\n\nPytanie użytkownika: ${query}`;
+            const { text, sources } = await callGeminiWithSearch(fullPrompt, 2500);
+
+            // Render wyniku
+            let sourcesHtml = '';
+            if (sources.length > 0) {
+                sourcesHtml = `<div class="webintel-sources">
+                    <h6>📚 Źródła (${sources.length})</h6>
+                    <div class="webintel-source-list">
+                        ${sources.map(s => `<a href="${s.uri}" target="_blank" rel="noopener" class="webintel-source-link">
+                            <span class="webintel-source-icon">🔗</span>
+                            <span>${s.title || s.uri}</span>
+                        </a>`).join('')}
+                    </div>
+                </div>`;
+            }
+
+            const queries = sources._queries;
+            let queriesHtml = '';
+            if (queries && queries.length) {
+                queriesHtml = `<div class="webintel-queries">
+                    <span class="webintel-queries-label">🔍 Zapytania AI:</span>
+                    ${queries.map(q => `<span class="webintel-query-tag">${q}</span>`).join('')}
+                </div>`;
+            }
+
+            resultsDiv.innerHTML = `
+                <div class="webintel-result">
+                    <div class="webintel-result-header">
+                        <span class="webintel-result-q">💬 ${query.length > 80 ? query.substring(0, 80) + '…' : query}</span>
+                        <span class="webintel-result-time">${new Date().toLocaleTimeString('pl-PL')}</span>
+                    </div>
+                    ${queriesHtml}
+                    <div class="webintel-result-text">${text.replace(/\n/g, '<br>')}</div>
+                    ${sourcesHtml}
+                </div>
+            `;
+
+            // Dodaj do historii
+            searchHistory.unshift({ query, text: text.substring(0, 200), sources: sources.length, time: new Date().toLocaleTimeString('pl-PL') });
+            renderHistory();
+
+        } catch (err) {
+            resultsDiv.innerHTML = `<div class="prediction-error">❌ Błąd: ${err.message}</div>`;
+        } finally {
+            searchBtn.disabled = false;
+            searchBtn.textContent = '🔍 Szukaj';
+        }
+    }
+
+    function renderHistory() {
+        if (searchHistory.length <= 1) { historyDiv.innerHTML = ''; return; }
+        historyDiv.innerHTML = `
+            <div class="webintel-history-section">
+                <h6>🗓️ Historia zapytań</h6>
+                ${searchHistory.slice(1, 10).map(h => `
+                    <div class="webintel-history-item" data-query="${h.query.replace(/"/g, '&quot;')}">
+                        <span class="webintel-history-q">${h.query.length > 60 ? h.query.substring(0, 60) + '…' : h.query}</span>
+                        <span class="webintel-history-meta">${h.sources} źródeł · ${h.time}</span>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+        historyDiv.querySelectorAll('.webintel-history-item').forEach(item => {
+            item.addEventListener('click', () => doSearch(item.dataset.query));
+        });
+    }
+
+    // Search button
+    searchBtn?.addEventListener('click', () => doSearch(queryInput.value));
+
+    // Enter key
+    queryInput?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); doSearch(queryInput.value); }
+    });
+
+    // Quick action buttons
+    container.querySelectorAll('.webintel-quick-btn').forEach(btn => {
+        btn.addEventListener('click', () => doSearch(btn.dataset.query));
+    });
 }
 
 // Export refresh function dla innych modułów
