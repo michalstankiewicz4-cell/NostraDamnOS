@@ -1037,9 +1037,9 @@ function updateEtlDetailPanel(percent, stage, details = {}) {
 
 /**
  * Aktualizuje widoczność sekcji live Sejmu
- * @param {boolean} isLive - czy trwa transmisja
+ * @param {Object|boolean} liveData - dane live lub false
  */
-function updateLiveSection(isLive) {
+function updateLiveSection(liveData) {
     const liveSection = document.getElementById('etlDetailLiveSection');
     const liveLamp = document.getElementById('liveLamp');
     
@@ -1055,10 +1055,15 @@ function updateLiveSection(isLive) {
             return;
         }
 
-        // Pokaż/ukryj sekcję na podstawie statusu live
+        // Sprawdź czy są dane live
+        const isLive = !!liveData && liveData.isLive;
+        
         if (isLive) {
             liveSection.style.display = '';
             console.log('[Info Panel] 🔴 Trwa transmisja Sejmu');
+            
+            // Renderuj szczegóły live
+            renderLiveDetails(liveData);
             
             // Aktualizuj lampkę na pasku dolnym (jeśli widoczna)
             if (liveLamp) {
@@ -1078,6 +1083,70 @@ function updateLiveSection(isLive) {
         updatePanelVisibility();
     } catch (error) {
         console.error('[updateLiveSection] Error:', error);
+    }
+}
+
+/**
+ * Renderuje szczegóły transmisji live
+ * @param {Object} data - dane live
+ */
+function renderLiveDetails(data) {
+    // Posiedzenie
+    const titleEl = document.getElementById('liveProceedingTitle');
+    const dayEl = document.getElementById('liveProceedingDay');
+    if (titleEl) titleEl.textContent = data.proceeding?.title || 'Posiedzenie Sejmu';
+    if (dayEl) dayEl.textContent = `Dzień ${data.proceeding?.currentDay || 1} / ${data.proceeding?.totalDays || 1}`;
+    
+    // Ostatni mówcy
+    const speakersList = document.getElementById('liveSpeakersList');
+    const speakersSection = document.getElementById('liveSpeakersSection');
+    if (speakersList && speakersSection) {
+        if (data.recentSpeakers && data.recentSpeakers.length > 0) {
+            speakersSection.style.display = '';
+            speakersList.innerHTML = data.recentSpeakers.map(speaker => `
+                <div class="etl-live-speaker-item">
+                    <div class="etl-live-speaker-name">${speaker.name}</div>
+                    <div class="etl-live-speaker-role">${speaker.role}</div>
+                </div>
+            `).join('');
+        } else {
+            speakersSection.style.display = 'none';
+        }
+    }
+    
+    // Ostatnie głosowania
+    const votingsList = document.getElementById('liveVotingsList');
+    const votingsSection = document.getElementById('liveVotingsSection');
+    if (votingsList && votingsSection) {
+        if (data.recentVotings && data.recentVotings.length > 0) {
+            votingsSection.style.display = '';
+            votingsList.innerHTML = data.recentVotings.map(voting => `
+                <div class="etl-live-voting-item">
+                    <div class="etl-live-voting-topic">${voting.topic}</div>
+                    <div class="etl-live-voting-results">
+                        <span class="etl-live-voting-yes">Za: ${voting.yes}</span>
+                        <span class="etl-live-voting-no">Przeciw: ${voting.no}</span>
+                        <span class="etl-live-voting-abstain">Wstrz.: ${voting.abstain}</span>
+                    </div>
+                </div>
+            `).join('');
+        } else {
+            votingsSection.style.display = 'none';
+        }
+    }
+    
+    // Porządek obrad
+    const agendaList = document.getElementById('liveAgendaList');
+    const agendaSection = document.getElementById('liveAgendaSection');
+    if (agendaList && agendaSection) {
+        if (data.agenda && data.agenda.length > 0) {
+            agendaSection.style.display = '';
+            agendaList.innerHTML = data.agenda.slice(0, 10).map(item => `
+                <div class="etl-live-agenda-item">${item.title || item}</div>
+            `).join('');
+        } else {
+            agendaSection.style.display = 'none';
+        }
     }
 }
 
