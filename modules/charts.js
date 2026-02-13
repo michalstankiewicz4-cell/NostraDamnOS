@@ -9,6 +9,13 @@ import {
 } from './sentiment-analysis.js';
 
 const chartInstances = {};
+
+// Wspólne opcje Chart.js — wyłączamy animację (lazy-render z display:none)
+const CHART_DEFAULTS = {
+    animation: false,
+    maintainAspectRatio: true
+};
+
 const COLORS = [
     '#667eea', '#764ba2', '#f093fb', '#4facfe', '#00f2fe',
     '#43e97b', '#fa709a', '#fee140', '#30cfd0', '#a8edea',
@@ -62,6 +69,7 @@ function renderKluby() {
             }]
         },
         options: {
+            ...CHART_DEFAULTS,
             responsive: true,
             plugins: {
                 legend: { position: 'right', labels: { color: '#ccc', font: { size: 11 } } }
@@ -89,6 +97,7 @@ function renderTopPoslowie() {
             }]
         },
         options: {
+            ...CHART_DEFAULTS,
             indexAxis: 'y',
             responsive: true,
             plugins: { legend: { display: false } },
@@ -119,6 +128,7 @@ function renderGlosowania() {
             }]
         },
         options: {
+            ...CHART_DEFAULTS,
             responsive: true,
             plugins: {
                 legend: { position: 'right', labels: { color: '#ccc', font: { size: 12 } } }
@@ -154,6 +164,7 @@ function renderGlosowaniaTime() {
             }]
         },
         options: {
+            ...CHART_DEFAULTS,
             responsive: true,
             plugins: { legend: { display: false } },
             scales: {
@@ -189,6 +200,7 @@ function renderKomisje() {
             }]
         },
         options: {
+            ...CHART_DEFAULTS,
             responsive: true,
             plugins: { legend: { display: false } },
             scales: {
@@ -224,6 +236,7 @@ function renderInterpelacje() {
             }]
         },
         options: {
+            ...CHART_DEFAULTS,
             indexAxis: 'y',
             responsive: true,
             plugins: { legend: { display: false } },
@@ -258,6 +271,7 @@ function renderFrekwencja() {
             }]
         },
         options: {
+            ...CHART_DEFAULTS,
             responsive: true,
             plugins: { legend: { display: false },
                 tooltip: { callbacks: { label: ctx => `Frekwencja: ${ctx.parsed.y}%` } }
@@ -298,6 +312,7 @@ function renderNajmniejAktywni() {
             }]
         },
         options: {
+            ...CHART_DEFAULTS,
             indexAxis: 'y',
             responsive: true,
             plugins: { legend: { display: false } },
@@ -337,6 +352,7 @@ function renderNajmniejAktywneKluby() {
             }]
         },
         options: {
+            ...CHART_DEFAULTS,
             indexAxis: 'y',
             responsive: true,
             plugins: { legend: { display: false } },
@@ -423,6 +439,7 @@ function renderHeatmap() {
             }]
         },
         options: {
+            ...CHART_DEFAULTS,
             responsive: true,
             plugins: {
                 legend: { display: false },
@@ -544,13 +561,16 @@ function expandChartCard(card) {
             const cardId = card.id;
             setCardState(cardId, false);
         } else {
-            setTimeout(() => {
-                const fn = renderers[chartType];
-                if (fn) {
-                    fn();
-                    card.setAttribute('data-loaded', '1');
-                }
-            }, 50);
+            // requestAnimationFrame — poczekaj aż DOM przelayoutuje elementy po display:none→block
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    const fn = renderers[chartType];
+                    if (fn) {
+                        fn();
+                        card.setAttribute('data-loaded', '1');
+                    }
+                });
+            });
         }
     }
 
@@ -682,6 +702,7 @@ async function renderSentimentDistribution() {
                 }]
             },
             options: {
+                ...CHART_DEFAULTS,
                 responsive: true,
                 plugins: {
                     legend: { position: 'right', labels: { color: '#ccc', font: { size: 12 } } },
@@ -735,6 +756,7 @@ async function renderSentimentOverTime() {
                 ]
             },
             options: {
+                ...CHART_DEFAULTS,
                 responsive: true,
                 plugins: {
                     legend: { display: false },
@@ -802,6 +824,7 @@ async function renderSentimentByParty() {
                 }]
             },
             options: {
+                ...CHART_DEFAULTS,
                 responsive: true,
                 plugins: {
                     legend: { display: false },
@@ -884,6 +907,7 @@ async function renderTopSpeakersSentiment() {
                 }]
             },
             options: {
+                ...CHART_DEFAULTS,
                 indexAxis: 'y',
                 responsive: true,
                 plugins: {
