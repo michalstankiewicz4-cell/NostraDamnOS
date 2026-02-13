@@ -1829,10 +1829,10 @@ if (liveLamp && liveStreamModal) {
     liveLamp.addEventListener('click', () => {
         // Sprawdź czy trwa transmisja (czy lampka miga)
         if (liveLamp.classList.contains('floating-lamp-live-blink')) {
-            // Otwórz aktualną transmisję na żywo
-            const streamUrl = 'https://www.sejm.gov.pl/Sejm10.nsf/transmisje.xsp';
-            window.open(streamUrl, 'SejmLiveStream', 'width=1280,height=720,menubar=no,toolbar=no,location=no');
-            console.log('[Live Stream] Opened in new window');
+            // Oficjalny kanał YouTube Sejmu RP - na żywo
+            const streamUrl = 'https://www.youtube.com/@SejmRzeczypospolitejPolskiej/streams';
+            window.open(streamUrl, 'SejmLiveStream', 'width=1280,height=720');
+            console.log('[Live Stream] Opened YouTube channel in new window');
         }
     });
 }
