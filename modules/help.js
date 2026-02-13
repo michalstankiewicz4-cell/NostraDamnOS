@@ -1,6 +1,8 @@
-// Help System v3.0
+// Help System v3.1
 // Jeden tryb: MARKER — blokuje WSZYSTKO oprócz ESC
-// Kliknięcie elementu z data-help pokazuje opis
+// Opisy elementów w osobnym pliku help-data.js
+
+import { HELP_DATA } from './help-data.js';
 
 let isActive = false;
 let tooltip = null;
@@ -48,8 +50,10 @@ function createTooltip() {
 
 function showTooltip(el) {
     if (!tooltip) createTooltip();
-    const title = el.getAttribute('data-help-title') || '';
-    const desc = el.getAttribute('data-help') || '';
+    const helpId = el.getAttribute('data-help-id') || '';
+    const entry = HELP_DATA[helpId];
+    const title = entry ? entry.title : helpId;
+    const desc = entry ? entry.desc : '';
     tooltip.querySelector('.help-tooltip-title').textContent = title;
     tooltip.querySelector('.help-tooltip-desc').textContent = desc;
     tooltip.style.display = 'block';
@@ -95,7 +99,7 @@ function clearHighlight() {
 function findHelpTarget(el) {
     let cur = el;
     while (cur && cur !== document.body) {
-        if (cur.hasAttribute && cur.hasAttribute('data-help')) return cur;
+        if (cur.hasAttribute && cur.hasAttribute('data-help-id')) return cur;
         cur = cur.parentElement;
     }
     return null;
