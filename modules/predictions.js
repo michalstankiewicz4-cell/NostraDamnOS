@@ -71,7 +71,8 @@ const predictionLoaders = {
     'antiPolish': analyzeAntiPolish,
     'ghostVoting': analyzeGhostVoting,
     'webIntel': loadWebIntel,
-    'aiCharts': loadAiCharts
+    'aiCharts': loadAiCharts,
+    'aggressionAnalysis': analyzeAggression
 };
 
 /**
@@ -5054,6 +5055,488 @@ WAŻNE:
             generateChart(btn.dataset.query);
         });
     });
+}
+
+// =====================================================
+// ANALIZA AGRESJI PARLAMENTARNEJ
+// =====================================================
+
+/**
+ * Frazy stereotypowe - prośby o spokój / przywołanie do porządku
+ */
+const CALM_PHRASES = [
+    'proszę o spokój',
+    'proszę o ciszę',
+    'proszę o porządek',
+    'proszę nie przerywać',
+    'proszę nie przeszkadzać',
+    'proszę o umożliwienie',
+    'proszę o zachowanie spokoju',
+    'proszę o zachowanie porządku',
+    'proszę państwa o spokój',
+    'przywołuję do porządku',
+    'proszę nie zakłócać',
+    'proszę o kulturę',
+    'proszę, niech pan',
+    'proszę, niech pani',
+    'panie pośle, proszę',
+    'panie marszałku, proszę',
+    'proszę o umiar',
+    'proszę się uspokoić',
+    'proszę o powagę',
+    'wysoka izbo, proszę',
+    'nie przekrzykujmy się',
+    'proszę nie krzyczeć',
+    'przepraszam, ale proszę',
+    'panie ministrze, proszę',
+    'dość tego',
+    'porządek, proszę',
+    'proszę o skupienie',
+    'szanowni państwo, proszę',
+    'zarządzam przerwę',
+    'proszę nie wchodzić w słowo',
+    'panie przewodniczący, proszę',
+    'proszę pozwolić dokończyć',
+    'apeluję o spokój',
+    'spokojnie, proszę',
+    'dajcie spokój'
+];
+
+/**
+ * Słowa agresywne — rozszerzony leksykon do detekcji agresji werbalnej
+ */
+const AGGRESSION_KEYWORDS = [
+    'kłamstwo', 'kłamie', 'kłamca', 'kłamiesz', 'kłamiecie',
+    'hańba', 'skandal', 'wstyd', 'zdrada', 'zdrajca',
+    'przestęp', 'oszust', 'złodziej', 'złodziejstwo',
+    'kompromitacja', 'absurd', 'absurdal',
+    'bezczelność', 'bezczelnie', 'bezwstyd',
+    'agresj', 'nienawis', 'prowokac', 'manipulac',
+    'demagogia', 'demagog', 'hipokryzj', 'hipokryt',
+    'korupc', 'nepotyzm', 'afera',
+    'bezpraw', 'łamanie', 'pogard',
+    'idiot', 'głupot', 'bzdur', 'nonsens',
+    'zamknij', 'wynoś się', 'won',
+    'tchórz', 'tchórzliw',
+    'łajdak', 'kanalia', 'szuja', 'łobuz',
+    'warjat', 'obłąkan'
+];
+
+function analyzeAggression() {
+    const container = document.getElementById('aggressionAnalysisContent');
+    if (!container) return;
+
+    console.log('[Predictions] Analyzing parliamentary aggression...');
+
+    try {
+        // Pobierz wszystkie wypowiedzi pogrupowane wg posiedzenia i kolejności
+        const rows = db2.database.exec(`
+            SELECT 
+                w.id_wypowiedzi,
+                w.id_posiedzenia,
+                w.tekst,
+                w.data,
+                w.mowca,
+                w.typ,
+                p.imie,
+                p.nazwisko,
+                p.klub
+            FROM wypowiedzi w
+            LEFT JOIN poslowie p ON w.id_osoby = p.id_osoby
+            WHERE w.tekst IS NOT NULL AND LENGTH(w.tekst) > 30
+            ORDER BY w.id_posiedzenia, w.id_wypowiedzi
+        `);
+
+        if (!rows.length || !rows[0].values.length) {
+            container.innerHTML = '<div class="prediction-no-data">Brak danych wypowiedzi w bazie</div>';
+            return;
+        }
+
+        // Parsuj wypowiedzi
+        const allSpeeches = rows[0].values.map(row => {
+            const [id, idPos, tekst, data, mowca, typ, imie, nazwisko, klub] = row;
+            const sentiment = analyzeSentiment(tekst);
+            const lower = tekst.toLowerCase();
+            const aggressionWords = AGGRESSION_KEYWORDS.filter(kw => lower.includes(kw));
+            return {
+                id, idPos, text: tekst, date: data,
+                speaker: mowca || ((imie && nazwisko) ? `${imie} ${nazwisko}` : 'Nieznany'),
+                type: typ,
+                party: klub || 'niez.',
+                sentiment,
+                aggressionWords,
+                isAggressive: sentiment.score < -0.25 || aggressionWords.length >= 2
+            };
+        });
+
+        // =============================
+        // 1. PROWOKACJA AGRESJI
+        // =============================
+        // Dla każdego mówcy: policz ile razy wypowiedź NASTĘPNA (innego mówcy) była agresywna
+        const provocationMap = {}; // speaker → {name, party, speechCount, provocations, examples[]}
+
+        // Pogrupuj wg posiedzenia
+        const bySitting = {};
+        allSpeeches.forEach(s => {
+            if (!bySitting[s.idPos]) bySitting[s.idPos] = [];
+            bySitting[s.idPos].push(s);
+        });
+
+        Object.values(bySitting).forEach(sitting => {
+            for (let i = 0; i < sitting.length - 1; i++) {
+                const current = sitting[i];
+                const next = sitting[i + 1];
+                // Sprawdź czy następny mówca jest inny i agresywny
+                if (next.speaker !== current.speaker && next.isAggressive) {
+                    if (!provocationMap[current.speaker]) {
+                        provocationMap[current.speaker] = {
+                            name: current.speaker,
+                            party: current.party,
+                            speechCount: 0,
+                            provocations: 0,
+                            examples: []
+                        };
+                    }
+                    provocationMap[current.speaker].provocations++;
+                    if (provocationMap[current.speaker].examples.length < 3) {
+                        provocationMap[current.speaker].examples.push({
+                            provocateur: current.speaker,
+                            provocateurText: current.text.substring(0, 150),
+                            reactor: next.speaker,
+                            reactorText: next.text.substring(0, 150),
+                            reactorScore: next.sentiment.score,
+                            reactorWords: next.aggressionWords.slice(0, 5),
+                            date: current.date || next.date || ''
+                        });
+                    }
+                }
+            }
+        });
+
+        // Policz łączne wypowiedzi na mówcę
+        allSpeeches.forEach(s => {
+            if (provocationMap[s.speaker]) {
+                provocationMap[s.speaker].speechCount++;
+            }
+        });
+
+        const provocateurs = Object.values(provocationMap)
+            .filter(p => p.speechCount >= 3)
+            .map(p => ({
+                ...p,
+                rate: Math.round((p.provocations / p.speechCount) * 100)
+            }))
+            .sort((a, b) => b.provocations - a.provocations)
+            .slice(0, 20);
+
+        // =============================
+        // 2. INICJACJA AGRESJI
+        // =============================
+        // Kto jako pierwszy w danym posiedzeniu używa agresywnego języka
+        const initiatorMap = {}; // speaker → {initiations, examples[]}
+
+        Object.values(bySitting).forEach(sitting => {
+            // Znajdź pierwszą agresywną wypowiedź w posiedzeniu
+            const firstAggressive = sitting.find(s => s.isAggressive);
+            if (firstAggressive) {
+                const sp = firstAggressive.speaker;
+                if (!initiatorMap[sp]) {
+                    initiatorMap[sp] = { name: sp, party: firstAggressive.party, initiations: 0, totalSpeeches: 0, examples: [] };
+                }
+                initiatorMap[sp].initiations++;
+                if (initiatorMap[sp].examples.length < 3) {
+                    initiatorMap[sp].examples.push({
+                        text: firstAggressive.text.substring(0, 150),
+                        date: firstAggressive.date || '',
+                        words: firstAggressive.aggressionWords.slice(0, 5),
+                        score: firstAggressive.sentiment.score
+                    });
+                }
+            }
+        });
+
+        // Policz łączne wypowiedzi
+        allSpeeches.forEach(s => {
+            if (initiatorMap[s.speaker]) initiatorMap[s.speaker].totalSpeeches++;
+        });
+
+        const initiators = Object.values(initiatorMap)
+            .sort((a, b) => b.initiations - a.initiations)
+            .slice(0, 20);
+
+        // =============================
+        // 3. FRAZY SPOKOJU
+        // =============================
+        const calmPhraseStats = {}; // phrase → {count, speakers: Set, examples[]}
+        const calmSpeakerStats = {}; // speaker → {count, phrases: Set}
+
+        allSpeeches.forEach(s => {
+            const lower = s.text.toLowerCase();
+            CALM_PHRASES.forEach(phrase => {
+                if (lower.includes(phrase)) {
+                    // Stats per phrase
+                    if (!calmPhraseStats[phrase]) {
+                        calmPhraseStats[phrase] = { phrase, count: 0, speakers: new Set(), examples: [] };
+                    }
+                    calmPhraseStats[phrase].count++;
+                    calmPhraseStats[phrase].speakers.add(s.speaker);
+                    if (calmPhraseStats[phrase].examples.length < 2) {
+                        calmPhraseStats[phrase].examples.push({
+                            speaker: s.speaker, party: s.party,
+                            text: s.text.substring(0, 200), date: s.date || ''
+                        });
+                    }
+
+                    // Stats per speaker
+                    if (!calmSpeakerStats[s.speaker]) {
+                        calmSpeakerStats[s.speaker] = { name: s.speaker, party: s.party, count: 0, phrases: new Set() };
+                    }
+                    calmSpeakerStats[s.speaker].count++;
+                    calmSpeakerStats[s.speaker].phrases.add(phrase);
+                }
+            });
+        });
+
+        const topCalmPhrases = Object.values(calmPhraseStats)
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 20);
+
+        const topCalmSpeakers = Object.values(calmSpeakerStats)
+            .map(s => ({ ...s, phrases: [...s.phrases] }))
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 15);
+
+        // =============================
+        // ZBIERZ STATYSTYKI
+        // =============================
+        const totalSpeeches = allSpeeches.length;
+        const totalAggressive = allSpeeches.filter(s => s.isAggressive).length;
+        const totalSittings = Object.keys(bySitting).length;
+        const sittingsWithAggression = Object.values(bySitting).filter(
+            sitting => sitting.some(s => s.isAggressive)
+        ).length;
+        const totalCalmUsages = Object.values(calmPhraseStats).reduce((s, p) => s + p.count, 0);
+
+        // =============================
+        // RENDER
+        // =============================
+        let html = '';
+
+        // Nawigacja zakładkowa
+        html += `<div class="aggr-tabs">
+            <button class="aggr-tab aggr-tab--active" data-tab="provocation">🔥 Prowokacja agresji</button>
+            <button class="aggr-tab" data-tab="initiation">⚡ Inicjacja agresji</button>
+            <button class="aggr-tab" data-tab="calm">🕊️ Frazy spokoju</button>
+        </div>`;
+
+        // Podsumowanie ogólne
+        html += `<div class="aggr-summary">
+            <div class="aggr-stat">
+                <div class="aggr-stat-value">${totalSpeeches}</div>
+                <div class="aggr-stat-label">Wypowiedzi</div>
+            </div>
+            <div class="aggr-stat aggr-stat--red">
+                <div class="aggr-stat-value">${totalAggressive} (${totalSpeeches ? Math.round(totalAggressive / totalSpeeches * 100) : 0}%)</div>
+                <div class="aggr-stat-label">Agresywnych</div>
+            </div>
+            <div class="aggr-stat">
+                <div class="aggr-stat-value">${sittingsWithAggression}/${totalSittings}</div>
+                <div class="aggr-stat-label">Posiedzeń z agresją</div>
+            </div>
+            <div class="aggr-stat aggr-stat--blue">
+                <div class="aggr-stat-value">${totalCalmUsages}</div>
+                <div class="aggr-stat-label">Próśb o spokój</div>
+            </div>
+        </div>`;
+
+        // ---- ZAKŁADKA 1: Prowokacja ----
+        html += '<div class="aggr-tab-content" data-tab-content="provocation">';
+        html += '<h4>🔥 Kto prowokuje agresywne reakcje?</h4>';
+        html += '<p class="aggr-desc">Ranking mówców, po których wypowiedziach najczęściej następuje agresywna odpowiedź innego posła.</p>';
+
+        if (provocateurs.length === 0) {
+            html += '<div class="prediction-no-data">Nie wykryto wzorców prowokacji</div>';
+        } else {
+            html += '<div class="aggr-ranking">';
+            provocateurs.forEach((p, i) => {
+                const barWidth = provocateurs[0].provocations > 0 ? Math.round((p.provocations / provocateurs[0].provocations) * 100) : 0;
+                html += `<div class="aggr-rank-item">
+                    <div class="aggr-rank-header">
+                        <span class="aggr-rank-pos">#${i + 1}</span>
+                        <span class="aggr-rank-name">${p.name}</span>
+                        <span class="aggr-rank-party">${p.party}</span>
+                        <span class="aggr-rank-value">${p.provocations} prowokacji</span>
+                        <span class="aggr-rank-rate">(${p.rate}% wyp.)</span>
+                    </div>
+                    <div class="aggr-rank-bar-bg">
+                        <div class="aggr-rank-bar aggr-rank-bar--red" style="width:${barWidth}%"></div>
+                    </div>`;
+
+                // Przykłady
+                if (p.examples.length > 0) {
+                    html += '<div class="aggr-examples">';
+                    p.examples.forEach(ex => {
+                        html += `<div class="aggr-example">
+                            <div class="aggr-example-arrow">
+                                <div class="aggr-example-speaker">💬 ${ex.provocateur}:</div>
+                                <div class="aggr-example-text">${ex.provocateurText}...</div>
+                            </div>
+                            <div class="aggr-example-reaction">
+                                <div class="aggr-example-speaker">😡 ${ex.reactor} (${ex.reactorScore}):</div>
+                                <div class="aggr-example-text">${ex.reactorText}...</div>
+                                ${ex.reactorWords.length > 0 ? '<div class="aggr-keywords">' + ex.reactorWords.map(w => `<span class="aggr-keyword">${w}</span>`).join('') + '</div>' : ''}
+                            </div>
+                        </div>`;
+                    });
+                    html += '</div>';
+                }
+                html += '</div>';
+            });
+            html += '</div>';
+        }
+        html += '</div>';
+
+        // ---- ZAKŁADKA 2: Inicjacja ----
+        html += '<div class="aggr-tab-content" data-tab-content="initiation" style="display:none;">';
+        html += '<h4>⚡ Kto zaczyna agresję?</h4>';
+        html += '<p class="aggr-desc">Kto jako pierwszy w danym posiedzeniu użył agresywnego języka — czyli kto „odpala" debatę.</p>';
+
+        if (initiators.length === 0) {
+            html += '<div class="prediction-no-data">Brak danych o inicjacji agresji</div>';
+        } else {
+            html += '<div class="aggr-ranking">';
+            initiators.forEach((ini, i) => {
+                const barWidth = initiators[0].initiations > 0 ? Math.round((ini.initiations / initiators[0].initiations) * 100) : 0;
+                html += `<div class="aggr-rank-item">
+                    <div class="aggr-rank-header">
+                        <span class="aggr-rank-pos">#${i + 1}</span>
+                        <span class="aggr-rank-name">${ini.name}</span>
+                        <span class="aggr-rank-party">${ini.party}</span>
+                        <span class="aggr-rank-value">${ini.initiations} inicjacji</span>
+                        <span class="aggr-rank-rate">w ${totalSittings} posiedzeniach</span>
+                    </div>
+                    <div class="aggr-rank-bar-bg">
+                        <div class="aggr-rank-bar aggr-rank-bar--orange" style="width:${barWidth}%"></div>
+                    </div>`;
+
+                if (ini.examples.length > 0) {
+                    html += '<div class="aggr-examples">';
+                    ini.examples.forEach(ex => {
+                        html += `<div class="aggr-example">
+                            <div class="aggr-example-first">
+                                <div class="aggr-example-speaker">⚡ ${ini.name} (${ex.score}):</div>
+                                <div class="aggr-example-text">${ex.text}...</div>
+                                ${ex.words.length > 0 ? '<div class="aggr-keywords">' + ex.words.map(w => `<span class="aggr-keyword">${w}</span>`).join('') + '</div>' : ''}
+                                <div class="aggr-example-date">${ex.date}</div>
+                            </div>
+                        </div>`;
+                    });
+                    html += '</div>';
+                }
+                html += '</div>';
+            });
+            html += '</div>';
+        }
+        html += '</div>';
+
+        // ---- ZAKŁADKA 3: Frazy spokoju ----
+        html += '<div class="aggr-tab-content" data-tab-content="calm" style="display:none;">';
+        html += '<h4>🕊️ Zascenotypowane frazy próśb o spokój</h4>';
+        html += '<p class="aggr-desc">Które formułki „proszę o spokój" padają najczęściej? Czy to scenariusz, czy spontan?</p>';
+
+        if (topCalmPhrases.length === 0) {
+            html += '<div class="prediction-no-data">Nie znaleziono fraz spokoju</div>';
+        } else {
+            // Podsumowanie
+            const uniquePhrases = topCalmPhrases.filter(p => p.count > 0).length;
+            const uniqueSpeakers = new Set(topCalmPhrases.flatMap(p => [...p.speakers])).size;
+            html += `<div class="aggr-calm-summary">
+                <div class="aggr-calm-stat">📝 ${uniquePhrases} różnych fraz</div>
+                <div class="aggr-calm-stat">👥 ${uniqueSpeakers} mówców je używa</div>
+                <div class="aggr-calm-stat">📊 ${totalCalmUsages} użyć łącznie</div>
+            </div>`;
+
+            // Ranking fraz
+            html += '<h4 style="margin:12px 0 6px;">📋 Najczęstsze frazy</h4>';
+            html += '<div class="aggr-calm-phrases">';
+            topCalmPhrases.forEach((p, i) => {
+                const barWidth = topCalmPhrases[0].count > 0 ? Math.round((p.count / topCalmPhrases[0].count) * 100) : 0;
+                html += `<div class="aggr-calm-phrase-item">
+                    <div class="aggr-calm-phrase-header">
+                        <span class="aggr-calm-phrase-rank">#${i + 1}</span>
+                        <span class="aggr-calm-phrase-text">„${p.phrase}"</span>
+                        <span class="aggr-calm-phrase-count">${p.count}×</span>
+                        <span class="aggr-calm-phrase-speakers">${p.speakers.size} mówców</span>
+                    </div>
+                    <div class="aggr-rank-bar-bg">
+                        <div class="aggr-rank-bar aggr-rank-bar--blue" style="width:${barWidth}%"></div>
+                    </div>
+                </div>`;
+            });
+            html += '</div>';
+
+            // Kto najczęściej prosi o spokój
+            html += '<h4 style="margin:16px 0 6px;">👤 Kto najczęściej prosi o spokój?</h4>';
+            html += '<div class="aggr-ranking">';
+            topCalmSpeakers.forEach((sp, i) => {
+                const barWidth = topCalmSpeakers[0].count > 0 ? Math.round((sp.count / topCalmSpeakers[0].count) * 100) : 0;
+                html += `<div class="aggr-rank-item">
+                    <div class="aggr-rank-header">
+                        <span class="aggr-rank-pos">#${i + 1}</span>
+                        <span class="aggr-rank-name">${sp.name}</span>
+                        <span class="aggr-rank-party">${sp.party}</span>
+                        <span class="aggr-rank-value">${sp.count}× prosił/a o spokój</span>
+                    </div>
+                    <div class="aggr-rank-bar-bg">
+                        <div class="aggr-rank-bar aggr-rank-bar--green" style="width:${barWidth}%"></div>
+                    </div>
+                    <div class="aggr-calm-used-phrases">
+                        Używane frazy: ${sp.phrases.map(ph => `<span class="aggr-keyword aggr-keyword--calm">„${ph}"</span>`).join(' ')}
+                    </div>
+                </div>`;
+            });
+            html += '</div>';
+
+            // Analiza szablonowości
+            const mostUsedPhrase = topCalmPhrases[0];
+            const isScripted = mostUsedPhrase && mostUsedPhrase.count > totalCalmUsages * 0.3;
+            html += `<div class="aggr-scripted-verdict">
+                <h4>🎭 Ocena szablonowości</h4>
+                ${isScripted 
+                    ? `<p class="aggr-verdict aggr-verdict--scripted">⚠️ Tak — fraza „${mostUsedPhrase.phrase}" stanowi ${Math.round(mostUsedPhrase.count / totalCalmUsages * 100)}% wszystkich próśb o spokój. Sugeruje to <strong>scenariuszowe zachowanie</strong>.</p>`
+                    : `<p class="aggr-verdict aggr-verdict--organic">✅ Frazy spokoju są <strong>zróżnicowane</strong> — brak jednego dominującego szablonu. Wygląda na spontaniczne reakcje.</p>`
+                }
+            </div>`;
+        }
+        html += '</div>';
+
+        container.innerHTML = html;
+
+        // Obsługa zakładek
+        container.querySelectorAll('.aggr-tab').forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const target = tab.dataset.tab;
+                container.querySelectorAll('.aggr-tab').forEach(t => t.classList.remove('aggr-tab--active'));
+                tab.classList.add('aggr-tab--active');
+                container.querySelectorAll('.aggr-tab-content').forEach(tc => {
+                    tc.style.display = tc.dataset.tabContent === target ? '' : 'none';
+                });
+            });
+        });
+
+        console.log('[Predictions] Aggression analysis done:', {
+            provocateurs: provocateurs.length,
+            initiators: initiators.length,
+            calmPhrases: topCalmPhrases.length,
+            totalAggressive,
+            totalSpeeches
+        });
+
+    } catch (err) {
+        console.error('[Predictions] analyzeAggression error:', err);
+        container.innerHTML = '<div class="prediction-error">Błąd analizy agresji: ' + err.message + '</div>';
+    }
 }
 
 // Export refresh function dla innych modułów

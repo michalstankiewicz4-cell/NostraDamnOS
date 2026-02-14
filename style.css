@@ -5521,3 +5521,173 @@ input:disabled {
     .vault-mode-select { background: #0f172a; color: #e2e8f0; border-color: #334155; }
     .vault-desc { background: rgba(16, 185, 129, 0.08); color: #94a3b8; }
 }
+
+/* =====================================================
+   ANALIZA AGRESJI PARLAMENTARNEJ
+   ===================================================== */
+
+/* Zakładki */
+.aggr-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 12px;
+    border-bottom: 2px solid var(--border-color, #333);
+    padding-bottom: 0;
+}
+.aggr-tab {
+    padding: 8px 14px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary, #aaa);
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    transition: all 0.2s;
+    border-radius: 6px 6px 0 0;
+}
+.aggr-tab:hover { color: var(--text-primary, #e0e0e0); background: var(--bg-secondary, #1e1e2e); }
+.aggr-tab--active {
+    color: var(--text-primary, #e0e0e0);
+    border-bottom-color: #e74c3c;
+    background: var(--bg-secondary, #1e1e2e);
+}
+
+/* Podsumowanie */
+.aggr-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 16px;
+    padding: 10px;
+    background: var(--bg-secondary, #1e1e2e);
+    border-radius: 8px;
+}
+.aggr-stat {
+    flex: 1;
+    min-width: 100px;
+    text-align: center;
+    padding: 8px;
+    border-radius: 6px;
+    background: var(--bg-color, #151520);
+}
+.aggr-stat--red { border-left: 3px solid #e74c3c; }
+.aggr-stat--blue { border-left: 3px solid #3498db; }
+.aggr-stat-value { font-size: 1.2rem; font-weight: 700; color: var(--text-primary, #e0e0e0); }
+.aggr-stat-label { font-size: 0.72rem; color: var(--text-secondary, #aaa); margin-top: 2px; }
+
+/* Opis */
+.aggr-desc {
+    font-size: 0.8rem;
+    color: var(--text-secondary, #aaa);
+    margin: 0 0 12px;
+    line-height: 1.4;
+}
+
+/* Ranking - wspólne */
+.aggr-ranking { display: flex; flex-direction: column; gap: 10px; }
+.aggr-rank-item {
+    padding: 10px;
+    background: var(--bg-secondary, #1e1e2e);
+    border-radius: 8px;
+    border: 1px solid var(--border-color, #333);
+}
+.aggr-rank-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 6px;
+}
+.aggr-rank-pos { font-size: 0.78rem; font-weight: 700; color: var(--text-secondary); min-width: 28px; }
+.aggr-rank-name { font-size: 0.85rem; font-weight: 600; color: var(--text-primary); }
+.aggr-rank-party { font-size: 0.72rem; padding: 1px 6px; background: var(--bg-color); border-radius: 4px; color: var(--text-secondary); }
+.aggr-rank-value { font-size: 0.82rem; font-weight: 700; color: #e74c3c; margin-left: auto; }
+.aggr-rank-rate { font-size: 0.72rem; color: var(--text-secondary); }
+
+/* Paski */
+.aggr-rank-bar-bg { height: 6px; background: var(--bg-color, #151520); border-radius: 3px; overflow: hidden; margin-top: 4px; }
+.aggr-rank-bar { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
+.aggr-rank-bar--red { background: linear-gradient(90deg, #e74c3c, #c0392b); }
+.aggr-rank-bar--orange { background: linear-gradient(90deg, #f39c12, #e67e22); }
+.aggr-rank-bar--blue { background: linear-gradient(90deg, #3498db, #2980b9); }
+.aggr-rank-bar--green { background: linear-gradient(90deg, #27ae60, #2ecc71); }
+
+/* Przykłady */
+.aggr-examples { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+.aggr-example {
+    padding: 8px;
+    background: var(--bg-color, #151520);
+    border-radius: 6px;
+    border-left: 3px solid #e74c3c33;
+    font-size: 0.78rem;
+}
+.aggr-example-arrow { margin-bottom: 6px; }
+.aggr-example-reaction { padding-top: 6px; border-top: 1px dashed var(--border-color, #333); }
+.aggr-example-first { /* inicjacja */ }
+.aggr-example-speaker { font-weight: 600; color: var(--text-primary); margin-bottom: 2px; }
+.aggr-example-text { color: var(--text-secondary); line-height: 1.4; font-style: italic; }
+.aggr-example-date { font-size: 0.7rem; color: var(--text-secondary); margin-top: 4px; opacity: 0.7; }
+
+/* Słowa kluczowe */
+.aggr-keywords { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.aggr-keyword {
+    font-size: 0.68rem;
+    padding: 1px 6px;
+    border-radius: 3px;
+    background: #e74c3c22;
+    color: #e74c3c;
+    border: 1px solid #e74c3c44;
+    font-weight: 600;
+}
+.aggr-keyword--calm {
+    background: #27ae6022;
+    color: #27ae60;
+    border-color: #27ae6044;
+    font-style: italic;
+    font-weight: 500;
+}
+
+/* Frazy spokoju */
+.aggr-calm-summary {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+    padding: 10px;
+    background: var(--bg-secondary, #1e1e2e);
+    border-radius: 8px;
+}
+.aggr-calm-stat { font-size: 0.82rem; font-weight: 600; color: var(--text-primary); }
+
+.aggr-calm-phrases { display: flex; flex-direction: column; gap: 6px; }
+.aggr-calm-phrase-item {
+    padding: 8px 10px;
+    background: var(--bg-secondary, #1e1e2e);
+    border-radius: 6px;
+}
+.aggr-calm-phrase-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.aggr-calm-phrase-rank { font-size: 0.72rem; font-weight: 700; color: var(--text-secondary); min-width: 24px; }
+.aggr-calm-phrase-text { font-size: 0.82rem; color: var(--text-primary); font-style: italic; flex: 1; }
+.aggr-calm-phrase-count { font-size: 0.82rem; font-weight: 700; color: #3498db; }
+.aggr-calm-phrase-speakers { font-size: 0.72rem; color: var(--text-secondary); }
+
+.aggr-calm-used-phrases { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 4px; }
+
+/* Werdykt szablonowości */
+.aggr-scripted-verdict {
+    margin-top: 16px;
+    padding: 12px;
+    background: var(--bg-secondary, #1e1e2e);
+    border-radius: 8px;
+    border: 1px solid var(--border-color, #333);
+}
+.aggr-verdict { font-size: 0.82rem; line-height: 1.5; margin: 6px 0 0; }
+.aggr-verdict--scripted { color: #f39c12; }
+.aggr-verdict--organic { color: #27ae60; }
