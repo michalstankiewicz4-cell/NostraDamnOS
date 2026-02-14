@@ -1,6 +1,7 @@
 // Models handler - obsługa ładowania modeli AI
 import { initNLP, analyzeSentiment, analyzeTopics } from './modules/nlp.js';
 import { initWebLLM, generateSummary, compareSpeeches } from './modules/webllm.js';
+import { escapeHtml } from './modules/security.js';
 
 // Stan modeli
 const state = {
@@ -154,5 +155,5 @@ function enableAnalysisButtons() {
 
 function showError(message) {
     const resultsDiv = document.getElementById('results');
-    resultsDiv.innerHTML = `<p style="color: var(--danger-color);">❌ ${message}</p>`;
+    resultsDiv.innerHTML = `<p style="color: var(--danger-color);">❌ ${escapeHtml(message)}</p>`;
 }
