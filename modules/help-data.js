@@ -102,30 +102,178 @@ export const HELP_DATA = {
         desc: "Kliknij przycisk ❓ — strona się zablokuje, najedź na element by zobaczyć opis. ESC aby wyjść."
     },
 
-    // ── Predykcja ────────────────────────────────
-    predDiscipline: {
-        title: "🎯 Dyscyplina klubowa",
-        desc: "Analiza jak często posłowie głosują zgodnie z linią swojego klubu. Wyższy wskaźnik = większa dyscyplina partii."
+    // ── Moduły AI ─────────────────────────────────
+    predSessionSummary: {
+        title: "🤖 Auto-podsumowanie posiedzeń",
+        desc: "AI generuje streszczenia sesji parlamentarnych na podstawie wypowiedzi i głosowań. Wymaga pobranych wypowiedzi i skonfigurowanego modelu AI. Podsumowanie obejmuje kluczowe tematy, decyzje i kontrowersje z danego posiedzenia."
     },
-    predRebels: {
-        title: "⚠️ Wykrywanie anomalii",
-        desc: "Wykrywa posłów którzy często głosują przeciwko większości swojego klubu. Identyfikuje niezależnych myślicieli."
+    predTopicClassification: {
+        title: "🏷️ Klasyfikacja tematyczna",
+        desc: "Automatyczne tagowanie wypowiedzi parlamentarnych według tematu (ekonomia, obronność, zdrowie, edukacja itp.). AI analizuje treść wypowiedzi i przypisuje kategorie tematyczne. Wymaga pobranych wypowiedzi i modelu AI."
     },
-    predCoalitions: {
-        title: "🤝 Potencjalne koalicje",
-        desc: "Macierz koalicji — pokazuje jak często różne kluby głosują tak samo. Pozwala przewidywać potencjalne sojusze."
+    predMpContradictions: {
+        title: "🔄 Sprzeczności posła",
+        desc: "AI wykrywa zmiany stanowiska tego samego posła w czasie — porównuje wypowiedzi i głosowania z różnych okresów. Pozwala zidentyfikować posłów którzy zmienili zdanie w kluczowych kwestiach. Wymaga wypowiedzi z wielu posiedzeń."
     },
-    predTrend: {
-        title: "📈 Trend aktywności",
-        desc: "Analiza zmian aktywności posłów w czasie: kto zwiększa zaangażowanie a kto je zmniejsza. Porównuje dwie połowy kadencji."
+    predAiReport: {
+        title: "📊 Raport AI",
+        desc: "Jednym kliknięciem generuje pełny raport analityczny obejmujący: aktywność, dyscyplinę, trendy, anomalie i sentyment. AI łączy wszystkie dostępne dane w spójne podsumowanie kadencji. Wymaga kompletnej bazy danych i klucza API."
     },
-    predSentiment: {
-        title: "📰 Analiza online",
-        desc: "Pobierz i analizuj artykuły z polskich serwisów informacyjnych. Analiza sentymentu treści o posłach."
+    predWebllmChat: {
+        title: "🧠 WebLLM — AI lokalne",
+        desc: "Model językowy działający w całości w przeglądarce (WebGPU). Nie wymaga klucza API ani połączenia z internetem. Obsługuje mniejsze modele (np. Llama 3). Wymaga GPU z obsługą WebGPU i ~4 GB VRAM. Ładowanie modelu trwa 1-3 minuty."
+    },
+    predAntiPolish: {
+        title: "🛡️ Wykrywanie zachowań antypolskich",
+        desc: "AI analizuje wypowiedzi parlamentarne pod kątem treści prorosyjskich, antypaństwowych i antyunijnych. Wykorzystuje analizę sentymentu i słowa kluczowe. Wymaga pobranych wypowiedzi i modelu AI. Wyniki prezentowane z kontekstem i cytatami."
+    },
+    predWebIntel: {
+        title: "🌐 Wywiad sieciowy",
+        desc: "AI przeszukuje internet w kontekście parlamentarnym — zbiera informacje o posłach, partiach i wydarzeniach politycznych z zewnętrznych źródeł. Wymaga klucza API i połączenia z internetem. Wyniki krzyżowane z danymi z bazy."
     },
     predAiCharts: {
         title: "📊 Wykresy AI",
-        desc: "Opisz słownie jaki wykres chcesz — AI wygeneruje zapytanie SQL i narysuje wykres z danych w bazie. Obsługuje: kołowy, słupkowy, liniowy, radarowy."
+        desc: "Opisz słownie jaki wykres chcesz — AI wygeneruje zapytanie SQL i narysuje wykres z danych w bazie. Obsługuje: kołowy, słupkowy, liniowy, radarowy. Np. 'pokaż aktywność klubów w czasie' lub 'porównaj frekwencję PiS vs KO'."
+    },
+
+    // ── Wykresy (karty) ──────────────────────────
+    chartKluby: {
+        title: "🏛️ Rozkład klubów parlamentarnych",
+        desc: "Wykres kołowy (doughnut) przedstawiający liczbę posłów w każdym klubie parlamentarnym. Wymaga pobranych danych o posłach. Kolory odpowiadają barwom partii. Kliknij segment aby zobaczyć szczegóły klubu."
+    },
+    chartTopPoslowie: {
+        title: "👥 Top 10 najaktywniejszych posłów",
+        desc: "Wykres słupkowy z rankingiem 10 posłów z największą liczbą wypowiedzi sejmowych. Wymaga pobranych wypowiedzi. Najedź na słupek aby zobaczyć dokładną liczbę. Aktywność mierzona liczbą wypowiedzi na posiedzeniach."
+    },
+    chartGlosowania: {
+        title: "🗳️ Wyniki głosowań",
+        desc: "Wykres kołowy (doughnut) pokazujący proporcje głosów: za, przeciw, wstrzymał się i nieobecny. Wymaga pobranych danych o głosowaniach. Daje ogólny obraz konsensusu lub podziałów w Sejmie."
+    },
+    chartCustom: {
+        title: "📊 Wykres niestandardowy",
+        desc: "Wykres z wybieralnym typem danych: głosowania w czasie (liniowy), aktywność komisji (słupkowy), interpelacje wg posłów (słupkowy), frekwencja głosowań (liniowy). Użyj selektora aby zmienić widok. Przycisk 🔄 odświeża dane."
+    },
+    chartNajmniejAktywni: {
+        title: "😴 Top 20 najmniej aktywnych posłów",
+        desc: "Wykres słupkowy pokazujący 20 posłów z najmniejszą liczbą wypowiedzi. Wymaga pobranych wypowiedzi i posłów. Pozwala zidentyfikować parlamentarzystów o niskiej aktywności mówniczej. Uwaga: niska aktywność mównicza ≠ niska aktywność ogólna."
+    },
+    chartNajmniejAktywneKluby: {
+        title: "🔻 Najmniej aktywne kluby",
+        desc: "Wykres słupkowy porównujący aktywność klubów parlamentarnych per capita (średnia liczba wypowiedzi na posła). Wymaga pobranych wypowiedzi i posłów. Normalizacja per capita eliminuje wpływ wielkości klubu na wyniki."
+    },
+    chartHeatmap: {
+        title: "🔥 Heatmapa frekwencji",
+        desc: "Macierz obecności posłów/klubów na głosowaniach. Oś X: posiedzenia lub głosowania. Oś Y: posłowie lub kluby. Kolor: obecność, głosy za, przeciw lub wstrzymał się. Wymaga pobranych głosów indywidualnych. Użyj selektorów aby zmienić widok."
+    },
+    chartSentimentDist: {
+        title: "📊 Rozkład sentymentu wypowiedzi",
+        desc: "Wykres kołowy (doughnut) z proporcjami wypowiedzi pozytywnych, neutralnych i negatywnych. Sentyment mierzony algorytmem NLP na podstawie słownika polskiego. Wymaga pobranych wypowiedzi. Zielony = pozytywny, szary = neutralny, czerwony = negatywny."
+    },
+    chartSentimentTime: {
+        title: "📈 Sentyment w czasie",
+        desc: "Wykres liniowy pokazujący ewolucję średniego sentymentu wypowiedzi w kolejnych miesiącach. Pozwala śledzić trendy nastrojów — czy debata się radykalizuje czy łagodnieje. Wymaga wypowiedzi z wielu posiedzeń."
+    },
+    chartSentimentParty: {
+        title: "🎭 Sentyment per klub",
+        desc: "Wykres słupkowy porównujący średni sentyment wypowiedzi w podziale na kluby parlamentarne. Pozwala sprawdzić który klub mówi najbardziej pozytywnie a który najbardziej krytycznie. Wymaga pobranych wypowiedzi."
+    },
+    chartTopSpeakers: {
+        title: "🎤 Top mówcy — sentyment",
+        desc: "Wykres słupkowy z rankingiem posłów o najbardziej pozytywnym i najbardziej negatywnym sentymencie wypowiedzi. Wymaga pobranych wypowiedzi. Sentyment analizowany algorytmem NLP. Pokazuje dwustronny ranking: optymistów i krytyków."
+    },
+
+    // ── Predykcja ────────────────────────────────
+    predMpProfile: {
+        title: "👤 Profil parlamentarzysty",
+        desc: "Szczegółowy profil wybranego posła: dane osobowe, klub, aktywność, frekwencja, dyscyplina klubowa, interpelacje, projekty ustaw. Wybierz posła z listy lub wpisz nazwisko. Wymaga pobranych danych posłów, głosowań i wypowiedzi."
+    },
+    predClubProfile: {
+        title: "🏛️ Profil klubu / partii",
+        desc: "Kompleksowe statystyki wybranego klubu parlamentarnego: skład, aktywność, dyscyplina głosowań, frekwencja, sentyment wypowiedzi. Porównuje klub z resztą Sejmu. Wymaga kompletnych danych (posłowie, głosowania, wypowiedzi)."
+    },
+    predCommitteeProfile: {
+        title: "📋 Profil komisji",
+        desc: "Szczegóły wybranej komisji sejmowej: skład, częstotliwość posiedzeń, tematy, aktywność członków. Wymaga pobranych danych o komisjach (zaznacz 'Komisje' w panelu ETL)."
+    },
+    predDiscipline: {
+        title: "🎯 Dyscyplina klubowa",
+        desc: "Analiza jak często posłowie głosują zgodnie z linią swojego klubu. Dla każdego głosowania porównuje głos posła z większością jego klubu. Wyższy wskaźnik = większa dyscyplina partii. Wymaga pobranych głosów indywidualnych."
+    },
+    predRebels: {
+        title: "⚠️ Wykrywanie anomalii",
+        desc: "Wykrywa posłów którzy często głosują przeciwko większości swojego klubu — tzw. buntowników partyjnych. Identyfikuje niezależnych myślicieli i potencjalne frakcje wewnątrzpartyjne. Wymaga pobranych głosów indywidualnych."
+    },
+    predCoalitions: {
+        title: "🤝 Potencjalne koalicje",
+        desc: "Macierz koalicji — pokazuje jak często różne kluby głosują tak samo (procent zgodności). Pozwala przewidywać potencjalne sojusze polityczne. Wizualizacja: macierz z kolorami od czerwonego (niska zgodność) do zielonego (wysoka)."
+    },
+    predTrend: {
+        title: "📈 Trend aktywności",
+        desc: "Analiza zmian aktywności posłów w czasie: kto zwiększa zaangażowanie a kto je zmniejsza. Porównuje dwie połowy kadencji. Wymaga wypowiedzi z wielu posiedzeń aby uchwycić trend."
+    },
+    predSentiment: {
+        title: "📰 Analiza online",
+        desc: "Pobierz i analizuj artykuły z polskich serwisów informacyjnych (Onet, WP, TVN24, etc.). Analiza sentymentu treści medialnych o posłach i partiach. Wymaga połączenia z internetem. Wyniki krzyżowane z danymi parlamentarnymi."
+    },
+    predAttendance: {
+        title: "📊 Frekwencja & Absencja",
+        desc: "Ranking obecności posłów na głosowaniach — kto jest najczęściej obecny a kto najczęściej opuszcza głosowania. Uwzględnia wszystkie głosowania w pobranych posiedzeniach. Wymaga głosów indywidualnych (opcja 'głosy' w ETL)."
+    },
+    predPolarization: {
+        title: "⚡ Polaryzacja głosowań",
+        desc: "Mierzy jak mocno podzielone są głosowania — identyfikuje głosowania gdzie Sejm jest najbardziej podzielony vs jednomyślny. Indeks polaryzacji: 0% = pełna zgodność, 100% = pełny podział. Wymaga pobranych głosowań."
+    },
+    predActivityRank: {
+        title: "🏆 Ranking aktywności",
+        desc: "Composite score łączący różne wymiary aktywności posła: wypowiedzi, interpelacje, głosowania, projekty ustaw. Normalizowany ranking pozwala porównać aktywność posłów na wielu płaszczyznach jednocześnie."
+    },
+    predLegislation: {
+        title: "⏱️ Tempo legislacyjne",
+        desc: "Analiza szybkości procedowania ustaw: od złożenia projektu do uchwalenia. Identyfikuje ustawy procedowane ekspresowo vs. te zamrożone w komisjach. Wymaga pobranych projektów ustaw i aktów prawnych."
+    },
+    predInterpellations: {
+        title: "📬 Analiza interpelacji",
+        desc: "Analiza tematów i aktywności interpelacyjnej posłów. Kto składa najwięcej interpelacji? Do kogo? Na jakie tematy? Wymaga pobranych interpelacji (opcja 'interpelacje' w panelu ETL, dane per kadencja)."
+    },
+    predCommittees: {
+        title: "🔗 Sieć komisji",
+        desc: "Analiza współpracy międzykomisyjnej posłów — kto zasiada w wielu komisjach jednocześnie, kto jest łącznikiem między komisjami. Wizualizacja sieci powiązań. Wymaga pobranych danych o komisjach."
+    },
+    predControversialSpeeches: {
+        title: "🔥 Kontrowersyjne wypowiedzi",
+        desc: "Ranking najbardziej agresywnych i negatywnych wystąpień sejmowych na podstawie analizy sentymentu NLP. Pokazuje cytaty z kontekstem, posła, posiedzenie i wynik sentymentu. Wymaga pobranych wypowiedzi."
+    },
+    predContradictoryVotes: {
+        title: "⚔️ Sprzeczne głosowania",
+        desc: "Wykrywa posłów którzy głosowali wbrew linii swojego klubu w konkretnych głosowaniach — pokazuje temat głosowania, głos posła vs. większość klubu. Bardziej szczegółowa wersja modułu 'Wykrywanie anomalii'. Wymaga głosów indywidualnych."
+    },
+    predDefectionRisk: {
+        title: "🚪 Ryzyko odejścia z klubu",
+        desc: "Scoring prawdopodobieństwa zmiany partii dla każdego posła. Algorytm uwzględnia: częstość głosowania wbrew klubowi, podobieństwo głosowań do innych partii, trend dyscypliny w czasie. Im wyższy wynik, tym większe ryzyko odejścia."
+    },
+    predVotePredictor: {
+        title: "🎯 Prognoza głosowania",
+        desc: "Symulacja wyniku głosowania na podstawie historii głosowań. Wprowadź temat — model przewidzi jak zagłosują kluby i poszczególni posłowie. Bazuje na wzorcach z poprzednich głosowań w podobnych tematach."
+    },
+    predTensionBarometer: {
+        title: "🌡️ Barometr napięcia",
+        desc: "Trend radykalizacji debaty politycznej w czasie. Mierzy poziom agresji, polaryzacji i emocjonalności wypowiedzi sejmowych. Skala: 0 (spokój) → 100 (maksymalne napięcie). Wymaga wypowiedzi z wielu posiedzeń."
+    },
+    predCoalitionForecast: {
+        title: "🤝 Prognoza koalicji",
+        desc: "Zbieżność głosowań między klubami w czasie — wykres liniowy pokazujący jak zmienia się zgodność głosowania par klubów z posiedzenia na posiedzenie. Pozwala śledzić zbliżanie lub oddalanie się partii. Wymaga wielu posiedzeń."
+    },
+    predActivityForecast: {
+        title: "📈 Predykcja aktywności",
+        desc: "Prognoza przyszłej aktywności posłów na podstawie dotychczasowych trendów. Model regresji liniowej przewiduje czy aktywność posła będzie rosła czy malała w kolejnych posiedzeniach. Wymaga danych z min. 3 posiedzeń."
+    },
+    predGhostVoting: {
+        title: "👻 Podejrzane głosowania",
+        desc: "Wykrywanie anomalii: posłowie którzy oddali głos mimo nieobecności na innych głosowaniach tego samego dnia (potencjalne ghost voting). Algorytm porównuje wzorce obecności w ramach jednego posiedzenia. Wymaga głosów indywidualnych."
+    },
+    predAggressionAnalysis: {
+        title: "🔥 Analiza agresji parlamentarnej",
+        desc: "Trzy analizy: (1) Kto najczęściej prowokuje agresję — posłowie po których wypowiedziach następują agresywne reakcje, (2) Kto inicjuje agresję — posłowie z najwyższym wynikiem agresji, (3) Stereotypowe prośby o spokój — wykrywanie szablonowych apeli o kulturę debaty. Wymaga wypowiedzi."
     },
 
     // ── Nawigacja dolna ──────────────────────────
