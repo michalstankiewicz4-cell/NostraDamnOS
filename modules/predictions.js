@@ -3024,12 +3024,17 @@ function analyzeActivityForecast() {
 // =====================================================
 
 /**
- * Helper: pobierz klucz API z vault (bezpiecznie)
+ * Helper: pobierz klucz API z vault lub fallback na storage
  */
 function getApiKey() {
     try {
+        // 1. Vault odblokowany → klucz w pamięci
         if (isUnlocked()) return getKey() || '';
-        return '';
+        // 2. Fallback: sessionStorage (tryb 'session')
+        const sessionKey = sessionStorage.getItem('nostradamnos_vault');
+        if (sessionKey) return sessionKey;
+        // 3. Fallback: legacy plaintext (do migracji)
+        return localStorage.getItem('aiChat_apiKey') || localStorage.getItem('aiChatApiKey') || '';
     } catch { return ''; }
 }
 
