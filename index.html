@@ -1328,8 +1328,24 @@
                 </div>
 
                 <div class="predictions-grid">
-                    <!-- Card 1: Profil parlamentarzysty -->
-                    <div class="prediction-card" data-prediction="mpProfile"
+                    <!-- Card 1: Analiza agresji parlamentarnej (HOT) -->
+                    <div class="prediction-card prediction-card--hot" data-prediction="aggressionAnalysis"
+                        data-help-id="predAggressionAnalysis">
+                        <div class="prediction-card-ribbon">HOT</div>
+                        <div class="prediction-card-header">
+                            <div class="prediction-card-icon">🔥</div>
+                            <div>
+                                <h3>Analiza agresji parlamentarnej</h3>
+                                <p>Kto prowokuje agresję, kto ją zaczyna, stereotypowe prośby o spokój</p>
+                            </div>
+                        </div>
+                        <div class="prediction-card-body" style="display:none;">
+                            <div id="aggressionAnalysisContent" class="prediction-content"></div>
+                        </div>
+                    </div>
+
+                    <!-- Card 2: Profil parlamentarzysty -->
+                    <div class="prediction-card prediction-card--orange" data-prediction="mpProfile"
                         data-help-id="predMpProfile">
                         <div class="prediction-card-header">
                             <div class="prediction-card-icon">👤</div>
@@ -1343,8 +1359,8 @@
                         </div>
                     </div>
 
-                    <!-- Card 2: Profil klubu/partii -->
-                    <div class="prediction-card" data-prediction="clubProfile"
+                    <!-- Card 3: Profil klubu/partii -->
+                    <div class="prediction-card prediction-card--orange" data-prediction="clubProfile"
                         data-help-id="predClubProfile">
                         <div class="prediction-card-header">
                             <div class="prediction-card-icon">🏛️</div>
@@ -1358,8 +1374,8 @@
                         </div>
                     </div>
 
-                    <!-- Card 3: Profil komisji -->
-                    <div class="prediction-card" data-prediction="committeeProfile"
+                    <!-- Card 4: Profil komisji -->
+                    <div class="prediction-card prediction-card--orange" data-prediction="committeeProfile"
                         data-help-id="predCommitteeProfile">
                         <div class="prediction-card-header">
                             <div class="prediction-card-icon">📋</div>
@@ -1389,7 +1405,7 @@
                     </div>
 
                     <!-- Card 5: Wykrywanie buntowników -->
-                    <div class="prediction-card" data-prediction="rebels"
+                    <div class="prediction-card prediction-card--blue" data-prediction="rebels"
                         data-help-id="predRebels">
                         <div class="prediction-card-header">
                             <div class="prediction-card-icon">⚠️</div>
@@ -1434,7 +1450,7 @@
                     </div>
 
                     <!-- Card 5: Analiza online -->
-                    <div class="prediction-card" data-prediction="online"
+                    <div class="prediction-card prediction-card--blue" data-prediction="online"
                         data-help-id="predSentiment">
                         <div class="prediction-card-header">
                             <div class="prediction-card-icon">📰</div>
@@ -1655,21 +1671,6 @@
                         </div>
                         <div class="prediction-card-body" style="display:none;">
                             <div id="ghostVotingContent" class="prediction-content"></div>
-                        </div>
-                    </div>
-
-                    <!-- Card 20: Analiza agresji parlamentarnej -->
-                    <div class="prediction-card" data-prediction="aggressionAnalysis"
-                        data-help-id="predAggressionAnalysis">
-                        <div class="prediction-card-header">
-                            <div class="prediction-card-icon">🔥</div>
-                            <div>
-                                <h3>Analiza agresji parlamentarnej</h3>
-                                <p>Kto prowokuje agresję, kto ją zaczyna, stereotypowe prośby o spokój</p>
-                            </div>
-                        </div>
-                        <div class="prediction-card-body" style="display:none;">
-                            <div id="aggressionAnalysisContent" class="prediction-content"></div>
                         </div>
                     </div>
                 </div>

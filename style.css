@@ -2320,12 +2320,19 @@ input:disabled {
 }
 
 .chart-card {
-    background: rgba(255,255,255,0.04);
+    background: #F7F7FC;
     border: 1px solid rgba(255,255,255,0.08);
     border-radius: 12px;
-    overflow: hidden;
     transition: transform 0.2s, box-shadow 0.2s;
     cursor: pointer;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Bottom color strip for chart cards — same as prediction cards */
+.chart-card:not(.chart-card--expanded) {
+    border-bottom: 30px solid #079BBB;
 }
 
 .chart-card:hover {
@@ -2335,6 +2342,7 @@ input:disabled {
 
 /* Tile mode (collapsed): icon + title centered */
 .chart-card:not(.chart-card--expanded) .chart-card-header {
+    flex: 1;
     flex-direction: column;
     text-align: center;
     padding: 2rem 1rem 1.5rem;
@@ -2440,6 +2448,7 @@ input:disabled {
 /* Chart body (hidden in tile mode) */
 .chart-card-body {
     padding: 0;
+    overflow: hidden;
 }
 
 .chart-card--expanded .chart-card-body {
@@ -3038,6 +3047,47 @@ input:disabled {
     overflow: hidden;
     transition: transform 0.2s, box-shadow 0.2s;
     cursor: pointer;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Bottom color strip — domyślnie (30px border) */
+.prediction-card:not(.prediction-card--expanded) {
+    border-bottom: 30px solid #079BBB;
+}
+
+/* Orange bottom strip — profil parlamentarzysty, klubu, komisji */
+.prediction-card--orange:not(.prediction-card--expanded) {
+    border-bottom-color: #ffcc80;
+}
+
+/* Pastelowy czerwony — analiza agresji (HOT) */
+.prediction-card--hot:not(.prediction-card--expanded) {
+    border-bottom-color: #ef9a9a;
+}
+
+/* Pastelowy niebieski — wykrywanie anomalii, analiza online */
+.prediction-card--blue:not(.prediction-card--expanded) {
+    border-bottom-color: #90caf9;
+}
+
+/* HOT ribbon — skośna wstążka w prawym górnym rogu */
+.prediction-card-ribbon {
+    position: absolute;
+    top: 14px;
+    right: -32px;
+    background: #e53935;
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 4px 40px;
+    transform: rotate(45deg);
+    z-index: 10;
+    box-shadow: 0 2px 6px rgba(229, 57, 53, 0.4);
+    line-height: 1;
 }
 
 .prediction-card:hover {
@@ -3045,8 +3095,9 @@ input:disabled {
     box-shadow: 0 6px 20px rgba(102, 126, 234, 0.2);
 }
 
-/* Zwinięta karta: header jako kafelek z ikoną */
+/* Zwinięta karta: header jako kafelek z ikoną — flex:1 wypełnia całą kartę */
 .prediction-card:not(.prediction-card--expanded) .prediction-card-header {
+    flex: 1;
     flex-direction: column;
     text-align: center;
     padding: 2rem 1rem 1.5rem;
