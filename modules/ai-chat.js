@@ -3,6 +3,11 @@
 
 import { db2 } from './database-v2.js';
 import { WEBLLM_MODELS, initWebLLM, chatCompletion as webllmChatCompletion, isReady as webllmIsReady, getCurrentModel as webllmGetCurrentModel, isWebGPUAvailable } from './webllm.js';
+import {
+    getVaultMode, setVaultMode, hasStoredKey, isUnlocked, getKey,
+    storeKey, unlock, lock, clearVault, changePin, onLock,
+    migrateFromPlaintext
+} from './key-vault.js';
 
 // State
 const chatState = {
@@ -209,6 +214,9 @@ export function initAIChat() {
     // Initialize status lamps
     initStatusLamps();
     
+    // Initialize Key Vault
+    initKeyVault();
+    
     console.log('[AI Chat] Initialized');
 }
 
@@ -246,12 +254,25 @@ function setupChatEventListeners() {
         });
     }
     
-    // API Key input
+    // API Key input — integracja z vault
     const apiKeyInput = document.getElementById('aiApiKey');
     if (apiKeyInput) {
-        apiKeyInput.addEventListener('input', (e) => {
-            chatState.apiKey = e.target.value;
-            saveChatPreferences();
+        apiKeyInput.addEventListener('change', (e) => {
+            const newKey = e.target.value.trim();
+            if (!newKey) return;
+            chatState.apiKey = newKey;
+
+            const mode = getVaultMode();
+            if (mode === 'pin') {
+                // Pokaż modal PINu do zaszyfrowania
+                showPinModal('store', newKey);
+            } else {
+                // session / memory — zapisz bez PINu
+                storeKey(newKey).then(() => {
+                    updateVaultUI();
+                    saveChatPreferencesWithoutKey();
+                });
+            }
         });
     }
     
@@ -938,13 +959,17 @@ function formatMessage(content) {
 }
 
 /**
- * Save preferences to localStorage
+ * Save preferences to localStorage (BEZ klucza API — klucz w vault)
  */
 function saveChatPreferences() {
+    saveChatPreferencesWithoutKey();
+}
+
+function saveChatPreferencesWithoutKey() {
     localStorage.setItem('aiChat_model', chatState.selectedModel);
-    localStorage.setItem('aiChat_apiKey', chatState.apiKey);
     localStorage.setItem('aiChat_favorites', JSON.stringify(chatState.favoriteModels));
     localStorage.setItem('aiChat_showAllModels', chatState.showAllModels.toString());
+    // Klucz API NIE jest już zapisywany jako plaintext — obsługuje go key-vault.js
 }
 
 /**
@@ -952,7 +977,6 @@ function saveChatPreferences() {
  */
 function loadChatPreferences() {
     const savedModel = localStorage.getItem('aiChat_model');
-    const savedKey = localStorage.getItem('aiChat_apiKey');
     const savedFavorites = localStorage.getItem('aiChat_favorites');
     const savedShowAll = localStorage.getItem('aiChat_showAllModels');
     
@@ -962,10 +986,20 @@ function loadChatPreferences() {
         if (modelSelect) modelSelect.value = savedModel;
     }
     
-    if (savedKey) {
-        chatState.apiKey = savedKey;
+    // Klucz z vault (jeśli odblokowany)
+    if (isUnlocked()) {
+        chatState.apiKey = getKey() || '';
         const apiKeyInput = document.getElementById('aiApiKey');
-        if (apiKeyInput) apiKeyInput.value = savedKey;
+        if (apiKeyInput) apiKeyInput.value = chatState.apiKey;
+    } else {
+        // Migracja: stary plaintext klucz → vault (jednorazowo)
+        const legacyKey = localStorage.getItem('aiChat_apiKey');
+        if (legacyKey) {
+            chatState.apiKey = legacyKey;
+            const apiKeyInput = document.getElementById('aiApiKey');
+            if (apiKeyInput) apiKeyInput.value = legacyKey;
+            // Migracja zostanie dokończona przy initKeyVault
+        }
     }
     
     if (savedShowAll !== null) {
@@ -1152,3 +1186,265 @@ async function pingModelAPI(modelKey) {
 // Export for external access
 window.recheckAIStatus = checkAllFavoriteModels;
 
+// =====================================================
+// KEY VAULT INTEGRATION
+// =====================================================
+
+/**
+ * Inicjalizacja vault — UI, migracja, auto-unlock
+ */
+function initKeyVault() {
+    console.log('[AI Chat] Initializing Key Vault...');
+
+    // Ustaw tryb w select
+    const modeSelect = document.getElementById('vaultMode');
+    if (modeSelect) {
+        modeSelect.value = getVaultMode();
+        modeSelect.addEventListener('change', (e) => {
+            setVaultMode(e.target.value);
+            updateVaultUI();
+            // Jeśli zmieniono na 'pin' i jest klucz w pamięci — zapytaj o PIN
+            if (e.target.value === 'pin' && chatState.apiKey) {
+                showPinModal('store', chatState.apiKey);
+            }
+        });
+    }
+
+    // Przycisk zablokuj
+    const lockBtn = document.getElementById('vaultLockBtn');
+    if (lockBtn) {
+        lockBtn.addEventListener('click', () => {
+            lock();
+            chatState.apiKey = '';
+            const inp = document.getElementById('aiApiKey');
+            if (inp) inp.value = '';
+            updateVaultUI();
+        });
+    }
+
+    // Przycisk zmień PIN
+    const changePinBtn = document.getElementById('vaultChangePinBtn');
+    if (changePinBtn) {
+        changePinBtn.addEventListener('click', () => {
+            showPinModal('change');
+        });
+    }
+
+    // Callback na auto-lock
+    onLock(() => {
+        chatState.apiKey = '';
+        const inp = document.getElementById('aiApiKey');
+        if (inp) inp.value = '';
+        updateVaultUI();
+        console.log('[AI Chat] Key auto-locked after inactivity');
+    });
+
+    // Migracja plaintext → vault
+    const legacyKey = localStorage.getItem('aiChat_apiKey');
+    if (legacyKey) {
+        console.log('[AI Chat] Found legacy plaintext key, migration needed');
+        chatState.apiKey = legacyKey;
+        showPinModal('migrate', legacyKey);
+        return; // vault UI będzie zaktualizowany po migracji
+    }
+
+    // Jeśli vault ma klucz i tryb PIN — pokaż modal odblokowania
+    if (hasStoredKey() && getVaultMode() === 'pin' && !isUnlocked()) {
+        showPinModal('unlock');
+    } else if (hasStoredKey() && getVaultMode() === 'session') {
+        // session — od razu odblokuj
+        unlock('').then(key => {
+            chatState.apiKey = key;
+            const inp = document.getElementById('aiApiKey');
+            if (inp) inp.value = key;
+            updateVaultUI();
+        }).catch(() => {});
+    }
+
+    updateVaultUI();
+}
+
+/**
+ * Aktualizuj UI vault (ikona, status, przyciski)
+ */
+function updateVaultUI() {
+    const icon = document.getElementById('vaultLockIcon');
+    const text = document.getElementById('vaultStatusText');
+    const lockBtn = document.getElementById('vaultLockBtn');
+    const changePinBtn = document.getElementById('vaultChangePinBtn');
+    const mode = getVaultMode();
+    const unlocked = isUnlocked();
+
+    if (icon) icon.textContent = unlocked ? '🔓' : '🔒';
+    if (text) {
+        if (mode === 'pin') {
+            text.textContent = unlocked ? 'Odblokowany (AES-256)' : 'Zablokowany (AES-256)';
+        } else if (mode === 'session') {
+            text.textContent = 'Klucz w sesji (bez szyfrowania)';
+        } else {
+            text.textContent = 'Tylko pamięć (nie zapisywany)';
+        }
+    }
+    if (lockBtn) lockBtn.style.display = unlocked ? '' : 'none';
+    if (changePinBtn) changePinBtn.style.display = (mode === 'pin' && hasStoredKey()) ? '' : 'none';
+
+    const modeSelect = document.getElementById('vaultMode');
+    if (modeSelect) modeSelect.value = mode;
+}
+
+// =====================================================
+// PIN MODAL
+// =====================================================
+
+let _pinModalResolve = null;
+let _pinModalAction = '';
+let _pinModalPayload = null;
+
+/**
+ * Pokaż modal PINu
+ * @param {'store'|'unlock'|'change'|'migrate'} action
+ * @param {string} payload — klucz API (dla store/migrate)
+ */
+function showPinModal(action, payload = null) {
+    _pinModalAction = action;
+    _pinModalPayload = payload;
+
+    const modal = document.getElementById('pinModal');
+    const title = document.getElementById('pinModalTitle');
+    const desc = document.getElementById('pinModalDesc');
+    const confirmGroup = document.getElementById('pinConfirmGroup');
+    const errorEl = document.getElementById('pinError');
+    const dontSaveCheck = document.getElementById('pinDontSave');
+    const input1 = document.getElementById('pinInput1');
+    const input2 = document.getElementById('pinInput2');
+    const label1 = document.getElementById('pinLabel1');
+
+    if (errorEl) { errorEl.style.display = 'none'; errorEl.textContent = ''; }
+    if (input1) input1.value = '';
+    if (input2) input2.value = '';
+
+    switch (action) {
+        case 'store':
+        case 'migrate':
+            if (title) title.textContent = action === 'migrate' ? '🔄 Migracja klucza' : '🔐 Zabezpiecz klucz';
+            if (desc) desc.textContent = action === 'migrate'
+                ? 'Znaleziono niezaszyfrowany klucz. Ustaw PIN aby go zabezpieczyć.'
+                : 'Ustaw 4–8 cyfrowy PIN aby zaszyfrować klucz API';
+            if (label1) label1.textContent = 'Nowy PIN:';
+            if (confirmGroup) confirmGroup.style.display = '';
+            if (dontSaveCheck) dontSaveCheck.parentElement.style.display = '';
+            break;
+        case 'unlock':
+            if (title) title.textContent = '🔑 Odblokuj klucz';
+            if (desc) desc.textContent = 'Podaj PIN aby odszyfrować klucz API';
+            if (label1) label1.textContent = 'PIN:';
+            if (confirmGroup) confirmGroup.style.display = 'none';
+            if (dontSaveCheck) dontSaveCheck.parentElement.style.display = 'none';
+            break;
+        case 'change':
+            if (title) title.textContent = '🔄 Zmień PIN';
+            if (desc) desc.textContent = 'Podaj stary PIN, następnie nowy';
+            if (label1) label1.textContent = 'Stary PIN:';
+            if (confirmGroup) confirmGroup.style.display = '';
+            if (document.querySelector('#pinConfirmGroup label')) {
+                document.querySelector('#pinConfirmGroup label').textContent = 'Nowy PIN:';
+            }
+            if (dontSaveCheck) dontSaveCheck.parentElement.style.display = 'none';
+            break;
+    }
+
+    if (modal) modal.style.display = 'flex';
+    if (input1) setTimeout(() => input1.focus(), 100);
+
+    // Podepnij eventy
+    const submitBtn = document.getElementById('pinSubmitBtn');
+    const cancelBtn = document.getElementById('pinCancelBtn');
+
+    // Usuń stare listenery
+    const newSubmit = submitBtn.cloneNode(true);
+    submitBtn.parentNode.replaceChild(newSubmit, submitBtn);
+    const newCancel = cancelBtn.cloneNode(true);
+    cancelBtn.parentNode.replaceChild(newCancel, cancelBtn);
+
+    newSubmit.addEventListener('click', handlePinSubmit);
+    newCancel.addEventListener('click', () => {
+        hidePinModal();
+    });
+
+    // Enter w inputach
+    [input1, input2].forEach(inp => {
+        if (inp) {
+            inp.onkeydown = (e) => {
+                if (e.key === 'Enter') handlePinSubmit();
+            };
+        }
+    });
+}
+
+function hidePinModal() {
+    const modal = document.getElementById('pinModal');
+    if (modal) modal.style.display = 'none';
+}
+
+async function handlePinSubmit() {
+    const input1 = document.getElementById('pinInput1');
+    const input2 = document.getElementById('pinInput2');
+    const errorEl = document.getElementById('pinError');
+    const dontSaveCheck = document.getElementById('pinDontSave');
+
+    const pin1 = input1?.value || '';
+    const pin2 = input2?.value || '';
+
+    try {
+        switch (_pinModalAction) {
+            case 'store':
+            case 'migrate': {
+                if (dontSaveCheck?.checked) {
+                    // Tryb "nie zapamiętuj" → session
+                    setVaultMode('session');
+                    await storeKey(_pinModalPayload);
+                    if (_pinModalAction === 'migrate') localStorage.removeItem('aiChat_apiKey');
+                    hidePinModal();
+                    updateVaultUI();
+                    return;
+                }
+                if (pin1.length < 4) throw new Error('PIN musi mieć co najmniej 4 znaki');
+                if (pin1 !== pin2) throw new Error('PINy się nie zgadzają');
+
+                if (_pinModalAction === 'migrate') {
+                    await migrateFromPlaintext(_pinModalPayload, pin1);
+                } else {
+                    await storeKey(_pinModalPayload, pin1);
+                }
+                chatState.apiKey = _pinModalPayload;
+                saveChatPreferencesWithoutKey();
+                hidePinModal();
+                updateVaultUI();
+                break;
+            }
+            case 'unlock': {
+                if (!pin1) throw new Error('Podaj PIN');
+                const key = await unlock(pin1);
+                chatState.apiKey = key;
+                const inp = document.getElementById('aiApiKey');
+                if (inp) inp.value = key;
+                hidePinModal();
+                updateVaultUI();
+                break;
+            }
+            case 'change': {
+                if (!pin1) throw new Error('Podaj stary PIN');
+                if (pin2.length < 4) throw new Error('Nowy PIN musi mieć co najmniej 4 znaki');
+                await changePin(pin1, pin2);
+                hidePinModal();
+                updateVaultUI();
+                break;
+            }
+        }
+    } catch (e) {
+        if (errorEl) {
+            errorEl.textContent = e.message;
+            errorEl.style.display = '';
+        }
+    }
+}

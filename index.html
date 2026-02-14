@@ -633,6 +633,23 @@
                             <label for="aiApiKey">Klucz API:</label>
                             <input type="password" id="aiApiKey" placeholder="sk-..." />
                         </div>
+
+                        <!-- Vault: tryb przechowywania + status -->
+                        <div class="chat-config-row vault-controls">
+                            <div class="vault-status" id="vaultStatus">
+                                <span class="vault-lock-icon" id="vaultLockIcon">🔒</span>
+                                <span id="vaultStatusText">Zabezpieczony</span>
+                            </div>
+                            <div class="vault-actions">
+                                <select id="vaultMode" class="chart-select vault-mode-select" title="Tryb przechowywania klucza">
+                                    <option value="pin">🔐 PIN + szyfrowanie</option>
+                                    <option value="session">📋 Tylko sesja</option>
+                                    <option value="memory">🧠 Tylko pamięć</option>
+                                </select>
+                                <button id="vaultLockBtn" class="vault-btn" title="Zablokuj klucz">🔒</button>
+                                <button id="vaultChangePinBtn" class="vault-btn" title="Zmień PIN">🔄</button>
+                            </div>
+                        </div>
                         </div>
                         
                         <div class="chat-config-row">
@@ -3029,5 +3046,32 @@
         window._saveEtlSettings = saveEtlSettings;
     })();
     </script>
+
+    <!-- PIN Modal (Key Vault) -->
+    <div id="pinModal" class="pin-modal-overlay" style="display:none;">
+        <div class="pin-modal">
+            <div class="pin-modal-header">
+                <span class="pin-modal-icon">🔐</span>
+                <h3 id="pinModalTitle">Ustaw PIN</h3>
+            </div>
+            <p id="pinModalDesc" class="pin-modal-desc">Ustaw 4–8 cyfrowy PIN aby zaszyfrować klucz API</p>
+            <div class="pin-input-group">
+                <label for="pinInput1" id="pinLabel1">PIN:</label>
+                <input type="password" id="pinInput1" class="pin-input" maxlength="8" placeholder="••••" inputmode="numeric" autocomplete="off" />
+            </div>
+            <div class="pin-input-group" id="pinConfirmGroup">
+                <label for="pinInput2">Potwierdź PIN:</label>
+                <input type="password" id="pinInput2" class="pin-input" maxlength="8" placeholder="••••" inputmode="numeric" autocomplete="off" />
+            </div>
+            <div id="pinError" class="pin-error" style="display:none;"></div>
+            <div class="pin-modal-actions">
+                <button id="pinSubmitBtn" class="pin-btn pin-btn-primary">Zatwierdź</button>
+                <button id="pinCancelBtn" class="pin-btn pin-btn-secondary">Anuluj</button>
+                <label class="pin-remember-label">
+                    <input type="checkbox" id="pinDontSave" /> Nie zapamiętuj klucza
+                </label>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
