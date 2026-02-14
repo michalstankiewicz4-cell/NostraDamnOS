@@ -8,7 +8,6 @@ import {
     storeKey, unlock, lock, clearVault, changePin, onLock,
     migrateFromPlaintext
 } from './key-vault.js';
-import { escapeHtml, sanitizeSQL } from './security.js';
 
 // State
 const chatState = {
@@ -684,10 +683,11 @@ Odpowiadaj zawsze po polsku. Jeśli generujesz SQL, umieść go w bloku kodu.`;
         console.log('[AI Chat] Executing SQL:', sql);
         
         // Walidacja: tylko SELECT jest dozwolony (bezpieczeństwo bazy)
-        const validation = sanitizeSQL(sql);
-        if (!validation.safe) {
-            console.warn('[AI Chat] Blocked dangerous SQL:', sql, validation.reason);
-            response += `\n\n⛔ Zablokowano zapytanie SQL — ${validation.reason}.`;
+        const sqlUpper = sql.replace(/--.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '').trim().toUpperCase();
+        const forbidden = /^\s*(INSERT|UPDATE|DELETE|DROP|ALTER|CREATE|TRUNCATE|REPLACE|ATTACH|DETACH|PRAGMA|REINDEX|VACUUM)\b/i;
+        if (forbidden.test(sql.trim())) {
+            console.warn('[AI Chat] Blocked dangerous SQL:', sql);
+            response += '\n\n⛔ Zablokowano zapytanie SQL — dozwolone są tylko operacje odczytu (SELECT).';
         } else {
             try {
                 const results = db2.database.exec(sql);
@@ -942,10 +942,10 @@ function updateMessage(messageId, content) {
  * Format message content
  */
 function formatMessage(content) {
-    // Escape HTML FIRST to prevent XSS, then apply markdown formatting
-    let formatted = escapeHtml(content);
+    // Simple markdown-like formatting
+    let formatted = content;
     
-    // Code blocks (escaped content, so &lt; etc. inside code is fine)
+    // Code blocks
     formatted = formatted.replace(/```sql\n([\s\S]*?)\n```/g, '<pre class="chat-code">$1</pre>');
     formatted = formatted.replace(/```\n([\s\S]*?)\n```/g, '<pre class="chat-code">$1</pre>');
     

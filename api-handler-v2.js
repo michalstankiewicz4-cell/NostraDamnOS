@@ -6,7 +6,6 @@ import ToastModule from './modules/toast.js';
 import { startLivePolling, stopLivePolling } from './modules/sejm-live-checker.js';
 import { refreshChartsManager } from './modules/charts-manager.js';
 import { refreshPredictions } from './modules/predictions.js';
-import { escapeHtml, isValidTableName } from './modules/security.js';
 
 // === TASK QUEUE SYSTEM ===
 // Zapobiega jednoczesnym operacjom: fetch, verify, checkNewRecords, checkDataChanges
@@ -444,12 +443,6 @@ function showSummaryTable(tableName) {
     const cols = tableColumns[tableName];
     if (!cols) return;
 
-    // Walidacja nazwy tabeli
-    if (!isValidTableName(tableName)) {
-        console.warn('[API] Invalid table name:', tableName);
-        return;
-    }
-
     const colList = cols.join(', ');
     const result = db2.database.exec(`SELECT ${colList} FROM ${tableName} LIMIT 500`);
 
@@ -470,7 +463,7 @@ function showSummaryTable(tableName) {
         html += '<tr>';
         for (const val of row) {
             const display = val === null ? '-' : String(val);
-            html += `<td title="${escapeHtml(display)}">${escapeHtml(display)}</td>`;
+            html += `<td title="${display.replace(/"/g, '&quot;')}">${display}</td>`;
         }
         html += '</tr>';
     }

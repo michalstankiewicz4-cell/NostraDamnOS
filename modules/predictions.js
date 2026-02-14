@@ -1,8 +1,6 @@
 // Predictions Module - Model Predykcyjny
 import { db2 } from './database-v2.js';
 import { analyzeSentiment } from './sentiment-analysis.js';
-import { escapeHtml, sanitizeSQL, sanitizeUrl } from './security.js';
-import { isUnlocked, getKey } from './key-vault.js';
 
 /**
  * Inicjalizacja modułu predykcji
@@ -2056,7 +2054,7 @@ function analyzeControversialSpeeches() {
 
     } catch (err) {
         console.error('[Predictions] analyzeControversialSpeeches error:', err);
-        container.innerHTML = '<div class="prediction-error">Błąd analizy kontrowersyjnych wypowiedzi: ' + escapeHtml(err.message) + '</div>';
+        container.innerHTML = '<div class="prediction-error">Błąd analizy kontrowersyjnych wypowiedzi: ' + err.message + '</div>';
     }
 }
 
@@ -2226,7 +2224,7 @@ function analyzeContradictoryVotes() {
 
     } catch (err) {
         console.error('[Predictions] analyzeContradictoryVotes error:', err);
-        container.innerHTML = '<div class="prediction-error">Błąd analizy sprzecznych głosowań: ' + escapeHtml(err.message) + '</div>';
+        container.innerHTML = '<div class="prediction-error">Błąd analizy sprzecznych głosowań: ' + err.message + '</div>';
     }
 }
 
@@ -2391,7 +2389,7 @@ function analyzeDefectionRisk() {
 
     } catch (err) {
         console.error('[Predictions] analyzeDefectionRisk error:', err);
-        container.innerHTML = '<div class="prediction-error">Błąd analizy ryzyka odejścia: ' + escapeHtml(err.message) + '</div>';
+        container.innerHTML = '<div class="prediction-error">Błąd analizy ryzyka odejścia: ' + err.message + '</div>';
     }
 }
 
@@ -2533,7 +2531,7 @@ function analyzeVotePredictor() {
 
     } catch (err) {
         console.error('[Predictions] analyzeVotePredictor error:', err);
-        container.innerHTML = '<div class="prediction-error">Błąd prognozy głosowania: ' + escapeHtml(err.message) + '</div>';
+        container.innerHTML = '<div class="prediction-error">Błąd prognozy głosowania: ' + err.message + '</div>';
     }
 }
 
@@ -2671,7 +2669,7 @@ function analyzeTensionBarometer() {
 
     } catch (err) {
         console.error('[Predictions] analyzeTensionBarometer error:', err);
-        container.innerHTML = '<div class="prediction-error">Błąd barometru napięcia: ' + escapeHtml(err.message) + '</div>';
+        container.innerHTML = '<div class="prediction-error">Błąd barometru napięcia: ' + err.message + '</div>';
     }
 }
 
@@ -2842,7 +2840,7 @@ function analyzeCoalitionForecast() {
 
     } catch (err) {
         console.error('[Predictions] analyzeCoalitionForecast error:', err);
-        container.innerHTML = '<div class="prediction-error">Błąd prognozy koalicji: ' + escapeHtml(err.message) + '</div>';
+        container.innerHTML = '<div class="prediction-error">Błąd prognozy koalicji: ' + err.message + '</div>';
     }
 }
 
@@ -3015,7 +3013,7 @@ function analyzeActivityForecast() {
 
     } catch (err) {
         console.error('[Predictions] analyzeActivityForecast error:', err);
-        container.innerHTML = '<div class="prediction-error">Błąd predykcji aktywności: ' + escapeHtml(err.message) + '</div>';
+        container.innerHTML = '<div class="prediction-error">Błąd predykcji aktywności: ' + err.message + '</div>';
     }
 }
 
@@ -3024,12 +3022,11 @@ function analyzeActivityForecast() {
 // =====================================================
 
 /**
- * Helper: pobierz klucz API z vault (bezpiecznie)
+ * Helper: pobierz klucz API z localStorage (wspólny z ai-chat.js)
  */
 function getApiKey() {
     try {
-        if (isUnlocked()) return getKey() || '';
-        return '';
+        return localStorage.getItem('aiChatApiKey') || '';
     } catch { return ''; }
 }
 
@@ -3284,21 +3281,21 @@ Wypowiedzi:
 ${speechExcerpts}`;
 
                         const aiSummary = await callGeminiForPrediction(aiPrompt, 1500);
-                        document.getElementById('aiSummaryBox').innerHTML = `<div class="session-ai-text">${escapeHtml(aiSummary).replace(/\n/g, '<br>')}</div>`;
+                        document.getElementById('aiSummaryBox').innerHTML = `<div class="session-ai-text">${aiSummary.replace(/\n/g, '<br>')}</div>`;
                     } catch (aiErr) {
-                        document.getElementById('aiSummaryBox').innerHTML = `<div class="prediction-error">Błąd AI: ${escapeHtml(aiErr.message)}</div>`;
+                        document.getElementById('aiSummaryBox').innerHTML = `<div class="prediction-error">Błąd AI: ${aiErr.message}</div>`;
                     }
                 } else {
                     resultDiv.innerHTML = rhtml;
                 }
             } catch (err) {
-                resultDiv.innerHTML = '<div class="prediction-error">Błąd: ' + escapeHtml(err.message) + '</div>';
+                resultDiv.innerHTML = '<div class="prediction-error">Błąd: ' + err.message + '</div>';
             }
         });
 
     } catch (err) {
         console.error('[Predictions] analyzeSessionSummary error:', err);
-        container.innerHTML = '<div class="prediction-error">Błąd: ' + escapeHtml(err.message) + '</div>';
+        container.innerHTML = '<div class="prediction-error">Błąd: ' + err.message + '</div>';
     }
 }
 
@@ -3458,7 +3455,7 @@ function analyzeTopicClassification() {
 
     } catch (err) {
         console.error('[Predictions] analyzeTopicClassification error:', err);
-        container.innerHTML = '<div class="prediction-error">Błąd klasyfikacji: ' + escapeHtml(err.message) + '</div>';
+        container.innerHTML = '<div class="prediction-error">Błąd klasyfikacji: ' + err.message + '</div>';
     }
 }
 
@@ -3478,7 +3475,7 @@ function analyzeMpContradictions() {
             _analyzeMpContradictionsSync(container);
         } catch (err) {
             console.error('[Predictions] analyzeMpContradictions error:', err);
-            container.innerHTML = '<div class="prediction-error">Błąd analizy sprzeczności: ' + escapeHtml(err.message) + '</div>';
+            container.innerHTML = '<div class="prediction-error">Błąd analizy sprzeczności: ' + err.message + '</div>';
         }
     }, 50);
 }
@@ -3839,9 +3836,9 @@ Top mówcy: ${topSpeakers.length ? topSpeakers[0].values.map(r => `${r[0]}(${r[2
 ${dataForAi}`;
 
                 const aiComment = await callGeminiForPrediction(aiPrompt, 1200);
-                document.getElementById('aiReportCommentary').innerHTML = `<div class="report-ai-text">${escapeHtml(aiComment).replace(/\n/g, '<br>')}</div>`;
+                document.getElementById('aiReportCommentary').innerHTML = `<div class="report-ai-text">${aiComment.replace(/\n/g, '<br>')}</div>`;
             } catch (aiErr) {
-                document.getElementById('aiReportCommentary').innerHTML = `<div class="prediction-error">Błąd AI: ${escapeHtml(aiErr.message)}</div>`;
+                document.getElementById('aiReportCommentary').innerHTML = `<div class="prediction-error">Błąd AI: ${aiErr.message}</div>`;
             }
         }
 
@@ -3849,7 +3846,7 @@ ${dataForAi}`;
 
     } catch (err) {
         console.error('[Predictions] generateAiReport error:', err);
-        container.innerHTML = '<div class="prediction-error">Błąd generowania raportu: ' + escapeHtml(err.message) + '</div>';
+        container.innerHTML = '<div class="prediction-error">Błąd generowania raportu: ' + err.message + '</div>';
     }
 }
 
@@ -4002,7 +3999,7 @@ async function loadWebLLMChat() {
             if (!userText) return;
 
             // User message
-            messages.innerHTML += `<div class="webllm-msg webllm-msg-user"><div class="webllm-msg-icon">👤</div><div class="webllm-msg-text">${escapeHtml(userText)}</div></div>`;
+            messages.innerHTML += `<div class="webllm-msg webllm-msg-user"><div class="webllm-msg-icon">👤</div><div class="webllm-msg-text">${userText}</div></div>`;
             input.value = '';
             sendBtn.disabled = true;
 
@@ -4033,9 +4030,9 @@ async function loadWebLLMChat() {
                 });
 
                 const responseText = reply.choices[0]?.message?.content || 'Brak odpowiedzi';
-                document.getElementById('webllmCurrentResponse').innerHTML = escapeHtml(responseText).replace(/\n/g, '<br>');
+                document.getElementById('webllmCurrentResponse').innerHTML = responseText.replace(/\n/g, '<br>');
             } catch (err) {
-                document.getElementById('webllmCurrentResponse').innerHTML = `<span style="color:#e74c3c;">Błąd: ${escapeHtml(err.message)}</span>`;
+                document.getElementById('webllmCurrentResponse').innerHTML = `<span style="color:#e74c3c;">Błąd: ${err.message}</span>`;
             }
 
             sendBtn.disabled = false;
@@ -4067,7 +4064,7 @@ async function loadWebLLMChat() {
 
     } catch (err) {
         console.error('[Predictions] loadWebLLMChat error:', err);
-        container.innerHTML = '<div class="prediction-error">Błąd WebLLM: ' + escapeHtml(err.message) + '</div>';
+        container.innerHTML = '<div class="prediction-error">Błąd WebLLM: ' + err.message + '</div>';
     }
 }
 
@@ -4350,9 +4347,9 @@ Poniżej masz wypowiedzi parlamentarne oflagowane automatycznie przez system. Dl
 Wypowiedzi:\n${excerpts}\n\nOdpowiedz po polsku, zwięźle, strukturalnie.`;
 
                     const aiText = await callGeminiForPrediction(prompt, 1500);
-                    resultDiv.innerHTML = `<div class="antipolish-ai-result"><h5>🤖 Ocena AI</h5><div class="antipolish-ai-text">${escapeHtml(aiText).replace(/\n/g, '<br>')}</div></div>`;
+                    resultDiv.innerHTML = `<div class="antipolish-ai-result"><h5>🤖 Ocena AI</h5><div class="antipolish-ai-text">${aiText.replace(/\n/g, '<br>')}</div></div>`;
                 } catch (err) {
-                    resultDiv.innerHTML = `<div class="prediction-error">Błąd AI: ${escapeHtml(err.message)}</div>`;
+                    resultDiv.innerHTML = `<div class="prediction-error">Błąd AI: ${err.message}</div>`;
                 } finally {
                     btn.disabled = false;
                     btn.textContent = '✨ Analiza AI — ocena kontekstu';
@@ -4362,7 +4359,7 @@ Wypowiedzi:\n${excerpts}\n\nOdpowiedz po polsku, zwięźle, strukturalnie.`;
 
     } catch (err) {
         console.error('[Predictions] analyzeAntiPolish error:', err);
-        container.innerHTML = '<div class="prediction-error">Błąd analizy: ' + escapeHtml(err.message) + '</div>';
+        container.innerHTML = '<div class="prediction-error">Błąd analizy: ' + err.message + '</div>';
     }
 }
 
@@ -4617,7 +4614,7 @@ function analyzeGhostVoting() {
 
     } catch (err) {
         console.error('[Predictions] analyzeGhostVoting error:', err);
-        container.innerHTML = '<div class="prediction-error">Błąd analizy: ' + escapeHtml(err.message) + '</div>';
+        container.innerHTML = '<div class="prediction-error">Błąd analizy: ' + err.message + '</div>';
     }
 }
 
@@ -4720,9 +4717,9 @@ Kluby: ${clubs.join(', ') || 'brak danych'}.`;
                 sourcesHtml = `<div class="webintel-sources">
                     <h6>📚 Źródła (${sources.length})</h6>
                     <div class="webintel-source-list">
-                        ${sources.map(s => `<a href="${sanitizeUrl(s.uri)}" target="_blank" rel="noopener" class="webintel-source-link">
+                        ${sources.map(s => `<a href="${s.uri}" target="_blank" rel="noopener" class="webintel-source-link">
                             <span class="webintel-source-icon">🔗</span>
-                            <span>${escapeHtml(s.title || s.uri)}</span>
+                            <span>${s.title || s.uri}</span>
                         </a>`).join('')}
                     </div>
                 </div>`;
@@ -4733,18 +4730,18 @@ Kluby: ${clubs.join(', ') || 'brak danych'}.`;
             if (queries && queries.length) {
                 queriesHtml = `<div class="webintel-queries">
                     <span class="webintel-queries-label">🔍 Zapytania AI:</span>
-                    ${queries.map(q => `<span class="webintel-query-tag">${escapeHtml(q)}</span>`).join('')}
+                    ${queries.map(q => `<span class="webintel-query-tag">${q}</span>`).join('')}
                 </div>`;
             }
 
             resultsDiv.innerHTML = `
                 <div class="webintel-result">
                     <div class="webintel-result-header">
-                        <span class="webintel-result-q">💬 ${escapeHtml(query.length > 80 ? query.substring(0, 80) + '…' : query)}</span>
+                        <span class="webintel-result-q">💬 ${query.length > 80 ? query.substring(0, 80) + '…' : query}</span>
                         <span class="webintel-result-time">${new Date().toLocaleTimeString('pl-PL')}</span>
                     </div>
                     ${queriesHtml}
-                    <div class="webintel-result-text">${escapeHtml(text).replace(/\n/g, '<br>')}</div>
+                    <div class="webintel-result-text">${text.replace(/\n/g, '<br>')}</div>
                     ${sourcesHtml}
                 </div>
             `;
@@ -4754,7 +4751,7 @@ Kluby: ${clubs.join(', ') || 'brak danych'}.`;
             renderHistory();
 
         } catch (err) {
-            resultsDiv.innerHTML = `<div class="prediction-error">❌ Błąd: ${escapeHtml(err.message)}</div>`;
+            resultsDiv.innerHTML = `<div class="prediction-error">❌ Błąd: ${err.message}</div>`;
         } finally {
             searchBtn.disabled = false;
             searchBtn.textContent = '🔍 Szukaj';
@@ -4918,10 +4915,10 @@ WAŻNE:
                 throw new Error('AI nie wygenerowało kompletnej konfiguracji (brak sql lub chartType)');
             }
 
-            // Validate: only SELECT (secure validation via sanitizeSQL)
-            const sqlValidation = sanitizeSQL(config.sql);
-            if (!sqlValidation.safe) {
-                throw new Error(`AI wygenerowało niedozwolone zapytanie SQL: ${sqlValidation.reason}`);
+            // Validate: only SELECT
+            const sqlTrimmed = config.sql.trim();
+            if (!/^SELECT/i.test(sqlTrimmed)) {
+                throw new Error('AI wygenerowało niedozwolone zapytanie SQL (tylko SELECT)');
             }
 
             // Execute SQL
@@ -5021,7 +5018,7 @@ WAŻNE:
         } catch (err) {
             console.error('[AI Charts] Error:', err);
             statusDiv.style.display = '';
-            statusDiv.innerHTML = `<div class="prediction-error">❌ ${escapeHtml(err.message)}</div>`;
+            statusDiv.innerHTML = `<div class="prediction-error">❌ ${err.message}</div>`;
         } finally {
             genBtn.disabled = false;
         }
