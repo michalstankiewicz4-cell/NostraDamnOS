@@ -87,10 +87,7 @@ export const HELP_DATA = {
         title: "📊 Zarządzanie wykresami",
         desc: "Zarządzaj widocznością i kolejnością wykresów. Przeciągnij aby zmienić kolejność, zaznacz/odznacz aby pokazać/ukryć."
     },
-    chartsGrid: {
-        title: "📈 Wykresy",
-        desc: "Siatka interaktywnych wykresów Chart.js. Każdy wykres ma przycisk odświeżania. Najedź na punkty danych by zobaczyć szczegóły."
-    },
+
 
     // ── Ustawienia ───────────────────────────────
     resetMemorySettings: {
