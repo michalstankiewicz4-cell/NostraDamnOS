@@ -55,12 +55,8 @@ export function sanitizeSQL(sql) {
     }
 
     // Blokuj niebezpieczne słowa kluczowe (nawet w subquery)
-    // Usuń literały stringów aby nie blokować np. WHERE tekst LIKE '%DELETE%'
-    const noStrings = noComments
-        .replace(/'[^']*'/g, "''")
-        .replace(/"[^"]*"/g, '""');
     const forbidden = /\b(INSERT|UPDATE|DELETE|DROP|ALTER|CREATE|TRUNCATE|REPLACE|ATTACH|DETACH|PRAGMA|REINDEX|VACUUM|LOAD_EXTENSION)\b/i;
-    if (forbidden.test(noStrings)) {
+    if (forbidden.test(noComments)) {
         return { safe: false, reason: 'Wykryto niedozwoloną operację SQL' };
     }
 
