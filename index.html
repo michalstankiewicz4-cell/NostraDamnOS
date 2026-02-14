@@ -191,6 +191,16 @@
 
             <!-- SEKCJA 1: FORMULARZ ETL -->
             <section class="app-section active" data-section="1">
+
+                <!-- Powiadomienie: zasada pracy na danych -->
+                <div id="dataWorkflowOverlay" class="wip-overlay hidden">
+                    <div class="wip-modal">
+                        <div class="wip-icon">💡</div>
+                        <h3 class="wip-title">Zasada pracy na danych</h3>
+                        <p class="wip-text">Pamiętaj o zasadzie pracy na danych:<br><strong>Ściągnij raz, wyeksportuj a potem analizuj</strong><br>aby niepotrzebnie ponownie nie pobierać.</p>
+                        <button id="dataWorkflowCloseBtn" class="wip-close-btn">Rozumiem</button>
+                    </div>
+                </div>
                 
                 <div class="etl-panel">
                     <div class="etl-sidebar">
@@ -1254,6 +1264,15 @@
                             <label class="settings-checkbox-label">
                                 <input type="checkbox" id="toggleRememberEtl">
                                 <span>Pamiętaj ustawienia ściągania danych</span>
+                            </label>
+                            <p style="font-size:0.85rem;color:var(--text-secondary);margin-top:10px;margin-bottom:6px">Powiadomienia przy wejściu w zakładkę:</p>
+                            <label class="settings-checkbox-label">
+                                <input type="checkbox" id="toggleNotifyDataWorkflow" checked>
+                                <span>Powiadomienie "Zasada pracy na danych" (zakładka Dane)</span>
+                            </label>
+                            <label class="settings-checkbox-label">
+                                <input type="checkbox" id="toggleNotifyAiWip" checked>
+                                <span>Powiadomienie "Sekcja w budowie" (zakładka AI Asystent)</span>
                             </label>
                         </div>
                     </div>
@@ -2414,8 +2433,20 @@
 
                 // Sekcja AI Asystent — pokaż overlay "w budowie"
                 if (sectionNum === '3') {
-                    const overlay = document.getElementById('aiWipOverlay');
-                    if (overlay) overlay.classList.remove('hidden');
+                    const vis = JSON.parse(localStorage.getItem('uiVisibility') || '{}');
+                    if (vis.notifyAiWip !== false) {
+                        const overlay = document.getElementById('aiWipOverlay');
+                        if (overlay) overlay.classList.remove('hidden');
+                    }
+                }
+
+                // Sekcja Dane — pokaż overlay "zasada pracy na danych"
+                if (sectionNum === '1') {
+                    const vis = JSON.parse(localStorage.getItem('uiVisibility') || '{}');
+                    if (vis.notifyDataWorkflow !== false) {
+                        const overlay = document.getElementById('dataWorkflowOverlay');
+                        if (overlay) overlay.classList.remove('hidden');
+                    }
                 }
             }
 
@@ -2434,6 +2465,15 @@
             if (wipCloseBtn) {
                 wipCloseBtn.addEventListener('click', () => {
                     const overlay = document.getElementById('aiWipOverlay');
+                    if (overlay) overlay.classList.add('hidden');
+                });
+            }
+
+            // Data workflow overlay — zamknij przyciskiem
+            const dataWorkflowCloseBtn = document.getElementById('dataWorkflowCloseBtn');
+            if (dataWorkflowCloseBtn) {
+                dataWorkflowCloseBtn.addEventListener('click', () => {
+                    const overlay = document.getElementById('dataWorkflowOverlay');
                     if (overlay) overlay.classList.add('hidden');
                 });
             }
@@ -2771,7 +2811,9 @@
             dbCheckDataChanges: true,
             dbCheckDataChangesInterval: 11,
             infoFetch: true,
-            rememberEtl: false
+            rememberEtl: false,
+            notifyDataWorkflow: true,
+            notifyAiWip: true
         };
 
         function load() {
@@ -2991,6 +3033,15 @@
         const chkRememberEtl = document.getElementById('toggleRememberEtl');
         if (chkRememberEtl) chkRememberEtl.checked = !!state.rememberEtl;
         onToggle('rememberEtl', chkRememberEtl);
+
+        // Notification toggles (overlays)
+        const chkNotifyDataWorkflow = document.getElementById('toggleNotifyDataWorkflow');
+        if (chkNotifyDataWorkflow) chkNotifyDataWorkflow.checked = state.notifyDataWorkflow !== false;
+        onToggle('notifyDataWorkflow', chkNotifyDataWorkflow);
+
+        const chkNotifyAiWip = document.getElementById('toggleNotifyAiWip');
+        if (chkNotifyAiWip) chkNotifyAiWip.checked = state.notifyAiWip !== false;
+        onToggle('notifyAiWip', chkNotifyAiWip);
 
         // ETL settings persistence
         const ETL_SETTINGS_KEY = 'nostradamnos_etlSettings';

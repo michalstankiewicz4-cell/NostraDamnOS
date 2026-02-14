@@ -89,22 +89,17 @@ function populateTermSelect(terms, selectEl) {
         selectEl.appendChild(opt);
     }
 
-    // "Wszystkie" jako ostatnia opcja
-    if (validTerms.length > 1) {
-        const allOpt = document.createElement('option');
-        allOpt.value = 'all';
-        allOpt.textContent = 'Wszystkie kadencje';
-        selectEl.appendChild(allOpt);
-    }
+    // "Wszystkie kadencje" — zablokowane (zbyt duże obciążenie API)
+    // if (validTerms.length > 1) { ... }
 
-    // Przywróć poprzednią wartość jeśli istnieje
+    // Przywróć poprzednią wartość jeśli istnieje (pomijaj "all")
     if ([...selectEl.options].some(o => o.value === prevValue)) {
         selectEl.value = prevValue;
     }
 
     // Zaktualizuj wyświetlanie kadencji
     const termDisplay = document.getElementById('etlTerm');
-    if (termDisplay) termDisplay.textContent = selectEl.value === 'all' ? 'wszystkie' : selectEl.value;
+    if (termDisplay) termDisplay.textContent = selectEl.value;
 }
 
 async function fetchSittingsCount(institution, kadencja) {
