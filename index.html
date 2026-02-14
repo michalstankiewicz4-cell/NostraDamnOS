@@ -574,7 +574,7 @@
             <section class="app-section" data-section="3" style="display:none;">
 
                 <!-- Powiadomienie: sekcja w budowie -->
-                <div id="aiWipOverlay" class="wip-overlay">
+                <div id="aiWipOverlay" class="wip-overlay hidden">
                     <div class="wip-modal">
                         <div class="wip-icon">🚧</div>
                         <h3 class="wip-title">Sekcja w trakcie budowy</h3>
@@ -2431,21 +2431,29 @@
                     window._renderCharts();
                 }
 
-                // Sekcja AI Asystent — pokaż overlay "w budowie"
+                // Sekcja AI Asystent — pokaż overlay "w budowie" (jeśli włączone)
                 if (sectionNum === '3') {
                     const vis = JSON.parse(localStorage.getItem('uiVisibility') || '{}');
-                    if (vis.notifyAiWip !== false) {
-                        const overlay = document.getElementById('aiWipOverlay');
-                        if (overlay) overlay.classList.remove('hidden');
+                    const overlay = document.getElementById('aiWipOverlay');
+                    if (overlay) {
+                        if (vis.notifyAiWip !== false) {
+                            overlay.classList.remove('hidden');
+                        } else {
+                            overlay.classList.add('hidden');
+                        }
                     }
                 }
 
-                // Sekcja Dane — pokaż overlay "zasada pracy na danych"
+                // Sekcja Dane — pokaż overlay "zasada pracy na danych" (jeśli włączone)
                 if (sectionNum === '1') {
                     const vis = JSON.parse(localStorage.getItem('uiVisibility') || '{}');
-                    if (vis.notifyDataWorkflow !== false) {
-                        const overlay = document.getElementById('dataWorkflowOverlay');
-                        if (overlay) overlay.classList.remove('hidden');
+                    const overlay = document.getElementById('dataWorkflowOverlay');
+                    if (overlay) {
+                        if (vis.notifyDataWorkflow !== false) {
+                            overlay.classList.remove('hidden');
+                        } else {
+                            overlay.classList.add('hidden');
+                        }
                     }
                 }
             }
