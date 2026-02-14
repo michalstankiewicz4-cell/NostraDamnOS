@@ -1242,10 +1242,24 @@ function initKeyVault() {
     // Migracja plaintext → vault
     const legacyKey = localStorage.getItem('aiChat_apiKey');
     if (legacyKey) {
-        console.log('[AI Chat] Found legacy plaintext key, migration needed');
+        console.log('[AI Chat] Found legacy plaintext key, migrating...');
         chatState.apiKey = legacyKey;
-        showPinModal('migrate', legacyKey);
-        return; // vault UI będzie zaktualizowany po migracji
+        const inp = document.getElementById('aiApiKey');
+        if (inp) inp.value = legacyKey;
+        const mode = getVaultMode();
+        if (mode === 'pin') {
+            // Tryb PIN — pytaj o PIN do zaszyfrowania
+            showPinModal('migrate', legacyKey);
+            return;
+        } else {
+            // session/memory — ciche przeniesienie
+            storeKey(legacyKey).then(() => {
+                localStorage.removeItem('aiChat_apiKey');
+                console.log('[KeyVault] Migrated legacy key to', mode);
+                updateVaultUI();
+            });
+            return;
+        }
     }
 
     // Jeśli vault ma klucz i tryb PIN — pokaż modal odblokowania
@@ -1275,21 +1289,28 @@ function updateVaultUI() {
     const mode = getVaultMode();
     const unlocked = isUnlocked();
 
+    // Inline status (przy polu klucza w AI Asystencie)
     if (icon) icon.textContent = unlocked ? '🔓' : '🔒';
     if (text) {
         if (mode === 'pin') {
-            text.textContent = unlocked ? 'Odblokowany (AES-256)' : 'Zablokowany (AES-256)';
+            text.textContent = unlocked ? 'AES-256 🔓' : 'AES-256 🔒';
         } else if (mode === 'session') {
-            text.textContent = 'Klucz w sesji (bez szyfrowania)';
+            text.textContent = 'Sesja';
         } else {
-            text.textContent = 'Tylko pamięć (nie zapisywany)';
+            text.textContent = 'RAM';
         }
     }
-    if (lockBtn) lockBtn.style.display = unlocked ? '' : 'none';
-    if (changePinBtn) changePinBtn.style.display = (mode === 'pin' && hasStoredKey()) ? '' : 'none';
+    if (lockBtn) lockBtn.style.display = (mode === 'pin' && unlocked) ? '' : 'none';
 
+    // Settings panel (Ustawienia > Bezpieczeństwo klucza API)
+    if (changePinBtn) changePinBtn.style.display = (mode === 'pin' && hasStoredKey()) ? '' : 'none';
     const modeSelect = document.getElementById('vaultMode');
     if (modeSelect) modeSelect.value = mode;
+
+    // Pokaż opis odpowiedniego trybu
+    document.querySelectorAll('.vault-desc').forEach(el => {
+        el.style.display = el.dataset.mode === mode ? '' : 'none';
+    });
 }
 
 // =====================================================

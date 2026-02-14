@@ -118,7 +118,7 @@ async function decrypt(encryptedBase64, pin) {
  * Zwraca aktualny tryb przechowywania: 'pin' | 'session' | 'memory'
  */
 export function getVaultMode() {
-    return localStorage.getItem(VAULT_MODE_KEY) || 'pin';
+    return localStorage.getItem(VAULT_MODE_KEY) || 'session';
 }
 
 /**

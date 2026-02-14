@@ -632,22 +632,10 @@
                         <div class="chat-config-row">
                             <label for="aiApiKey">Klucz API:</label>
                             <input type="password" id="aiApiKey" placeholder="sk-..." />
-                        </div>
-
-                        <!-- Vault: tryb przechowywania + status -->
-                        <div class="chat-config-row vault-controls">
-                            <div class="vault-status" id="vaultStatus">
+                            <div class="vault-status-inline" id="vaultStatus">
                                 <span class="vault-lock-icon" id="vaultLockIcon">🔒</span>
-                                <span id="vaultStatusText">Zabezpieczony</span>
-                            </div>
-                            <div class="vault-actions">
-                                <select id="vaultMode" class="chart-select vault-mode-select" title="Tryb przechowywania klucza">
-                                    <option value="pin">🔐 PIN + szyfrowanie</option>
-                                    <option value="session">📋 Tylko sesja</option>
-                                    <option value="memory">🧠 Tylko pamięć</option>
-                                </select>
-                                <button id="vaultLockBtn" class="vault-btn" title="Zablokuj klucz">🔒</button>
-                                <button id="vaultChangePinBtn" class="vault-btn" title="Zmień PIN">🔄</button>
+                                <span id="vaultStatusText">Sesja</span>
+                                <button id="vaultLockBtn" class="vault-btn-inline" title="Zablokuj klucz" style="display:none">🔒</button>
                             </div>
                         </div>
                         </div>
@@ -1257,6 +1245,35 @@
                                 <input type="checkbox" id="toggleRememberEtl">
                                 <span>Pamiętaj ustawienia ściągania danych</span>
                             </label>
+                        </div>
+                    </div>
+                </div>
+                <!-- Sekcja: Bezpieczeństwo klucza API -->
+                <div class="console-style-panel">
+                    <div class="console-style-header">
+                        <h3>🔐 Bezpieczeństwo klucza API</h3>
+                    </div>
+                    <div class="console-style-body">
+                        <div class="console-style-description">
+                            <p>Wybierz sposób przechowywania klucza API dla AI Asystenta.</p>
+                        </div>
+                        <div class="vault-settings-panel">
+                            <div class="vault-settings-row">
+                                <label for="vaultMode">Tryb przechowywania:</label>
+                                <select id="vaultMode" class="vault-mode-select">
+                                    <option value="session">📋 Tylko sesja (domyślny)</option>
+                                    <option value="pin">🔐 PIN + szyfrowanie AES-256</option>
+                                    <option value="memory">🧠 Tylko pamięć RAM</option>
+                                </select>
+                            </div>
+                            <div class="vault-settings-descriptions">
+                                <p class="vault-desc" data-mode="session"><strong>Sesja</strong> — klucz zapisany w sessionStorage, usuwany po zamknięciu karty.</p>
+                                <p class="vault-desc" data-mode="pin"><strong>PIN + AES-256</strong> — klucz szyfrowany PINem (PBKDF2 + AES-GCM), przechowywany w localStorage.</p>
+                                <p class="vault-desc" data-mode="memory"><strong>Pamięć</strong> — klucz tylko w pamięci RAM, nigdzie nie zapisywany.</p>
+                            </div>
+                            <div class="vault-settings-actions">
+                                <button id="vaultChangePinBtn" class="console-style-btn" style="display:none">🔄 Zmień PIN</button>
+                            </div>
                         </div>
                     </div>
                 </div>

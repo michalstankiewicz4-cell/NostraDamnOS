@@ -5266,59 +5266,86 @@ input:disabled {
 
 /* ===================== KEY VAULT & PIN MODAL ===================== */
 
-/* Vault controls in chat config */
-.vault-controls {
-    background: rgba(16, 185, 129, 0.05);
-    border: 1px solid rgba(16, 185, 129, 0.15);
-    border-radius: 8px;
-    padding: 10px 12px !important;
-}
-
-.vault-status {
+/* Inline vault status (next to API key input) */
+.vault-status-inline {
     display: flex;
     align-items: center;
-    gap: 6px;
-    margin-bottom: 8px;
-    font-size: 0.82rem;
-    color: #374151;
+    gap: 5px;
+    margin-top: 5px;
+    font-size: 0.78rem;
+    color: var(--text-secondary);
 }
 
 .vault-lock-icon {
-    font-size: 1rem;
+    font-size: 0.85rem;
 }
 
-.vault-actions {
-    display: flex;
-    gap: 6px;
-    align-items: center;
+.vault-btn-inline {
+    background: none;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    margin-left: 4px;
+    transition: all 0.15s;
+}
+.vault-btn-inline:hover {
+    background: #f3f4f6;
+    border-color: #9ca3af;
+}
+
+/* Vault settings panel (in Settings section) */
+.vault-settings-panel {
+    padding: 4px 0;
+}
+
+.vault-settings-row {
+    margin-bottom: 10px;
+}
+
+.vault-settings-row label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 5px;
 }
 
 .vault-mode-select {
-    flex: 1;
-    padding: 5px 8px !important;
-    font-size: 0.8rem !important;
+    width: 100%;
+    padding: 8px 12px;
     border-radius: 6px;
-    border: 1px solid #d1d5db;
-    background: white;
+    border: 1px solid var(--border-color);
+    background: var(--card-bg);
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    font-family: inherit;
     cursor: pointer;
+}
+.vault-mode-select:focus {
+    outline: none;
+    border-color: #10b981;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
 }
 
-.vault-btn {
-    width: 32px;
-    height: 32px;
-    border: 1px solid #d1d5db;
-    border-radius: 6px;
-    background: white;
-    cursor: pointer;
-    font-size: 0.9rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.15s;
+.vault-settings-descriptions {
+    margin-bottom: 10px;
 }
-.vault-btn:hover {
-    background: #f3f4f6;
-    border-color: #9ca3af;
+
+.vault-desc {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+    padding: 6px 10px;
+    background: rgba(16, 185, 129, 0.05);
+    border-left: 3px solid #10b981;
+    border-radius: 0 6px 6px 0;
+}
+
+.vault-settings-actions {
+    display: flex;
+    gap: 8px;
 }
 
 /* PIN Modal overlay */
@@ -5488,9 +5515,9 @@ input:disabled {
     .pin-error { background: #450a0a; border-color: #7f1d1d; color: #fca5a5; }
     .pin-btn-secondary { background: #334155; color: #e2e8f0; border-color: #475569; }
     .pin-btn-secondary:hover { background: #475569; }
-    .vault-controls { background: rgba(16, 185, 129, 0.08); border-color: rgba(16, 185, 129, 0.2); }
-    .vault-status { color: #cbd5e1; }
+    .vault-status-inline { color: #94a3b8; }
+    .vault-btn-inline { background: #334155; color: #e2e8f0; border-color: #475569; }
+    .vault-btn-inline:hover { background: #475569; }
     .vault-mode-select { background: #0f172a; color: #e2e8f0; border-color: #334155; }
-    .vault-btn { background: #0f172a; color: #e2e8f0; border-color: #334155; }
-    .vault-btn:hover { background: #1e293b; }
+    .vault-desc { background: rgba(16, 185, 129, 0.08); color: #94a3b8; }
 }
