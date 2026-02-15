@@ -89,8 +89,13 @@ function populateTermSelect(terms, selectEl) {
         selectEl.appendChild(opt);
     }
 
-    // "Wszystkie kadencje" — zablokowane (zbyt duże obciążenie API)
-    // if (validTerms.length > 1) { ... }
+    // "Wszystkie kadencje" — opcja na dole
+    if (validTerms.length > 1) {
+        const allOpt = document.createElement('option');
+        allOpt.value = 'all';
+        allOpt.textContent = 'Wszystkie kadencje (...)';
+        selectEl.appendChild(allOpt);
+    }
 
     // Przywróć poprzednią wartość jeśli istnieje (pomijaj "all")
     if ([...selectEl.options].some(o => o.value === prevValue)) {
