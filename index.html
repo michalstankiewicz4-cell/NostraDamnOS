@@ -230,15 +230,15 @@
                             data-help-id="estimateBox">
                             <div class="estimate-title">💡 Estymacja</div>
                             <div class="estimate-grid">
-                                <div class="estimate-row">
+                                <div class="estimate-row estimate-row-size">
                                     <span class="estimate-label">Rozmiar:</span>
                                     <span class="estimate-value" id="etlSize">~700 KB</span>
                                 </div>
-                                <div class="estimate-row">
+                                <div class="estimate-row estimate-row-time">
                                     <span class="estimate-label">Czas:</span>
                                     <span class="estimate-value" id="etlTime">~10-15s</span>
                                 </div>
-                                <div class="estimate-row estimate-row-last">
+                                <div class="estimate-row estimate-row-last estimate-row-requests">
                                     <span class="estimate-label">Requesty:</span>
                                     <span class="estimate-value" id="etlRequests">~25</span>
                                 </div>
@@ -1264,6 +1264,14 @@
                             <label class="settings-checkbox-label">
                                 <input type="checkbox" id="toggleRememberEtl">
                                 <span>Pamiętaj ustawienia ściągania danych</span>
+                            </label>
+                            <label class="settings-checkbox-label">
+                                <input type="checkbox" id="toggleAutoCountRecords" checked>
+                                <span>Szacuj ilości rekordów na starcie (requesty do API)</span>
+                            </label>
+                            <label class="settings-checkbox-label">
+                                <input type="checkbox" id="toggleShowEstimate" checked>
+                                <span>Pokaż estymację pamięci i czasu</span>
                             </label>
                             <label class="settings-checkbox-label">
                                 <input type="checkbox" id="toggleSoundAlerts" checked>
@@ -3064,6 +3072,71 @@
         const chkRememberEtl = document.getElementById('toggleRememberEtl');
         if (chkRememberEtl) chkRememberEtl.checked = !!state.rememberEtl;
         onToggle('rememberEtl', chkRememberEtl);
+
+        // Auto count records on startup toggle
+        const chkAutoCount = document.getElementById('toggleAutoCountRecords');
+        if (chkAutoCount) {
+            chkAutoCount.checked = state.autoCountRecords !== false;
+            chkAutoCount.addEventListener('change', function() {
+                state.autoCountRecords = this.checked;
+                save(state);
+                if (this.checked) {
+                    // Włączono — odpytaj API o ilości
+                    window._updateTranscriptsCount?.();
+                    window._updateVotingsCount?.();
+                    window._updatePerTermCounts?.();
+                    window._loadCommitteeOptions?.();
+                    const reqRow = document.querySelector('.estimate-row-requests');
+                    if (reqRow) reqRow.style.display = '';
+                } else {
+                    // Wyłączono — wyczyść spany z liczbami + ukryj wiersz requestów
+                    const spanIds = [
+                        'etlTranscriptsCount', 'etlVotingsCount', 'etlVotesCount',
+                        'etlInterpellationsCount', 'etlWrittenQuestionsCount',
+                        'etlBillsCount', 'etlLegalActsCount',
+                        'etlCommitteeSittingsCount', 'etlCommitteeStatementsCount'
+                    ];
+                    spanIds.forEach(id => {
+                        const el = document.getElementById(id);
+                        if (el) el.textContent = '';
+                    });
+                    const reqRow = document.querySelector('.estimate-row-requests');
+                    if (reqRow) reqRow.style.display = 'none';
+                    if (window._updateETLEstimate) window._updateETLEstimate();
+                }
+            });
+        }
+        window._shouldAutoCountRecords = () => (state.autoCountRecords !== false);
+
+        // Ustaw widoczność wiersza requestów według autoCountRecords
+        const reqRowInit = document.querySelector('.estimate-row-requests');
+        if (reqRowInit) reqRowInit.style.display = (state.autoCountRecords !== false) ? '' : 'none';
+
+        // Show estimate: pamięć i czas
+        const chkShowEstimate = document.getElementById('toggleShowEstimate');
+        if (chkShowEstimate) {
+            chkShowEstimate.checked = state.showEstimate !== false;
+            const applyEstimate = (show) => {
+                const sizeBadges = document.querySelectorAll('.badge-size');
+                const sizeRow = document.querySelector('.estimate-row-size');
+                const timeRow = document.querySelector('.estimate-row-time');
+                sizeBadges.forEach(b => b.style.display = show ? '' : 'none');
+                if (sizeRow) sizeRow.style.display = show ? '' : 'none';
+                if (timeRow) timeRow.style.display = show ? '' : 'none';
+                // Ukryj cały box jeśli obie opcje wyłączone
+                const reqsVisible = state.autoCountRecords !== false;
+                const box = document.querySelector('.estimate-box');
+                if (box) box.style.display = (!show && !reqsVisible) ? 'none' : '';
+            };
+            applyEstimate(chkShowEstimate.checked);
+            chkShowEstimate.addEventListener('change', function() {
+                state.showEstimate = this.checked;
+                save(state);
+                applyEstimate(this.checked);
+                if (this.checked && window._updateETLEstimate) window._updateETLEstimate();
+            });
+        }
+        window._shouldShowEstimate = () => (state.showEstimate !== false || state.autoCountRecords !== false);
 
         // Sound alerts toggle (syncs to separate key for fetcher.js)
         const chkSoundAlerts = document.getElementById('toggleSoundAlerts');

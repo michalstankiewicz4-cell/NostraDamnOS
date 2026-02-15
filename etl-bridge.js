@@ -262,7 +262,14 @@ async function fetchVotingsForSittings(inst, kadencja, sittings) {
     return { votings: totalVotings, votes: totalVotes };
 }
 
+function shouldAutoCount() {
+    return typeof window._shouldAutoCountRecords === 'function'
+        ? window._shouldAutoCountRecords()
+        : true;
+}
+
 async function updateVotingsCount() {
+    if (!shouldAutoCount()) return;
     const votingsSpan = document.getElementById('etlVotingsCount');
     const votesSpan = document.getElementById('etlVotesCount');
 
@@ -406,6 +413,7 @@ function collectSittingDays(proceedings, from, to) {
 }
 
 async function updateTranscriptsCount() {
+    if (!shouldAutoCount()) return;
     const span = document.getElementById('etlTranscriptsCount');
     if (!span) return;
 
@@ -486,6 +494,7 @@ const committeeListCache = {};
 let committeeLoadToken = 0;
 
 async function loadCommitteeOptions() {
+    if (!shouldAutoCount()) return;
     const select = document.getElementById('etlCommitteeSelect');
     const countSpan = document.getElementById('etlCommitteeSittingsCount');
     const statementsSpan = document.getElementById('etlCommitteeStatementsCount');
@@ -580,6 +589,7 @@ async function loadCommitteeOptions() {
 }
 
 async function updatePerTermCounts() {
+    if (!shouldAutoCount()) return;
     const inst = document.querySelector('input[name="etlInst"]:checked')?.value || 'sejm';
     const kadencja = document.getElementById('etlTermSelect')?.value;
 
@@ -842,6 +852,10 @@ function initETLPanel() {
     }
 
     // Signal that etl-bridge is ready
+    window._updateTranscriptsCount = updateTranscriptsCount;
+    window._updateVotingsCount = updateVotingsCount;
+    window._updatePerTermCounts = updatePerTermCounts;
+    window._loadCommitteeOptions = loadCommitteeOptions;
     window.dispatchEvent(new Event('etl-bridge-ready'));
 
     // ===== DEPENDENCIES =====
@@ -958,6 +972,9 @@ function initETLPanel() {
     }
 
     function updateETLEstimate() {
+        // Jeśli estymacja wyłączona w ustawieniach — nie aktualizuj
+        if (typeof window._shouldShowEstimate === 'function' && !window._shouldShowEstimate()) return;
+
         // Institution
         const inst = document.querySelector('input[name="etlInst"]:checked')?.value || 'sejm';
         document.getElementById('etlInstitution').textContent = inst === 'sejm' ? 'Sejm' : 'Senat';
@@ -997,22 +1014,28 @@ function initETLPanel() {
         let data = [];
         let totalItems = 2 * termCount; // base: posłowie + posiedzenia — zawsze 2 requesty
         
-        // Definicje: checkbox → span z liczbą pozycji + rozmiar KB
+        // Definicje: checkbox → span z liczbą pozycji + rozmiar KB + fallback (gdy szacowanie wyłączone)
         const countSources = [
-            { id: 'etlTranscripts', spanId: 'etlTranscriptsCount', name: 'wypowiedzi', sizePerSitting: 400 },
-            { id: 'etlVotings', spanId: 'etlVotingsCount', name: 'głosowania', sizePerSitting: 15 },
-            { id: 'etlVotes', spanId: 'etlVotesCount', name: 'głosy indywidualne', sizePerSitting: 1200 },
-            { id: 'etlInterpellations', spanId: 'etlInterpellationsCount', name: 'interpelacje', sizeTotal: 4000 },
-            { id: 'etlWrittenQuestions', spanId: 'etlWrittenQuestionsCount', name: 'zapytania pisemne', sizeTotal: 800 },
-            { id: 'etlBills', spanId: 'etlBillsCount', name: 'projekty ustaw', sizeTotal: 700 },
-            { id: 'etlLegalActs', spanId: 'etlLegalActsCount', name: 'ustawy (akty prawne)', sizeTotal: 500 }
+            { id: 'etlTranscripts', spanId: 'etlTranscriptsCount', name: 'wypowiedzi', sizePerSitting: 400, fallbackPerSitting: 120 },
+            { id: 'etlVotings', spanId: 'etlVotingsCount', name: 'głosowania', sizePerSitting: 15, fallbackPerSitting: 1 },
+            { id: 'etlVotes', spanId: 'etlVotesCount', name: 'głosy indywidualne', sizePerSitting: 1200, fallbackPerSitting: 65 },
+            { id: 'etlInterpellations', spanId: 'etlInterpellationsCount', name: 'interpelacje', sizeTotal: 4000, fallbackPerTerm: 5000 },
+            { id: 'etlWrittenQuestions', spanId: 'etlWrittenQuestionsCount', name: 'zapytania pisemne', sizeTotal: 800, fallbackPerTerm: 1500 },
+            { id: 'etlBills', spanId: 'etlBillsCount', name: 'projekty ustaw', sizeTotal: 700, fallbackPerTerm: 1000 },
+            { id: 'etlLegalActs', spanId: 'etlLegalActsCount', name: 'ustawy (akty prawne)', sizeTotal: 500, fallbackPerTerm: 500 }
         ];
 
         countSources.forEach(item => {
             const checkbox = document.getElementById(item.id);
             if (checkbox && checkbox.checked) {
                 const count = getCountFromSpan(item.spanId);
-                totalItems += count;
+                if (count > 0) {
+                    totalItems += count;
+                } else if (item.fallbackPerSitting) {
+                    totalItems += item.fallbackPerSitting * range * termCount;
+                } else if (item.fallbackPerTerm) {
+                    totalItems += item.fallbackPerTerm * termCount;
+                }
                 if (item.sizePerSitting) {
                     size += item.sizePerSitting * range * termCount;
                 } else if (item.sizeTotal) {
