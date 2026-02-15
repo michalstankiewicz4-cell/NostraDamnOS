@@ -1,7 +1,7 @@
 // Module: komisje_posiedzenia.js
 import { safeFetch } from '../fetcher.js';
 
-export async function fetchKomisjePosiedzenia({ komisje, selectedCommittees, committees, kadencja = 10, typ = 'sejm' }) {
+export async function fetchKomisjePosiedzenia({ komisje, selectedCommittees, committees, kadencja = 10, typ = 'sejm', onItemProgress }) {
     const results = [];
     const base = typ === 'sejm' ? 'sejm' : 'senat';
 
@@ -12,6 +12,8 @@ export async function fetchKomisjePosiedzenia({ komisje, selectedCommittees, com
     const toFetch = selected.includes('all')
         ? komisje
         : komisje.filter(k => selected.includes(k.code));
+    const totalItems = toFetch.length;
+    let doneItems = 0;
     
     for (const kom of toFetch) {
         const url = `https://api.sejm.gov.pl/${base}/term${kadencja}/committees/${kom.code}/sittings`;
@@ -21,6 +23,8 @@ export async function fetchKomisjePosiedzenia({ komisje, selectedCommittees, com
         } catch (e) {
             console.warn(`[Komisje Posiedzenia] Failed for ${kom.code}:`, e.message);
         }
+        doneItems++;
+        if (onItemProgress) onItemProgress(doneItems, totalItems, 'komisje');
     }
     
     return results;

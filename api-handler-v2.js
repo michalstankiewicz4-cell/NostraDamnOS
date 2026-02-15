@@ -964,12 +964,23 @@ function showEtlProgress() {
     if (pctEl) pctEl.style.display = '';
     if (bar) bar.style.width = '0%';
     setLoadLamp('loading');
+    // Clear sub-progress
+    const subEl = document.getElementById('etlDetailSubProgress');
+    if (subEl) subEl.textContent = '';
     // Start live link counter polling
     _linksPollInterval = setInterval(() => {
         const linksEl = document.getElementById('etlDetailLinks');
-        if (linksEl && fetchCounter.count > 0) {
-            const errInfo = fetchCounter.errors > 0 ? ` (${fetchCounter.errors} err)` : '';
-            linksEl.textContent = `${fetchCounter.count} zapytań API${errInfo}`;
+        if (!linksEl) return;
+        const cnt = fetchCounter.count;
+        const errs = fetchCounter.errors;
+        const errInfo = errs > 0 ? ` (${errs} err)` : '';
+        // Czytaj estymowane requesty wprost z DOM (element etlRequests = "~47")
+        const reqsText = document.getElementById('etlRequests')?.textContent || '';
+        const estReqs = parseInt(reqsText.replace(/[^0-9]/g, ''), 10) || 0;
+        if (estReqs > 0) {
+            linksEl.textContent = `${cnt} z ~${estReqs} zapytań API${errInfo}`;
+        } else {
+            linksEl.textContent = `${cnt} zapytań API${errInfo}`;
         }
     }, 300);
 }
@@ -992,8 +1003,8 @@ function hideEtlProgress() {
 function updateEtlProgress(percent, stage, details) {
     const bar = document.getElementById('etlProgressBar');
     const pctEl = document.getElementById('etlProgressPercent');
-    if (bar) bar.style.width = percent + '%';
-    if (pctEl) pctEl.textContent = Math.round(percent) + '%';
+    if (bar && percent !== undefined) bar.style.width = percent + '%';
+    if (pctEl && percent !== undefined) pctEl.textContent = Math.round(percent) + '%';
     // Aktualizuj panel szczegółów ETL
     updateEtlDetailPanel(percent, stage, details);
 }
@@ -1016,13 +1027,16 @@ function updateEtlDetailPanel(percent, stage, details = {}) {
     const detailBar = document.getElementById('etlDetailBar');
     const pctEl = document.getElementById('etlDetailPercent');
     const statsEl = document.getElementById('etlDetailStats');
+    const subProgressEl = document.getElementById('etlDetailSubProgress');
     const linksEl = document.getElementById('etlDetailLinks');
 
     // Aktualizuj zawartość sekcji fetch
     if (stageEl && stage) stageEl.textContent = stage;
-    if (detailBar) detailBar.style.width = percent + '%';
-    if (pctEl) pctEl.textContent = Math.round(percent) + '%';
+    if (detailBar && percent !== undefined) detailBar.style.width = percent + '%';
+    if (pctEl && percent !== undefined) pctEl.textContent = Math.round(percent) + '%';
     if (statsEl && details.module) statsEl.textContent = details.module;
+    if (subProgressEl && details.subProgress) subProgressEl.textContent = details.subProgress;
+    if (subProgressEl && details.module) subProgressEl.textContent = '';  // Czyść sub-progress po tick modułu
     if (linksEl && details.linksLabel) linksEl.textContent = details.linksLabel;
     
     // Pokaż/ukryj sekcję fetch na podstawie ustawienia

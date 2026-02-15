@@ -318,6 +318,7 @@ async function updateVotingsCount() {
         if (myToken !== votingsCountToken) return;
         if (votingsSpan) votingsSpan.textContent = votingsChecked ? `(${totalV})` : '';
         if (votesSpan) votesSpan.textContent = votesChecked ? `(${totalG})` : '';
+        window._updateETLEstimate?.();
         return;
     }
 
@@ -347,6 +348,7 @@ async function updateVotingsCount() {
     if (myToken !== votingsCountToken) return;
     if (votingsSpan) votingsSpan.textContent = votingsChecked ? `(${votings})` : '';
     if (votesSpan) votesSpan.textContent = votesChecked ? `(${votes})` : '';
+    window._updateETLEstimate?.();
 }
 
 async function fetchTranscriptsForSittingDays(inst, kadencja, sittingDays) {
@@ -450,6 +452,7 @@ async function updateTranscriptsCount() {
 
         if (myToken !== transcriptsCountToken) return;
         span.textContent = `(${totalSittingDays} dni obrad, ${totalWyp} wyp.)`;
+        window._updateETLEstimate?.();
         return;
     }
 
@@ -472,6 +475,7 @@ async function updateTranscriptsCount() {
 
     if (myToken !== transcriptsCountToken) return;
     span.textContent = `(${days.length} dni obrad, ${totalWyp} wyp.)`;
+    window._updateETLEstimate?.();
 }
 
 // Cache dla per-kadencja counts (klucz: "inst_kadencja_module")
@@ -570,6 +574,7 @@ async function loadCommitteeOptions() {
             if (countSpan) countSpan.textContent = `(${totalSittings})`;
             const committeeStatementsChecked = document.getElementById('etlCommitteeStatements')?.checked;
             if (statementsSpan) statementsSpan.textContent = committeeStatementsChecked ? `(${totalSittings})` : '';
+            window._updateETLEstimate?.();
         }
     }
 }
@@ -707,6 +712,7 @@ async function updatePerTermCounts() {
             perTermCountCache[cacheKey] = count;
             span.textContent = `(${count})`;
         } catch { span.textContent = '(?)'; }
+        window._updateETLEstimate?.();
     }
 }
 
@@ -789,6 +795,8 @@ function initETLPanel() {
             loadCommitteeOptions();
         });
     });
+
+    // Szybkość pobierania przeniesiona do Ustawień
 
     // ===== MODULE AVAILABILITY (Sejm vs Senat) =====
     function updateModuleAvailability(institution) {
@@ -937,6 +945,18 @@ function initETLPanel() {
     }
     
     // ===== UPDATE ESTIMATE =====
+    // Helper: wyciąga liczbę z tekstu spana, np. "(2330 wyp.)" → 2330, "(195)" → 195
+    function getCountFromSpan(spanId) {
+        const el = document.getElementById(spanId);
+        if (!el) return 0;
+        const text = el.textContent || '';
+        if (text.includes('...') || text === '' || text === '(?)') return 0;
+        // Dla wypowiedzi format: "(8 dni obrad, 2330 wyp.)" — bierz ostatnią liczbę
+        const nums = text.match(/\d+/g);
+        if (!nums || nums.length === 0) return 0;
+        return parseInt(nums[nums.length - 1], 10) || 0;
+    }
+
     function updateETLEstimate() {
         // Institution
         const inst = document.querySelector('input[name="etlInst"]:checked')?.value || 'sejm';
@@ -962,6 +982,7 @@ function initETLPanel() {
             document.getElementById('etlTime').textContent = `~${estimatedTime}s`;
             document.getElementById('etlRequests').textContent = `~${requests}`;
             document.getElementById('etlData').textContent = 'głosowania, głosy indywidualne';
+            window._estimatedRequests = requests;
             return;
         }
 
@@ -974,38 +995,29 @@ function initETLPanel() {
         // Collect selected data
         let size = 70 * termCount; // base (deputies + proceedings) per kadencja
         let data = [];
-        let requests = 2 * termCount; // base requests per kadencja
+        let totalItems = 2 * termCount; // base: posłowie + posiedzenia — zawsze 2 requesty
         
-        // Per sitting data (zweryfikowane z API: rozmiary = znormalizowane dane w SQLite)
-        const perSittingData = [
-            { id: 'etlTranscripts', name: 'wypowiedzi', sizePerSitting: 400, reqsPerSitting: 15 },
-            { id: 'etlVotings', name: 'głosowania', sizePerSitting: 15, reqsPerSitting: 1 },
-            { id: 'etlVotes', name: 'głosy indywidualne', sizePerSitting: 1200, reqsPerSitting: 65 }
+        // Definicje: checkbox → span z liczbą pozycji + rozmiar KB
+        const countSources = [
+            { id: 'etlTranscripts', spanId: 'etlTranscriptsCount', name: 'wypowiedzi', sizePerSitting: 400 },
+            { id: 'etlVotings', spanId: 'etlVotingsCount', name: 'głosowania', sizePerSitting: 15 },
+            { id: 'etlVotes', spanId: 'etlVotesCount', name: 'głosy indywidualne', sizePerSitting: 1200 },
+            { id: 'etlInterpellations', spanId: 'etlInterpellationsCount', name: 'interpelacje', sizeTotal: 4000 },
+            { id: 'etlWrittenQuestions', spanId: 'etlWrittenQuestionsCount', name: 'zapytania pisemne', sizeTotal: 800 },
+            { id: 'etlBills', spanId: 'etlBillsCount', name: 'projekty ustaw', sizeTotal: 700 },
+            { id: 'etlLegalActs', spanId: 'etlLegalActsCount', name: 'ustawy (akty prawne)', sizeTotal: 500 }
         ];
 
-        perSittingData.forEach(item => {
+        countSources.forEach(item => {
             const checkbox = document.getElementById(item.id);
             if (checkbox && checkbox.checked) {
-                size += item.sizePerSitting * range * termCount;
-                requests += item.reqsPerSitting * range * termCount;
-                data.push(item.name);
-            }
-        });
-
-        // Per term data (zweryfikowane z API: interpelacje ~15k rekordów, zapytania ~3k)
-        const perTermData = [
-            { id: 'etlInterpellations', name: 'interpelacje', size: 4000, reqs: 1 },
-            { id: 'etlWrittenQuestions', name: 'zapytania pisemne', size: 800, reqs: 2 },
-            { id: 'etlBills', name: 'projekty ustaw', size: 700, reqs: 1 },
-            { id: 'etlDisclosures', name: 'oświadczenia majątkowe', size: 500, reqs: 5 },
-            { id: 'etlLegalActs', name: 'ustawy (akty prawne)', size: 500, reqs: 3 }
-        ];
-        
-        perTermData.forEach(item => {
-            const checkbox = document.getElementById(item.id);
-            if (checkbox && checkbox.checked) {
-                size += item.size * termCount;
-                requests += item.reqs * termCount;
+                const count = getCountFromSpan(item.spanId);
+                totalItems += count;
+                if (item.sizePerSitting) {
+                    size += item.sizePerSitting * range * termCount;
+                } else if (item.sizeTotal) {
+                    size += item.sizeTotal * termCount;
+                }
                 data.push(item.name);
             }
         });
@@ -1021,29 +1033,35 @@ function initETLPanel() {
             const committeeCount = isAllCommittees ? 30 : Math.max(1, selectedCommittees.length);
             
             if (committeeSittings?.checked) {
+                const csCount = getCountFromSpan('etlCommitteeSittingsCount');
                 size += 80 * committeeCount * termCount;
-                requests += 2 * committeeCount * termCount;
+                totalItems += csCount || (committeeCount * termCount);
                 data.push('posiedzenia komisji');
             }
 
             if (committeeStatements?.checked) {
                 size += 200 * committeeCount * termCount;
-                requests += 5 * committeeCount * termCount;
+                totalItems += 5 * committeeCount * termCount;
                 data.push('wypowiedzi komisji');
             }
         }
         
         // Calculate time (wąskie gardło = requesty; ~10 req/s z batchowaniem)
-        const estimatedTime = Math.max(5, Math.round(requests / 10));
+        const estimatedTime = Math.max(5, Math.round(totalItems / 10));
 
         // Update UI
         const sizeMB = size >= 1000 ? `~${(size / 1024).toFixed(1)} MB` : `~${size} KB`;
         document.getElementById('etlSize').textContent = sizeMB;
         document.getElementById('etlTime').textContent = `~${estimatedTime}-${estimatedTime + Math.round(estimatedTime * 0.3)}s`;
-        document.getElementById('etlRequests').textContent = `~${requests}`;
+        document.getElementById('etlRequests').textContent = `~${totalItems}`;
         document.getElementById('etlData').textContent = data.length > 0 ? data.join(', ') : '—';
+        // Expose for pipeline progress display
+        window._estimatedRequests = totalItems;
     }
     
+    // Expose for async count functions outside initETLPanel
+    window._updateETLEstimate = updateETLEstimate;
+
     // Initial update
     applyDependencies();
     updateRangeSummary();

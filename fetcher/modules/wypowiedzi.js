@@ -4,8 +4,17 @@
 
 import { safeFetch, safeFetchText } from '../fetcher.js';
 
+// Speed profiles: normal / fast / risky
+function getSpeedConfig(speed) {
+    switch (speed) {
+        case 'fast':  return { batch: 10, delay: 50 };
+        case 'risky': return { batch: 15, delay: 0 };
+        default:      return { batch: 5, delay: 100 };
+    }
+}
+
 export async function fetchWypowiedzi(config) {
-    const { kadencja, typ = 'sejm', sittingsToFetch = [] } = config;
+    const { kadencja, typ = 'sejm', sittingsToFetch = [], fetchSpeed = 'normal', onItemProgress } = config;
     const base = typ === 'sejm' ? 'sejm' : 'senat';
 
     if (sittingsToFetch.length === 0) {
@@ -19,22 +28,30 @@ export async function fetchWypowiedzi(config) {
     if (!Array.isArray(proceedings)) return [];
 
     const allStatements = [];
+    const totalItems = sittingsToFetch.length;
+    let doneItems = 0;
 
     for (const sittingNum of sittingsToFetch) {
         const proc = proceedings.find(p => p.number === sittingNum);
-        if (!proc || !Array.isArray(proc.dates) || proc.dates.length === 0) continue;
+        if (!proc || !Array.isArray(proc.dates) || proc.dates.length === 0) {
+            doneItems++;
+            if (onItemProgress) onItemProgress(doneItems, totalItems, 'wypowiedzi');
+            continue;
+        }
 
         for (const date of proc.dates) {
-            const statements = await fetchTranscriptsForDay(base, kadencja, sittingNum, date);
+            const statements = await fetchTranscriptsForDay(base, kadencja, sittingNum, date, fetchSpeed);
             allStatements.push(...statements);
         }
+        doneItems++;
+        if (onItemProgress) onItemProgress(doneItems, totalItems, 'wypowiedzi');
     }
 
     console.log(`[wypowiedzi] Fetched ${allStatements.length} statements from ${sittingsToFetch.length} sittings`);
     return allStatements;
 }
 
-async function fetchTranscriptsForDay(base, kadencja, sitting, date) {
+async function fetchTranscriptsForDay(base, kadencja, sitting, date, speed = 'normal') {
     const statements = [];
     const apiBase = `https://api.sejm.gov.pl/${base}/term${kadencja}/proceedings/${sitting}/${date}/transcripts`;
 
@@ -56,12 +73,12 @@ async function fetchTranscriptsForDay(base, kadencja, sitting, date) {
         maxNum = probe + 10;
     }
 
-    // Pobierz od #2 w batchach po 5
+    // Pobierz od #2 w batchach — rozmiar zależy od fetchSpeed
     const nums = Array.from({ length: maxNum - 1 }, (_, i) => i + 2);
-    const batchSize = 5;
+    const speedCfg = getSpeedConfig(speed);
 
-    for (let i = 0; i < nums.length; i += batchSize) {
-        const batch = nums.slice(i, i + batchSize);
+    for (let i = 0; i < nums.length; i += speedCfg.batch) {
+        const batch = nums.slice(i, i + speedCfg.batch);
 
         const results = await Promise.all(batch.map(async num => {
             const html = await safeFetchText(`${apiBase}/${num}`);
@@ -74,7 +91,7 @@ async function fetchTranscriptsForDay(base, kadencja, sitting, date) {
 
         // Jeśli batch pusty i jesteśmy za probe — koniec
         if (valid.length === 0 && i > 20) break;
-        await new Promise(r => setTimeout(r, 100));
+        if (speedCfg.delay > 0) await new Promise(r => setTimeout(r, speedCfg.delay));
     }
 
     return statements;

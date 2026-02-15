@@ -201,13 +201,28 @@ export async function runPipeline(config, callbacks = {}) {
         };
 
         // Call fetcher with progress callback mapped to 10-85% range
+        const estReqs = config.estimatedRequests || 0;
         const raw = await runFetcher(fetchConfig, (fetchPct, label) => {
             const mapped = 10 + Math.round(fetchPct * 0.75); // 10% + (0-100% → 0-75%) = 10-85%
             const errInfo = fetchCounter.errors > 0 ? ` (${fetchCounter.errors} err)` : '';
+            const linksText = estReqs > 0
+                ? `${fetchCounter.count} z ~${estReqs} zapytań API${errInfo}`
+                : `${fetchCounter.count} zapytań API${errInfo}`;
             onProgress(Math.min(mapped, 85), `Pobieranie: ${label}`, {
                 module: label,
                 links: fetchCounter.count,
-                linksLabel: `${fetchCounter.count} zapytań API${errInfo}`
+                linksLabel: linksText
+            });
+        }, (done, total, moduleName) => {
+            // Per-item sub-progress for heavy modules
+            const errInfo = fetchCounter.errors > 0 ? ` (${fetchCounter.errors} err)` : '';
+            const linksText = estReqs > 0
+                ? `${fetchCounter.count} z ~${estReqs} zapytań API${errInfo}`
+                : `${fetchCounter.count} zapytań API${errInfo}`;
+            onProgress(undefined, undefined, {
+                subProgress: `${moduleName}: ${done}/${total}`,
+                links: fetchCounter.count,
+                linksLabel: linksText
             });
         });
 
@@ -229,7 +244,7 @@ export async function runPipeline(config, callbacks = {}) {
         );
 
         onLog(`📥 Fetched ${totalRecords} raw records from API (${fetchCounter.count} requests)`);
-        onProgress(85, 'Pobieranie zakończone', { module: `${totalRecords} rekordów`, links: fetchCounter.count, linksLabel: `${fetchCounter.count} zapytań API` });
+        onProgress(85, 'Pobieranie zakończone', { module: `${totalRecords} rekordów`, links: fetchCounter.count, linksLabel: `${fetchCounter.count} zapytań API (wykonano)` });
 
         checkAbort();
 
@@ -465,7 +480,9 @@ export function buildConfigFromUI() {
         rangeMode: 'custom',
         rangeFrom: parseInt(document.getElementById('etlRangeFrom')?.value) || 1,
         rangeTo: parseInt(document.getElementById('etlRangeTo')?.value) || 3,
-        modules: ['poslowie', 'posiedzenia']
+        modules: ['poslowie', 'posiedzenia'],
+        fetchSpeed: (typeof window._getSettingsFetchSpeed === 'function' ? window._getSettingsFetchSpeed() : 'normal'),
+        estimatedRequests: window._estimatedRequests || parseInt(document.getElementById('etlRequests')?.textContent?.replace(/[^0-9]/g, ''), 10) || 0
     };
 
     // "Wszystkie kadencje" — lista kadencji do pobrania, pełny zakres

@@ -7,20 +7,40 @@ import { getSittingNumbers } from '../fetcher.js';
  * Pobiera podstawowe dane głosowań (bez indywidualnych głosów)
  * Szybkie, zwięzłe - do ogólnego przeglądu
  */
+// Speed profiles: normal / fast / risky
+function getSpeedConfig(speed) {
+    switch (speed) {
+        case 'fast':  return { batch: 10, delay: 50 };
+        case 'risky': return { batch: 15, delay: 0 };
+        default:      return { batch: 5, delay: 100 };
+    }
+}
+
 export async function fetchGlosowania(config) {
     const results = [];
-    const { posiedzenia, kadencja = 10, typ = 'sejm' } = config;
+    const { posiedzenia, kadencja = 10, typ = 'sejm', fetchSpeed = 'normal', onItemProgress } = config;
     const sittingNumbers = getSittingNumbers(posiedzenia, config);
     const base = typ === 'sejm' ? 'sejm' : 'senat';
+    const speedCfg = getSpeedConfig(fetchSpeed);
+    const totalItems = sittingNumbers.length;
+    let doneItems = 0;
     
-    for (const num of sittingNumbers) {
-        const url = `https://api.sejm.gov.pl/${base}/term${kadencja}/votings/${num}`;
-        try {
-            const data = await safeFetch(url);
-            results.push(...(Array.isArray(data) ? data : []));
-        } catch (e) {
-            console.warn(`[Glosowania] Failed for sitting ${num}:`, e.message);
-        }
+    for (let i = 0; i < sittingNumbers.length; i += speedCfg.batch) {
+        const batch = sittingNumbers.slice(i, i + speedCfg.batch);
+        const batchResults = await Promise.all(batch.map(async num => {
+            const url = `https://api.sejm.gov.pl/${base}/term${kadencja}/votings/${num}`;
+            try {
+                const data = await safeFetch(url);
+                return Array.isArray(data) ? data : [];
+            } catch (e) {
+                console.warn(`[Glosowania] Failed for sitting ${num}:`, e.message);
+                return [];
+            }
+        }));
+        results.push(...batchResults.flat());
+        doneItems = Math.min(i + speedCfg.batch, totalItems);
+        if (onItemProgress) onItemProgress(doneItems, totalItems, 'głosowania');
+        if (speedCfg.delay > 0) await new Promise(r => setTimeout(r, speedCfg.delay));
     }
     
     return results;

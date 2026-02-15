@@ -23,6 +23,36 @@ export const fetchCounter = { count: 0, errors: 0 };
 export let fetchAbortController = null;
 export function setFetchAbortController(ctrl) { fetchAbortController = ctrl; }
 
+// Beep on 503 errors (Web Audio API)
+let _audioCtx = null;
+function playBeep503() {
+    try {
+        const soundEnabled = localStorage.getItem('nostradamnos_soundAlerts');
+        if (soundEnabled === 'false') return;
+        if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = _audioCtx.createOscillator();
+        const gain = _audioCtx.createGain();
+        osc.type = 'square';
+        osc.frequency.value = 880;
+        gain.gain.value = 0.3;
+        osc.connect(gain);
+        gain.connect(_audioCtx.destination);
+        osc.start();
+        osc.stop(_audioCtx.currentTime + 0.15);
+        setTimeout(() => {
+            const osc2 = _audioCtx.createOscillator();
+            const gain2 = _audioCtx.createGain();
+            osc2.type = 'square';
+            osc2.frequency.value = 660;
+            gain2.gain.value = 0.3;
+            osc2.connect(gain2);
+            gain2.connect(_audioCtx.destination);
+            osc2.start();
+            osc2.stop(_audioCtx.currentTime + 0.25);
+        }, 180);
+    } catch (_) { /* ignore audio errors */ }
+}
+
 // Safe fetch with retry + exponential backoff
 export async function safeFetch(url) {
     for (let i = 0; i < 3; i++) {
@@ -30,6 +60,10 @@ export async function safeFetch(url) {
             const opts = fetchAbortController ? { signal: fetchAbortController.signal } : {};
             const res = await fetch(url, opts);
             fetchCounter.count++;
+            if (res.status === 503) {
+                playBeep503();
+                console.warn(`[Fetcher] 503 Service Unavailable: ${url}`);
+            }
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             return await res.json();
         } catch (e) {
@@ -48,6 +82,10 @@ export async function safeFetchText(url) {
             const res = await fetch(url, opts);
             fetchCounter.count++;
             if (res.status === 404) return null;
+            if (res.status === 503) {
+                playBeep503();
+                console.warn(`[Fetcher] 503 Service Unavailable: ${url}`);
+            }
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             return await res.text();
         } catch (e) {
@@ -59,10 +97,11 @@ export async function safeFetchText(url) {
 }
 
 // Main fetcher orchestrator
-export async function runFetcher(config, onProgress) {
+export async function runFetcher(config, onProgress, onItemProgress) {
     console.log('[Fetcher] Starting with config:', config);
     const results = {};
     const report = onProgress || (() => {});
+    const reportItem = onItemProgress || (() => {});
 
     // Build task list to calculate progress
     const tasks = [];
@@ -119,19 +158,19 @@ export async function runFetcher(config, onProgress) {
 
     if (m.includes('wypowiedzi')) {
         console.log('[Fetcher] Fetching wypowiedzi...');
-        results.wypowiedzi = await fetchWypowiedzi(config);
+        results.wypowiedzi = await fetchWypowiedzi({ ...config, onItemProgress: reportItem });
         tick('wypowiedzi');
     }
 
     if (m.includes('glosowania')) {
         console.log('[Fetcher] Fetching glosowania...');
-        results.glosowania = await fetchGlosowania(config);
+        results.glosowania = await fetchGlosowania({ ...config, onItemProgress: reportItem });
         tick('głosowania');
     }
 
     if (m.includes('glosy') && results.glosowania) {
         console.log('[Fetcher] Fetching glosy...');
-        results.glosy = await fetchGlosy({ ...config, glosowania: results.glosowania });
+        results.glosy = await fetchGlosy({ ...config, glosowania: results.glosowania, onItemProgress: reportItem });
         tick('głosy');
     }
 
@@ -175,7 +214,8 @@ export async function runFetcher(config, onProgress) {
             console.log('[Fetcher] Fetching komisje_posiedzenia...');
             results.komisje_posiedzenia = await fetchKomisjePosiedzenia({
                 ...config,
-                komisje: komisjeData
+                komisje: komisjeData,
+                onItemProgress: reportItem
             });
             tick('posiedzenia komisji');
         } else {
