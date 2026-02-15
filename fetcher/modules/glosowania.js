@@ -11,7 +11,7 @@ import { getSittingNumbers } from '../fetcher.js';
 function getSpeedConfig(speed) {
     switch (speed) {
         case 'fast':  return { batch: 10, delay: 50 };
-        case 'risky': return { batch: 15, delay: 0 };
+        case 'risky': return { batch: 13, delay: 25 };
         default:      return { batch: 5, delay: 100 };
     }
 }
