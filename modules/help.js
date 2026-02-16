@@ -159,16 +159,28 @@ function onMouseMove(e) {
         // Temporarily hide shield & tooltip so elementFromPoint sees real DOM
         if (shield) shield.style.pointerEvents = 'none';
         if (tooltip) tooltip.style.pointerEvents = 'none';
-        // Also temporarily disable pointer-events on highlighted el
-        if (highlightedEl) highlightedEl.style.pointerEvents = 'none';
 
-        const elUnder = document.elementFromPoint(cx, cy);
+        // Pass 1: find target WITH highlighted element visible (detects children with data-help-id)
+        let elUnder = document.elementFromPoint(cx, cy);
+        let target = elUnder ? findHelpTarget(elUnder) : null;
 
-        if (highlightedEl) highlightedEl.style.pointerEvents = '';
+        // Pass 2: if target is same as current highlight, disable it to check if cursor truly left
+        if (target && target === highlightedEl) {
+            highlightedEl.style.pointerEvents = 'none';
+            elUnder = document.elementFromPoint(cx, cy);
+            highlightedEl.style.pointerEvents = '';
+            const deeper = elUnder ? findHelpTarget(elUnder) : null;
+            // Only clear if there's nothing beneath AND cursor left the zone
+            if (!deeper && !isInsideCachedRect(cx, cy)) {
+                target = null;
+            }
+            // If deeper found a different target, use it
+            // (shouldn't happen since we already found the parent, but just in case)
+        }
+
         if (shield) shield.style.pointerEvents = '';
         if (tooltip) tooltip.style.pointerEvents = '';
 
-        const target = elUnder ? findHelpTarget(elUnder) : null;
         if (target) {
             highlightElement(target); // no-op if same element (no flicker)
         } else if (!isInsideCachedRect(cx, cy)) {

@@ -1,6 +1,7 @@
 // Predictions Module - Model Predykcyjny
 import { db2 } from './database-v2.js';
 import { analyzeSentiment } from './sentiment-analysis.js';
+import { renderInvestigationCard } from './investigation-engine.js';
 
 /**
  * Inicjalizacja modułu predykcji
@@ -10,6 +11,9 @@ export function initPredictions() {
 
     // Click-to-expand: kliknięcie na kartę → rozwiń + lazy-load danych
     initPredictionCardExpand();
+
+    // 🔓 IDDQD: ukryty kod odblokowania Investigation Engine
+    initSecretUnlock();
 
     // Sprawdź czy jest baza
     if (!db2.database) {
@@ -35,6 +39,46 @@ export function runAllPredictions() {
     // Wyczyść załadowane flagi żeby przy kolejnym otwarciu przeliczyło na nowo
     document.querySelectorAll('.prediction-card').forEach(card => {
         card.removeAttribute('data-loaded');
+    });
+}
+
+/**
+ * 🔓 Sekretny kod IDDQD — odblokowanie Investigation Engine
+ */
+function initSecretUnlock() {
+    const SECRET = 'iddqd';
+    let buffer = '';
+    let unlocked = false;
+
+    document.addEventListener('keydown', (e) => {
+        if (unlocked) return;
+        // Ignoruj jeśli focus jest w input/textarea
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
+
+        buffer += e.key.toLowerCase();
+        // Ogranicz bufor do długości kodu
+        if (buffer.length > SECRET.length) buffer = buffer.slice(-SECRET.length);
+
+        if (buffer === SECRET) {
+            unlocked = true;
+            const card = document.getElementById('investigationEngineCard');
+            if (card) {
+                card.style.display = '';
+                card.classList.add('inv-unlock-reveal');
+                // Usunięcie animacji po zakończeniu
+                card.addEventListener('animationend', () => {
+                    card.classList.remove('inv-unlock-reveal');
+                }, { once: true });
+            }
+            // Toast
+            if (window.ToastModule) {
+                window.ToastModule.show('🔓 GOD MODE ACTIVATED — Investigation Engine odblokowany!', {
+                    duration: 4000,
+                    type: 'success'
+                });
+            }
+            console.log('%c[IDDQD] 🔓 Investigation Engine unlocked!', 'color: #667eea; font-weight: bold; font-size: 14px;');
+        }
     });
 }
 
@@ -72,7 +116,8 @@ const predictionLoaders = {
     'ghostVoting': analyzeGhostVoting,
     'webIntel': loadWebIntel,
     'aiCharts': loadAiCharts,
-    'aggressionAnalysis': analyzeAggression
+    'aggressionAnalysis': analyzeAggression,
+    'investigationEngine': renderInvestigationCard
 };
 
 /**

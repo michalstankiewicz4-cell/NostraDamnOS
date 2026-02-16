@@ -133,6 +133,32 @@ export const HELP_DATA = {
         desc: "Opisz słownie jaki wykres chcesz — AI wygeneruje zapytanie SQL i narysuje wykres z danych w bazie. Obsługuje: kołowy, słupkowy, liniowy, radarowy. Np. 'pokaż aktywność klubów w czasie' lub 'porównaj frekwencję PiS vs KO'."
     },
 
+    // ── Investigation Engine ──────────────────────────
+    predInvestigationEngine: {
+        title: "🕵️ Investigation Engine",
+        desc: "Moduł wykrywający teorie spiskowe, spekulacyjne narracje i manipulacje retoryczne w wypowiedziach parlamentarnych. Analizuje 500 losowych wypowiedzi z bazy, skanuje pod kątem 6 kategorii narracji i 14 wzorców retorycznych, buduje mapę pojęć i wykrywa powtarzające się motywy. Przycisk '🔍 Zbadaj' wysyła wybrany element do czatu AI w celu pogłębionej analizy."
+    },
+    invTabClusters: {
+        title: "🏷️ Klastry narracji",
+        desc: "Wypowiedzi są grupowane w 6 kategorii narracji: ukryte wpływy zagraniczne, tajne działania rządu, manipulacja mediami, zbiegi okoliczności, niewyjaśnione zdarzenia, niejawne powiązania. Każda wypowiedź jest skanowana pod kątem słów kluczowych i przypisywana do dominującej kategorii. Klaster pokazuje ile wypowiedzi zawiera, łączny score, najczęstszych mówców i partie. Kliknij '🔍 Zbadaj' aby wysłać klaster do AI."
+    },
+    invTabRhetoric: {
+        title: "🎭 Wzorce retoryczne",
+        desc: "Wykrywa 14 typów technik manipulacji retorycznej w wypowiedziach, np.: 'to nie przypadek' (negacja przypadkowości), 'obudźcie się' (wezwanie do przebudzenia), 'cui bono' (motyw korzyści), 'nikt nie mówi' (argument z przemilczenia), 'oficjalna wersja' (podważanie narracji). Każdy wzorzec ma przypisaną wagę — im częstszy i mocniejszy, tym wyższy pasek na wykresie."
+    },
+    invTabMotifs: {
+        title: "🔁 Motywy",
+        desc: "Wyświetla powtarzające się bigramy (pary wyrazów) wykryte w wypowiedziach parlamentarnych. Tekst jest dzielony na słowa (>3 znaki, bez stop-words), liczone są pary sąsiednich wyrazów. Filtrowane są tylko te, które pojawiły się ≥3 razy u ≥2 różnych mówców. Motywy oznaczone 'trans-partyjny' pojawiają się w więcej niż jednej partii — potencjalnie skoordynowane narracje lub wspólne punkty zapalne."
+    },
+    invTabConceptMap: {
+        title: "🕸️ Mapa pojęć",
+        desc: "Wizualizacja SVG współwystępowania najczęstszych pojęć. Analizuje top 40 słów z wypowiedzi i mierzy jak często pojawiają się razem w oknie 5 wyrazów. Węzły (kółka) to pojęcia — im większe, tym częstsze. Krawędzie (linie) łączą pojęcia występujące obok siebie — im grubsza linia, tym silniejsze powiązanie. Pozwala zobaczyć jakie idee 'krążą' razem w parlamencie."
+    },
+    invTabTopFlagged: {
+        title: "🚩 Top oflagowane",
+        desc: "Ranking 10 wypowiedzi z najwyższym 'Investigation Score'. Score obliczany jest na podstawie: liczby trafień słów kluczowych z 6 kategorii narracji (każda z własną wagą) + wykrytych wzorców retorycznych. Każda karta pokazuje mówcę, partię, score, kategorie, sentyment i fragment tekstu. Kliknij '🔍 Zbadaj' aby AI oceniło czy to rzeczywisty sygnał czy fałszywy alarm."
+    },
+
     // ── Wykresy (karty) ──────────────────────────
     chartKluby: {
         title: "🏛️ Rozkład klubów parlamentarnych",

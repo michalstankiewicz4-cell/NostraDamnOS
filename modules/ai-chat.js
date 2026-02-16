@@ -1186,6 +1186,31 @@ async function pingModelAPI(modelKey) {
 // Export for external access
 window.recheckAIStatus = checkAllFavoriteModels;
 
+/**
+ * Programowo wyślij wiadomość do czatu AI z zewnętrznego modułu.
+ * Przełącza na zakładkę AI Asystent, wypełnia pole i wysyła.
+ * @param {string} message — treść wiadomości
+ */
+window.sendToAIChat = function(message) {
+    if (!message || typeof message !== 'string') return;
+
+    // Przełącz na zakładkę AI Asystent (sekcja 3)
+    const navItem = document.querySelector('.nav-item[data-section="3"]');
+    if (navItem) navItem.click();
+
+    // Wypełnij pole i wyślij z małym opóźnieniem (żeby sekcja zdążyła się pokazać)
+    setTimeout(() => {
+        const input = document.getElementById('chatInput');
+        if (input) {
+            input.value = message;
+            input.style.height = 'auto';
+            input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+        }
+        // Wywołaj sendMessage
+        sendMessage();
+    }, 150);
+};
+
 // =====================================================
 // KEY VAULT INTEGRATION
 // =====================================================
