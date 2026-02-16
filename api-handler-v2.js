@@ -1465,6 +1465,9 @@ async function startPipelineETL() {
     }
     showEtlProgress();
 
+    // Start mini-game if enabled in settings
+    if (typeof window.startEmoGame === 'function') window.startEmoGame();
+
     try {
         // Build config from ETL Panel UI
         const config = buildConfigFromUI();
@@ -1627,6 +1630,9 @@ async function startPipelineETL() {
         console.log('❌ [Zadanie] Pobierz/Zaktualizuj dane zakończony z błędem');
 
     } finally {
+        // Stop mini-game
+        if (typeof window.stopEmoGame === 'function') window.stopEmoGame();
+
         isFetching = false;
         updateChartActionButtons(false); // Odblokuj przyciski akcji
         currentAbortController = null;

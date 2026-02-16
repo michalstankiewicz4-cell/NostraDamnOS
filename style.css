@@ -6259,3 +6259,101 @@ input:disabled {
 .aggr-verdict { font-size: 0.82rem; line-height: 1.5; margin: 6px 0 0; }
 .aggr-verdict--scripted { color: #f39c12; }
 .aggr-verdict--organic { color: #27ae60; }
+
+/* ===================== EMOGAME — Rocket mini-game ===================== */
+
+#emogame-container {
+    position: fixed;
+    inset: 0;
+    z-index: 999990;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+#emogame-ship {
+    position: absolute;
+    font-size: 28px;
+    user-select: none;
+    pointer-events: none;
+    transition: transform 0.05s linear;
+    filter: drop-shadow(0 0 6px rgba(255, 200, 50, 0.6));
+    z-index: 999995;
+}
+
+.emogame-bullet {
+    position: absolute;
+    color: #0f0;
+    font-size: 16px;
+    pointer-events: none;
+    text-shadow: 0 0 4px #0f0;
+}
+
+.emogame-flash {
+    animation: emogameFlash 0.2s linear !important;
+}
+
+@keyframes emogameFlash {
+    0%   { filter: brightness(300%) drop-shadow(0 0 8px #fff); }
+    100% { filter: brightness(100%); }
+}
+
+.emogame-hole {
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    background: #000;
+    pointer-events: none;
+    filter: blur(2px);
+    z-index: 999991;
+}
+
+.emogame-fragment {
+    position: absolute;
+    pointer-events: none;
+    z-index: 999992;
+}
+
+.emogame-smoke {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    pointer-events: none;
+    filter: blur(3px);
+    opacity: 1;
+    transition: opacity 1s linear, transform 1s linear;
+    z-index: 999992;
+}
+
+.emogame-spark {
+    position: absolute;
+    width: 3px;
+    height: 3px;
+    pointer-events: none;
+    border-radius: 50%;
+    opacity: 1;
+    transition: opacity 0.4s linear;
+    z-index: 999992;
+}
+
+#emogame-hint {
+    position: fixed;
+    bottom: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.75);
+    color: #fff;
+    padding: 10px 24px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    pointer-events: none;
+    z-index: 999999;
+    transition: opacity 1s ease;
+    white-space: nowrap;
+}
+
+#emogame-hint b {
+    color: #facc15;
+}
