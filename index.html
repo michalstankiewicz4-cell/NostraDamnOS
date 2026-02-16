@@ -1180,12 +1180,10 @@
                         <h3>Pamięć przeglądarki</h3>
                     </div>
                     <div class="console-style-body">
-                        <div class="console-style-description">
-                            <p>Resetuj zapisane pozycje przycisków oraz ustawienia interfejsu do wartości domyślnych.</p>
-                        </div>
-                        <div class="console-style-options">
+                        <div class="console-style-options" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
                                <button id="btnResetMemory" class="console-style-btn console-style-btn-danger"
                                    data-help-id="resetMemorySettings">Reset pamięci</button>
+                               <span style="font-size:0.85rem;color:var(--text-secondary)">Resetuj zapisane pozycje przycisków oraz ustawienia interfejsu do wartości domyślnych.</span>
                         </div>
                     </div>
                 </div>
@@ -1195,163 +1193,168 @@
                         <h3>Widoczność elementów</h3>
                     </div>
                     <div class="console-style-body">
-                        <div class="settings-checkboxes">
-                            <label class="settings-checkbox-label">
-                                <input type="checkbox" id="toggleFloatingBtns" checked>
-                                <span>Przyciski po lewej stronie</span>
-                            </label>
-                            <label class="settings-checkbox-label">
-                                <input type="checkbox" id="toggleTopBar" checked>
-                                <span>Pasek informacyjny (góra)</span>
-                            </label>
-                            <label class="settings-checkbox-label">
-                                <input type="checkbox" id="toggleBottomBar" checked>
-                                <span>Pasek statusu (dół)</span>
-                            </label>
-                        </div>
-                        <div class="settings-checkboxes" style="margin-top:10px">
-                            <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:6px">Przyciski boczne:</p>
-                            <label class="settings-checkbox-label">
-                                <input type="checkbox" id="toggleBtnImport" checked>
-                                <span>Import bazy</span>
-                            </label>
-                            <label class="settings-checkbox-label">
-                                <input type="checkbox" id="toggleBtnExport" checked>
-                                <span>Export bazy</span>
-                            </label>
-                            <label class="settings-checkbox-label">
-                                <input type="checkbox" id="toggleBtnAi" checked>
-                                <span>Nawigator</span>
-                                <select id="btnAiTargetSelect" style="margin-left:8px;font-size:0.75rem;padding:1px 4px;background:var(--bg-secondary);color:var(--text-primary);border:1px solid var(--border-color);border-radius:4px">
-                                    <option value="1">ETL</option>
-                                    <option value="2">Podsumowanie</option>
-                                    <option value="3" selected>AI Asystent</option>
-                                    <option value="4">Wykresy</option>
-                                    <option value="5">Ustawienia</option>
-                                </select>
-                            </label>
-                            <label class="settings-checkbox-label">
-                                <input type="checkbox" id="toggleBtnAbout" checked>
-                                <span>Informacje o wersji</span>
-                            </label>
-                            <label class="settings-checkbox-label">
-                                <input type="checkbox" id="toggleBtnLanguage">
-                                <span style="opacity:0.5">Zmiana języka (niedostępna)</span>
-                            </label>
-                            <label class="settings-checkbox-label">
-                                <input type="checkbox" id="toggleBtnHelp" checked>
-                                <span>Podpowiedzi</span>
-                            </label>
-                            <label class="settings-checkbox-label">
-                                <input type="checkbox" id="toggleBtnReset">
-                                <span>Reset pamięci</span>
-                            </label>
-                        </div>
-                        <div class="settings-checkboxes" style="margin-top:10px">
-                            <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:6px">Elementy paska statusu:</p>
-                            <label class="settings-checkbox-label">
-                                <input type="checkbox" id="toggleBarVersion" checked>
-                                <span>Wersja</span>
-                            </label>
-                            <div style="display:flex;flex-direction:column;gap:10px;">
-                                <label class="settings-checkbox-label" style="font-size:0.9rem;">
-                                    <input type="checkbox" id="toggleDbCheckNewRecords">
-                                    <span>Monitoruj nowe rekordy co</span>
-                                    <input type="number" id="dbCheckNewRecordsInterval" min="1" max="60" value="5" style="width:50px;margin:0 5px;padding:2px 5px;">
-                                    <span>min</span>
-                                    <button id="btnCheckNewRecords" class="console-style-btn" style="margin-left:8px;padding:4px 10px;font-size:0.8rem;" title="Sprawdź teraz">🔄</button>
+                        <fieldset class="etl-fieldset" style="margin-bottom:10px;background:var(--bg-secondary);border-color:var(--border-color)">
+                            <legend style="color:var(--text-secondary)">Paski informacyjne</legend>
+                            <div class="settings-checkboxes">
+                                <label class="settings-checkbox-label">
+                                    <input type="checkbox" id="toggleTopBar" checked>
+                                    <span>Pasek informacyjny (góra)</span>
                                 </label>
-                                <label class="settings-checkbox-label" style="font-size:0.9rem;">
-                                    <input type="checkbox" id="toggleDbCheckDataChanges">
-                                    <span>Monitoruj zmiany danych co</span>
-                                    <input type="number" id="dbCheckDataChangesInterval" min="1" max="60" value="11" style="width:50px;margin:0 5px;padding:2px 5px;">
-                                    <span>min</span>
-                                    <button id="btnCheckDataChanges" class="console-style-btn" style="margin-left:8px;padding:4px 10px;font-size:0.8rem;" title="Sprawdź teraz">🔄</button>
+                                <label class="settings-checkbox-label">
+                                    <input type="checkbox" id="toggleBottomBar" checked>
+                                    <span>Pasek statusu (dół)</span>
                                 </label>
                             </div>
-                            <label class="settings-checkbox-label">
-                                <input type="checkbox" id="toggleBarAi" checked>
-                                <span>AI</span>
-                            </label>
-                            <label class="settings-checkbox-label">
-                                <input type="checkbox" id="toggleBarLoad" checked>
-                                <span>Load</span>
-                            </label>
-                            <label class="settings-checkbox-label">
-                                <input type="checkbox" id="toggleBarMemory">
-                                <span>Memory</span>
-                            </label>
-                            <label class="settings-checkbox-label">
-                                <input type="checkbox" id="toggleBarStorage">
-                                <span>Storage</span>
-                            </label>
-                            <label class="settings-checkbox-label">
-                                <input type="checkbox" id="toggleBarCache">
-                                <span>Cache</span>
-                            </label>
-                            <label class="settings-checkbox-label">
-                                <input type="checkbox" id="toggleBarConsole" checked>
-                                <span>Konsola</span>
-                            </label>
-                            <label class="settings-checkbox-label">
-                                <input type="checkbox" id="toggleBarLive">
-                                <span>Live</span>
-                            </label>
-                            <p style="font-size:0.85rem;color:var(--text-secondary);margin-top:10px;margin-bottom:6px">Inne:</p>
-                            <label class="settings-checkbox-label">
-                                <input type="checkbox" id="toggleInfoFetch" checked>
-                                <span>Informuj o ściąganiu danych</span>
-                            </label>
-                            <label class="settings-checkbox-label">
-                                <input type="checkbox" id="toggleRememberEtl">
-                                <span>Pamiętaj ustawienia ściągania danych</span>
-                            </label>
-                            <label class="settings-checkbox-label">
-                                <input type="checkbox" id="toggleAutoCountRecords" checked>
-                                <span>Szacuj ilości rekordów na starcie (requesty do API)</span>
-                            </label>
-                            <label class="settings-checkbox-label">
-                                <input type="checkbox" id="toggleShowEstimate" checked>
-                                <span>Pokaż estymację pamięci i czasu</span>
-                            </label>
-                            <label class="settings-checkbox-label">
-                                <input type="checkbox" id="toggleSoundAlerts" checked>
-                                <span>Dźwiękowe alerty (błąd 503)</span>
-                            </label>
-                            <p style="font-size:0.85rem;color:var(--text-secondary);margin-top:10px;margin-bottom:6px">⚡ Szybkość pobierania danych:</p>
-                            <div class="settings-speed-group">
+                            <div class="settings-checkboxes" style="margin-top:8px;margin-left:16px">
+                                <div style="display:flex;flex-direction:column;gap:10px;">
+                                    <label class="settings-checkbox-label" style="font-size:0.9rem;">
+                                        <input type="checkbox" id="toggleDbCheckNewRecords">
+                                        <span>Monitoruj nowe rekordy co</span>
+                                        <input type="number" id="dbCheckNewRecordsInterval" min="1" max="60" value="5" style="width:50px;margin:0 5px;padding:2px 5px;">
+                                        <span>min</span>
+                                        <button id="btnCheckNewRecords" class="console-style-btn" style="margin-left:8px;padding:4px 10px;font-size:0.8rem;" title="Sprawdź teraz">🔄</button>
+                                    </label>
+                                    <label class="settings-checkbox-label" style="font-size:0.9rem;">
+                                        <input type="checkbox" id="toggleDbCheckDataChanges">
+                                        <span>Monitoruj zmiany danych co</span>
+                                        <input type="number" id="dbCheckDataChangesInterval" min="1" max="60" value="11" style="width:50px;margin:0 5px;padding:2px 5px;">
+                                        <span>min</span>
+                                        <button id="btnCheckDataChanges" class="console-style-btn" style="margin-left:8px;padding:4px 10px;font-size:0.8rem;" title="Sprawdź teraz">🔄</button>
+                                    </label>
+                                </div>
                                 <label class="settings-checkbox-label">
-                                    <input type="radio" name="settingsSpeed" value="normal" checked>
-                                    <span>Normalnie <small style="color:var(--text-secondary)">(batch 5, 100ms delay)</small></span>
+                                    <input type="checkbox" id="toggleBarAi" checked>
+                                    <span>AI</span>
                                 </label>
                                 <label class="settings-checkbox-label">
-                                    <input type="radio" name="settingsSpeed" value="fast">
-                                    <span>Szybko 🚀 <small style="color:var(--text-secondary)">(batch 10, 50ms delay)</small></span>
+                                    <input type="checkbox" id="toggleBarLoad" checked>
+                                    <span>Load</span>
                                 </label>
                                 <label class="settings-checkbox-label">
-                                    <input type="radio" name="settingsSpeed" value="risky">
-                                    <span>Ryzykownie 🔥 <small style="color:var(--text-secondary)">(batch 13, 25ms delay)</small></span>
+                                    <input type="checkbox" id="toggleBarMemory">
+                                    <span>Memory</span>
+                                </label>
+                                <label class="settings-checkbox-label">
+                                    <input type="checkbox" id="toggleBarStorage">
+                                    <span>Storage</span>
+                                </label>
+                                <label class="settings-checkbox-label">
+                                    <input type="checkbox" id="toggleBarCache">
+                                    <span>Cache</span>
+                                </label>
+                                <label class="settings-checkbox-label">
+                                    <input type="checkbox" id="toggleBarConsole" checked>
+                                    <span>Konsola</span>
+                                </label>
+                                <label class="settings-checkbox-label">
+                                    <input type="checkbox" id="toggleBarLive">
+                                    <span>Live</span>
                                 </label>
                             </div>
-                            <p style="font-size:0.85rem;color:var(--text-secondary);margin-top:10px;margin-bottom:6px">Powiadomienia przy wejściu w zakładkę:</p>
-                            <label class="settings-checkbox-label">
-                                <input type="checkbox" id="toggleNotifyDataWorkflow" checked>
-                                <span>Powiadomienie "Zasada pracy na danych" (zakładka Dane)</span>
-                            </label>
-                            <label class="settings-checkbox-label">
-                                <input type="checkbox" id="toggleNotifyAiWip" checked>
-                                <span>Powiadomienie "Sekcja w budowie" (zakładka AI Asystent)</span>
-                            </label>
-                            <p style="font-size:0.85rem;color:var(--text-secondary);margin-top:10px;margin-bottom:6px">🎮 Rozrywka:</p>
-                            <label class="settings-checkbox-label">
-                                <input type="checkbox" id="toggleGameOnLoad">
-                                <span>Mini-gra 🚀 w trakcie ładowania danych (ESC — end game)</span>
-                            </label>
-                            <label class="settings-checkbox-label" style="margin-left:18px">
-                                <input type="checkbox" id="toggleGameLite" checked>
-                                <span>Wersja lekka (odłamki wypadają za ekran)</span>
-                            </label>
-                        </div>
+                        </fieldset>
+                        <fieldset class="etl-fieldset" style="margin-bottom:10px;background:var(--bg-secondary);border-color:var(--border-color)">
+                            <legend style="color:var(--text-secondary)">Przyciski po lewej stronie</legend>
+                            <div class="settings-checkboxes">
+                                <label class="settings-checkbox-label">
+                                    <input type="checkbox" id="toggleBtnImport" checked>
+                                    <span>Import bazy</span>
+                                </label>
+                                <label class="settings-checkbox-label">
+                                    <input type="checkbox" id="toggleBtnExport" checked>
+                                    <span>Export bazy</span>
+                                </label>
+                                <label class="settings-checkbox-label">
+                                    <input type="checkbox" id="toggleBtnAi" checked>
+                                    <span>Nawigator</span>
+                                    <select id="btnAiTargetSelect" style="margin-left:8px;font-size:0.75rem;padding:1px 4px;background:var(--bg-secondary);color:var(--text-primary);border:1px solid var(--border-color);border-radius:4px">
+                                        <option value="1">ETL</option>
+                                        <option value="2">Podsumowanie</option>
+                                        <option value="3" selected>AI Asystent</option>
+                                        <option value="4">Wykresy</option>
+                                        <option value="5">Ustawienia</option>
+                                    </select>
+                                </label>
+                                <label class="settings-checkbox-label">
+                                    <input type="checkbox" id="toggleBtnAbout" checked>
+                                    <span>Informacje o wersji</span>
+                                </label>
+                                <label class="settings-checkbox-label">
+                                    <input type="checkbox" id="toggleBtnLanguage">
+                                    <span style="opacity:0.5">Zmiana języka (niedostępna)</span>
+                                </label>
+                                <label class="settings-checkbox-label">
+                                    <input type="checkbox" id="toggleBtnHelp" checked>
+                                    <span>Podpowiedzi</span>
+                                </label>
+                                <label class="settings-checkbox-label">
+                                    <input type="checkbox" id="toggleBtnReset">
+                                    <span>Reset pamięci</span>
+                                </label>
+                            </div>
+                        </fieldset>
+                        <fieldset class="etl-fieldset" style="margin-bottom:10px;background:var(--bg-secondary);border-color:var(--border-color)">
+                            <legend style="color:var(--text-secondary)">Dane</legend>
+                            <div class="settings-checkboxes">
+                                <label class="settings-checkbox-label">
+                                    <input type="checkbox" id="toggleRememberEtl">
+                                    <span>Pamiętaj ustawienia ściągania danych</span>
+                                </label>
+                                <label class="settings-checkbox-label">
+                                    <input type="checkbox" id="toggleAutoCountRecords" checked>
+                                    <span>Szacuj ilości rekordów na starcie (requesty do API)</span>
+                                </label>
+                                <label class="settings-checkbox-label">
+                                    <input type="checkbox" id="toggleShowEstimate" checked>
+                                    <span>Pokaż estymację pamięci i czasu</span>
+                                </label>
+                                <label class="settings-checkbox-label">
+                                    <input type="checkbox" id="toggleInfoFetch" checked>
+                                    <span>Informuj o ściąganiu danych</span>
+                                </label>
+                                <label class="settings-checkbox-label">
+                                    <input type="checkbox" id="toggleSoundAlerts" checked>
+                                    <span>Dźwiękowe alerty (błąd 503)</span>
+                                </label>
+                            </div>
+                            <div class="settings-checkboxes" style="margin-top:8px;margin-left:16px">
+                                <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:6px">Szybkość pobierania danych:</p>
+                                <div class="settings-speed-group">
+                                    <label class="settings-checkbox-label">
+                                        <input type="radio" name="settingsSpeed" value="normal" checked>
+                                        <span>Normalnie <small style="color:var(--text-secondary)">(batch 5, 100ms delay)</small></span>
+                                    </label>
+                                    <label class="settings-checkbox-label">
+                                        <input type="radio" name="settingsSpeed" value="fast">
+                                        <span>Szybko 🚀 <small style="color:var(--text-secondary)">(batch 10, 50ms delay)</small></span>
+                                    </label>
+                                    <label class="settings-checkbox-label">
+                                        <input type="radio" name="settingsSpeed" value="risky">
+                                        <span>Ryzykownie 🔥 <small style="color:var(--text-secondary)">(batch 13, 25ms delay)</small></span>
+                                    </label>
+                                </div>
+                            </div>
+                        </fieldset>
+                        <fieldset class="etl-fieldset" style="margin-bottom:10px;background:var(--bg-secondary);border-color:var(--border-color)">
+                            <legend style="color:var(--text-secondary)">Inne</legend>
+                            <div class="settings-checkboxes">
+                                <label class="settings-checkbox-label">
+                                    <input type="checkbox" id="toggleNotifyDataWorkflow" checked>
+                                    <span>Powiadomienie "Zasada pracy na danych" (zakładka Dane)</span>
+                                </label>
+                                <label class="settings-checkbox-label">
+                                    <input type="checkbox" id="toggleNotifyAiWip" checked>
+                                    <span>Powiadomienie "Sekcja w budowie" (zakładka AI Asystent)</span>
+                                </label>
+                                <label class="settings-checkbox-label">
+                                    <input type="checkbox" id="toggleGameOnLoad">
+                                    <span>Mini-gra 🚀 w trakcie ładowania danych (ESC — end game)</span>
+                                </label>
+                                <label class="settings-checkbox-label" style="margin-left:18px">
+                                    <input type="checkbox" id="toggleGameLite" checked>
+                                    <span>Wersja lekka (odłamki wypadają za ekran)</span>
+                                </label>
+                            </div>
+                        </fieldset>
                     </div>
                 </div>
                 <!-- Sekcja: Bezpieczeństwo klucza API -->
@@ -1383,18 +1386,7 @@
                         </div>
                     </div>
                 </div>
-                <!-- Sekcja: Tryb pomocy -->
-                <div class="console-style-panel">
-                    <div class="console-style-header">
-                        <h3>Tryb pomocy interaktywnej</h3>
-                    </div>
-                    <div class="console-style-body">
-                        <div class="console-style-description"
-                            data-help-id="helpModeInfo">
-                            <p>Kliknij przycisk ❓ aby włączyć tryb pomocy. Strona zostanie zablokowana — najedź na element i kliknij aby zobaczyć opis. Wciśnij <kbd>ESC</kbd> aby wyjść.</p>
-                        </div>
-                    </div>
-                </div>
+
             </section>
 
             <!-- SEKCJA 6: PREDYKCJA & MODELE -->
@@ -2912,9 +2904,9 @@
             barCache: true,
             barConsole: true,
             barLive: false,
-            dbCheckNewRecords: true,
+            dbCheckNewRecords: false,
             dbCheckNewRecordsInterval: 5,
-            dbCheckDataChanges: true,
+            dbCheckDataChanges: false,
             dbCheckDataChangesInterval: 11,
             infoFetch: true,
             rememberEtl: false,
@@ -2966,7 +2958,6 @@
 
             // Individual bar sections
             const barSections = [
-                { key: 'barVersion', id: 'versionSection' },
                 { key: 'barAi', id: 'aiStatusSection' },
                 { key: 'barLoad', id: 'etlProgressSection' },
                 { key: 'barMemory', id: 'memorySection' },
@@ -2993,11 +2984,9 @@
 
         const state = load();
 
-        const chkBtns = document.getElementById('toggleFloatingBtns');
         const chkTop = document.getElementById('toggleTopBar');
         const chkBottom = document.getElementById('toggleBottomBar');
 
-        if (chkBtns) chkBtns.checked = state.floatingBtns;
         if (chkTop) chkTop.checked = state.topBar;
         if (chkBottom) chkBottom.checked = state.bottomBar;
 
@@ -3036,7 +3025,6 @@
 
         // Bar section checkboxes
         const barToggles = [
-            { key: 'barVersion', id: 'toggleBarVersion' },
             { key: 'barAi', id: 'toggleBarAi' },
             { key: 'barLoad', id: 'toggleBarLoad' },
             { key: 'barMemory', id: 'toggleBarMemory' },
@@ -3081,7 +3069,6 @@
             });
         }
 
-        onToggle('floatingBtns', chkBtns);
         onToggle('topBar', chkTop);
         onToggle('bottomBar', chkBottom);
         for (const { key, id } of btnToggles) {
