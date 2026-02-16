@@ -8,6 +8,15 @@
     <meta name="author" content="Michał Stankiewicz">
     <meta name="description" content="PIMP - System lokalnej analizy wypowiedzi parlamentarnych z API Sejmu RP. Autor: Michał Stankiewicz. Współtwórcy: Claude Sonnet 4.5, GitHub Copilot">
     <link rel="stylesheet" href="style.css">
+
+    <!-- ✅ GOOGLE ANALYTICS 4 -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-VZ3BMQQENE"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-VZ3BMQQENE');
+    </script>
     
     <!-- ✅ GEOLOKALIZACJA - AKTYWNA -->
     <script type="module">
@@ -2437,7 +2446,21 @@
             }, { passive: true });
 
             // --- CLICK: activate section + center item ---
+            const SECTION_NAMES = {
+                '1': 'Dane', '2': 'Podsumowanie', '3': 'AI Asystent',
+                '4': 'Wykresy', '5': 'Ustawienia', '6': 'Predykcja'
+            };
+
             function activateSection(sectionNum) {
+                // 📊 GA4: śledź kliknięcia w zakładki
+                if (typeof gtag === 'function') {
+                    gtag('event', 'tab_click', {
+                        event_category: 'navigation',
+                        event_label: SECTION_NAMES[sectionNum] || `Sekcja ${sectionNum}`,
+                        section_number: sectionNum
+                    });
+                }
+
                 allItems.forEach(n => {
                     n.classList.toggle('active', n.dataset.section === sectionNum);
                 });
