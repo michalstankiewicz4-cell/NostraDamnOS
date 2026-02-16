@@ -35,7 +35,8 @@ const ToastModule = (() => {
     const {
       type = 'info',
       duration = 5000,
-      title = null
+      title = null,
+      rawHtml = false
     } = options;
 
     const toast = document.createElement('div');
@@ -56,7 +57,7 @@ const ToastModule = (() => {
       <div class="toast-icon">${icons[type] || icons.info}</div>
       <div class="toast-content">
         ${title ? `<div class="toast-title">${escapeHtml(title)}</div>` : ''}
-        <div class="toast-message">${escapeHtml(message)}</div>
+        <div class="toast-message">${rawHtml ? message : escapeHtml(message)}</div>
       </div>
       <button class="toast-close" onclick="ToastModule.close('${id}')">&times;</button>
     `;

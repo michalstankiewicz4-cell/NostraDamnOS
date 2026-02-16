@@ -2697,9 +2697,12 @@
             addButtonAnimation(aboutBtn, () => {
                 ToastModule.info(
                     'Autor: Michał Stankiewicz (tel. 797 486 355)\n\n' +
+                    '📘 <a href="https://www.facebook.com/parlamentpimp" target="_blank" style="color:#4a9eff">Facebook</a>\n' +
+                    '🎬 <a href="https://www.youtube.com/@ParlamentPIMP" target="_blank" style="color:#4a9eff">YouTube</a>\n' +
+                    '💻 <a href="https://github.com/michalstankiewicz4-cell/NostraDamnOS/discussions" target="_blank" style="color:#4a9eff">GitHub Discussions</a>\n\n' +
                     'Osoby które wspierają: Robin070\n\n' +
                     'Pomoc w realizacji: Tomasz Gierczak, xBigle22x, szauw_iks',
-                    { title: 'Parlament P.I.M.P. - Parliamentary Intelligence & Monitoring Platform', duration: 10000 }
+                    { title: 'Parlament P.I.M.P. - Parliamentary Intelligence & Monitoring Platform', duration: 10000, rawHtml: true }
                 );
             });
             
