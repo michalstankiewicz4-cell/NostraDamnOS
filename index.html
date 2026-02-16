@@ -1348,7 +1348,7 @@
                                 <span>Mini-gra 🚀 w trakcie ładowania danych (ESC — end game)</span>
                             </label>
                             <label class="settings-checkbox-label" style="margin-left:18px">
-                                <input type="checkbox" id="toggleGameLite">
+                                <input type="checkbox" id="toggleGameLite" checked>
                                 <span>Wersja lekka (odłamki wypadają za ekran)</span>
                             </label>
                         </div>
@@ -2923,7 +2923,7 @@
             notifyDataWorkflow: true,
             notifyAiWip: true,
             gameOnLoad: false,
-            gameLiteMode: false
+            gameLiteMode: true
         };
 
         function load() {
@@ -3250,7 +3250,7 @@
 
         // Game lite mode toggle
         const chkGameLite = document.getElementById('toggleGameLite');
-        if (chkGameLite) chkGameLite.checked = !!state.gameLiteMode;
+        if (chkGameLite) chkGameLite.checked = state.gameLiteMode !== false;
         onToggle('gameLiteMode', chkGameLite);
 
         // ETL settings persistence
