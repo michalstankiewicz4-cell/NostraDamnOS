@@ -6357,3 +6357,27 @@ input:disabled {
 #emogame-hint b {
     color: #facc15;
 }
+
+#emogame-close {
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    z-index: 999999;
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(239, 68, 68, 0.85);
+    color: #fff;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    pointer-events: auto;
+    backdrop-filter: blur(4px);
+    transition: background 0.15s, transform 0.1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+#emogame-close:hover { background: #dc2626; transform: scale(1.1); }
+#emogame-close:active { transform: scale(0.95); }

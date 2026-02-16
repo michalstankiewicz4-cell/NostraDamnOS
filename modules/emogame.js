@@ -80,10 +80,23 @@ function createGameLayer() {
     // Hint overlay (auto-hide after 5s)
     const hint = document.createElement('div');
     hint.id = 'emogame-hint';
-    hint.innerHTML = '🎮 <b>Strzałki</b> = sterowanie &nbsp; <b>Ctrl</b> = strzał &nbsp; <b>Esc</b> = zamknij';
+    hint.innerHTML = '🎮 <b>Strzałki</b> = sterowanie &nbsp; <b>Ctrl</b> = strzał &nbsp; <b>Tap/Klik</b> = celuj+strzelaj';
     gameContainer.appendChild(hint);
     setTimeout(() => { if (hint.parentNode) hint.style.opacity = '0'; }, 5000);
     setTimeout(() => { if (hint.parentNode) hint.remove(); }, 6000);
+
+    // Close button [x]
+    const closeBtn = document.createElement('button');
+    closeBtn.id = 'emogame-close';
+    closeBtn.textContent = '✕';
+    closeBtn.addEventListener('click', (e) => { e.stopPropagation(); stopGame(); });
+    closeBtn.addEventListener('touchend', (e) => { e.stopPropagation(); e.preventDefault(); stopGame(); });
+    gameContainer.appendChild(closeBtn);
+
+    // Touch/click to aim and shoot
+    gameContainer.style.pointerEvents = 'auto';
+    gameContainer.addEventListener('click', onTapShoot);
+    gameContainer.addEventListener('touchend', onTapShoot);
 }
 
 function cleanupGameLayer() {
@@ -127,6 +140,37 @@ function bindKeys() {
 function unbindKeys() {
     document.removeEventListener('keydown', onKeyDown);
     document.removeEventListener('keyup', onKeyUp);
+}
+
+// ── Touch / Click to aim & shoot ──
+function onTapShoot(e) {
+    if (!isActive) return;
+    // Ignore if tapped the close button
+    if (e.target.id === 'emogame-close') return;
+    e.preventDefault();
+
+    // Get tap coordinates
+    let tx, ty;
+    if (e.changedTouches && e.changedTouches.length > 0) {
+        tx = e.changedTouches[0].clientX;
+        ty = e.changedTouches[0].clientY;
+    } else {
+        tx = e.clientX;
+        ty = e.clientY;
+    }
+
+    // Rotate ship toward tap point
+    const dx = tx - x;
+    const dy = ty - y;
+    angle = Math.atan2(dy, dx) * 180 / Math.PI;
+
+    // Small thrust toward tap
+    const rad = angle * Math.PI / 180;
+    vx += Math.cos(rad) * thrust * 3;
+    vy += Math.sin(rad) * thrust * 3;
+
+    updateShip();
+    shoot();
 }
 
 // ── Collision: point in polygon ──
