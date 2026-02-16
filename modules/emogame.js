@@ -25,6 +25,13 @@ function isGameEnabled() {
     } catch { return false; }
 }
 
+function isLiteMode() {
+    try {
+        const vis = JSON.parse(localStorage.getItem('uiVisibility') || '{}');
+        return !!vis.gameLiteMode;
+    } catch { return false; }
+}
+
 // ── Public API ──
 export function startGame() {
     if (isActive) return;
@@ -93,6 +100,10 @@ function cleanupGameLayer() {
 // ── Input ──
 function onKeyDown(e) {
     if (!isActive) return;
+    // Block arrow keys from scrolling the page
+    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+        e.preventDefault();
+    }
     keys[e.key] = true;
     if (e.key === 'Control' && !ctrlPressed) {
         ctrlPressed = true;
@@ -260,41 +271,55 @@ let fragmentInterval = null;
 
 function startFragmentPhysics() {
     if (fragmentInterval) return;
+    const lite = isLiteMode();
     fragmentInterval = setInterval(() => {
         if (!isActive) { clearInterval(fragmentInterval); fragmentInterval = null; return; }
-        for (let i = 0; i < fragments.length; i++) {
+        for (let i = fragments.length - 1; i >= 0; i--) {
             const a = fragments[i];
             a.vy += 0.01;
             a.fx += a.vx;
             a.fy += a.vy;
             a.rot += a.rotSpeed;
 
-            if (a.fy > window.innerHeight - a.radius) {
-                a.fy = window.innerHeight - a.radius;
-                a.vy *= -0.4;
-                a.vx *= 0.7;
-                if (Math.abs(a.vy) < 0.1) a.vy = 0;
-            }
-
-            for (let j = i + 1; j < fragments.length; j++) {
-                const b = fragments[j];
-                const dx = b.fx - a.fx;
-                const dy = b.fy - a.fy;
-                const dist = Math.sqrt(dx * dx + dy * dy);
-                const minDist = a.radius + b.radius;
-                if (dist > 0 && dist < minDist) {
-                    const nx = dx / dist;
-                    const ny = dy / dist;
-                    const p = 2 * (a.vx * nx + a.vy * ny - b.vx * nx - b.vy * ny) / 2;
-                    a.vx -= p * nx; a.vy -= p * ny;
-                    b.vx += p * nx; b.vy += p * ny;
-                    const overlap = minDist - dist;
-                    a.fx -= nx * overlap / 2; a.fy -= ny * overlap / 2;
-                    b.fx += nx * overlap / 2; b.fy += ny * overlap / 2;
+            // Lite mode: remove fragments that leave the screen
+            if (lite) {
+                if (a.fx < -a.radius || a.fx > window.innerWidth + a.radius ||
+                    a.fy < -a.radius || a.fy > window.innerHeight + a.radius) {
+                    a.el.remove();
+                    fragments.splice(i, 1);
+                    continue;
+                }
+            } else {
+                // Normal mode: bounce off bottom
+                if (a.fy > window.innerHeight - a.radius) {
+                    a.fy = window.innerHeight - a.radius;
+                    a.vy *= -0.4;
+                    a.vx *= 0.7;
+                    if (Math.abs(a.vy) < 0.1) a.vy = 0;
                 }
             }
 
-            if (a.isSmoking) {
+            if (!lite) {
+                for (let j = i + 1; j < fragments.length; j++) {
+                    const b = fragments[j];
+                    const dx = b.fx - a.fx;
+                    const dy = b.fy - a.fy;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    const minDist = a.radius + b.radius;
+                    if (dist > 0 && dist < minDist) {
+                        const nx = dx / dist;
+                        const ny = dy / dist;
+                        const p = 2 * (a.vx * nx + a.vy * ny - b.vx * nx - b.vy * ny) / 2;
+                        a.vx -= p * nx; a.vy -= p * ny;
+                        b.vx += p * nx; b.vy += p * ny;
+                        const overlap = minDist - dist;
+                        a.fx -= nx * overlap / 2; a.fy -= ny * overlap / 2;
+                        b.fx += nx * overlap / 2; b.fy += ny * overlap / 2;
+                    }
+                }
+            }
+
+            if (a.isSmoking && !lite) {
                 if (Math.random() < 0.25) spawnSmoke(a.fx, a.fy, a.color);
                 if (Math.random() < 0.05) spawnColoredSparks(a.fx, a.fy, a.color);
             }

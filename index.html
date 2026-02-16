@@ -1345,7 +1345,11 @@
                             <p style="font-size:0.85rem;color:var(--text-secondary);margin-top:10px;margin-bottom:6px">🎮 Rozrywka:</p>
                             <label class="settings-checkbox-label">
                                 <input type="checkbox" id="toggleGameOnLoad">
-                                <span>Mini-gra 🚀 w trakcie ładowania danych</span>
+                                <span>Mini-gra 🚀 w trakcie ładowania danych (ESC — end game)</span>
+                            </label>
+                            <label class="settings-checkbox-label" style="margin-left:18px">
+                                <input type="checkbox" id="toggleGameLite">
+                                <span>Wersja lekka (odłamki wypadają za ekran)</span>
                             </label>
                         </div>
                     </div>
@@ -2918,7 +2922,8 @@
             fetchSpeed: 'normal',
             notifyDataWorkflow: true,
             notifyAiWip: true,
-            gameOnLoad: false
+            gameOnLoad: false,
+            gameLiteMode: false
         };
 
         function load() {
@@ -3242,6 +3247,11 @@
         const chkGameOnLoad = document.getElementById('toggleGameOnLoad');
         if (chkGameOnLoad) chkGameOnLoad.checked = !!state.gameOnLoad;
         onToggle('gameOnLoad', chkGameOnLoad);
+
+        // Game lite mode toggle
+        const chkGameLite = document.getElementById('toggleGameLite');
+        if (chkGameLite) chkGameLite.checked = !!state.gameLiteMode;
+        onToggle('gameLiteMode', chkGameLite);
 
         // ETL settings persistence
         const ETL_SETTINGS_KEY = 'nostradamnos_etlSettings';
