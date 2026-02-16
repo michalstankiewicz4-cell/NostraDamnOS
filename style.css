@@ -5200,8 +5200,9 @@ input:disabled {
     backdrop-filter: blur(6px);
     z-index: 1000;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
+    padding-top: 15vh;
 }
 .wip-overlay.hidden { display: none; }
 .wip-modal {
