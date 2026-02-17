@@ -1469,6 +1469,17 @@ async function startPipelineETL() {
     // Start mini-game if enabled in settings
     if (typeof window.startEmoGame === 'function') window.startEmoGame();
 
+    // Wake Lock — zapobiega wygaszeniu ekranu podczas pobierania (mobile)
+    let wakeLock = null;
+    try {
+        if ('wakeLock' in navigator) {
+            wakeLock = await navigator.wakeLock.request('screen');
+            console.log('[Wake Lock] Ekran zablokowany przed wygaszeniem');
+        }
+    } catch (e) {
+        console.warn('[Wake Lock] Nie udało się zablokować ekranu:', e.message);
+    }
+
     try {
         // Build config from ETL Panel UI
         const config = buildConfigFromUI();
@@ -1632,6 +1643,12 @@ async function startPipelineETL() {
         console.log('❌ [Zadanie] Pobierz/Zaktualizuj dane zakończony z błędem');
 
     } finally {
+        // Zwolnij Wake Lock
+        if (wakeLock) {
+            await wakeLock.release().catch(() => {});
+            console.log('[Wake Lock] Ekran odblokowany');
+        }
+
         // Stop mini-game
         if (typeof window.stopEmoGame === 'function') window.stopEmoGame();
 
