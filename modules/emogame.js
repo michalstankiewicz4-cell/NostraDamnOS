@@ -1,5 +1,6 @@
 // EmoGame — Rocket 🚀 mini-game during ETL data loading
 // Activates when database is being fetched; player shoots visible UI elements
+import { trackEvent } from './analytics.js';
 
 let isActive = false;
 let shipEl = null;
@@ -45,6 +46,7 @@ export function startGame() {
     vx = 0;
     vy = 0;
     gameLoop();
+    trackEvent('emogame_play');
     console.log('[EmoGame] 🚀 Gra uruchomiona');
 }
 

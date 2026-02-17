@@ -1,5 +1,6 @@
 // Charts Manager - zarządzanie widocznością i kolejnością wykresów
 import { db2 } from './database-v2.js';
+import { trackEvent } from './analytics.js';
 
 const CHARTS_CONFIG = [
     { id: 'chartKluby', name: 'Rozkład klubów parlamentarnych', icon: '🏛️', enabled: true },
@@ -214,6 +215,7 @@ function handleVisibilityChange(chartId, enabled) {
         saveChartsState();
         applyChartsVisibility();
         console.log(`[Charts Manager] ${chartId} ${enabled ? 'enabled' : 'disabled'}`);
+        if (enabled) trackEvent('chart_view', { chart_id: chartId });
     }
 }
 

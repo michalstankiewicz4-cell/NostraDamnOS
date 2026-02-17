@@ -9,18 +9,14 @@
     <meta name="description" content="PIMP - System lokalnej analizy wypowiedzi parlamentarnych z API Sejmu RP. Autor: Michał Stankiewicz. Współtwórcy: Claude Sonnet 4.5, GitHub Copilot">
     <link rel="stylesheet" href="style.css">
 
-    <!-- ✅ GOOGLE TAG MANAGER -->
-    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-    })(window,document,'script','dataLayer','GTM-P2GL47ZC');</script>
-
-    <!-- ✅ GOOGLE ANALYTICS 4 -->
+    <!-- ✅ GOOGLE ANALYTICS 4 + Consent Mode v2 -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-VZ3BMQQENE"></script>
     <script>
         window.dataLayer = window.dataLayer || [];
         function gtag(){dataLayer.push(arguments);}
+        gtag('consent', 'default', {
+            analytics_storage: localStorage.getItem('analytics_consent') === 'granted' ? 'granted' : 'denied'
+        });
         gtag('js', new Date());
         gtag('config', 'G-VZ3BMQQENE');
     </script>
@@ -28,14 +24,13 @@
     <!-- ✅ GEOLOKALIZACJA - AKTYWNA -->
     <script type="module">
         import { enforceEuropeOnly } from "./modules/geo.js";
+        import { initConsent } from "./modules/consent.js";
+        import "./modules/analytics.js";
         enforceEuropeOnly();
+        initConsent();
     </script>
 </head>
 <body>
-    <!-- Google Tag Manager (noscript) -->
-    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-P2GL47ZC"
-    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-
     <!-- Project Metadata -->
     <script>
         window.PROJECT = {
@@ -2484,8 +2479,8 @@
 
             function activateSection(sectionNum) {
                 // 📊 GA4: śledź kliknięcia w zakładki
-                if (typeof gtag === 'function') {
-                    gtag('event', 'tab_click', {
+                if (typeof window.trackEvent === 'function') {
+                    window.trackEvent('tab_click', {
                         event_category: 'navigation',
                         event_label: SECTION_NAMES[sectionNum] || `Sekcja ${sectionNum}`,
                         section_number: sectionNum
@@ -3067,6 +3062,9 @@
                 state[key] = this.checked;
                 save(state);
                 apply(state);
+                if (typeof window.trackEvent === 'function') {
+                    window.trackEvent('settings_change', { setting_name: key, setting_value: this.checked });
+                }
             });
         }
 

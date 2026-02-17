@@ -6,6 +6,7 @@ import ToastModule from './modules/toast.js';
 import { startLivePolling, stopLivePolling } from './modules/sejm-live-checker.js';
 import { refreshChartsManager } from './modules/charts-manager.js';
 import { refreshPredictions } from './modules/predictions.js';
+import { trackEvent } from './modules/analytics.js';
 
 // === TASK QUEUE SYSTEM ===
 // Zapobiega jednoczesnym operacjom: fetch, verify, checkNewRecords, checkDataChanges
@@ -1600,6 +1601,7 @@ async function startPipelineETL() {
                 { title: 'Pobrano dane', duration: 8000 }
             );
             console.log('✅ [Zadanie] Pobierz/Zaktualizuj dane zakończony');
+            trackEvent('data_fetch', { status: 'success' });
 
             // Switch button to verify mode
             fetchBtnMode = 'verify';

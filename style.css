@@ -6382,3 +6382,78 @@ input:disabled {
 }
 #emogame-close:hover { background: #dc2626; transform: scale(1.1); }
 #emogame-close:active { transform: scale(0.95); }
+
+/* =============================================================================
+   Consent Banner (GDPR)
+   ============================================================================= */
+.consent-banner {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 100000;
+    background: var(--card-bg, #1e1e2e);
+    border-top: 1px solid var(--border-color, #333);
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    opacity: 0;
+    transform: translateY(100%);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
+}
+.consent-banner--visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+.consent-banner--hidden {
+    opacity: 0;
+    transform: translateY(100%);
+}
+.consent-text {
+    font-size: 0.9rem;
+    color: var(--text-secondary, #a0a0b0);
+    flex: 1;
+}
+.consent-buttons {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+.consent-btn {
+    padding: 8px 20px;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.consent-btn--accept {
+    background: var(--primary-color, #667eea);
+    color: #fff;
+}
+.consent-btn--accept:hover {
+    filter: brightness(1.15);
+}
+.consent-btn--reject {
+    background: transparent;
+    color: var(--text-secondary, #a0a0b0);
+    border: 1px solid var(--border-color, #444);
+}
+.consent-btn--reject:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+@media (max-width: 600px) {
+    .consent-banner {
+        flex-direction: column;
+        text-align: center;
+        padding: 14px 16px;
+    }
+    .consent-buttons {
+        width: 100%;
+        justify-content: center;
+    }
+}

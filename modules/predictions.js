@@ -2,6 +2,7 @@
 import { db2 } from './database-v2.js';
 import { analyzeSentiment } from './sentiment-analysis.js';
 import { renderInvestigationCard } from './investigation-engine.js';
+import { trackEvent } from './analytics.js';
 
 /**
  * Inicjalizacja modułu predykcji
@@ -36,6 +37,7 @@ export function runAllPredictions() {
     }
     
     hideEmptyState();
+    trackEvent('prediction_run');
     // Wyczyść załadowane flagi żeby przy kolejnym otwarciu przeliczyło na nowo
     document.querySelectorAll('.prediction-card').forEach(card => {
         card.removeAttribute('data-loaded');

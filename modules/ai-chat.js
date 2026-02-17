@@ -8,6 +8,7 @@ import {
     storeKey, unlock, lock, clearVault, changePin, onLock,
     migrateFromPlaintext
 } from './key-vault.js';
+import { trackEvent } from './analytics.js';
 
 // State
 const chatState = {
@@ -613,6 +614,7 @@ async function sendMessage() {
     
     // Add user message
     addMessageToChat('user', message);
+    trackEvent('ai_chat_message', { model: chatState.selectedModel, message_length: message.length });
     input.value = '';
     
     // Set processing state
