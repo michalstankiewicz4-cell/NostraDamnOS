@@ -1633,6 +1633,7 @@ async function startPipelineETL() {
                 if (savedCount > 0) {
                     // Partial data exists — user can resume later
                     setRecordsStatus(true);
+                    setValidityStatus(false);
                     fetchBtnMode = 'verify';
                     ToastModule.success(
                         `Pobieranie zatrzymane — zachowano ${savedCount} rekordów w bazie. Możesz kontynuować pobieranie później.`,
@@ -1640,6 +1641,7 @@ async function startPipelineETL() {
                     );
                 } else {
                     setRecordsStatus(false);
+                    setValidityStatus(false);
                     ToastModule.success('Pobieranie zatrzymane — baza pusta');
                 }
                 updateFetchButtonMode();
