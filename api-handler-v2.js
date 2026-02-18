@@ -1621,20 +1621,30 @@ async function startPipelineETL() {
     } catch (error) {
         fetchBtnMode = 'fetch';
         if (error.name === 'AbortError' || currentAbortController?.signal?.aborted) {
-            // User aborted — clear database
-            console.log('[API Handler] Fetch aborted by user — clearing database');
+            // User aborted — keep partial data in database
+            console.log('[API Handler] Fetch aborted by user — keeping partial data');
             try {
-                await db2.init();
-                db2.clearAll();
+                const stats = db2.getStats();
+                const savedCount = Object.values(stats).reduce((a, b) => a + b, 0);
                 updateStatusIndicators();
-                setRecordsStatus(false);
-                setValidityStatus(false);
                 updateSummaryTab();
                 if (window._updateCacheBar) window._updateCacheBar();
-                updateFetchButtonMode(); // Reset to fetch mode (empty database)
-                ToastModule.success('Pobieranie zatrzymane — baza wyczyszczona');
+
+                if (savedCount > 0) {
+                    // Partial data exists — user can resume later
+                    setRecordsStatus(true);
+                    fetchBtnMode = 'verify';
+                    ToastModule.success(
+                        `Pobieranie zatrzymane — zachowano ${savedCount} rekordów w bazie. Możesz kontynuować pobieranie później.`,
+                        { title: 'Zatrzymano', duration: 6000 }
+                    );
+                } else {
+                    setRecordsStatus(false);
+                    ToastModule.success('Pobieranie zatrzymane — baza pusta');
+                }
+                updateFetchButtonMode();
             } catch (clearErr) {
-                console.error('[API Handler] Clear after abort error:', clearErr);
+                console.error('[API Handler] Abort handler error:', clearErr);
             }
         } else {
             console.error('[API Handler] Error:', error);
