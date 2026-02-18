@@ -15,9 +15,9 @@ import { normalizeKomisjeWypowiedzi, saveKomisjeWypowiedzi } from './modules/kom
 import { normalizeOswiadczeniaMajatkowe, saveOswiadczeniaMajatkowe } from './modules/oswiadczenia_majatkowe.js';
 import { normalizeUstawy, saveUstawy } from './modules/ustawy.js';
 
-export async function runNormalizer(db, raw, config = {}) {
+export async function runNormalizer(db, raw, config = {}, onProgress = () => {}) {
     console.log('[Normalizer] Starting...');
-    
+
     let stats = {
         poslowie: 0,
         posiedzenia: 0,
@@ -33,100 +33,139 @@ export async function runNormalizer(db, raw, config = {}) {
         oswiadczenia_majatkowe: 0,
         ustawy: 0
     };
-    
+
+    // Modules to process — each gets a progress step
+    const modules = [
+        { key: 'poslowie', label: 'Posłowie' },
+        { key: 'posiedzenia', label: 'Posiedzenia' },
+        { key: 'wypowiedzi', label: 'Wypowiedzi' },
+        { key: 'glosowania', label: 'Głosowania' },
+        { key: 'glosy', label: 'Głosy' },
+        { key: 'interpelacje', label: 'Interpelacje' },
+        { key: 'zapytania', label: 'Zapytania' },
+        { key: 'projekty_ustaw', label: 'Projekty ustaw' },
+        { key: 'komisje', label: 'Komisje' },
+        { key: 'komisje_posiedzenia', label: 'Posiedzenia komisji' },
+        { key: 'komisje_wypowiedzi', label: 'Wypowiedzi komisji' },
+        { key: 'oswiadczenia', label: 'Oświadczenia' },
+        { key: 'ustawy', label: 'Ustawy' }
+    ];
+
+    let step = 0;
+    const totalSteps = modules.length;
+
+    function reportProgress(label, count) {
+        step++;
+        const pct = Math.round((step / totalSteps) * 100);
+        onProgress(pct, label, count);
+    }
+
     // 1. Poslowie (foundation - always first)
     if (raw.poslowie && raw.poslowie.length > 0) {
         let normalized = normalizePoslowie(raw.poslowie, config);
         if (config.rodoFilter) {
             normalized = normalized.map(r => ({ ...r, email: null }));
         }
-        savePoslowie(db, normalized);
+        await savePoslowie(db, normalized);
         stats.poslowie = normalized.length;
     }
+    reportProgress('Posłowie', stats.poslowie);
 
     // 2. Posiedzenia (needed for per-sitting data)
     if (raw.posiedzenia && raw.posiedzenia.length > 0) {
         const normalized = normalizePosiedzenia(raw.posiedzenia, config);
-        savePosiedzenia(db, normalized);
+        await savePosiedzenia(db, normalized);
         stats.posiedzenia = normalized.length;
     }
-    
+    reportProgress('Posiedzenia', stats.posiedzenia);
+
     // 3. Wypowiedzi (per sitting)
     if (raw.wypowiedzi && raw.wypowiedzi.length > 0) {
         const normalized = normalizeWypowiedzi(raw.wypowiedzi);
-        saveWypowiedzi(db, normalized);
+        await saveWypowiedzi(db, normalized);
         stats.wypowiedzi = normalized.length;
     }
-    
+    reportProgress('Wypowiedzi', stats.wypowiedzi);
+
     // 4. Glosowania (per sitting)
     if (raw.glosowania && raw.glosowania.length > 0) {
         const normalized = normalizeGlosowania(raw.glosowania);
-        saveGlosowania(db, normalized);
+        await saveGlosowania(db, normalized);
         stats.glosowania = normalized.length;
     }
-    
+    reportProgress('Głosowania', stats.glosowania);
+
     // 5. Glosy (individual votes)
     if (raw.glosy && raw.glosy.length > 0) {
         const normalized = normalizeGlosy(raw.glosy, raw.glosowania || []);
-        saveGlosy(db, normalized);
+        await saveGlosy(db, normalized);
         stats.glosy = normalized.length;
     }
-    
+    reportProgress('Głosy', stats.glosy);
+
     // 6. Interpelacje (per term)
     if (raw.interpelacje && raw.interpelacje.length > 0) {
         const normalized = normalizeInterpelacje(raw.interpelacje);
-        saveInterpelacje(db, normalized);
+        await saveInterpelacje(db, normalized);
         stats.interpelacje = normalized.length;
     }
-    
+    reportProgress('Interpelacje', stats.interpelacje);
+
     // 7. Zapytania pisemne (per term)
     if (raw.zapytania && raw.zapytania.length > 0) {
         const normalized = normalizeZapytania(raw.zapytania);
-        saveZapytania(db, normalized);
+        await saveZapytania(db, normalized);
         stats.zapytania = normalized.zapytania.length;
     }
-    
+    reportProgress('Zapytania', stats.zapytania);
+
     // 8. Projekty ustaw (per term)
     if (raw.projekty_ustaw && raw.projekty_ustaw.length > 0) {
         const normalized = normalizeProjektyUstaw(raw.projekty_ustaw);
-        saveProjektyUstaw(db, normalized);
+        await saveProjektyUstaw(db, normalized);
         stats.projekty_ustaw = normalized.length;
     }
-    
-    // 8. Komisje
+    reportProgress('Projekty ustaw', stats.projekty_ustaw);
+
+    // 9. Komisje
     if (raw.komisje && raw.komisje.length > 0) {
         const normalized = normalizeKomisje(raw.komisje, config);
-        saveKomisje(db, normalized);
+        await saveKomisje(db, normalized);
         stats.komisje = normalized.length;
     }
-    
-    // 9. Komisje posiedzenia
+    reportProgress('Komisje', stats.komisje);
+
+    // 10. Komisje posiedzenia
     if (raw.komisje_posiedzenia && raw.komisje_posiedzenia.length > 0) {
         const normalized = normalizeKomisjePosiedzenia(raw.komisje_posiedzenia);
-        saveKomisjePosiedzenia(db, normalized);
+        await saveKomisjePosiedzenia(db, normalized);
         stats.komisje_posiedzenia = normalized.length;
     }
-    
-    // 10. Komisje wypowiedzi
+    reportProgress('Posiedzenia komisji', stats.komisje_posiedzenia);
+
+    // 11. Komisje wypowiedzi
     if (raw.komisje_wypowiedzi && raw.komisje_wypowiedzi.length > 0) {
         const normalized = normalizeKomisjeWypowiedzi(raw.komisje_wypowiedzi);
-        saveKomisjeWypowiedzi(db, normalized);
+        await saveKomisjeWypowiedzi(db, normalized);
         stats.komisje_wypowiedzi = normalized.length;
     }
-    
-    // 11. Oświadczenia majątkowe
+    reportProgress('Wypowiedzi komisji', stats.komisje_wypowiedzi);
+
+    // 12. Oświadczenia majątkowe
     if (raw.oswiadczenia && raw.oswiadczenia.length > 0) {
         const normalized = normalizeOswiadczeniaMajatkowe(raw.oswiadczenia);
-        saveOswiadczeniaMajatkowe(db, normalized);
+        await saveOswiadczeniaMajatkowe(db, normalized);
         stats.oswiadczenia_majatkowe = normalized.length;
     }
-    
-    // 12. Ustawy (akty prawne)
+    reportProgress('Oświadczenia', stats.oswiadczenia_majatkowe);
+
+    // 13. Ustawy (akty prawne)
     if (raw.ustawy && raw.ustawy.length > 0) {
         const normalized = normalizeUstawy(raw.ustawy);
-        saveUstawy(db, normalized);
+        await saveUstawy(db, normalized);
         stats.ustawy = normalized.length;
     }
+    reportProgress('Ustawy', stats.ustawy);
 
     console.log('[Normalizer] ✅ Complete - Stats:', stats);
     return stats;

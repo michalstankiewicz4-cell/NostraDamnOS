@@ -12,27 +12,8 @@ export function normalizeWypowiedzi(raw) {
     }));
 }
 
-export function saveWypowiedzi(db, records) {
-    const stmt = db.database.prepare(`
-        INSERT INTO wypowiedzi (id_wypowiedzi, id_posiedzenia, id_osoby, data, tekst, typ, mowca)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT(id_wypowiedzi) DO UPDATE SET
-            id_posiedzenia = excluded.id_posiedzenia,
-            id_osoby = excluded.id_osoby,
-            data = excluded.data,
-            tekst = excluded.tekst,
-            typ = excluded.typ,
-            mowca = excluded.mowca
-    `);
-
-    for (const r of records) {
-        stmt.run([
-            r.id_wypowiedzi, r.id_posiedzenia, r.id_osoby,
-            r.data, r.tekst, r.typ, r.mowca
-        ]);
-    }
-    
-    stmt.free();
+export async function saveWypowiedzi(db, records) {
+    await db.upsertWypowiedzi(records);
     console.log(`[Normalizer] Saved ${records.length} wypowiedzi`);
 
     // Resolve mowca text → id_osoby using poslowie table

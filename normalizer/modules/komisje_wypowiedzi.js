@@ -11,25 +11,7 @@ export function normalizeKomisjeWypowiedzi(raw) {
     }));
 }
 
-export function saveKomisjeWypowiedzi(db, records) {
-    const stmt = db.database.prepare(`
-        INSERT INTO komisje_wypowiedzi (id_wypowiedzi_komisji, id_posiedzenia_komisji, id_osoby, tekst, data, typ)
-        VALUES (?, ?, ?, ?, ?, ?)
-        ON CONFLICT(id_wypowiedzi_komisji) DO UPDATE SET
-            id_posiedzenia_komisji = excluded.id_posiedzenia_komisji,
-            id_osoby = excluded.id_osoby,
-            tekst = excluded.tekst,
-            data = excluded.data,
-            typ = excluded.typ
-    `);
-    
-    for (const r of records) {
-        stmt.run([
-            r.id_wypowiedzi_komisji, r.id_posiedzenia_komisji,
-            r.id_osoby, r.tekst, r.data, r.typ
-        ]);
-    }
-    
-    stmt.free();
+export async function saveKomisjeWypowiedzi(db, records) {
+    await db.upsertKomisjeWypowiedzi(records);
     console.log(`[Normalizer] Saved ${records.length} komisje_wypowiedzi`);
 }

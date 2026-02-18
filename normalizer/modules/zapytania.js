@@ -120,14 +120,14 @@ export function getZapytaniaIndexes() {
 /**
  * Zapisuje zapytania do bazy (UPSERT)
  */
-export function saveZapytania(db, normalized) {
+export async function saveZapytania(db, normalized) {
     console.log(`[Normalizer] Saving ${normalized.zapytania.length} zapytania + ${normalized.zapytania_odpowiedzi.length} replies...`);
-    
+
     // 1. Zapytania
-    db.upsertZapytania(normalized.zapytania);
-    
+    await db.upsertZapytania(normalized.zapytania);
+
     // 2. Odpowiedzi
-    db.upsertZapytaniaOdpowiedzi(normalized.zapytania_odpowiedzi);
-    
+    await db.upsertZapytaniaOdpowiedzi(normalized.zapytania_odpowiedzi);
+
     console.log(`[Normalizer] ✓ Saved zapytania successfully`);
 }

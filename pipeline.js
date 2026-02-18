@@ -233,7 +233,7 @@ export async function runPipeline(config, callbacks = {}) {
 
         if (config.rodoFilter) {
             onLog('🛡️ RODO: removing sensitive fields...');
-            processedRaw = applyRodo(raw);
+            processedRaw = await applyRodo(raw);
         } else {
             onLog('⚠️ RODO disabled — sensitive fields included');
         }
@@ -252,7 +252,12 @@ export async function runPipeline(config, callbacks = {}) {
         onLog('🧹 Normalizing and saving to database...');
         onProgress(87, 'Normalizacja danych', { module: 'Zapis do bazy...' });
 
-        const stats = await runNormalizer(db2, processedRaw, config);
+        const stats = await runNormalizer(db2, processedRaw, config, (pct, label, count) => {
+            // Map normalizer 0-100% → pipeline 87-92%
+            const mapped = 87 + Math.round((pct / 100) * 5);
+            const info = count > 0 ? `${label}: ${count}` : label;
+            onProgress(Math.min(mapped, 92), `Normalizacja: ${label}`, { module: info });
+        });
         const savedTotal = Object.values(stats).reduce((a, b) => a + b, 0);
 
         onLog(`💾 Saved ${savedTotal} records to database`);

@@ -14,23 +14,7 @@ export function normalizeGlosowania(raw) {
     }));
 }
 
-export function saveGlosowania(db, records) {
-    const stmt = db.database.prepare(`
-        INSERT INTO glosowania (id_glosowania, id_posiedzenia, numer, data, wynik, tytul, za, przeciw, wstrzymalo)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT(id_glosowania) DO UPDATE SET
-            id_posiedzenia = excluded.id_posiedzenia,
-            numer = excluded.numer,
-            data = excluded.data,
-            wynik = excluded.wynik,
-            tytul = excluded.tytul,
-            za = excluded.za,
-            przeciw = excluded.przeciw,
-            wstrzymalo = excluded.wstrzymalo
-    `);
-    for (const r of records) {
-        stmt.run([r.id_glosowania, r.id_posiedzenia, r.numer, r.data, r.wynik, r.tytul, r.za, r.przeciw, r.wstrzymalo]);
-    }
-    stmt.free();
+export async function saveGlosowania(db, records) {
+    await db.upsertGlosowania(records);
     console.log(`[Normalizer] Saved ${records.length} glosowania`);
 }

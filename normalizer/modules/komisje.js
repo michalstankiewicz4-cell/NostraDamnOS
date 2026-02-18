@@ -10,24 +10,7 @@ export function normalizeKomisje(raw, config = {}) {
     }));
 }
 
-export function saveKomisje(db, records) {
-    const stmt = db.database.prepare(`
-        INSERT INTO komisje (id_komisji, nazwa, skrot, typ, kadencja)
-        VALUES (?, ?, ?, ?, ?)
-        ON CONFLICT(id_komisji) DO UPDATE SET
-            nazwa = excluded.nazwa,
-            skrot = excluded.skrot,
-            typ = excluded.typ,
-            kadencja = excluded.kadencja
-    `);
-    
-    for (const r of records) {
-        stmt.run([
-            r.id_komisji, r.nazwa, r.skrot,
-            r.typ, r.kadencja
-        ]);
-    }
-    
-    stmt.free();
+export async function saveKomisje(db, records) {
+    await db.upsertKomisje(records);
     console.log(`[Normalizer] Saved ${records.length} komisje`);
 }

@@ -20,25 +20,7 @@ export function normalizePosiedzenia(raw, config = {}) {
     }));
 }
 
-export function savePosiedzenia(db, records) {
-    const stmt = db.database.prepare(`
-        INSERT INTO posiedzenia (id_posiedzenia, numer, data_start, data_koniec, kadencja, typ)
-        VALUES (?, ?, ?, ?, ?, ?)
-        ON CONFLICT(id_posiedzenia) DO UPDATE SET
-            numer = excluded.numer,
-            data_start = excluded.data_start,
-            data_koniec = excluded.data_koniec,
-            kadencja = excluded.kadencja,
-            typ = excluded.typ
-    `);
-
-    for (const r of records) {
-        stmt.run([
-            r.id_posiedzenia, r.numer, r.data_start,
-            r.data_koniec, r.kadencja, r.typ
-        ]);
-    }
-    
-    stmt.free();
+export async function savePosiedzenia(db, records) {
+    await db.upsertPosiedzenia(records);
     console.log(`[Normalizer] Saved ${records.length} posiedzenia`);
 }

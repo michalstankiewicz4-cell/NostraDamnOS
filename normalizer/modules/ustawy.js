@@ -14,25 +14,7 @@ export function normalizeUstawy(raw) {
     }));
 }
 
-export function saveUstawy(db, records) {
-    const stmt = db.database.prepare(`
-        INSERT INTO ustawy (id_ustawy, publisher, year, pos, title, type, status, promulgation, entry_into_force)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT(id_ustawy) DO UPDATE SET
-            title = excluded.title,
-            type = excluded.type,
-            status = excluded.status,
-            promulgation = excluded.promulgation,
-            entry_into_force = excluded.entry_into_force
-    `);
-
-    for (const r of records) {
-        stmt.run([
-            r.id_ustawy, r.publisher, r.year, r.pos,
-            r.title, r.type, r.status, r.promulgation, r.entry_into_force
-        ]);
-    }
-
-    stmt.free();
+export async function saveUstawy(db, records) {
+    await db.upsertUstawy(records);
     console.log(`[Normalizer] Saved ${records.length} ustawy`);
 }

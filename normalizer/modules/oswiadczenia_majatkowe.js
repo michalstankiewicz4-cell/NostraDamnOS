@@ -10,24 +10,7 @@ export function normalizeOswiadczeniaMajatkowe(raw) {
     }));
 }
 
-export function saveOswiadczeniaMajatkowe(db, records) {
-    const stmt = db.database.prepare(`
-        INSERT INTO oswiadczenia_majatkowe (id_oswiadczenia, id_osoby, rok, tresc, data_zlozenia)
-        VALUES (?, ?, ?, ?, ?)
-        ON CONFLICT(id_oswiadczenia) DO UPDATE SET
-            id_osoby = excluded.id_osoby,
-            rok = excluded.rok,
-            tresc = excluded.tresc,
-            data_zlozenia = excluded.data_zlozenia
-    `);
-    
-    for (const r of records) {
-        stmt.run([
-            r.id_oswiadczenia, r.id_osoby, r.rok,
-            r.tresc, r.data_zlozenia
-        ]);
-    }
-    
-    stmt.free();
+export async function saveOswiadczeniaMajatkowe(db, records) {
+    await db.upsertOswiadczeniaMajatkowe(records);
     console.log(`[Normalizer] Saved ${records.length} oswiadczenia_majatkowe`);
 }

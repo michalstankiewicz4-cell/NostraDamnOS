@@ -15,28 +15,7 @@ export function normalizePoslowie(raw, config = {}) {
     }));
 }
 
-export function savePoslowie(db, records) {
-    const stmt = db.database.prepare(`
-        INSERT INTO poslowie (id_osoby, imie, nazwisko, klub, okreg, rola, kadencja, email, aktywny)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT(id_osoby) DO UPDATE SET
-            imie = excluded.imie,
-            nazwisko = excluded.nazwisko,
-            klub = excluded.klub,
-            okreg = excluded.okreg,
-            rola = excluded.rola,
-            kadencja = excluded.kadencja,
-            email = excluded.email,
-            aktywny = excluded.aktywny
-    `);
-
-    for (const r of records) {
-        stmt.run([
-            r.id_osoby, r.imie, r.nazwisko, r.klub, r.okreg,
-            r.rola, r.kadencja, r.email, r.aktywny
-        ]);
-    }
-    
-    stmt.free();
+export async function savePoslowie(db, records) {
+    await db.upsertPoslowie(records);
     console.log(`[Normalizer] Saved ${records.length} poslowie`);
 }

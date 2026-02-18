@@ -352,92 +352,72 @@ export const db2 = {
         }
     },
 
+    // ===== CHUNKED UPSERT HELPER =====
+
+    async chunkedUpsert(sql, data, rowMapper, opts = {}) {
+        const { chunkSize = 500, signal } = opts;
+        if (!data?.length) return;
+        const stmt = this.database.prepare(sql);
+        for (let i = 0; i < data.length; i += chunkSize) {
+            if (signal?.aborted) { stmt.free(); throw new DOMException('Aborted', 'AbortError'); }
+            this.database.run('BEGIN TRANSACTION');
+            try {
+                const end = Math.min(i + chunkSize, data.length);
+                for (let j = i; j < end; j++) stmt.run(rowMapper(data[j]));
+                this.database.run('COMMIT');
+            } catch (e) {
+                try { this.database.run('ROLLBACK'); } catch (_) {}
+                stmt.free();
+                throw e;
+            }
+            await new Promise(r => setTimeout(r, 0));
+        }
+        stmt.free();
+    },
+
     // ===== UPSERT METHODS =====
-    
-    upsertPoslowie(data) {
-        const stmt = this.database.prepare(`
+
+    async upsertPoslowie(data, opts = {}) {
+        await this.chunkedUpsert(`
             INSERT INTO poslowie (id_osoby, imie, nazwisko, klub, okreg, rola, kadencja, email, aktywny)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(id_osoby) DO UPDATE SET
-                imie = excluded.imie,
-                nazwisko = excluded.nazwisko,
-                klub = excluded.klub,
-                okreg = excluded.okreg,
-                rola = excluded.rola,
-                kadencja = excluded.kadencja,
-                email = excluded.email,
-                aktywny = excluded.aktywny
-        `);
-        
-        data.forEach(row => {
-            stmt.run([
-                row.id_osoby,
-                row.imie,
-                row.nazwisko,
-                row.klub,
-                row.okreg,
-                row.rola,
-                row.kadencja,
-                row.email,
-                row.aktywny ?? 1
-            ]);
-        });
-        
-        stmt.free();
+                imie = excluded.imie, nazwisko = excluded.nazwisko,
+                klub = excluded.klub, okreg = excluded.okreg,
+                rola = excluded.rola, kadencja = excluded.kadencja,
+                email = excluded.email, aktywny = excluded.aktywny
+        `, data, row => [
+            row.id_osoby, row.imie, row.nazwisko, row.klub,
+            row.okreg, row.rola, row.kadencja, row.email, row.aktywny ?? 1
+        ], opts);
     },
-    
-    upsertPosiedzenia(data) {
-        const stmt = this.database.prepare(`
+
+    async upsertPosiedzenia(data, opts = {}) {
+        await this.chunkedUpsert(`
             INSERT INTO posiedzenia (id_posiedzenia, numer, data_start, data_koniec, kadencja, typ)
             VALUES (?, ?, ?, ?, ?, ?)
             ON CONFLICT(id_posiedzenia) DO UPDATE SET
-                numer = excluded.numer,
-                data_start = excluded.data_start,
-                data_koniec = excluded.data_koniec,
-                kadencja = excluded.kadencja,
+                numer = excluded.numer, data_start = excluded.data_start,
+                data_koniec = excluded.data_koniec, kadencja = excluded.kadencja,
                 typ = excluded.typ
-        `);
-        
-        data.forEach(row => {
-            stmt.run([
-                row.id_posiedzenia,
-                row.numer,
-                row.data_start,
-                row.data_koniec,
-                row.kadencja,
-                row.typ
-            ]);
-        });
-        
-        stmt.free();
+        `, data, row => [
+            row.id_posiedzenia, row.numer, row.data_start,
+            row.data_koniec, row.kadencja, row.typ
+        ], opts);
     },
-    
-    upsertWypowiedzi(data) {
-        const stmt = this.database.prepare(`
+
+    async upsertWypowiedzi(data, opts = {}) {
+        await this.chunkedUpsert(`
             INSERT INTO wypowiedzi (id_wypowiedzi, id_posiedzenia, id_osoby, data, tekst, typ, mowca)
             VALUES (?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(id_wypowiedzi) DO UPDATE SET
-                id_posiedzenia = excluded.id_posiedzenia,
-                id_osoby = excluded.id_osoby,
-                data = excluded.data,
-                tekst = excluded.tekst,
-                typ = excluded.typ,
-                mowca = excluded.mowca
-        `);
-
-        data.forEach(row => {
-            stmt.run([
-                row.id_wypowiedzi,
-                row.id_posiedzenia,
-                row.id_osoby,
-                row.data,
-                row.tekst,
-                row.typ,
-                row.mowca || null
-            ]);
-        });
-        
-        stmt.free();
+                id_posiedzenia = excluded.id_posiedzenia, id_osoby = excluded.id_osoby,
+                data = excluded.data, tekst = excluded.tekst,
+                typ = excluded.typ, mowca = excluded.mowca
+        `, data, row => [
+            row.id_wypowiedzi, row.id_posiedzenia, row.id_osoby,
+            row.data, row.tekst, row.typ, row.mowca || null
+        ], opts);
     },
     
     // ... (pozostałe upsert metody podobnie)
@@ -621,225 +601,142 @@ export const db2 = {
         console.log('[DB v2] Database imported');
     },
     
-    upsertGlosowania(data) {
-        const stmt = this.database.prepare(`
+    async upsertGlosowania(data, opts = {}) {
+        await this.chunkedUpsert(`
             INSERT INTO glosowania (id_glosowania, id_posiedzenia, numer, data, wynik, tytul, za, przeciw, wstrzymalo)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(id_glosowania) DO UPDATE SET
-                id_posiedzenia = excluded.id_posiedzenia,
-                numer = excluded.numer,
-                data = excluded.data,
-                wynik = excluded.wynik,
-                tytul = excluded.tytul,
-                za = excluded.za,
-                przeciw = excluded.przeciw,
-                wstrzymalo = excluded.wstrzymalo
-        `);
-        
-        data.forEach(row => {
-            stmt.run([
-                row.id_glosowania, row.id_posiedzenia, row.numer, row.data,
-                row.wynik, row.tytul, row.za, row.przeciw, row.wstrzymalo
-            ]);
-        });
-        
-        stmt.free();
+                id_posiedzenia = excluded.id_posiedzenia, numer = excluded.numer,
+                data = excluded.data, wynik = excluded.wynik, tytul = excluded.tytul,
+                za = excluded.za, przeciw = excluded.przeciw, wstrzymalo = excluded.wstrzymalo
+        `, data, row => [
+            row.id_glosowania, row.id_posiedzenia, row.numer, row.data,
+            row.wynik, row.tytul, row.za, row.przeciw, row.wstrzymalo
+        ], opts);
     },
-    
-    upsertGlosy(data) {
-        const stmt = this.database.prepare(`
+
+    async upsertGlosy(data, opts = {}) {
+        await this.chunkedUpsert(`
             INSERT INTO glosy (id_glosu, id_glosowania, id_osoby, glos)
             VALUES (?, ?, ?, ?)
             ON CONFLICT(id_glosu) DO UPDATE SET
                 id_glosowania = excluded.id_glosowania,
-                id_osoby = excluded.id_osoby,
-                glos = excluded.glos
-        `);
-        
-        data.forEach(row => {
-            stmt.run([row.id_glosu, row.id_glosowania, row.id_osoby, row.glos]);
-        });
-        
-        stmt.free();
+                id_osoby = excluded.id_osoby, glos = excluded.glos
+        `, data, row => [row.id_glosu, row.id_glosowania, row.id_osoby, row.glos], opts);
     },
-    
-    upsertInterpelacje(data) {
-        const stmt = this.database.prepare(`
+
+    async upsertInterpelacje(data, opts = {}) {
+        await this.chunkedUpsert(`
             INSERT INTO interpelacje (id_interpelacji, id_osoby, data, tytul, tresc, status)
             VALUES (?, ?, ?, ?, ?, ?)
             ON CONFLICT(id_interpelacji) DO UPDATE SET
-                id_osoby = excluded.id_osoby,
-                data = excluded.data,
-                tytul = excluded.tytul,
-                tresc = excluded.tresc,
-                status = excluded.status
-        `);
-        
-        data.forEach(row => {
-            stmt.run([row.id_interpelacji, row.id_osoby, row.data, row.tytul, row.tresc, row.status]);
-        });
-        
-        stmt.free();
+                id_osoby = excluded.id_osoby, data = excluded.data,
+                tytul = excluded.tytul, tresc = excluded.tresc, status = excluded.status
+        `, data, row => [
+            row.id_interpelacji, row.id_osoby, row.data, row.tytul, row.tresc, row.status
+        ], opts);
     },
-    
-    upsertProjektyUstaw(data) {
-        const stmt = this.database.prepare(`
+
+    async upsertProjektyUstaw(data, opts = {}) {
+        await this.chunkedUpsert(`
             INSERT INTO projekty_ustaw (id_projektu, kadencja, data, tytul, status, opis)
             VALUES (?, ?, ?, ?, ?, ?)
             ON CONFLICT(id_projektu) DO UPDATE SET
-                kadencja = excluded.kadencja,
-                data = excluded.data,
-                tytul = excluded.tytul,
-                status = excluded.status,
-                opis = excluded.opis
-        `);
-        
-        data.forEach(row => {
-            stmt.run([row.id_projektu, row.kadencja, row.data, row.tytul, row.status, row.opis]);
-        });
-        
-        stmt.free();
+                kadencja = excluded.kadencja, data = excluded.data,
+                tytul = excluded.tytul, status = excluded.status, opis = excluded.opis
+        `, data, row => [
+            row.id_projektu, row.kadencja, row.data, row.tytul, row.status, row.opis
+        ], opts);
     },
-    
-    upsertKomisje(data) {
-        const stmt = this.database.prepare(`
+
+    async upsertKomisje(data, opts = {}) {
+        await this.chunkedUpsert(`
             INSERT INTO komisje (id_komisji, nazwa, skrot, typ, kadencja)
             VALUES (?, ?, ?, ?, ?)
             ON CONFLICT(id_komisji) DO UPDATE SET
-                nazwa = excluded.nazwa,
-                skrot = excluded.skrot,
-                typ = excluded.typ,
-                kadencja = excluded.kadencja
-        `);
-        
-        data.forEach(row => {
-            stmt.run([row.id_komisji, row.nazwa, row.skrot, row.typ, row.kadencja]);
-        });
-        
-        stmt.free();
+                nazwa = excluded.nazwa, skrot = excluded.skrot,
+                typ = excluded.typ, kadencja = excluded.kadencja
+        `, data, row => [
+            row.id_komisji, row.nazwa, row.skrot, row.typ, row.kadencja
+        ], opts);
     },
-    
-    upsertKomisjePosiedzenia(data) {
-        const stmt = this.database.prepare(`
+
+    async upsertKomisjePosiedzenia(data, opts = {}) {
+        await this.chunkedUpsert(`
             INSERT INTO komisje_posiedzenia (id_posiedzenia_komisji, id_komisji, numer, data, opis)
             VALUES (?, ?, ?, ?, ?)
             ON CONFLICT(id_posiedzenia_komisji) DO UPDATE SET
-                id_komisji = excluded.id_komisji,
-                numer = excluded.numer,
-                data = excluded.data,
-                opis = excluded.opis
-        `);
-        
-        data.forEach(row => {
-            stmt.run([row.id_posiedzenia_komisji, row.id_komisji, row.numer, row.data, row.opis]);
-        });
-        
-        stmt.free();
+                id_komisji = excluded.id_komisji, numer = excluded.numer,
+                data = excluded.data, opis = excluded.opis
+        `, data, row => [
+            row.id_posiedzenia_komisji, row.id_komisji, row.numer, row.data, row.opis
+        ], opts);
     },
-    
-    upsertKomisjeWypowiedzi(data) {
-        const stmt = this.database.prepare(`
+
+    async upsertKomisjeWypowiedzi(data, opts = {}) {
+        await this.chunkedUpsert(`
             INSERT INTO komisje_wypowiedzi (id_wypowiedzi_komisji, id_posiedzenia_komisji, id_osoby, tekst, data, typ)
             VALUES (?, ?, ?, ?, ?, ?)
             ON CONFLICT(id_wypowiedzi_komisji) DO UPDATE SET
                 id_posiedzenia_komisji = excluded.id_posiedzenia_komisji,
-                id_osoby = excluded.id_osoby,
-                tekst = excluded.tekst,
-                data = excluded.data,
-                typ = excluded.typ
-        `);
-        
-        data.forEach(row => {
-            stmt.run([
-                row.id_wypowiedzi_komisji, row.id_posiedzenia_komisji,
-                row.id_osoby, row.tekst, row.data, row.typ
-            ]);
-        });
-        
-        stmt.free();
+                id_osoby = excluded.id_osoby, tekst = excluded.tekst,
+                data = excluded.data, typ = excluded.typ
+        `, data, row => [
+            row.id_wypowiedzi_komisji, row.id_posiedzenia_komisji,
+            row.id_osoby, row.tekst, row.data, row.typ
+        ], opts);
     },
-    
-    upsertOswiadczeniaMajatkowe(data) {
-        const stmt = this.database.prepare(`
+
+    async upsertOswiadczeniaMajatkowe(data, opts = {}) {
+        await this.chunkedUpsert(`
             INSERT INTO oswiadczenia_majatkowe (id_oswiadczenia, id_osoby, rok, tresc, data_zlozenia)
             VALUES (?, ?, ?, ?, ?)
             ON CONFLICT(id_oswiadczenia) DO UPDATE SET
-                id_osoby = excluded.id_osoby,
-                rok = excluded.rok,
-                tresc = excluded.tresc,
-                data_zlozenia = excluded.data_zlozenia
-        `);
-        
-        data.forEach(row => {
-            stmt.run([row.id_oswiadczenia, row.id_osoby, row.rok, row.tresc, row.data_zlozenia]);
-        });
-        
-        stmt.free();
+                id_osoby = excluded.id_osoby, rok = excluded.rok,
+                tresc = excluded.tresc, data_zlozenia = excluded.data_zlozenia
+        `, data, row => [
+            row.id_oswiadczenia, row.id_osoby, row.rok, row.tresc, row.data_zlozenia
+        ], opts);
     },
-    
-    upsertZapytania(data) {
-        const stmt = this.database.prepare(`
+
+    async upsertZapytania(data, opts = {}) {
+        await this.chunkedUpsert(`
             INSERT INTO zapytania (term, num, title, receiptDate, lastModified, sentDate, from_mp_ids, to_ministries, answerDelayedDays)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(term, num) DO UPDATE SET
-                title = excluded.title,
-                lastModified = excluded.lastModified,
-                sentDate = excluded.sentDate,
-                from_mp_ids = excluded.from_mp_ids,
-                to_ministries = excluded.to_ministries,
-                answerDelayedDays = excluded.answerDelayedDays
-        `);
-        
-        data.forEach(row => {
-            stmt.run([
-                row.term, row.num, row.title, row.receiptDate, row.lastModified,
-                row.sentDate, row.from_mp_ids, row.to_ministries, row.answerDelayedDays
-            ]);
-        });
-        
-        stmt.free();
+                title = excluded.title, lastModified = excluded.lastModified,
+                sentDate = excluded.sentDate, from_mp_ids = excluded.from_mp_ids,
+                to_ministries = excluded.to_ministries, answerDelayedDays = excluded.answerDelayedDays
+        `, data, row => [
+            row.term, row.num, row.title, row.receiptDate, row.lastModified,
+            row.sentDate, row.from_mp_ids, row.to_ministries, row.answerDelayedDays
+        ], opts);
     },
-    
-    upsertZapytaniaOdpowiedzi(data) {
-        const stmt = this.database.prepare(`
+
+    async upsertZapytaniaOdpowiedzi(data, opts = {}) {
+        await this.chunkedUpsert(`
             INSERT INTO zapytania_odpowiedzi (zapytanie_term, zapytanie_num, key, from_author, receiptDate, lastModified, onlyAttachment, prolongation)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(zapytanie_term, zapytanie_num, key) DO UPDATE SET
-                from_author = excluded.from_author,
-                lastModified = excluded.lastModified,
-                onlyAttachment = excluded.onlyAttachment,
-                prolongation = excluded.prolongation
-        `);
-        
-        data.forEach(row => {
-            stmt.run([
-                row.zapytanie_term, row.zapytanie_num, row.key, row.from_author,
-                row.receiptDate, row.lastModified, row.onlyAttachment, row.prolongation
-            ]);
-        });
-        
-        stmt.free();
+                from_author = excluded.from_author, lastModified = excluded.lastModified,
+                onlyAttachment = excluded.onlyAttachment, prolongation = excluded.prolongation
+        `, data, row => [
+            row.zapytanie_term, row.zapytanie_num, row.key, row.from_author,
+            row.receiptDate, row.lastModified, row.onlyAttachment, row.prolongation
+        ], opts);
     },
 
-    upsertUstawy(data) {
-        const stmt = this.database.prepare(`
+    async upsertUstawy(data, opts = {}) {
+        await this.chunkedUpsert(`
             INSERT INTO ustawy (id_ustawy, publisher, year, pos, title, type, status, promulgation, entry_into_force)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(id_ustawy) DO UPDATE SET
-                title = excluded.title,
-                type = excluded.type,
-                status = excluded.status,
-                promulgation = excluded.promulgation,
+                title = excluded.title, type = excluded.type,
+                status = excluded.status, promulgation = excluded.promulgation,
                 entry_into_force = excluded.entry_into_force
-        `);
-
-        data.forEach(row => {
-            stmt.run([
-                row.id_ustawy, row.publisher, row.year, row.pos,
-                row.title, row.type, row.status, row.promulgation, row.entry_into_force
-            ]);
-        });
-
-        stmt.free();
+        `, data, row => [
+            row.id_ustawy, row.publisher, row.year, row.pos,
+            row.title, row.type, row.status, row.promulgation, row.entry_into_force
+        ], opts);
     }
 };

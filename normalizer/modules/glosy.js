@@ -32,15 +32,7 @@ export function normalizeGlosy(raw, glosowania) {
     return results;
 }
 
-export function saveGlosy(db, records) {
-    const stmt = db.database.prepare(`
-        INSERT INTO glosy (id_glosu, id_glosowania, id_osoby, glos)
-        VALUES (?, ?, ?, ?)
-        ON CONFLICT(id_glosu) DO UPDATE SET glos = excluded.glos
-    `);
-    for (const r of records) {
-        stmt.run([r.id_glosu, r.id_glosowania, r.id_osoby, r.glos]);
-    }
-    stmt.free();
+export async function saveGlosy(db, records) {
+    await db.upsertGlosy(records);
     console.log(`[Normalizer] Saved ${records.length} glosy`);
 }
