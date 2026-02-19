@@ -11,7 +11,7 @@ export function normalizePosiedzenia(raw, config = {}) {
     );
 
     return valid.map(p => ({
-        id_posiedzenia: p.number || p.num || p.id,
+        id_posiedzenia: `${config.kadencja || ''}_${p.number || p.num || p.id}`,
         numer: p.number || p.num || p.numer || null,
         data_start: Array.isArray(p.dates) && p.dates[0] ? p.dates[0] : null,
         data_koniec: Array.isArray(p.dates) && p.dates.length > 0 ? p.dates[p.dates.length - 1] : null,

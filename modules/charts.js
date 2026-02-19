@@ -144,7 +144,7 @@ const canvasId = 'canvasCustom';
 const cardId = 'chartCustom';
 
 function renderGlosowaniaTime() {
-    const data = query("SELECT id_posiedzenia as pos, COUNT(*) as cnt FROM glosowania GROUP BY id_posiedzenia ORDER BY id_posiedzenia");
+    const data = query("SELECT g.id_posiedzenia as pos, p.numer as numer, COUNT(*) as cnt FROM glosowania g LEFT JOIN posiedzenia p ON g.id_posiedzenia = p.id_posiedzenia GROUP BY g.id_posiedzenia ORDER BY p.numer");
     if (data.length < 2) { setCardState(cardId, false); return; }
 
     setCardState(cardId, true);
@@ -153,7 +153,7 @@ function renderGlosowaniaTime() {
     chartInstances['custom'] = new Chart(document.getElementById(canvasId), {
         type: 'line',
         data: {
-            labels: data.map(d => 'Pos. ' + d.pos),
+            labels: data.map(d => 'Pos. ' + (d.numer || d.pos)),
             datasets: [{
                 label: 'Głosowania',
                 data: data.map(d => d.cnt),
@@ -251,7 +251,7 @@ function renderInterpelacje() {
 
 function renderFrekwencja() {
     const TOTAL_POSLOW = 460; // Sejm X kadencja
-    const data = query("SELECT id_posiedzenia as pos, AVG(za + przeciw + wstrzymalo) as avg_total FROM glosowania GROUP BY id_posiedzenia ORDER BY id_posiedzenia");
+    const data = query("SELECT g.id_posiedzenia as pos, p.numer as numer, AVG(g.za + g.przeciw + g.wstrzymalo) as avg_total FROM glosowania g LEFT JOIN posiedzenia p ON g.id_posiedzenia = p.id_posiedzenia GROUP BY g.id_posiedzenia ORDER BY p.numer");
     if (data.length < 2) { setCardState(cardId, false); return; }
 
     setCardState(cardId, true);
@@ -260,7 +260,7 @@ function renderFrekwencja() {
     chartInstances['custom'] = new Chart(document.getElementById(canvasId), {
         type: 'line',
         data: {
-            labels: data.map(d => 'Pos. ' + d.pos),
+            labels: data.map(d => 'Pos. ' + (d.numer || d.pos)),
             datasets: [{
                 label: 'Frekwencja %',
                 data: data.map(d => Math.round(d.avg_total / TOTAL_POSLOW * 100)),
@@ -373,7 +373,7 @@ function renderHeatmap() {
 
     // Build query based on selections
     const xCol = xSel === 'glosowania' ? 'g.id_glosowania' : 'gl.id_posiedzenia';
-    const xLabel = xSel === 'glosowania' ? "gl.id_posiedzenia || '/' || gl.numer" : 'gl.id_posiedzenia';
+    const xLabel = xSel === 'glosowania' ? "ps.numer || '/' || gl.numer" : 'ps.numer';
     const yCol = ySel === 'kluby' ? 'p.klub' : "p.nazwisko || ' ' || SUBSTR(p.imie,1,1) || '.'";
 
     let valueSql;
@@ -388,19 +388,21 @@ function renderHeatmap() {
             SELECT ${xLabel} as x_label, ${yCol} as y_label, ${valueSql} as val
             FROM glosy g
             JOIN glosowania gl ON g.id_glosowania = gl.id_glosowania
+            LEFT JOIN posiedzenia ps ON gl.id_posiedzenia = ps.id_posiedzenia
             JOIN poslowie p ON g.id_osoby = p.id_osoby
             GROUP BY ${xLabel}, ${yCol}
-            ORDER BY gl.id_posiedzenia, gl.numer, ${yCol}
+            ORDER BY ps.numer, gl.numer, ${yCol}
             LIMIT 2000
         `;
     } else {
         sql = `
-            SELECT gl.id_posiedzenia as x_label, ${yCol} as y_label, ${valueSql} as val
+            SELECT ps.numer as x_label, ${yCol} as y_label, ${valueSql} as val
             FROM glosy g
             JOIN glosowania gl ON g.id_glosowania = gl.id_glosowania
+            LEFT JOIN posiedzenia ps ON gl.id_posiedzenia = ps.id_posiedzenia
             JOIN poslowie p ON g.id_osoby = p.id_osoby
-            GROUP BY gl.id_posiedzenia, ${yCol}
-            ORDER BY gl.id_posiedzenia, ${yCol}
+            GROUP BY ps.numer, ${yCol}
+            ORDER BY ps.numer, ${yCol}
             LIMIT 2000
         `;
     }

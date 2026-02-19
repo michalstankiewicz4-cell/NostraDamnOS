@@ -74,7 +74,7 @@ export const db2 = {
             
             -- 2. Posiedzenia
             CREATE TABLE IF NOT EXISTS posiedzenia (
-                id_posiedzenia INTEGER PRIMARY KEY,
+                id_posiedzenia TEXT PRIMARY KEY,
                 numer INTEGER,
                 data_start TEXT,
                 data_koniec TEXT,
@@ -87,7 +87,7 @@ export const db2 = {
             -- 3. Wypowiedzi
             CREATE TABLE IF NOT EXISTS wypowiedzi (
                 id_wypowiedzi TEXT PRIMARY KEY,
-                id_posiedzenia INTEGER,
+                id_posiedzenia TEXT,
                 id_osoby TEXT,
                 data TEXT,
                 tekst TEXT,
@@ -103,7 +103,7 @@ export const db2 = {
             -- 4. Głosowania
             CREATE TABLE IF NOT EXISTS glosowania (
                 id_glosowania TEXT PRIMARY KEY,
-                id_posiedzenia INTEGER,
+                id_posiedzenia TEXT,
                 numer INTEGER,
                 data TEXT,
                 wynik TEXT,         -- przyjęto/odrzucono
@@ -280,6 +280,12 @@ export const db2 = {
                 }
             }
 
+            // ── Migracja id_posiedzenia INTEGER → TEXT (kadencja prefix) ──
+            // Stare bazy miały id_posiedzenia INTEGER PRIMARY KEY w tabeli posiedzenia.
+            // Nowy format: "kadencja_numer" (TEXT). SQLite nie pozwala na ALTER COLUMN,
+            // więc trzeba odtworzyć tabelę.
+            this._migratePosiedzeniaPK();
+
             // Dodaj brakujące tabele (dodane w późniejszych wersjach schematu)
             this.database.run(`
                 CREATE TABLE IF NOT EXISTS zapytania_odpowiedzi (
@@ -317,6 +323,96 @@ export const db2 = {
             this.resolveWypowiedziSpeakers();
         } catch (err) {
             console.warn('[DB v2] Migration error:', err);
+        }
+    },
+
+    /**
+     * Migracja tabeli posiedzenia: INTEGER PRIMARY KEY → TEXT PRIMARY KEY
+     * Konwertuje stare ID (np. 5) na nowy format "kadencja_numer" (np. "10_5").
+     * Aktualizuje też FK w wypowiedzi i glosowania.
+     */
+    _migratePosiedzeniaPK() {
+        // Sprawdź aktualny typ kolumny id_posiedzenia
+        const info = this.database.exec("PRAGMA table_info(posiedzenia)");
+        if (!info.length) return; // tabela nie istnieje — createSchema ją stworzy
+
+        // Kolumny: [cid, name, type, notnull, dflt_value, pk]
+        const idCol = info[0].values.find(row => row[1] === 'id_posiedzenia');
+        if (!idCol) return;
+
+        const colType = (idCol[2] || '').toUpperCase();
+        // Jeśli już TEXT — nie trzeba migrować
+        if (colType === 'TEXT') return;
+
+        console.log('[DB v2] Migration: posiedzenia.id_posiedzenia INTEGER → TEXT...');
+
+        this.database.run('BEGIN TRANSACTION');
+        try {
+            // 1. Odtwórz tabelę z TEXT PRIMARY KEY
+            this.database.run(`
+                CREATE TABLE posiedzenia_new (
+                    id_posiedzenia TEXT PRIMARY KEY,
+                    numer INTEGER,
+                    data_start TEXT,
+                    data_koniec TEXT,
+                    kadencja INTEGER,
+                    typ TEXT
+                )
+            `);
+
+            // 2. Kopiuj dane, konwertując ID: kadencja_staryId
+            this.database.run(`
+                INSERT INTO posiedzenia_new (id_posiedzenia, numer, data_start, data_koniec, kadencja, typ)
+                SELECT CAST(COALESCE(kadencja, 10) AS TEXT) || '_' || CAST(id_posiedzenia AS TEXT),
+                       numer, data_start, data_koniec, kadencja, typ
+                FROM posiedzenia
+            `);
+
+            // 3. Zaktualizuj FK w wypowiedzi (id_posiedzenia)
+            this.database.run(`
+                UPDATE wypowiedzi
+                SET id_posiedzenia = (
+                    SELECT CAST(COALESCE(p.kadencja, 10) AS TEXT) || '_' || CAST(p.id_posiedzenia AS TEXT)
+                    FROM posiedzenia p
+                    WHERE CAST(p.id_posiedzenia AS TEXT) = CAST(wypowiedzi.id_posiedzenia AS TEXT)
+                )
+                WHERE EXISTS (
+                    SELECT 1 FROM posiedzenia p
+                    WHERE CAST(p.id_posiedzenia AS TEXT) = CAST(wypowiedzi.id_posiedzenia AS TEXT)
+                )
+            `);
+
+            // 4. Zaktualizuj FK w glosowania (id_posiedzenia)
+            this.database.run(`
+                UPDATE glosowania
+                SET id_posiedzenia = (
+                    SELECT CAST(COALESCE(p.kadencja, 10) AS TEXT) || '_' || CAST(p.id_posiedzenia AS TEXT)
+                    FROM posiedzenia p
+                    WHERE CAST(p.id_posiedzenia AS TEXT) = CAST(glosowania.id_posiedzenia AS TEXT)
+                )
+                WHERE EXISTS (
+                    SELECT 1 FROM posiedzenia p
+                    WHERE CAST(p.id_posiedzenia AS TEXT) = CAST(glosowania.id_posiedzenia AS TEXT)
+                )
+            `);
+
+            // 5. Zamień tabele
+            this.database.run('DROP TABLE posiedzenia');
+            this.database.run('ALTER TABLE posiedzenia_new RENAME TO posiedzenia');
+
+            // 6. Odtwórz indeksy
+            this.database.run('CREATE INDEX IF NOT EXISTS idx_posiedzenia_kadencja ON posiedzenia(kadencja)');
+            this.database.run('CREATE INDEX IF NOT EXISTS idx_posiedzenia_data ON posiedzenia(data_start)');
+
+            this.database.run('COMMIT');
+
+            const countRes = this.database.exec('SELECT COUNT(*) FROM posiedzenia');
+            const cnt = countRes.length ? countRes[0].values[0][0] : 0;
+            console.log(`[DB v2] Migration: posiedzenia → TEXT PK complete (${cnt} rows migrated)`);
+        } catch (e) {
+            try { this.database.run('ROLLBACK'); } catch (_) {}
+            console.error('[DB v2] Migration posiedzenia PK failed:', e);
+            throw e;
         }
     },
 

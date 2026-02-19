@@ -63,7 +63,7 @@ async function fetchTranscriptsForDay(base, kadencja, sitting, date, speed = 'no
     }
 
     // Mamy #1, sparsuj od razu
-    statements.push(...parseTranscriptHTML(first, sitting, date, 1));
+    statements.push(...parseTranscriptHTML(first, kadencja, sitting, date, 1));
 
     // Probe — szukaj końca numeracji (co 10)
     let maxNum = 10;
@@ -83,7 +83,7 @@ async function fetchTranscriptsForDay(base, kadencja, sitting, date, speed = 'no
         const results = await Promise.all(batch.map(async num => {
             const html = await safeFetchText(`${apiBase}/${num}`);
             if (!html) return [];
-            return parseTranscriptHTML(html, sitting, date, num);
+            return parseTranscriptHTML(html, kadencja, sitting, date, num);
         }));
 
         const valid = results.flat();
@@ -97,7 +97,7 @@ async function fetchTranscriptsForDay(base, kadencja, sitting, date, speed = 'no
     return statements;
 }
 
-function parseTranscriptHTML(html, sitting, date, transcriptNum) {
+function parseTranscriptHTML(html, kadencja, sitting, date, transcriptNum) {
     const statements = [];
     if (!html) return statements;
 
@@ -113,8 +113,8 @@ function parseTranscriptHTML(html, sitting, date, transcriptNum) {
 
         if (text && text.length > 10) {
             statements.push({
-                id: `${sitting}_${date}_${transcriptNum}_${i}`,
-                id_posiedzenia: sitting,
+                id: `${kadencja}_${sitting}_${date}_${transcriptNum}_${i}`,
+                id_posiedzenia: `${kadencja}_${sitting}`,
                 id_osoby: null,
                 data: date,
                 tekst: text,

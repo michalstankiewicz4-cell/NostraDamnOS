@@ -474,13 +474,15 @@ function analyzeActivityTrend() {
     if (!container) return;
     
     try {
-        // Znajdź medianę id_posiedzenia — dzieli posiedzenia na starszą i nowszą połowę
+        // Znajdź medianę po dacie posiedzenia — dzieli posiedzenia na starszą i nowszą połowę
         const medianResult = db2.database.exec(`
-            SELECT id_posiedzenia FROM (
-                SELECT DISTINCT id_posiedzenia FROM wypowiedzi
-                WHERE id_posiedzenia IS NOT NULL
-                ORDER BY id_posiedzenia
-            )
+            SELECT w.id_posiedzenia FROM (
+                SELECT DISTINCT w2.id_posiedzenia, p.data_start
+                FROM wypowiedzi w2
+                LEFT JOIN posiedzenia p ON w2.id_posiedzenia = p.id_posiedzenia
+                WHERE w2.id_posiedzenia IS NOT NULL
+                ORDER BY p.data_start
+            ) w
             LIMIT 1 OFFSET (
                 SELECT COUNT(DISTINCT id_posiedzenia) / 2
                 FROM wypowiedzi WHERE id_posiedzenia IS NOT NULL
@@ -494,24 +496,37 @@ function analyzeActivityTrend() {
         
         const medianPos = medianResult[0].values[0][0];
         console.log(`[Predictions] Activity trend — median posiedzenie: ${medianPos}`);
+
+        // Pobierz datę mediany do porównania
+        const medianDateResult = db2.database.exec(
+            `SELECT data_start FROM posiedzenia WHERE id_posiedzenia = ?`, [medianPos]
+        );
+        const medianDate = medianDateResult.length && medianDateResult[0].values.length
+            ? medianDateResult[0].values[0][0] : null;
+
+        if (!medianDate) {
+            container.innerHTML = '<div class="prediction-no-data">Brak dat posiedzeń do analizy trendów</div>';
+            return;
+        }
         
-        // Policz wypowiedzi w obu połówkach per poseł
+        // Policz wypowiedzi w obu połówkach per poseł (porównanie wg daty posiedzenia)
         const result = db2.database.exec(`
             SELECT 
                 p.imie || ' ' || p.nazwisko as name,
                 p.klub,
-                SUM(CASE WHEN w.id_posiedzenia < ? THEN 1 ELSE 0 END) as old_half,
-                SUM(CASE WHEN w.id_posiedzenia >= ? THEN 1 ELSE 0 END) as new_half,
+                SUM(CASE WHEN ps.data_start < ? THEN 1 ELSE 0 END) as old_half,
+                SUM(CASE WHEN ps.data_start >= ? THEN 1 ELSE 0 END) as new_half,
                 COUNT(w.id_wypowiedzi) as total_speeches
             FROM poslowie p
             JOIN wypowiedzi w ON p.id_osoby = w.id_osoby
+            LEFT JOIN posiedzenia ps ON w.id_posiedzenia = ps.id_posiedzenia
             WHERE p.klub IS NOT NULL AND p.klub != ''
             AND w.id_posiedzenia IS NOT NULL
             GROUP BY p.id_osoby, p.imie, p.nazwisko, p.klub
             HAVING COUNT(w.id_wypowiedzi) >= 5
             ORDER BY total_speeches DESC
             LIMIT 15
-        `, [medianPos, medianPos]);
+        `, [medianDate, medianDate]);
         
         if (!result.length || !result[0].values.length) {
             container.innerHTML = '<div class="prediction-no-data">Brak wystarczających danych wypowiedzi</div>';
@@ -3206,7 +3221,8 @@ async function analyzeSessionSummary() {
         html += '<select id="sessionSummarySelect" class="profile-combobox">';
         sessionList.forEach(row => {
             const [id, numer, dataStart, dataKoniec] = row;
-            const label = `Posiedzenie ${numer || id} (${dataStart || '?'}${dataKoniec ? ' – ' + dataKoniec : ''})`;
+            const displayNum = numer || (id && String(id).includes('_') ? String(id).split('_').pop() : id);
+            const label = `Posiedzenie ${displayNum} (${dataStart || '?'}${dataKoniec ? ' – ' + dataKoniec : ''})`;
             html += `<option value="${id}">${label}</option>`;
         });
         html += '</select>';
@@ -3576,13 +3592,14 @@ function _analyzeMpContradictionsSync(container) {
             p.id_osoby,
             p.imie || ' ' || p.nazwisko AS name,
             p.klub,
-            COALESCE(kp.opis, 'Posiedzenie ' || w.id_posiedzenia) AS temat,
+            COALESCE(kp.opis, 'Posiedzenie ' || COALESCE(ps2.numer, w.id_posiedzenia)) AS temat,
             SUBSTR(COALESCE(kw.data, w.data), 1, 7) AS month,
             COALESCE(kw.tekst, w.tekst) AS tekst
         FROM poslowie p
         LEFT JOIN komisje_wypowiedzi kw ON kw.id_osoby = p.id_osoby
         LEFT JOIN komisje_posiedzenia kp ON kp.id_posiedzenia_komisji = kw.id_posiedzenia_komisji
         LEFT JOIN wypowiedzi w ON w.id_osoby = p.id_osoby AND kw.id_wypowiedzi_komisji IS NULL
+        LEFT JOIN posiedzenia ps2 ON w.id_posiedzenia = ps2.id_posiedzenia
         WHERE COALESCE(kw.tekst, w.tekst) IS NOT NULL 
           AND LENGTH(COALESCE(kw.tekst, w.tekst)) > 100
           AND p.klub IS NOT NULL AND p.klub != ''

@@ -1,9 +1,10 @@
 // Normalizer: glosowania
 
-export function normalizeGlosowania(raw) {
+export function normalizeGlosowania(raw, config = {}) {
+    const k = config.kadencja || '';
     return raw.map(g => ({
-        id_glosowania: g.id_glosowania || g.id || `${g.sitting}_${g.votingNumber}` || null,
-        id_posiedzenia: g.id_posiedzenia || g.sitting || null,
+        id_glosowania: g.id_glosowania || `${k}_${g.sitting || ''}_${g.votingNumber || g.numer || ''}`,
+        id_posiedzenia: g.id_posiedzenia || `${k}_${g.sitting || ''}`,
         numer: g.numer || g.votingNumber || null,
         data: g.data || g.date || null,
         wynik: g.wynik || (g.yes != null && g.no != null ? (g.yes > g.no ? 'przyjęto' : 'odrzucono') : null),

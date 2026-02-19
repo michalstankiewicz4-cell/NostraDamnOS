@@ -1,6 +1,6 @@
 // Normalizer: glosy (individual votes)
 
-export function normalizeGlosy(raw, glosowania) {
+export function normalizeGlosy(raw, glosowania, config = {}) {
     const results = [];
 
     // Płaska tablica z gotowymi polami (Sejm + Senat)
@@ -17,12 +17,13 @@ export function normalizeGlosy(raw, glosowania) {
     }
 
     // Sejm: raw to dict {glosowanieId: [votes]}
+    const k = config.kadencja || '';
     for (const g of glosowania) {
         const votes = raw[g.id] || [];
         for (const v of votes) {
             results.push({
-                id_glosu: `${g.id}_${v.id_osoby}`,
-                id_glosowania: g.id || null,
+                id_glosu: `${k}_${g.id}_${v.id_osoby}`,
+                id_glosowania: `${k}_${g.id}`,
                 id_osoby: v.id_osoby || null,
                 glos: v.glos || null
             });

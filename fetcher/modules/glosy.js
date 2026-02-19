@@ -28,7 +28,7 @@ export async function fetchGlosy({ glosowania, kadencja = 10, typ = 'sejm', fetc
             const votingNumber = g.votingNumber;
             if (!sitting || !votingNumber) return [];
 
-            const id_glosowania = `${sitting}_${votingNumber}`;
+            const id_glosowania = `${kadencja}_${sitting}_${votingNumber}`;
             const url = `https://api.sejm.gov.pl/${base}/term${kadencja}/votings/${sitting}/${votingNumber}`;
 
             try {

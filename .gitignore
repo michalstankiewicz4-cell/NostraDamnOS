@@ -41,6 +41,9 @@ __pycache__/
 /data/*.jsonl
 /data/sample.*
 
+# Database exports
+*.db
+
 # Local data (ignoruj wypełnione pliki - każdy pobiera sam)
 # GitHub będzie miał puste pliki jako template
 /data/final/*.jsonl.local

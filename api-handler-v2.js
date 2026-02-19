@@ -253,7 +253,7 @@ window.forceCheckDataChanges = function() {
 
 function normalizeConfigForCompare(config) {
     if (!config) return null;
-    return {
+    const result = {
         typ: config.typ,
         kadencja: config.kadencja,
         rangeMode: config.rangeMode,
@@ -263,6 +263,10 @@ function normalizeConfigForCompare(config) {
         modules: Array.isArray(config.modules) ? [...config.modules].sort() : [],
         committees: Array.isArray(config.committees) ? [...config.committees].sort() : []
     };
+    if (Array.isArray(config.kadencje) && config.kadencje.length > 1) {
+        result.kadencje = config.kadencje;
+    }
+    return result;
 }
 
 function saveLastFetchConfig(config) {
@@ -840,11 +844,12 @@ function updateFetchOverview() {
     };
 
     // Lewa kolumna: Zlecone
+    const isMultiTerm = Array.isArray(config?.kadencje) && config.kadencje.length > 1;
     if (hasFetchHistory) {
         const inst = config.typ === 'senat' ? 'Senat' : 'Sejm';
         setText('fovInst', dbHasData ? inst : '—');
-        setText('fovKadencja', dbHasData ? (config.kadencja ? `nr ${config.kadencja}` : 'wszystkie') : '—');
-        setText('fovRange', dbHasData ? `${config.rangeFrom || '?'} — ${config.rangeTo || '?'}` : '—');
+        setText('fovKadencja', dbHasData ? (isMultiTerm ? `wszystkie (${config.kadencje.join(', ')})` : (config.kadencja ? `nr ${config.kadencja}` : 'wszystkie')) : '—');
+        setText('fovRange', dbHasData ? (isMultiTerm ? 'pełny zakres' : `${config.rangeFrom || '?'} — ${config.rangeTo || '?'}`) : '—');
     } else {
         setText('fovInst', '—');
         setText('fovKadencja', '—');
@@ -868,7 +873,7 @@ function updateFetchOverview() {
     if (hasFetchHistory) {
         const inst = config.typ === 'senat' ? 'Senat' : 'Sejm';
         setText('fovGotInst', dbHasData ? inst : '—');
-        setText('fovGotKadencja', dbHasData ? (config.kadencja ? `nr ${config.kadencja}` : 'wszystkie') : '—');
+        setText('fovGotKadencja', dbHasData ? (isMultiTerm ? `wszystkie (${config.kadencje.join(', ')})` : (config.kadencja ? `nr ${config.kadencja}` : 'wszystkie')) : '—');
         setText('fovGotRange', dbHasData && fetched.newSittings > 0 ? `${fetched.newSittings} posiedzeń` : '—');
     } else {
         // Import mode: try to detect from DB metadata
@@ -1519,7 +1524,11 @@ async function startPipelineETL() {
             
             // Always show: instytucja, kadencja, posiedzenia
             parts.push(`instytucja: ${instytucja}`);
-            parts.push(`kadencja: ${config.kadencja}`);
+            if (config.kadencje && config.kadencje.length > 1) {
+                parts.push(`kadencje: ${config.kadencje.join(', ')}`);
+            } else {
+                parts.push(`kadencja: ${config.kadencja}`);
+            }
             if (stats.posiedzenia > 0) {
                 parts.push(`posiedzenia: ${stats.posiedzenia}`);
             }

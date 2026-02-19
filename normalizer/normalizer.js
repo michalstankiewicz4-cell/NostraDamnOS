@@ -89,7 +89,7 @@ export async function runNormalizer(db, raw, config = {}, onProgress = () => {})
 
     // 4. Glosowania (per sitting)
     if (raw.glosowania && raw.glosowania.length > 0) {
-        const normalized = normalizeGlosowania(raw.glosowania);
+        const normalized = normalizeGlosowania(raw.glosowania, config);
         await saveGlosowania(db, normalized);
         stats.glosowania = normalized.length;
     }
@@ -97,7 +97,7 @@ export async function runNormalizer(db, raw, config = {}, onProgress = () => {})
 
     // 5. Glosy (individual votes)
     if (raw.glosy && raw.glosy.length > 0) {
-        const normalized = normalizeGlosy(raw.glosy, raw.glosowania || []);
+        const normalized = normalizeGlosy(raw.glosy, raw.glosowania || [], config);
         await saveGlosy(db, normalized);
         stats.glosy = normalized.length;
     }
@@ -137,7 +137,7 @@ export async function runNormalizer(db, raw, config = {}, onProgress = () => {})
 
     // 10. Komisje posiedzenia
     if (raw.komisje_posiedzenia && raw.komisje_posiedzenia.length > 0) {
-        const normalized = normalizeKomisjePosiedzenia(raw.komisje_posiedzenia);
+        const normalized = normalizeKomisjePosiedzenia(raw.komisje_posiedzenia, config);
         await saveKomisjePosiedzenia(db, normalized);
         stats.komisje_posiedzenia = normalized.length;
     }
@@ -145,7 +145,7 @@ export async function runNormalizer(db, raw, config = {}, onProgress = () => {})
 
     // 11. Komisje wypowiedzi
     if (raw.komisje_wypowiedzi && raw.komisje_wypowiedzi.length > 0) {
-        const normalized = normalizeKomisjeWypowiedzi(raw.komisje_wypowiedzi);
+        const normalized = normalizeKomisjeWypowiedzi(raw.komisje_wypowiedzi, config);
         await saveKomisjeWypowiedzi(db, normalized);
         stats.komisje_wypowiedzi = normalized.length;
     }

@@ -94,8 +94,10 @@ export async function runPipeline(config, callbacks = {}) {
     }
 
     let totalRecords = 0;
-    fetchCounter.count = 0;
-    fetchCounter.errors = 0;
+    if (!config._skipCounterReset) {
+        fetchCounter.count = 0;
+        fetchCounter.errors = 0;
+    }
 
     try {
         // Step 1: Initialize database (0-5%)
@@ -169,7 +171,7 @@ export async function runPipeline(config, callbacks = {}) {
         const m = config.modules || [];
         if (!m.includes('komisje') && (m.includes('komisje_posiedzenia') || m.includes('komisje_wypowiedzi'))) {
             try {
-                const rows = db2.database.exec('SELECT id_komisji AS code, nazwa AS name FROM komisje');
+                const rows = db2.database.exec('SELECT skrot AS code, nazwa AS name FROM komisje WHERE kadencja = ' + (parseInt(config.kadencja) || 0));
                 if (rows.length > 0) {
                     cachedKomisje = rows[0].values.map(r => ({ code: r[0], name: r[1] }));
                     onLog(`📌 Loaded ${cachedKomisje.length} komisje from cache for dependency`);
@@ -357,11 +359,11 @@ async function runMultiTermPipeline(config, callbacks) {
 
         onLog(`\n━━━ Kadencja ${k} (${i + 1}/${kadencje.length}) ━━━`);
 
-        const subConfig = { ...config, kadencja: k, kadencje: undefined };
+        const subConfig = { ...config, kadencja: k, kadencje: undefined, _skipCounterReset: true };
         const subResult = await runPipeline(subConfig, {
-            onProgress: (pct, label) => {
+            onProgress: (pct, label, details) => {
                 const mapped = pctBase + Math.round((pct / 100) * (pctNext - pctBase));
-                onProgress(mapped, `[${k}] ${label}`);
+                onProgress(mapped, `[${k}] ${label}`, details);
             },
             onLog: (msg) => onLog(`  [${k}] ${msg}`),
             onError,
