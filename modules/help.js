@@ -3,6 +3,7 @@
 // Opisy elementów w osobnym pliku help-data.js
 
 import { HELP_DATA } from './help-data.js';
+import { showClippy, hideClippy } from './clippy.js';
 
 let isActive = false;
 let tooltip = null;
@@ -111,7 +112,7 @@ function findHelpTarget(el) {
 // Event blockers
 // ================================
 
-/** Block every event except help UI elements (shield, tooltip, exit button) */
+/** Block every event except help UI elements (shield, tooltip, exit button, clippy) */
 function blockEvent(e) {
     if (!e.target || !e.target.closest) return;
     // Allow interactions on help UI elements
@@ -119,6 +120,7 @@ function blockEvent(e) {
     if (e.target.closest('#helpShield')) return;
     if (e.target.closest('#helpTooltip')) return;
     if (e.target.closest('#helpExitBtn')) return;
+    if (e.target.closest('#clippyContainer')) return;
     e.preventDefault();
     e.stopPropagation();
     e.stopImmediatePropagation();
@@ -272,6 +274,7 @@ function startHelp() {
     document.body.style.overflow = 'hidden';
     document.body.classList.add('help-active');
 
+    showClippy();
     console.log('[Help] Mode ON — everything blocked except ESC');
 }
 
@@ -302,6 +305,7 @@ function stopHelp() {
     clearHighlight();
     hideTooltip();
 
+    hideClippy();
     console.log('[Help] Mode OFF');
 }
 

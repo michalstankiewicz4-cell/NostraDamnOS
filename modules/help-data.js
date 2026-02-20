@@ -4,6 +4,25 @@
 // Key = data-help-id attribute value
 // ============================================
 
+// ── Clippy — wskazówki kontekstowe per sekcja ──
+// Każda sekcja: { name, icon, tips: [] }
+// Tłumaczenie: dodaj analogiczny obiekt w pliku językowym
+export const CLIPPY_TIPS = {
+    '1': {
+        name: 'Dane',
+        icon: '📊',
+        tips: [
+            'Hej! Jestem w sekcji DANE. Tu pobierasz dane parlamentarne z API Sejmu i zapisujesz je do lokalnej bazy.',
+            '📥 Kliknij "Pobierz/Zaktualizuj dane" aby rozpocząć pobieranie. Wybierz najpierw kadencję i zakres posiedzeń!',
+            '⚡ Wybierz moduły danych: posłowie, posiedzenia, wypowiedzi, głosowania, interpelacje, komisje i więcej!',
+            '📦 Pasek cache na górze pokazuje co jest już w bazie. Zielony = kompletne, żółty = częściowe.',
+            '🔒 Filtr RODO usuwa wrażliwe dane (email, PESEL) przed zapisem. Zalecamy pozostawić włączony.',
+            '⏱️ Głosowania i wypowiedzi pobierane są per posiedzenie — każde to ~100 zapytań do API Sejmu.',
+        ]
+    }
+    // Pozostałe sekcje: Podsumowanie, AI Asystent, Wykresy, Ustawienia, Predykcja — dodamy potem
+};
+
 export const HELP_DATA = {
 
     // ── Górny pasek ──────────────────────────────

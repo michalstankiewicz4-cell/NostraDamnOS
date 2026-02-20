@@ -1350,6 +1350,10 @@
                                     <input type="checkbox" id="toggleAnalyticsConsent">
                                     <span>Zgoda na Google Analytics (cookies analityczne)</span>
                                 </label>
+                                <label class="settings-checkbox-label">
+                                    <input type="checkbox" id="toggleClippy" checked>
+                                    <span>📎 Spinacz — wskazówki w trybie pomocy</span>
+                                </label>
                             </div>
                         </fieldset>
                     </div>
@@ -3253,6 +3257,15 @@
                 if (typeof gtag === 'function') {
                     gtag('consent', 'update', { analytics_storage: value });
                 }
+            });
+        }
+
+        // Clippy toggle
+        const chkClippy = document.getElementById('toggleClippy');
+        if (chkClippy) {
+            chkClippy.checked = localStorage.getItem('clippy_enabled') !== 'false';
+            chkClippy.addEventListener('change', function() {
+                localStorage.setItem('clippy_enabled', this.checked ? 'true' : 'false');
             });
         }
 
