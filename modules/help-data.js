@@ -15,7 +15,7 @@ export const EMOCLIPPY_TIPS = {
             'Hej! Jestem w sekcji DANE. Tu pobierasz dane parlamentarne z API Sejmu i zapisujesz je do lokalnej bazy.',
             '📥 Kliknij "Pobierz/Zaktualizuj dane" aby rozpocząć pobieranie. Wybierz najpierw kadencję i zakres posiedzeń!',
             '⚡ Wybierz moduły danych: posłowie, posiedzenia, wypowiedzi, głosowania, interpelacje, komisje i więcej!',
-            '📦 Pasek cache na górze pokazuje co jest już w bazie. Zielony = kompletne, żółty = częściowe.',
+            '📦 Pasek cache (wersja beta) na górze pokazuje co jest już w bazie. Zielony = kompletne, żółty = częściowe.',
             '🔒 Filtr RODO usuwa wrażliwe dane (email, PESEL) przed zapisem. Zalecamy pozostawić włączony.',
             '⏱️ Głosowania i wypowiedzi pobierane są per posiedzenie — każde to ~100 zapytań do API Sejmu.',
         ]
