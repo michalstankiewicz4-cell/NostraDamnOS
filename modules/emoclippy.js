@@ -1,12 +1,12 @@
 // =============================================================================
-// 📎 Clippy v1.0 — Pomocny spinacz z oczami
+// 📎 Emoclippy v1.0 — Pomocny spinacz z oczami
 // Pokazuje się w trybie pomocy, daje kontekstowe wskazówki per sekcja
 // Treść wskazówek pochodzi z help-data.js (możliwość tłumaczenia)
 // =============================================================================
 
-import { CLIPPY_TIPS as SECTION_TIPS } from './help-data.js';
+import { EMOCLIPPY_TIPS as SECTION_TIPS } from './help-data.js';
 
-const CLIPPY_ENABLED_KEY = 'clippy_enabled';
+const EMOCLIPPY_ENABLED_KEY = 'emoclippy_enabled';
 
 let container = null;
 let tipIndex = 0;
@@ -17,11 +17,11 @@ function getCurrentSection() {
 }
 
 function injectStyles() {
-    if (document.getElementById('clippy-styles')) return;
+    if (document.getElementById('emoclippy-styles')) return;
     const style = document.createElement('style');
-    style.id = 'clippy-styles';
+    style.id = 'emoclippy-styles';
     style.textContent = `
-        #clippyContainer {
+        #emoclippyContainer {
             position: fixed;
             bottom: 72px;
             right: 12px;
@@ -30,14 +30,14 @@ function injectStyles() {
             flex-direction: column;
             align-items: flex-end;
             gap: 8px;
-            animation: clippyEnter 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            animation: emoclippyEnter 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
             pointer-events: all;
         }
-        @keyframes clippyEnter {
+        @keyframes emoclippyEnter {
             from { transform: translateY(50px) scale(0.3); opacity: 0; }
             to   { transform: translateY(0)    scale(1);   opacity: 1; }
         }
-        .clippy-speech {
+        .emoclippy-speech {
             background: #fffde7;
             border: 2px solid #f9c700;
             border-radius: 14px 14px 4px 14px;
@@ -49,7 +49,7 @@ function injectStyles() {
             line-height: 1.45;
             color: #2a2a2a;
         }
-        .clippy-speech-header {
+        .emoclippy-speech-header {
             font-weight: 700;
             font-size: 10.5px;
             color: #999;
@@ -57,17 +57,17 @@ function injectStyles() {
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
-        .clippy-speech-text {
+        .emoclippy-speech-text {
             margin-bottom: 8px;
             min-height: 48px;
         }
-        .clippy-nav {
+        .emoclippy-nav {
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 6px;
         }
-        .clippy-nav-btn {
+        .emoclippy-nav-btn {
             background: #f9c700;
             border: none;
             border-radius: 6px;
@@ -81,14 +81,14 @@ function injectStyles() {
             transition: transform 0.1s;
             flex-shrink: 0;
         }
-        .clippy-nav-btn:active { transform: scale(0.88); }
-        .clippy-counter {
+        .emoclippy-nav-btn:active { transform: scale(0.88); }
+        .emoclippy-counter {
             font-size: 11px;
             color: #bbb;
             flex: 1;
             text-align: center;
         }
-        .clippy-char {
+        .emoclippy-char {
             position: relative;
             width: 56px;
             height: 66px;
@@ -96,9 +96,9 @@ function injectStyles() {
             align-self: flex-end;
             transition: transform 0.2s;
         }
-        .clippy-char:hover { transform: scale(1.12) rotate(-6deg); }
-        .clippy-char:active { transform: scale(0.96); }
-        .clippy-emoji {
+        .emoclippy-char:hover { transform: scale(1.12) rotate(-6deg); }
+        .emoclippy-char:active { transform: scale(0.96); }
+        .emoclippy-emoji {
             font-size: 52px;
             line-height: 1;
             display: block;
@@ -107,7 +107,7 @@ function injectStyles() {
             position: relative;
             z-index: 1;
         }
-        .clippy-eyes {
+        .emoclippy-eyes {
             position: absolute;
             top: 16px;
             left: 50%;
@@ -117,7 +117,7 @@ function injectStyles() {
             pointer-events: none;
             z-index: 2;
         }
-        .clippy-eye {
+        .emoclippy-eye {
             width: 11px;
             height: 11px;
             background: white;
@@ -125,12 +125,12 @@ function injectStyles() {
             border: 1.5px solid #444;
             position: relative;
             overflow: hidden;
-            animation: clippyBlink 3.8s infinite;
+            animation: emoclippyBlink 3.8s infinite;
         }
-        .clippy-eye:nth-child(2) {
+        .emoclippy-eye:nth-child(2) {
             animation-delay: 0.12s;
         }
-        .clippy-pupil {
+        .emoclippy-pupil {
             width: 5px;
             height: 5px;
             background: #1a1a2e;
@@ -139,16 +139,16 @@ function injectStyles() {
             top: 2.5px;
             left: 2.5px;
         }
-        @keyframes clippyBlink {
+        @keyframes emoclippyBlink {
             0%, 88%, 100% { transform: scaleY(1); }
             92%           { transform: scaleY(0.05); }
         }
-        @keyframes clippyWiggle {
+        @keyframes emoclippyWiggle {
             0%, 100% { transform: scale(1.12) rotate(-6deg); }
             50%       { transform: scale(1.12) rotate(6deg); }
         }
-        .clippy-char.wiggle {
-            animation: clippyWiggle 0.4s ease;
+        .emoclippy-char.wiggle {
+            animation: emoclippyWiggle 0.4s ease;
         }
     `;
     document.head.appendChild(style);
@@ -156,27 +156,27 @@ function injectStyles() {
 
 function buildHTML(sectionData) {
     return `
-        <div class="clippy-speech">
-            <div class="clippy-speech-header">${sectionData.icon} ${sectionData.name}</div>
-            <div class="clippy-speech-text">${sectionData.tips[0]}</div>
-            <div class="clippy-nav">
-                <button class="clippy-nav-btn" id="clippyPrev" title="Poprzednia wskazówka">◀</button>
-                <span class="clippy-counter">1 / ${sectionData.tips.length}</span>
-                <button class="clippy-nav-btn" id="clippyNext" title="Następna wskazówka">▶</button>
+        <div class="emoclippy-speech">
+            <div class="emoclippy-speech-header">${sectionData.icon} ${sectionData.name}</div>
+            <div class="emoclippy-speech-text">${sectionData.tips[0]}</div>
+            <div class="emoclippy-nav">
+                <button class="emoclippy-nav-btn" id="emoclippyPrev" title="Poprzednia wskazówka">◀</button>
+                <span class="emoclippy-counter">1 / ${sectionData.tips.length}</span>
+                <button class="emoclippy-nav-btn" id="emoclippyNext" title="Następna wskazówka">▶</button>
             </div>
         </div>
-        <div class="clippy-char" id="clippyChar" title="Kliknij aby zobaczyć następną wskazówkę">
-            <span class="clippy-emoji">📎</span>
-            <div class="clippy-eyes">
-                <div class="clippy-eye"><div class="clippy-pupil"></div></div>
-                <div class="clippy-eye"><div class="clippy-pupil"></div></div>
+        <div class="emoclippy-char" id="emoclippyChar" title="Kliknij aby zobaczyć następną wskazówkę">
+            <span class="emoclippy-emoji">📎</span>
+            <div class="emoclippy-eyes">
+                <div class="emoclippy-eye"><div class="emoclippy-pupil"></div></div>
+                <div class="emoclippy-eye"><div class="emoclippy-pupil"></div></div>
             </div>
         </div>
     `;
 }
 
 function wiggle() {
-    const char = container?.querySelector('#clippyChar');
+    const char = container?.querySelector('#emoclippyChar');
     if (!char) return;
     char.classList.remove('wiggle');
     void char.offsetWidth; // reflow
@@ -186,8 +186,8 @@ function wiggle() {
 
 function updateTip(sectionData) {
     if (!container || !sectionData) return;
-    container.querySelector('.clippy-speech-text').textContent = sectionData.tips[tipIndex];
-    container.querySelector('.clippy-counter').textContent = `${tipIndex + 1} / ${sectionData.tips.length}`;
+    container.querySelector('.emoclippy-speech-text').textContent = sectionData.tips[tipIndex];
+    container.querySelector('.emoclippy-counter').textContent = `${tipIndex + 1} / ${sectionData.tips.length}`;
     wiggle();
 }
 
@@ -207,9 +207,9 @@ function prevTip() {
     updateTip(sectionData);
 }
 
-export function showClippy() {
+export function showEmoclippy() {
     // Sprawdź czy spinacz jest włączony w ustawieniach (domyślnie: tak)
-    if (localStorage.getItem(CLIPPY_ENABLED_KEY) === 'false') return;
+    if (localStorage.getItem(EMOCLIPPY_ENABLED_KEY) === 'false') return;
 
     const section = getCurrentSection();
     const sectionData = SECTION_TIPS[section];
@@ -221,30 +221,30 @@ export function showClippy() {
     tipIndex = 0;
 
     container = document.createElement('div');
-    container.id = 'clippyContainer';
+    container.id = 'emoclippyContainer';
     container.innerHTML = buildHTML(sectionData);
     document.body.appendChild(container);
 
-    container.querySelector('#clippyNext').addEventListener('click', (e) => {
+    container.querySelector('#emoclippyNext').addEventListener('click', (e) => {
         e.stopPropagation();
         nextTip();
     });
-    container.querySelector('#clippyPrev').addEventListener('click', (e) => {
+    container.querySelector('#emoclippyPrev').addEventListener('click', (e) => {
         e.stopPropagation();
         prevTip();
     });
-    container.querySelector('#clippyChar').addEventListener('click', (e) => {
+    container.querySelector('#emoclippyChar').addEventListener('click', (e) => {
         e.stopPropagation();
         nextTip();
     });
 
-    console.log('[Clippy] Cześć! Jestem Spinacz 📎');
+    console.log('[Emoclippy] Cześć! Jestem Spinacz 📎');
 }
 
-export function hideClippy() {
+export function hideEmoclippy() {
     if (container) {
         container.remove();
         container = null;
     }
-    console.log('[Clippy] Do widzenia!');
+    console.log('[Emoclippy] Do widzenia!');
 }

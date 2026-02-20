@@ -4,10 +4,10 @@
 // Key = data-help-id attribute value
 // ============================================
 
-// ── Clippy — wskazówki kontekstowe per sekcja ──
+// ── Emoclippy — wskazówki kontekstowe per sekcja ──
 // Każda sekcja: { name, icon, tips: [] }
 // Tłumaczenie: dodaj analogiczny obiekt w pliku językowym
-export const CLIPPY_TIPS = {
+export const EMOCLIPPY_TIPS = {
     '1': {
         name: 'Dane',
         icon: '📊',

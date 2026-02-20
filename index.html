@@ -1351,7 +1351,7 @@
                                     <span>Zgoda na Google Analytics (cookies analityczne)</span>
                                 </label>
                                 <label class="settings-checkbox-label">
-                                    <input type="checkbox" id="toggleClippy" checked>
+                                    <input type="checkbox" id="toggleEmoclippy" checked>
                                     <span>📎 Spinacz — wskazówki w trybie pomocy</span>
                                 </label>
                             </div>
@@ -3260,12 +3260,12 @@
             });
         }
 
-        // Clippy toggle
-        const chkClippy = document.getElementById('toggleClippy');
-        if (chkClippy) {
-            chkClippy.checked = localStorage.getItem('clippy_enabled') !== 'false';
-            chkClippy.addEventListener('change', function() {
-                localStorage.setItem('clippy_enabled', this.checked ? 'true' : 'false');
+        // Emoclippy toggle
+        const chkEmoclippy = document.getElementById('toggleEmoclippy');
+        if (chkEmoclippy) {
+            chkEmoclippy.checked = localStorage.getItem('emoclippy_enabled') !== 'false';
+            chkEmoclippy.addEventListener('change', function() {
+                localStorage.setItem('emoclippy_enabled', this.checked ? 'true' : 'false');
             });
         }
 

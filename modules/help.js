@@ -3,7 +3,7 @@
 // Opisy elementów w osobnym pliku help-data.js
 
 import { HELP_DATA } from './help-data.js';
-import { showClippy, hideClippy } from './clippy.js';
+import { showEmoclippy, hideEmoclippy } from './emoclippy.js';
 
 let isActive = false;
 let tooltip = null;
@@ -120,7 +120,7 @@ function blockEvent(e) {
     if (e.target.closest('#helpShield')) return;
     if (e.target.closest('#helpTooltip')) return;
     if (e.target.closest('#helpExitBtn')) return;
-    if (e.target.closest('#clippyContainer')) return;
+    if (e.target.closest('#emoclippyContainer')) return;
     e.preventDefault();
     e.stopPropagation();
     e.stopImmediatePropagation();
@@ -274,7 +274,7 @@ function startHelp() {
     document.body.style.overflow = 'hidden';
     document.body.classList.add('help-active');
 
-    showClippy();
+    showEmoclippy();
     console.log('[Help] Mode ON — everything blocked except ESC');
 }
 
@@ -305,7 +305,7 @@ function stopHelp() {
     clearHighlight();
     hideTooltip();
 
-    hideClippy();
+    hideEmoclippy();
     console.log('[Help] Mode OFF');
 }
 
