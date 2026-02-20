@@ -104,6 +104,8 @@ function injectStyles() {
             display: block;
             filter: drop-shadow(0 3px 7px rgba(0,0,0,0.35));
             user-select: none;
+            position: relative;
+            z-index: 1;
         }
         .clippy-eyes {
             position: absolute;
@@ -113,6 +115,7 @@ function injectStyles() {
             display: flex;
             gap: 7px;
             pointer-events: none;
+            z-index: 2;
         }
         .clippy-eye {
             width: 11px;
@@ -163,11 +166,11 @@ function buildHTML(sectionData) {
             </div>
         </div>
         <div class="clippy-char" id="clippyChar" title="Kliknij aby zobaczyć następną wskazówkę">
+            <span class="clippy-emoji">📎</span>
             <div class="clippy-eyes">
                 <div class="clippy-eye"><div class="clippy-pupil"></div></div>
                 <div class="clippy-eye"><div class="clippy-pupil"></div></div>
             </div>
-            <span class="clippy-emoji">📎</span>
         </div>
     `;
 }
