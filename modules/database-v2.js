@@ -255,7 +255,22 @@ export const db2 = {
             CREATE INDEX IF NOT EXISTS idx_ustawy_type ON ustawy(type);
             CREATE INDEX IF NOT EXISTS idx_ustawy_status ON ustawy(status);
 
-            -- 15. Metadata (cache, wersje, logi)
+            -- 15. RSS News (kanały RSS gov.pl)
+            CREATE TABLE IF NOT EXISTS rss_news (
+                id TEXT PRIMARY KEY,
+                source TEXT NOT NULL,
+                source_url TEXT,
+                title TEXT,
+                link TEXT,
+                description TEXT,
+                content TEXT,
+                pub_date TEXT,
+                fetched_at TEXT DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE INDEX IF NOT EXISTS idx_rss_source ON rss_news(source);
+            CREATE INDEX IF NOT EXISTS idx_rss_pub_date ON rss_news(pub_date);
+
+            -- 16. Metadata (cache, wersje, logi)
             CREATE TABLE IF NOT EXISTS metadata (
                 klucz TEXT PRIMARY KEY,
                 wartosc TEXT,
@@ -354,6 +369,29 @@ export const db2 = {
                 CREATE INDEX IF NOT EXISTS idx_ustawy_status ON ustawy(status);
             `);
             console.log('[DB v2] Migration: ensured ustawy + zapytania_odpowiedzi tables exist');
+
+            // ── Migracja: tabela rss_news ──
+            this.database.run(`
+                CREATE TABLE IF NOT EXISTS rss_news (
+                    id TEXT PRIMARY KEY,
+                    source TEXT NOT NULL,
+                    source_url TEXT,
+                    title TEXT,
+                    link TEXT,
+                    description TEXT,
+                    content TEXT,
+                    pub_date TEXT,
+                    fetched_at TEXT DEFAULT CURRENT_TIMESTAMP
+                );
+                CREATE INDEX IF NOT EXISTS idx_rss_source ON rss_news(source);
+                CREATE INDEX IF NOT EXISTS idx_rss_pub_date ON rss_news(pub_date);
+            `);
+            // Dodaj kolumnę content jeśli nie istnieje (migracja dla istniejących baz)
+            try {
+                this.database.run(`ALTER TABLE rss_news ADD COLUMN content TEXT`);
+                console.log('[DB v2] Migration: added content column to rss_news');
+            } catch { /* column already exists */ }
+            console.log('[DB v2] Migration: ensured rss_news table exists');
 
             // Resolve wypowiedzi.id_osoby from mowca text ↔ poslowie names
             this.resolveWypowiedziSpeakers();
@@ -676,6 +714,12 @@ export const db2 = {
         
         console.log('[DB v2] All data cleared');
         this.saveToLocalStorage(); // Auto-save after clear
+    },
+
+    clearRss() {
+        this.database.run(`DELETE FROM rss_news`);
+        console.log('[DB v2] RSS news data cleared');
+        this.saveToLocalStorage();
     },
     
     saveToLocalStorage() {

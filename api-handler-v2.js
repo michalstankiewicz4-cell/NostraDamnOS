@@ -1377,12 +1377,269 @@ document.getElementById('etlFetchBtn')?.addEventListener('click', async () => {
         if (verifyAbortController) verifyAbortController.abort();
         return;
     }
+
+    // === RSS mode ===
+    const selectedInst = document.querySelector('input[name="etlInst"]:checked')?.value;
+    if (selectedInst === 'rss') {
+        await fetchRssFeeds();
+        return;
+    }
+
     if (fetchBtnMode === 'verify') {
         await runVerification();
         return;
     }
     await smartFetch();
 });
+
+// ===== RSS FEEDS FETCHER =====
+
+async function fetchRssFeeds() {
+    const rssPanel = document.getElementById('rssPanel');
+    if (!rssPanel) return;
+
+    const selectedFeeds = [...rssPanel.querySelectorAll('input[type="checkbox"]:checked')]
+        .map(cb => ({
+            id: cb.id,
+            name: cb.closest('.checkbox-item')?.querySelector('label')?.textContent?.trim() || cb.id,
+            url: cb.dataset.rssUrl
+        }))
+        .filter(f => f.url);
+
+    if (selectedFeeds.length === 0) {
+        ToastModule.warning('Zaznacz przynajmniej jeden kanał RSS', { title: '📰 RSS' });
+        return;
+    }
+
+    // Ensure database is ready
+    if (!db2.database) {
+        try { await db2.init(); } catch (e) {
+            ToastModule.error('Nie udało się zainicjalizować bazy danych: ' + e.message);
+            return;
+        }
+    }
+
+    const btn = document.getElementById('etlFetchBtn');
+    const origText = btn?.textContent;
+    isFetching = true;
+    currentAbortController = new AbortController();
+    fetchBtnMode = 'abort';
+
+    if (btn) {
+        btn.textContent = '⏹️ Zatrzymaj pobieranie';
+        btn.classList.add('etl-btn-abort');
+    }
+    showEtlProgress();
+
+    let totalInserted = 0;
+    let totalSkipped = 0;
+    let errors = 0;
+    // CORS proxy list — corsproxy.io is confirmed working, allorigins /get returns JSON wrapper
+    const CORS_PROXIES = [
+        { fn: url => `https://corsproxy.io/?${encodeURIComponent(url)}`, json: false },
+        { fn: url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`, json: false },
+        { fn: url => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`, json: true },
+    ];
+
+    // Helper: insert a news item into the database
+    function insertNewsItem(feedId, feedName, feedUrl, title, link, description, content, pubDate) {
+        const hashInput = feedId + '|' + link + '|' + title;
+        let id = '';
+        for (let c = 0; c < hashInput.length; c++) {
+            id = ((id << 5) - id + hashInput.charCodeAt(c)) | 0;
+        }
+        id = 'rss_' + Math.abs(id).toString(36);
+        try {
+            db2.database.run(
+                `INSERT OR IGNORE INTO rss_news (id, source, source_url, title, link, description, content, pub_date, fetched_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [id, feedName, feedUrl, title, link, description, content, pubDate, new Date().toISOString()]
+            );
+            const changes = db2.database.getRowsModified();
+            return changes > 0 ? 'inserted' : 'skipped';
+        } catch (dbErr) {
+            console.warn('[RSS] DB insert error:', dbErr);
+            return 'error';
+        }
+    }
+
+    for (let i = 0; i < selectedFeeds.length; i++) {
+        if (currentAbortController.signal.aborted) break;
+
+        const feed = selectedFeeds[i];
+        const percent = Math.round(((i + 1) / selectedFeeds.length) * 100);
+        updateEtlProgress(percent, `📰 ${feed.name}`, `(${i + 1}/${selectedFeeds.length})`);
+        console.log(`[RSS] Fetching: ${feed.name} → ${feed.url}`);
+
+        let xmlText = null;
+        let htmlText = null; // fallback for sites without RSS (e.g. gov.pl)
+        for (const proxy of CORS_PROXIES) {
+            if (currentAbortController.signal.aborted) break;
+            try {
+                const proxyUrl = proxy.fn(feed.url);
+                const res = await fetch(proxyUrl, {
+                    signal: currentAbortController.signal,
+                    headers: { 'Accept': 'application/xml, text/xml, application/rss+xml, */*' }
+                });
+                if (res.ok) {
+                    let text;
+                    if (proxy.json) {
+                        try {
+                            const j = JSON.parse(await res.text());
+                            text = j.contents || '';
+                        } catch { continue; }
+                    } else {
+                        text = await res.text();
+                    }
+                    if (text && (text.includes('<rss') || text.includes('<feed') || text.includes('<item') || text.includes('<entry'))) {
+                        xmlText = text;
+                        break; // Valid RSS/Atom
+                    }
+                    // Store HTML for fallback parsing (gov.pl pages)
+                    if (!htmlText && text && text.length > 500 && (text.includes('<html') || text.includes('<!DOCTYPE') || text.includes('<!doctype'))) {
+                        htmlText = text;
+                    }
+                }
+            } catch (e) {
+                if (e.name === 'AbortError') break;
+                // Try next proxy
+            }
+        }
+
+        // === Strategy 1: Standard RSS/Atom XML parsing ===
+        if (xmlText) {
+            try {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(xmlText, 'text/xml');
+                const items = [...doc.querySelectorAll('item'), ...doc.querySelectorAll('entry')];
+
+                console.log(`[RSS] ${feed.name}: ${items.length} items found (RSS/Atom)`);
+
+                for (const item of items) {
+                    const title = item.querySelector('title')?.textContent?.trim() || '';
+                    const link = item.querySelector('link')?.textContent?.trim()
+                        || item.querySelector('link')?.getAttribute('href') || '';
+                    const description = item.querySelector('description')?.textContent?.trim()
+                        || item.querySelector('summary')?.textContent?.trim() || '';
+                    const contentEncoded = item.getElementsByTagNameNS('*', 'encoded')[0]?.textContent?.trim() || '';
+                    const contentTag = item.querySelector('content')?.textContent?.trim() || '';
+                    const content = contentEncoded || contentTag || '';
+                    const pubDate = item.querySelector('pubDate')?.textContent?.trim()
+                        || item.querySelector('published')?.textContent?.trim()
+                        || item.querySelector('updated')?.textContent?.trim() || '';
+
+                    const result = insertNewsItem(feed.id, feed.name, feed.url, title, link, description, content, pubDate);
+                    if (result === 'inserted') totalInserted++;
+                    else if (result === 'skipped') totalSkipped++;
+                }
+            } catch (parseErr) {
+                console.warn(`[RSS] Parse error for ${feed.name}:`, parseErr);
+                errors++;
+            }
+            continue; // next feed
+        }
+
+        // === Strategy 2: HTML fallback — scrape news links from HTML pages (gov.pl etc.) ===
+        if (htmlText) {
+            try {
+                const htmlDoc = new DOMParser().parseFromString(htmlText, 'text/html');
+                const allLinks = [...htmlDoc.querySelectorAll('a[href]')];
+                const seen = new Set();
+                let htmlItems = 0;
+
+                for (const a of allLinks) {
+                    const href = a.getAttribute('href') || '';
+                    const rawText = a.textContent?.trim() || '';
+                    if (rawText.length < 15 || seen.has(href)) continue;
+                    if (href.includes('#') || href.includes('/rss') || href.includes('javascript:')) continue;
+
+                    // Build full URL
+                    let fullHref = href;
+                    try {
+                        fullHref = new URL(href, feed.url).href;
+                    } catch { continue; }
+
+                    // Filter: must look like an article link (not navigation/footer)
+                    const isArticle = (
+                        fullHref.includes('/web/') && !fullHref.endsWith('/aktualnosci') && !fullHref.endsWith('/rss') &&
+                        !fullHref.includes('uslugi-dla-') && !fullHref.includes('polityka-') &&
+                        !fullHref.includes('/gov/') && !fullHref.includes('deklaracja-dostepnosci') &&
+                        rawText.length > 20 && rawText.length < 300
+                    );
+                    if (!isArticle) continue;
+                    if (seen.has(fullHref)) continue;
+                    seen.add(fullHref);
+
+                    // Extract date from text like "19.02.2026 | Tytuł" or "19.02.2026 Tytuł"
+                    const dateMatch = rawText.match(/^(\d{2}\.\d{2}\.\d{4})\s*[|\-–]?\s*/);
+                    const title = dateMatch ? rawText.slice(dateMatch[0].length).trim() : rawText;
+                    const pubDate = dateMatch ? dateMatch[1].split('.').reverse().join('-') : '';
+
+                    if (title.length < 10) continue;
+
+                    const result = insertNewsItem(feed.id, feed.name, feed.url, title, fullHref, '', '', pubDate);
+                    if (result === 'inserted') totalInserted++;
+                    else if (result === 'skipped') totalSkipped++;
+                    htmlItems++;
+                }
+
+                if (htmlItems > 0) {
+                    console.log(`[RSS] ${feed.name}: ${htmlItems} items scraped from HTML`);
+                } else {
+                    console.warn(`[RSS] ❌ No items found in HTML: ${feed.name}`);
+                    errors++;
+                }
+            } catch (scrapeErr) {
+                console.warn(`[RSS] HTML scrape error for ${feed.name}:`, scrapeErr);
+                errors++;
+            }
+            continue;
+        }
+
+        // === No content retrieved ===
+        console.warn(`[RSS] ❌ Failed to fetch: ${feed.name} (no RSS and no HTML)`);
+        errors++;
+    }
+
+    // Save database
+    db2.saveToLocalStorage();
+
+    // Restore UI
+    isFetching = false;
+    fetchBtnMode = 'fetch';
+    if (btn) {
+        btn.textContent = origText || '📥 Pobierz/Zaktualizuj dane';
+        btn.classList.remove('etl-btn-abort');
+    }
+    hideEtlProgress();
+    currentAbortController = null;
+
+    // Get total RSS records in DB
+    let totalInDb = 0;
+    try {
+        const res = db2.database.exec('SELECT COUNT(*) FROM rss_news');
+        if (res.length) totalInDb = res[0].values[0][0];
+    } catch { /* ignore */ }
+
+    // Show summary
+    const parts = [`Nowych: ${totalInserted}`, `Pominięto (duplikaty): ${totalSkipped}`];
+    if (errors > 0) parts.push(`Błędy: ${errors}`);
+    parts.push(`Łącznie w bazie: ${totalInDb}`);
+
+    if (totalInserted > 0) {
+        ToastModule.success(parts.join(' | '), { title: '📰 RSS — pobrano newsy', duration: 6000 });
+    } else if (errors === selectedFeeds.length) {
+        ToastModule.error('Nie udało się pobrać żadnego kanału RSS. Sprawdź połączenie.', { title: '📰 RSS — błąd' });
+    } else {
+        ToastModule.info(parts.join(' | '), { title: '📰 RSS — brak nowych', duration: 4000 });
+    }
+
+    console.log(`[RSS] Done: inserted=${totalInserted}, skipped=${totalSkipped}, errors=${errors}, total=${totalInDb}`);
+
+    // Update status
+    updateFetchButtonMode();
+    if (typeof window._updateCacheBar === 'function') window._updateCacheBar();
+}
 
 // Smart fetch - checks if we should ask user first
 async function smartFetch() {
@@ -1780,24 +2037,38 @@ document.getElementById('etlClearBtn')?.addEventListener('click', async () => {
         return;
     }
     
-    if (confirm('Wyczyścić wszystkie dane z bazy?')) {
+    const selectedInst = document.querySelector('input[name="etlInst"]:checked')?.value;
+    const isRss = selectedInst === 'rss';
+    const confirmMsg = isRss
+        ? 'Wyczyścić wszystkie dane RSS z bazy?'
+        : 'Wyczyścić wszystkie dane Sejmu z bazy?';
+
+    if (confirm(confirmMsg)) {
         console.log('🚀 [Zadanie] Wyczyść bazę rozpoczęty');
         try {
             await db2.init();
-            db2.clearAll();
-            console.log('[API Handler] Database cleared');
 
-            // Update status indicators + summary tab + cache bar after clearing
-            updateStatusIndicators();
-            setRecordsStatus(false);
-            setValidityStatus(false);
-            updateSummaryTab();
-            if (window._updateCacheBar) window._updateCacheBar();
+            if (isRss) {
+                db2.clearRss();
+                console.log('[API Handler] RSS database cleared');
+                ToastModule.success('Baza RSS wyczyszczona');
+            } else {
+                db2.clearAll();
+                console.log('[API Handler] Sejm database cleared');
 
-            // Reset fetch button to default state (empty database = fetch mode)
-            updateFetchButtonMode();
+                // Update status indicators + summary tab + cache bar after clearing
+                updateStatusIndicators();
+                setRecordsStatus(false);
+                setValidityStatus(false);
+                updateSummaryTab();
+                if (window._updateCacheBar) window._updateCacheBar();
 
-            ToastModule.success('Baza wyczyszczona');
+                // Reset fetch button to default state (empty database = fetch mode)
+                updateFetchButtonMode();
+
+                ToastModule.success('Baza Sejmu wyczyszczona');
+            }
+
             console.log('✅ [Zadanie] Wyczyść bazę zakończony');
         } catch (error) {
             console.error('[API Handler] Clear error:', error);
