@@ -38,7 +38,7 @@ export const CHANGELOG = [
         ]
     },
     {
-        version: 'v6x.x',
+        version: 'v6.x.x',
         date: '2026-01',
         desc: 'Wielokadencyjne pobieranie + baza SQLite v2',
         items: [
