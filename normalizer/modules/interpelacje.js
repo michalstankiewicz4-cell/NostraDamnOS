@@ -7,7 +7,9 @@ export function normalizeInterpelacje(raw) {
         data: i.receiptDate || i.sentDate || null,
         tytul: i.title || null,
         tresc: '',
-        status: (i.replies && i.replies.length > 0) ? 'odpowiedziana' : 'złożona'
+        status: (i.replies && i.replies.length > 0) ? 'odpowiedziana' : 'złożona',
+        adresat: Array.isArray(i.to) ? i.to.join(' | ') : (i.to || null),
+        dni_opoznienia: i.answerDelayedDays || 0
     }));
 }
 

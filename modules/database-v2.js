@@ -107,7 +107,8 @@ export const db2 = {
                 numer INTEGER,
                 data TEXT,
                 wynik TEXT,         -- przyjęto/odrzucono
-                tytul TEXT,
+                tytul TEXT,         -- topic: "poprawka 2", "głosowanie nad całością..."
+                title TEXT,         -- szerszy kontekst: "Ustawa o zmianie ustawy o..."
                 za INTEGER,
                 przeciw INTEGER,
                 wstrzymalo INTEGER,
@@ -122,6 +123,7 @@ export const db2 = {
                 id_glosowania TEXT,
                 id_osoby TEXT,
                 glos TEXT,                      -- YES/NO/ABSTAIN/ABSENT/VOTE_VALID
+                klub TEXT,                      -- klub posła w chwili głosowania
                 FOREIGN KEY(id_glosowania) REFERENCES glosowania(id_glosowania),
                 FOREIGN KEY(id_osoby) REFERENCES poslowie(id_osoby)
             );
@@ -136,6 +138,8 @@ export const db2 = {
                 tytul TEXT,
                 tresc TEXT,
                 status TEXT,
+                adresat TEXT,       -- np. "Minister Finansów | Minister Zdrowia"
+                dni_opoznienia INTEGER DEFAULT 0,
                 FOREIGN KEY(id_osoby) REFERENCES poslowie(id_osoby)
             );
             CREATE INDEX IF NOT EXISTS idx_interpelacje_osoba ON interpelacje(id_osoby);
@@ -277,6 +281,38 @@ export const db2 = {
                 if (!columns.includes('mowca')) {
                     this.database.run("ALTER TABLE wypowiedzi ADD COLUMN mowca TEXT");
                     console.log('[DB v2] Migration: added mowca column to wypowiedzi');
+                }
+            }
+
+            // ── Migracja: nowe pola z API ──
+            const glosowaniaInfo = this.database.exec("PRAGMA table_info(glosowania)");
+            if (glosowaniaInfo.length) {
+                const cols = glosowaniaInfo[0].values.map(r => r[1]);
+                if (!cols.includes('title')) {
+                    this.database.run("ALTER TABLE glosowania ADD COLUMN title TEXT");
+                    console.log('[DB v2] Migration: added title column to glosowania');
+                }
+            }
+
+            const glosyInfo = this.database.exec("PRAGMA table_info(glosy)");
+            if (glosyInfo.length) {
+                const cols = glosyInfo[0].values.map(r => r[1]);
+                if (!cols.includes('klub')) {
+                    this.database.run("ALTER TABLE glosy ADD COLUMN klub TEXT");
+                    console.log('[DB v2] Migration: added klub column to glosy');
+                }
+            }
+
+            const interpelacjeInfo = this.database.exec("PRAGMA table_info(interpelacje)");
+            if (interpelacjeInfo.length) {
+                const cols = interpelacjeInfo[0].values.map(r => r[1]);
+                if (!cols.includes('adresat')) {
+                    this.database.run("ALTER TABLE interpelacje ADD COLUMN adresat TEXT");
+                    console.log('[DB v2] Migration: added adresat column to interpelacje');
+                }
+                if (!cols.includes('dni_opoznienia')) {
+                    this.database.run("ALTER TABLE interpelacje ADD COLUMN dni_opoznienia INTEGER DEFAULT 0");
+                    console.log('[DB v2] Migration: added dni_opoznienia column to interpelacje');
                 }
             }
 
@@ -699,37 +735,41 @@ export const db2 = {
     
     async upsertGlosowania(data, opts = {}) {
         await this.chunkedUpsert(`
-            INSERT INTO glosowania (id_glosowania, id_posiedzenia, numer, data, wynik, tytul, za, przeciw, wstrzymalo)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO glosowania (id_glosowania, id_posiedzenia, numer, data, wynik, tytul, title, za, przeciw, wstrzymalo)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(id_glosowania) DO UPDATE SET
                 id_posiedzenia = excluded.id_posiedzenia, numer = excluded.numer,
                 data = excluded.data, wynik = excluded.wynik, tytul = excluded.tytul,
+                title = excluded.title,
                 za = excluded.za, przeciw = excluded.przeciw, wstrzymalo = excluded.wstrzymalo
         `, data, row => [
             row.id_glosowania, row.id_posiedzenia, row.numer, row.data,
-            row.wynik, row.tytul, row.za, row.przeciw, row.wstrzymalo
+            row.wynik, row.tytul, row.title ?? null, row.za, row.przeciw, row.wstrzymalo
         ], opts);
     },
 
     async upsertGlosy(data, opts = {}) {
         await this.chunkedUpsert(`
-            INSERT INTO glosy (id_glosu, id_glosowania, id_osoby, glos)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO glosy (id_glosu, id_glosowania, id_osoby, glos, klub)
+            VALUES (?, ?, ?, ?, ?)
             ON CONFLICT(id_glosu) DO UPDATE SET
                 id_glosowania = excluded.id_glosowania,
-                id_osoby = excluded.id_osoby, glos = excluded.glos
-        `, data, row => [row.id_glosu, row.id_glosowania, row.id_osoby, row.glos], opts);
+                id_osoby = excluded.id_osoby, glos = excluded.glos,
+                klub = excluded.klub
+        `, data, row => [row.id_glosu, row.id_glosowania, row.id_osoby, row.glos, row.klub ?? null], opts);
     },
 
     async upsertInterpelacje(data, opts = {}) {
         await this.chunkedUpsert(`
-            INSERT INTO interpelacje (id_interpelacji, id_osoby, data, tytul, tresc, status)
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO interpelacje (id_interpelacji, id_osoby, data, tytul, tresc, status, adresat, dni_opoznienia)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(id_interpelacji) DO UPDATE SET
                 id_osoby = excluded.id_osoby, data = excluded.data,
-                tytul = excluded.tytul, tresc = excluded.tresc, status = excluded.status
+                tytul = excluded.tytul, tresc = excluded.tresc, status = excluded.status,
+                adresat = excluded.adresat, dni_opoznienia = excluded.dni_opoznienia
         `, data, row => [
-            row.id_interpelacji, row.id_osoby, row.data, row.tytul, row.tresc, row.status
+            row.id_interpelacji, row.id_osoby, row.data, row.tytul, row.tresc, row.status,
+            row.adresat ?? null, row.dni_opoznienia ?? 0
         ], opts);
     },
 

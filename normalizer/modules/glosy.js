@@ -10,7 +10,8 @@ export function normalizeGlosy(raw, glosowania, config = {}) {
                 id_glosu: v.id_glosu || `${v.id_glosowania}_${v.id_osoby}`,
                 id_glosowania: v.id_glosowania || null,
                 id_osoby: v.id_osoby || null,
-                glos: v.glos || null
+                glos: v.glos || null,
+                klub: v.klub || v.club || null
             });
         }
         return results;
@@ -25,7 +26,8 @@ export function normalizeGlosy(raw, glosowania, config = {}) {
                 id_glosu: `${k}_${g.id}_${v.id_osoby}`,
                 id_glosowania: `${k}_${g.id}`,
                 id_osoby: v.id_osoby || null,
-                glos: v.glos || null
+                glos: v.glos || null,
+                klub: v.klub || v.club || null
             });
         }
     }

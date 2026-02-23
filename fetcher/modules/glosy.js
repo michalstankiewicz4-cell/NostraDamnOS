@@ -37,7 +37,8 @@ export async function fetchGlosy({ glosowania, kadencja = 10, typ = 'sejm', fetc
                     return data.votes.map(v => ({
                         id_glosowania,
                         id_osoby: v.MP,
-                        glos: v.vote
+                        glos: v.vote,
+                        klub: v.club || null
                     }));
                 }
                 return [];
