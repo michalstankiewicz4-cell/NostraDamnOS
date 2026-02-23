@@ -2051,6 +2051,12 @@ document.getElementById('etlClearBtn')?.addEventListener('click', async () => {
             if (isRss) {
                 db2.clearRss();
                 console.log('[API Handler] RSS database cleared');
+
+                // Refresh UI after clearing RSS
+                updateSummaryTab();
+                if (window._updateCacheBar) window._updateCacheBar();
+                updateFetchButtonMode();
+
                 ToastModule.success('Baza RSS wyczyszczona');
             } else {
                 db2.clearAll();

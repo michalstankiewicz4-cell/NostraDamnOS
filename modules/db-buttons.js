@@ -6,6 +6,69 @@ import ToastModule from './toast.js';
 import { refreshChartsManager } from './charts-manager.js';
 import { refreshPredictions } from './predictions.js';
 
+// Tables belonging to each data source
+const SEJM_TABLES = [
+    'poslowie', 'posiedzenia', 'wypowiedzi', 'glosowania', 'glosy',
+    'interpelacje', 'projekty_ustaw', 'komisje', 'komisje_posiedzenia',
+    'komisje_wypowiedzi', 'oswiadczenia_majatkowe', 'zapytania',
+    'zapytania_odpowiedzi', 'ustawy', 'metadata'
+];
+const RSS_TABLES = ['rss_news'];
+
+/**
+ * Export only selected tables into a standalone SQLite .db file.
+ * Creates a temporary in-memory database, copies schema + data, exports it.
+ */
+function exportFilteredDb(tableList) {
+    const tmpDb = new db2.sql.Database();
+
+    try {
+        for (const table of tableList) {
+            try {
+                // Copy CREATE TABLE
+                const res = db2.database.exec(
+                    "SELECT sql FROM sqlite_master WHERE type='table' AND name=?", [table]
+                );
+                if (!res.length || !res[0].values[0][0]) continue;
+                tmpDb.run(res[0].values[0][0]);
+
+                // Copy CREATE INDEX
+                const idxRes = db2.database.exec(
+                    "SELECT sql FROM sqlite_master WHERE type='index' AND tbl_name=? AND sql IS NOT NULL", [table]
+                );
+                if (idxRes.length) {
+                    for (const [sql] of idxRes[0].values) {
+                        if (sql) tmpDb.run(sql);
+                    }
+                }
+
+                // Copy data
+                const rows = db2.database.exec(`SELECT * FROM "${table}"`);
+                if (!rows.length || !rows[0].values.length) continue;
+
+                const cols = rows[0].columns;
+                const placeholders = cols.map(() => '?').join(',');
+                tmpDb.run('BEGIN');
+                const stmt = tmpDb.prepare(
+                    `INSERT INTO "${table}" (${cols.map(c => `"${c}"`).join(',')}) VALUES (${placeholders})`
+                );
+                for (const row of rows[0].values) {
+                    stmt.run(row);
+                }
+                stmt.free();
+                tmpDb.run('COMMIT');
+            } catch (e) {
+                console.warn(`[Export] Table ${table}:`, e.message);
+                try { tmpDb.run('ROLLBACK'); } catch { /* ignore */ }
+            }
+        }
+
+        return tmpDb.export();
+    } finally {
+        tmpDb.close();
+    }
+}
+
 export function initDbButtons() {
     console.log('[DB Buttons] Initializing import/export buttons...');
     
@@ -56,10 +119,10 @@ export function initDbButtons() {
             return;
         }
 
-        const data = db2.database.export();
+        const data = exportFilteredDb(SEJM_TABLES);
         const blob = new Blob([data], { type: 'application/x-sqlite3' });
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
-        const filename = `nostradamnos-${timestamp}.db`;
+        const filename = `nostradamnos-sejm-${timestamp}.db`;
 
         const result = await saveBlob(blob, filename, [{
             description: 'SQLite Database',
@@ -105,7 +168,7 @@ export function initDbButtons() {
             return;
         }
 
-        const data = db2.database.export();
+        const data = exportFilteredDb(RSS_TABLES);
         const blob = new Blob([data], { type: 'application/x-sqlite3' });
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
         const filename = `nostradamnos-rss-${timestamp}.db`;
@@ -236,9 +299,70 @@ export function initDbButtons() {
         }
     });
     
+    /**
+     * Merge selected tables from an imported file into the current database.
+     * tablesToImport — list of table names to copy (SEJM_TABLES or RSS_TABLES).
+     * Existing rows in the target tables are replaced (INSERT OR REPLACE).
+     */
+    function importTablesFromFile(srcDb, tablesToImport) {
+        // Ensure the main database has the full schema
+        if (!db2.database) {
+            db2.database = new db2.sql.Database();
+            db2.createSchema();
+        }
+
+        // Get tables that actually exist in the source file
+        const srcTablesRes = srcDb.exec("SELECT name FROM sqlite_master WHERE type='table'");
+        const srcTableNames = srcTablesRes.length ? srcTablesRes[0].values.map(v => v[0]) : [];
+
+        const imported = {};
+
+        for (const table of tablesToImport) {
+            if (!srcTableNames.includes(table)) continue;
+
+            try {
+                // Clear existing data in this table
+                db2.database.run(`DELETE FROM "${table}"`);
+
+                // Copy rows from source
+                const rows = srcDb.exec(`SELECT * FROM "${table}"`);
+                if (!rows.length || !rows[0].values.length) {
+                    imported[table] = 0;
+                    continue;
+                }
+
+                const cols = rows[0].columns;
+                const placeholders = cols.map(() => '?').join(',');
+                db2.database.run('BEGIN');
+                const stmt = db2.database.prepare(
+                    `INSERT OR REPLACE INTO "${table}" (${cols.map(c => `"${c}"`).join(',')}) VALUES (${placeholders})`
+                );
+                for (const row of rows[0].values) {
+                    stmt.run(row);
+                }
+                stmt.free();
+                db2.database.run('COMMIT');
+                imported[table] = rows[0].values.length;
+            } catch (e) {
+                console.warn(`[Import] Table ${table}:`, e.message);
+                try { db2.database.run('ROLLBACK'); } catch { /* ignore */ }
+                imported[table] = 0;
+            }
+        }
+
+        return imported;
+    }
+
     // Helper function to load database from file
     async function loadDatabaseFromFile(file) {
         console.log('🚀 [Zadanie] Import bazy rozpoczęty');
+
+        // Determine mode from radio button
+        const selectedInst = document.querySelector('input[name="etlInst"]:checked')?.value || 'sejm';
+        const isRss = selectedInst === 'rss';
+        const tableList = isRss ? RSS_TABLES : SEJM_TABLES;
+        const modeLabel = isRss ? 'RSS' : 'Sejm';
+
         try {
             // Read file as ArrayBuffer
             const arrayBuffer = await file.arrayBuffer();
@@ -254,45 +378,46 @@ export function initDbButtons() {
                     locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/${file}`
                 });
             }
-            
-            // Close existing database
-            if (db2.database) {
-                db2.database.close();
-            }
 
-            // Wyczyść historię fetcha — importowana baza nie ma związku z poprzednim ETL
-            localStorage.removeItem('nostradamnos_lastFetchConfig');
-            localStorage.removeItem('nostradamnos_lastFetch');
+            // Open imported file as a temporary (source) database
+            const srcDb = new db2.sql.Database(uint8Array);
 
-            // Load new database
-            db2.database = new db2.sql.Database(uint8Array);
-            
-            // Verify database structure
-            const tables = db2.database.exec("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;");
-            const tableNames = tables[0] ? tables[0].values.map(v => v[0]) : [];
-            
-            console.log(`[DB Import] ✅ Database loaded successfully`);
-            console.log(`[DB Import] Tables found: ${tableNames.join(', ')}`);
-            
-            // Count records in main tables
-            let recordCounts = {};
-            for (const table of ['poslowie', 'posiedzenia', 'wypowiedzi', 'glosowania']) {
-                try {
-                    const result = db2.database.exec(`SELECT COUNT(*) FROM ${table};`);
-                    recordCounts[table] = result[0]?.values[0][0] || 0;
-                } catch (e) {
-                    recordCounts[table] = 0;
+            try {
+                // Ensure main database exists (create if first time)
+                if (!db2.database) {
+                    db2.database = new db2.sql.Database();
+                    await db2.createSchema();
                 }
-            }
-            
-            const summary = Object.entries(recordCounts)
-                .map(([table, count]) => `${table}: ${count}`)
-                .join('\n');
 
-            ToastModule.success(
-                `📁 ${file.name}\n📊 Rozmiar: ${(file.size / 1024).toFixed(2)} KB\n\n📋 Rekordy:\n${summary}`,
-                { title: 'Baza zaimportowana z Pulpitu', duration: 8000 }
-            );
+                if (!isRss) {
+                    // Wyczyść historię fetcha — importowana baza sejmowa nie ma związku z poprzednim ETL
+                    localStorage.removeItem('nostradamnos_lastFetchConfig');
+                    localStorage.removeItem('nostradamnos_lastFetch');
+                }
+
+                // Merge only relevant tables
+                const imported = importTablesFromFile(srcDb, tableList);
+
+                console.log(`[DB Import] ✅ ${modeLabel} tables imported successfully`);
+                console.log(`[DB Import] Tables:`, imported);
+
+                // Build summary
+                const summary = Object.entries(imported)
+                    .map(([table, count]) => `${table}: ${count}`)
+                    .join('\n');
+
+                const icon = isRss ? '📰' : '🏛️';
+
+                ToastModule.success(
+                    `📁 ${file.name}\n📊 Rozmiar: ${(file.size / 1024).toFixed(2)} KB\n\n📋 Zaimportowane tabele:\n${summary}`,
+                    { title: `${icon} Baza ${modeLabel} zaimportowana`, duration: 8000 }
+                );
+            } finally {
+                srcDb.close();
+            }
+
+            // Persist to localStorage so it survives page refresh
+            db2.saveToLocalStorage();
 
             console.log('✅ [Zadanie] Import bazy zakończony');
 
@@ -310,6 +435,9 @@ export function initDbButtons() {
             if (typeof window.updateFetchButtonMode === 'function') {
                 window.updateFetchButtonMode();
             }
+
+            // Odśwież cache bar
+            if (window._updateCacheBar) window._updateCacheBar();
             
             // Uruchom monitorowanie bazy
             if (typeof window.startDbMonitoring === 'function') {
