@@ -1659,25 +1659,85 @@ function renderMpProfile(id) {
         `;
 
         // Ostatnie głosowania
-        const recentVotes = db2.database.exec(`
-            SELECT g.tytul, gl.glos, g.data
-            FROM glosy gl JOIN glosowania g ON gl.id_glosowania=g.id_glosowania
-            WHERE gl.id_osoby=? ORDER BY g.data DESC LIMIT 8
-        `, [id]);
-        if (recentVotes.length && recentVotes[0].values.length) {
-            html += '<h4 class="pred-subtitle" style="margin-top:1.5rem;">🗳️ Ostatnie głosowania</h4>';
-            html += '<div class="profile-recent-list">';
-            recentVotes[0].values.forEach(row => {
-                const [tytul, glos, data] = row;
-                const title = tytul && tytul.length > 70 ? tytul.substring(0,70)+'...' : (tytul || '—');
-                const voteClass = glos === 'YES' ? 'vote-yes' : glos === 'NO' ? 'vote-no' : glos === 'ABSTAIN' ? 'vote-abstain' : 'vote-absent';
-                const voteLabel = {YES:'ZA', NO:'PRZECIW', ABSTAIN:'WSTRZ.', ABSENT:'NIEOB.'}[glos] || glos;
-                html += `<div class="profile-recent-item"><span class="profile-recent-title" title="${tytul||''}">${title}</span><span class="profile-vote-badge ${voteClass}">${voteLabel}</span><span class="profile-recent-date">${data||''}</span></div>`;
-            });
-            html += '</div>';
-        }
+        html += '<h4 class="pred-subtitle" style="margin-top:1.5rem;">🗳️ Ostatnie głosowania</h4>';
+        html += '<div id="mpVotesList" class="profile-recent-list"></div>';
+        html += '<div id="mpVotesLoadMoreWrap" style="text-align:center;margin-top:8px;"></div>';
 
         det.innerHTML = html;
+
+        // Renderuj głosowania z offsetem
+        function renderMpVotesChunk(mpId, offset, append) {
+            const rows = db2.database.exec(`
+                SELECT g.tytul, gl.glos, g.data, g.title, g.wynik, g.za, g.przeciw, g.wstrzymalo, gl.id_glosowania
+                FROM glosy gl JOIN glosowania g ON gl.id_glosowania=g.id_glosowania
+                WHERE gl.id_osoby=? ORDER BY g.data DESC LIMIT 10 OFFSET ?
+            `, [mpId, offset]);
+
+            const list = document.getElementById('mpVotesList');
+            const moreWrap = document.getElementById('mpVotesLoadMoreWrap');
+            if (!list) return;
+
+            const values = rows.length && rows[0].values.length ? rows[0].values : [];
+            values.forEach(row => {
+                const [tytul, glos, data, title, wynik, za, przeciw, wstrzymalo, idGlosowania] = row;
+                const shortTytul = tytul && tytul.length > 60 ? tytul.substring(0,60)+'…' : (tytul || '—');
+                const voteClass = glos === 'YES' ? 'vote-yes' : glos === 'NO' ? 'vote-no' : glos === 'ABSTAIN' ? 'vote-abstain' : 'vote-absent';
+                const voteLabel = {YES:'ZA', NO:'PRZECIW', ABSTAIN:'WSTRZ.', ABSENT:'NIEOB.'}[glos] || glos;
+
+                const detail = JSON.stringify({tytul, title, glos, data, wynik, za, przeciw, wstrzymalo});
+
+                const item = document.createElement('div');
+                item.className = 'profile-recent-item mp-vote-clickable';
+                item.dataset.detail = detail;
+                item.innerHTML = `
+                    <span class="profile-recent-title" title="${tytul||''}">${shortTytul}</span>
+                    <span class="profile-vote-badge ${voteClass}">${voteLabel}</span>
+                    <span class="profile-recent-date">${data ? data.substring(0,10) : ''}</span>
+                `;
+
+                const detailDiv = document.createElement('div');
+                detailDiv.className = 'mp-vote-detail';
+                detailDiv.style.display = 'none';
+
+                item.addEventListener('click', () => {
+                    const open = detailDiv.style.display !== 'none';
+                    // Zamknij pozostałe
+                    list.querySelectorAll('.mp-vote-detail').forEach(d => { d.style.display = 'none'; });
+                    list.querySelectorAll('.mp-vote-clickable').forEach(i => i.classList.remove('mp-vote-active'));
+                    if (!open) {
+                        const d = JSON.parse(item.dataset.detail);
+                        const wynikIcon = d.wynik === 'przyjęto' ? '✅' : d.wynik === 'odrzucono' ? '❌' : '—';
+                        detailDiv.innerHTML = `
+                            <div class="mp-vote-detail-title">${d.title || d.tytul || '—'}</div>
+                            ${d.title && d.tytul && d.title !== d.tytul ? `<div class="mp-vote-detail-topic">📌 ${d.tytul}</div>` : ''}
+                            <div class="mp-vote-detail-row">
+                                <span>${wynikIcon} Wynik: <strong>${d.wynik || '—'}</strong></span>
+                                <span>✅ Za: <strong>${d.za ?? '—'}</strong></span>
+                                <span>❌ Przeciw: <strong>${d.przeciw ?? '—'}</strong></span>
+                                <span>⚪ Wstrz.: <strong>${d.wstrzymalo ?? '—'}</strong></span>
+                            </div>
+                        `;
+                        detailDiv.style.display = 'block';
+                        item.classList.add('mp-vote-active');
+                    }
+                });
+
+                list.appendChild(item);
+                list.appendChild(detailDiv);
+            });
+
+            // Przycisk "Załaduj kolejne 10"
+            moreWrap.innerHTML = '';
+            if (values.length === 10) {
+                const btn = document.createElement('button');
+                btn.className = 'mp-votes-more-btn';
+                btn.textContent = 'Załaduj kolejne 10 →';
+                btn.addEventListener('click', () => renderMpVotesChunk(mpId, offset + 10, true));
+                moreWrap.appendChild(btn);
+            }
+        }
+
+        renderMpVotesChunk(id, 0, false);
     } catch (err) {
         console.error('[Predictions] renderMpProfile error:', err);
         det.innerHTML = '<div class="prediction-error">Błąd renderowania profilu</div>';

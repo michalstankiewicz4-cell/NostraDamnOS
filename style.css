@@ -4356,6 +4356,51 @@ input:disabled {
     border: 1px solid var(--border-color);
     font-size: 0.8rem;
 }
+.mp-vote-clickable {
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+}
+.mp-vote-clickable:hover { background: rgba(8,145,178,0.08); border-color: var(--primary-color, #0891b2); }
+.mp-vote-active { background: rgba(8,145,178,0.12); border-color: var(--primary-color, #0891b2); border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+.mp-vote-detail {
+    background: var(--bg-secondary, #1e1e2e);
+    border: 1px solid var(--primary-color, #0891b2);
+    border-top: none;
+    border-radius: 0 0 6px 6px;
+    padding: 0.6rem 0.8rem;
+    font-size: 0.78rem;
+    margin-top: -0.4rem;
+}
+.mp-vote-detail-title {
+    color: var(--text-primary, #e0e0e0);
+    font-weight: 600;
+    margin-bottom: 4px;
+    line-height: 1.4;
+}
+.mp-vote-detail-topic {
+    color: var(--text-secondary, #999);
+    font-size: 0.74rem;
+    margin-bottom: 6px;
+}
+.mp-vote-detail-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    color: var(--text-secondary, #aaa);
+    font-size: 0.75rem;
+}
+.mp-vote-detail-row strong { color: var(--text-primary, #e0e0e0); }
+.mp-votes-more-btn {
+    background: transparent;
+    border: 1px solid var(--border-color, #444);
+    color: var(--text-secondary, #999);
+    border-radius: 6px;
+    padding: 5px 16px;
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+}
+.mp-votes-more-btn:hover { border-color: var(--primary-color, #0891b2); color: var(--primary-color, #0891b2); }
 
 .profile-recent-title {
     flex: 1;
