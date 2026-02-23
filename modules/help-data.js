@@ -4,6 +4,51 @@
 // Key = data-help-id attribute value
 // ============================================
 
+// ── Changelog — historia wersji ──
+export const CHANGELOG = [
+    {
+        version: 'v7c.1.0',
+        date: '2026-02',
+        desc: 'Nowy plik bazy z rozszerzoną informacją o głosowaniach',
+        items: [
+            'glosowania.title — pełna nazwa ustawy przy każdym głosowaniu',
+            'glosy.klub — historycznie poprawny klub posła w chwili głosowania',
+            'interpelacje.adresat — adresat interpelacji (ministerstwo)',
+            'interpelacje.dni_opoznienia — dni opóźnienia odpowiedzi',
+        ]
+    },
+    {
+        version: 'v7b.1.0',
+        date: '2026-02',
+        desc: 'Rozszerzony zakres pomocy',
+        items: [
+            'Emoclippy — pomocny spinacz z oczami w trybie pomocy',
+            'Wskazówki kontekstowe per sekcja w pliku help-data.js',
+            'Toggle włącz/wyłącz Emoclippy w ustawieniach',
+        ]
+    },
+    {
+        version: 'v7a.1.0',
+        date: '2026-02',
+        desc: 'Optymalizacja zapisu do bazy — chunked transactions',
+        items: [
+            'Chunked upsert — brak zamrożenia UI podczas zapisu',
+            'Transakcje SQL — 10–50x szybszy zapis',
+            'Abort zatrzymuje pobieranie bez kasowania danych',
+        ]
+    },
+    {
+        version: 'v6x.x',
+        date: '2026-01',
+        desc: 'Wielokadencyjne pobieranie + baza SQLite v2',
+        items: [
+            'Pełna obsługa wielu kadencji jednocześnie',
+            'Nowy schemat bazy — 14 tabel + relacje FK',
+            'Pasek cache z pokryciem per moduł',
+        ]
+    },
+];
+
 // ── Emoclippy — wskazówki kontekstowe per sekcja ──
 // Każda sekcja: { name, icon, tips: [] }
 // Tłumaczenie: dodaj analogiczny obiekt w pliku językowym
