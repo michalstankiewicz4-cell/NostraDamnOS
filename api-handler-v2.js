@@ -964,7 +964,7 @@ function setLoadLamp(state) {
 
 let _linksPollInterval = null;
 
-function showEtlProgress() {
+function showEtlProgress(skipApiCounter = false) {
     const pctEl = document.getElementById('etlProgressPercent');
     const bar = document.getElementById('etlProgressBar');
     if (pctEl) pctEl.style.display = '';
@@ -973,6 +973,7 @@ function showEtlProgress() {
     // Clear sub-progress
     const subEl = document.getElementById('etlDetailSubProgress');
     if (subEl) subEl.textContent = '';
+    if (skipApiCounter) return; // RSS mode – bez pollingu zapytań API
     // Start live link counter polling
     _linksPollInterval = setInterval(() => {
         const linksEl = document.getElementById('etlDetailLinks');
@@ -1429,7 +1430,7 @@ async function fetchRssFeeds() {
         btn.textContent = '⏹️ Zatrzymaj pobieranie';
         btn.classList.add('etl-btn-abort');
     }
-    showEtlProgress();
+    showEtlProgress(true); // RSS mode – pomijamy polling zapytań API
 
     let totalInserted = 0;
     let totalSkipped = 0;
@@ -1468,7 +1469,7 @@ async function fetchRssFeeds() {
 
         const feed = selectedFeeds[i];
         const percent = Math.round(((i + 1) / selectedFeeds.length) * 100);
-        updateEtlProgress(percent, `📰 ${feed.name}`, `(${i + 1}/${selectedFeeds.length})`);
+        updateEtlProgress(percent, `📰 ${feed.name}`, { linksLabel: `${i + 1} z ${selectedFeeds.length} instytucji` });
         console.log(`[RSS] Fetching: ${feed.name} → ${feed.url}`);
 
         let xmlText = null;

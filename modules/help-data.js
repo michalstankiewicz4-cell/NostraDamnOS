@@ -7,6 +7,18 @@
 // ── Changelog — historia wersji ──
 export const CHANGELOG = [
     {
+        version: 'v8c.0.0',
+        date: '2026-02',
+        desc: 'Praca na dwóch bazach: Sejm i RSS',
+        items: [
+            'Sekcja Dane: przełączanie między trybem Sejm i RSS',
+            'Pobieranie artykułów z 25+ rządowych kanałów RSS (gov.pl, NBP, GUS, ZUS i inne)',
+            'Eksport/import filtrowany — sejm tylko tabele Sejmu, rss tylko tabelę rss_news',
+            'Czyszczenie bazy świadome trybu — nie usuwa danych drugiej bazy',
+            'Pasek postępu pobierania RSS pokazuje numer instytucji zamiast liczby zapytań API',
+        ]
+    },
+    {
         version: 'v7c.1.0',
         date: '2026-02',
         desc: 'Nowy plik bazy z rozszerzoną informacją o głosowaniach',
