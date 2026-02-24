@@ -1611,9 +1611,8 @@ async function fetchRssFeeds() {
 
                 for (const a of allLinks) {
                     const href = a.getAttribute('href') || '';
-                    const rawText = a.textContent?.trim() || '';
-                    if (rawText.length < 15 || seen.has(href)) continue;
                     if (href.includes('#') || href.includes('/rss') || href.includes('javascript:')) continue;
+                    if (seen.has(href)) continue;
 
                     // Build full URL
                     let fullHref = href;
@@ -1621,39 +1620,54 @@ async function fetchRssFeeds() {
                         fullHref = new URL(href, feed.url).href;
                     } catch { continue; }
 
-                    // Filter: must look like an article link (not navigation/footer)
+                    // Artykuły gov.pl mają URL w stylu /web/{ministry}/{slug} (długi slug tytułowy)
+                    // Nawigacja ma krótkie ścieżki lub kończy się cyfrą (np. kprm2, rm3)
+                    // Wymagamy: /web/ w URL, brak zabronionych wzorców, slug minimum 20 znaków za ostatnim /
+                    const urlSlug = fullHref.split('/').pop() || '';
                     const isArticle = (
-                        fullHref.includes('/web/') && !fullHref.endsWith('/aktualnosci') && !fullHref.endsWith('/rss') &&
+                        fullHref.includes('/web/') &&
+                        !fullHref.endsWith('/aktualnosci') && !fullHref.endsWith('/wiadomosci') &&
+                        !fullHref.endsWith('/rss') && !/\d$/.test(urlSlug) &&
                         !fullHref.includes('uslugi-dla-') && !fullHref.includes('polityka-') &&
                         !fullHref.includes('/gov/') && !fullHref.includes('deklaracja-dostepnosci') &&
-                        rawText.length > 20 && rawText.length < 300
+                        urlSlug.length >= 20
                     );
                     if (!isArticle) continue;
                     if (seen.has(fullHref)) continue;
                     seen.add(fullHref);
 
-                    // Extract date from text like "19.02.2026 | Tytuł" or "19.02.2026 Tytuł"
-                    const dateMatch = rawText.match(/^(\d{2}\.\d{2}\.\d{4})\s*[|\-–]?\s*/);
-                    const title = dateMatch ? rawText.slice(dateMatch[0].length).trim() : rawText;
-                    const pubDate = dateMatch ? dateMatch[1].split('.').reverse().join('-') : '';
+                    // Preferuj nagłówek wewnątrz linku; jeśli brak — pełny textContent
+                    const headingEl = a.querySelector('h1, h2, h3, h4, h5, h6, strong, [class*="title"], [class*="heading"]');
+                    const rawText = (headingEl?.textContent?.trim() || a.textContent?.trim() || '').replace(/\s+/g, ' ');
+
+                    // Wyciągnij datę z początku tekstu lub z elementu time/[class*=date] wewnątrz linku
+                    const timeEl = a.querySelector('time, [class*="date"], [class*="data"]');
+                    const dateText = timeEl?.getAttribute('datetime') || timeEl?.textContent?.trim() || '';
+                    const dateMatch = rawText.match(/(\d{2}\.\d{2}\.\d{4})/);
+                    const pubDate = dateText.match(/^\d{4}-\d{2}-\d{2}/)
+                        ? dateText.slice(0, 10)
+                        : dateMatch ? dateMatch[1].split('.').reverse().join('-') : '';
+                    const title = rawText.replace(/^\d{2}\.\d{2}\.\d{4}\s*[|\-–]?\s*/, '').trim();
 
                     if (title.length < 10) continue;
 
-                    // Extract description from the surrounding container (p, .description, sibling text)
+                    // Opis: <p> wewnątrz linku (karta artykułu) lub z kontenera rodzica
                     let desc = '';
-                    const container = a.closest('article, li, .article-item, .content-item, .entry, .news-item, .list-item') || a.parentElement?.parentElement || a.parentElement;
-                    if (container) {
-                        // Prefer <p> tags not inside <a>
-                        const paras = [...container.querySelectorAll('p')].filter(p => !p.closest('a') && p.textContent.trim().length > 15);
-                        if (paras.length > 0) {
-                            desc = paras.map(p => p.textContent.trim()).join(' ').slice(0, 500);
-                        }
-                        if (!desc) {
-                            // Fallback: container text minus link text and date
-                            const clone = container.cloneNode(true);
-                            clone.querySelectorAll('a, button, time, [class*="date"], [class*="tag"], nav').forEach(el => el.remove());
-                            const t = clone.textContent?.trim().replace(/\s+/g, ' ') || '';
-                            if (t.length > 15 && t.length < 600) desc = t;
+                    const innerParas = [...a.querySelectorAll('p')].filter(p => p.textContent.trim().length > 15);
+                    if (innerParas.length > 0) {
+                        desc = innerParas.map(p => p.textContent.trim()).join(' ').slice(0, 500);
+                    } else {
+                        const container = a.closest('article, li, .article-item, .content-item, .entry, .news-item, .list-item') || a.parentElement?.parentElement || a.parentElement;
+                        if (container) {
+                            const paras = [...container.querySelectorAll('p')].filter(p => !p.closest('a') && p.textContent.trim().length > 15);
+                            if (paras.length > 0) {
+                                desc = paras.map(p => p.textContent.trim()).join(' ').slice(0, 500);
+                            } else {
+                                const clone = container.cloneNode(true);
+                                clone.querySelectorAll('a, button, time, [class*="date"], [class*="tag"], nav').forEach(el => el.remove());
+                                const t = clone.textContent?.trim().replace(/\s+/g, ' ') || '';
+                                if (t.length > 15 && t.length < 600) desc = t;
+                            }
                         }
                     }
 
