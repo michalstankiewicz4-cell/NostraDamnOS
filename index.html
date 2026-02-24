@@ -2147,12 +2147,12 @@
                 const rssDeselectAll = document.getElementById('rssDeselectAll');
                 if (rssSelectAll) {
                     rssSelectAll.addEventListener('click', () => {
-                        rssPanel.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = true);
+                        rssPanel.querySelectorAll('input[type="checkbox"]:not(:disabled)').forEach(cb => cb.checked = true);
                     });
                 }
                 if (rssDeselectAll) {
                     rssDeselectAll.addEventListener('click', () => {
-                        rssPanel.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+                        rssPanel.querySelectorAll('input[type="checkbox"]:not(:disabled)').forEach(cb => cb.checked = false);
                     });
                 }
 
