@@ -1435,11 +1435,104 @@ async function fetchRssFeeds() {
     let totalInserted = 0;
     let totalSkipped = 0;
     let errors = 0;
-    // CORS proxy list — allorigins.win usunięty: zwraca 500 dla gov.pl bez nagłówka CORS (spam w konsoli)
     const CORS_PROXIES = [
-        { name: 'corsproxy.io',  fn: url => `https://corsproxy.io/?${encodeURIComponent(url)}`, json: false },
-        { name: 'codetabs.com',  fn: url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`, json: false },
+        { name: 'allorigins.win', fn: url => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`, json: true },
+        { name: 'corsproxy.io',   fn: url => `https://corsproxy.io/?${encodeURIComponent(url)}`, json: false },
+        { name: 'codetabs.com',   fn: url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`, json: false },
     ];
+
+    // Helper: fetch raw text via CORS proxies (tries each until one succeeds)
+    async function fetchViaProxy(url) {
+        for (const proxy of CORS_PROXIES) {
+            if (currentAbortController.signal.aborted) return null;
+            try {
+                const res = await fetch(proxy.fn(url), {
+                    signal: currentAbortController.signal,
+                    headers: { 'Accept': 'text/html, application/xml, text/xml, */*' }
+                });
+                if (!res.ok) { console.warn(`[RSS] ❌ HTTP ${res.status} via ${proxy.name} → ${url}`); continue; }
+                let text;
+                if (proxy.json) {
+                    const j = JSON.parse(await res.text());
+                    text = j.contents || '';
+                } else {
+                    text = await res.text();
+                }
+                if (text && text.length > 500) {
+                    console.log(`[RSS] ✅ via ${proxy.name} → ${url}`);
+                    return text;
+                }
+            } catch (e) {
+                if (e.name === 'AbortError') return null;
+                console.warn(`[RSS] ❌ Fetch error via ${proxy.name} → ${url}: ${e.message}`);
+            }
+        }
+        return null;
+    }
+
+    // Scraper dla stron gov.pl (SSR listing): szuka <a href="/web/..."><.title>, <.intro>, <.date>
+    function scrapeGovHTML(htmlStr, feedName, feedUrl) {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(htmlStr, 'text/html');
+        const origin = 'https://www.gov.pl';
+        const results = [];
+        const seen = new Set();
+
+        doc.querySelectorAll('a[href^="/web/"]').forEach(a => {
+            const titleEl = a.querySelector('.title');
+            if (!titleEl) return;
+            const title = titleEl.textContent.trim();
+            if (!title || title.length < 5) return;
+
+            const href = a.getAttribute('href');
+            const slug = href.split('/').pop();
+            if (!slug || slug.split('-').length < 3) return; // wymaga wieloczłonowego slugu
+
+            if (seen.has(href)) return;
+            seen.add(href);
+
+            const link = origin + href;
+            const description = a.querySelector('.intro')?.textContent?.trim() || '';
+            const dateEl = a.querySelector('.date, time');
+            let pubDate = new Date().toISOString();
+            if (dateEl) {
+                const dt = (dateEl.getAttribute('datetime') || dateEl.textContent).trim();
+                const m = dt.match(/(\d{2})\.(\d{2})\.(\d{4})/);
+                if (m) pubDate = new Date(`${m[3]}-${m[2]}-${m[1]}T12:00:00`).toISOString();
+                else { const d = new Date(dt); if (!isNaN(d)) pubDate = d.toISOString(); }
+            }
+
+            results.push({ title, link, description, pubDate });
+        });
+
+        return results;
+    }
+
+    // Wyciąga pełną treść artykułu z HTML strony
+    function extractFullContent(htmlStr) {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(htmlStr, 'text/html');
+        ['script', 'style', 'nav', 'header', 'footer', 'aside'].forEach(tag => {
+            doc.querySelectorAll(tag).forEach(el => el.remove());
+        });
+        const selectors = [
+            '[itemprop="articleBody"]', '.article-content', '.article-body',
+            '.article__content', '.entry-content', '.post-content',
+            '.content-article', '.news-content', '.text-content',
+            'article', '.article', 'main',
+        ];
+        for (const sel of selectors) {
+            try {
+                const el = doc.querySelector(sel);
+                if (el) {
+                    const text = el.textContent.replace(/\s+/g, ' ').trim();
+                    if (text.length > 150) return text;
+                }
+            } catch {}
+        }
+        return [...doc.querySelectorAll('p')]
+            .map(p => p.textContent.trim()).filter(t => t.length > 40).join('\n\n');
+    }
 
     // Helper: insert a news item into the database
     function insertNewsItem(feedId, feedName, feedUrl, title, link, description, content, pubDate) {
@@ -1467,231 +1560,96 @@ async function fetchRssFeeds() {
         if (currentAbortController.signal.aborted) break;
 
         const feed = selectedFeeds[i];
-        const percent = Math.round(((i + 1) / selectedFeeds.length) * 100);
-        updateEtlProgress(percent, `📰 ${feed.name}`, { linksLabel: `${i + 1} z ${selectedFeeds.length} instytucji` });
+        updateEtlProgress(
+            Math.round(((i + 1) / selectedFeeds.length) * 100),
+            `📰 ${feed.name}`,
+            { linksLabel: `${i + 1} z ${selectedFeeds.length} instytucji` }
+        );
         console.log(`[RSS] Fetching: ${feed.name} → ${feed.url}`);
 
-        let xmlText = null;
-        let htmlText = null; // fallback for sites without RSS (e.g. gov.pl)
+        const isGovWeb = feed.url.includes('gov.pl/web/');
 
-        // Build list of URLs to try: original first, then common RSS variants for non-RSS URLs
-        const isLikelyRssUrl = /\.(rss|xml|atom)$|\/rss|\/feed/.test(feed.url);
-        const urlsToTry = [feed.url];
-        if (!isLikelyRssUrl) {
-            // Try appending .rss or /rss (gov.pl, some other portals support this)
-            urlsToTry.push(feed.url.replace(/\/$/, '') + '.rss');
-            urlsToTry.push(feed.url.replace(/\/aktualnosci.*$/, '/rss'));
-        }
-
-        outerProxy: for (const tryUrl of urlsToTry) {
-            if (xmlText) break;
-            for (const proxy of CORS_PROXIES) {
-                if (currentAbortController.signal.aborted) break outerProxy;
-                try {
-                    const proxyUrl = proxy.fn(tryUrl);
-                    const res = await fetch(proxyUrl, {
-                        signal: currentAbortController.signal,
-                        headers: { 'Accept': 'application/xml, text/xml, application/rss+xml, */*' }
-                    });
-                    if (!res.ok) {
-                        console.warn(`[RSS] ❌ HTTP ${res.status} via ${proxy.name} → ${tryUrl}`);
-                        continue;
-                    }
-                    let text;
-                    if (proxy.json) {
-                        try {
-                            const j = JSON.parse(await res.text());
-                            text = j.contents || '';
-                        } catch (e) {
-                            console.warn(`[RSS] ❌ JSON parse error via ${proxy.name} → ${tryUrl}:`, e.message);
-                            continue;
-                        }
-                    } else {
-                        text = await res.text();
-                    }
-                    if (text && (text.includes('<rss') || text.includes('<feed') || text.includes('<item') || text.includes('<entry'))) {
-                        console.log(`[RSS] ✅ RSS/Atom via ${proxy.name} → ${tryUrl}`);
-                        xmlText = text;
-                        break outerProxy; // Valid RSS/Atom found
-                    }
-                    // Store HTML for fallback parsing (gov.pl pages) — only from original URL
-                    if (tryUrl === feed.url && !htmlText && text && text.length > 500 && (text.includes('<html') || text.includes('<!DOCTYPE') || text.includes('<!doctype'))) {
-                        console.log(`[RSS] ℹ️ HTML page (no RSS) via ${proxy.name} → ${tryUrl}`);
-                        htmlText = text;
-                    } else if (!text || text.length < 100) {
-                        console.warn(`[RSS] ⚠️ Empty/short response via ${proxy.name} → ${tryUrl} (${text?.length ?? 0} B)`);
-                    } else {
-                        console.warn(`[RSS] ⚠️ Not RSS/HTML via ${proxy.name} → ${tryUrl} (starts: ${text.slice(0, 80).replace(/\n/g, ' ')})`);
-                    }
-                } catch (e) {
-                    if (e.name === 'AbortError') break outerProxy;
-                    console.warn(`[RSS] ❌ Fetch error via ${proxy.name} → ${tryUrl}: ${e.message}`);
-                }
-            }
-        }
-
-        // === Strategy 1b: RSS autodiscovery — szukamy <link rel="alternate" type="...rss..."> w HTML ===
-        if (!xmlText && htmlText) {
-            try {
-                const htmlDoc = new DOMParser().parseFromString(htmlText, 'text/html');
-                const rssLink = htmlDoc.querySelector(
-                    'link[rel="alternate"][type*="rss"], link[rel="alternate"][type*="atom"]'
-                );
-                if (rssLink) {
-                    let discoveredUrl = rssLink.getAttribute('href') || '';
-                    try { discoveredUrl = new URL(discoveredUrl, feed.url).href; } catch { /* zostaw */ }
-                    if (discoveredUrl) {
-                        console.log(`[RSS] 🔍 Autodiscovery: ${feed.name} → ${discoveredUrl}`);
-                        for (const proxy of CORS_PROXIES) {
-                            if (currentAbortController.signal.aborted) break;
-                            try {
-                                const res = await fetch(proxy.fn(discoveredUrl), {
-                                    signal: currentAbortController.signal,
-                                    headers: { 'Accept': 'application/xml, text/xml, application/rss+xml, */*' }
-                                });
-                                if (!res.ok) { console.warn(`[RSS] ❌ HTTP ${res.status} via ${proxy.name} → ${discoveredUrl}`); continue; }
-                                const text = await res.text();
-                                if (text && (text.includes('<rss') || text.includes('<feed') || text.includes('<item') || text.includes('<entry'))) {
-                                    console.log(`[RSS] ✅ Autodiscovery RSS via ${proxy.name} → ${discoveredUrl}`);
-                                    xmlText = text;
-                                    htmlText = null; // nie używaj HTML fallbacku
-                                    break;
-                                }
-                            } catch (e) {
-                                if (e.name === 'AbortError') break;
-                                console.warn(`[RSS] ❌ Autodiscovery fetch error via ${proxy.name}: ${e.message}`);
-                            }
-                        }
-                    }
-                }
-            } catch { /* ignoruj błędy parsowania */ }
-        }
-
-        // === Strategy 2: Standard RSS/Atom XML parsing ===
-        if (xmlText) {
-            try {
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(xmlText, 'text/xml');
-                const items = [...doc.querySelectorAll('item'), ...doc.querySelectorAll('entry')];
-
-                console.log(`[RSS] ${feed.name}: ${items.length} items found (RSS/Atom)`);
-
-                for (const item of items) {
-                    const title = item.querySelector('title')?.textContent?.trim() || '';
-                    const link = item.querySelector('link')?.textContent?.trim()
-                        || item.querySelector('link')?.getAttribute('href') || '';
-                    const description = item.querySelector('description')?.textContent?.trim()
-                        || item.querySelector('summary')?.textContent?.trim() || '';
-                    const contentEncoded = item.getElementsByTagNameNS('*', 'encoded')[0]?.textContent?.trim() || '';
-                    const contentTag = item.querySelector('content')?.textContent?.trim() || '';
-                    const content = contentEncoded || contentTag || '';
-                    const pubDate = item.querySelector('pubDate')?.textContent?.trim()
-                        || item.querySelector('published')?.textContent?.trim()
-                        || item.querySelector('updated')?.textContent?.trim() || '';
-
-                    const result = insertNewsItem(feed.id, feed.name, feed.url, title, link, description, content, pubDate);
-                    if (result === 'inserted') totalInserted++;
-                    else if (result === 'skipped') totalSkipped++;
-                }
-            } catch (parseErr) {
-                console.warn(`[RSS] ❌ XML parse error for ${feed.name} (${feed.url}):`, parseErr.message);
+        if (isGovWeb) {
+            // === Gov.pl HTML scraping (SSR listing page) ===
+            const htmlText = await fetchViaProxy(feed.url);
+            if (!htmlText) {
+                console.warn(`[RSS] ❌ Brak odpowiedzi: ${feed.name} (${feed.url})`);
                 errors++;
+                continue;
             }
-            continue; // next feed
-        }
 
-        // === Strategy 2: HTML fallback — scrape news links from HTML pages (gov.pl etc.) ===
-        if (htmlText) {
-            try {
-                const htmlDoc = new DOMParser().parseFromString(htmlText, 'text/html');
-                const allLinks = [...htmlDoc.querySelectorAll('a[href]')];
-                const seen = new Set();
-                let htmlItems = 0;
+            const articles = scrapeGovHTML(htmlText, feed.name, feed.url);
+            console.log(`[RSS] ${feed.name}: ${articles.length} artykułów z listingu HTML`);
 
-                for (const a of allLinks) {
-                    const href = a.getAttribute('href') || '';
-                    if (href.includes('#') || href.includes('/rss') || href.includes('javascript:')) continue;
-                    if (seen.has(href)) continue;
+            if (articles.length === 0) {
+                console.warn(`[RSS] ❌ Brak artykułów w HTML: ${feed.name} — sprawdź strukturę strony`);
+                errors++;
+                continue;
+            }
 
-                    // Build full URL
-                    let fullHref = href;
-                    try {
-                        fullHref = new URL(href, feed.url).href;
-                    } catch { continue; }
+            for (let j = 0; j < articles.length; j++) {
+                if (currentAbortController.signal.aborted) break;
+                const art = articles[j];
 
-                    // Artykuły gov.pl mają URL w stylu /web/{ministry}/{slug} (długi slug tytułowy)
-                    // Nawigacja ma krótkie ścieżki lub kończy się cyfrą (np. kprm2, rm3)
-                    // Wymagamy: /web/ w URL, brak zabronionych wzorców, slug minimum 20 znaków za ostatnim /
-                    const urlSlug = fullHref.split('/').pop() || '';
-                    const isArticle = (
-                        fullHref.includes('/web/') &&
-                        !fullHref.endsWith('/aktualnosci') && !fullHref.endsWith('/wiadomosci') &&
-                        !fullHref.endsWith('/rss') && !/\d$/.test(urlSlug) &&
-                        !fullHref.includes('uslugi-dla-') && !fullHref.includes('polityka-') &&
-                        !fullHref.includes('/gov/') && !fullHref.includes('deklaracja-dostepnosci') &&
-                        urlSlug.length >= 20
-                    );
-                    if (!isArticle) continue;
-                    if (seen.has(fullHref)) continue;
-                    seen.add(fullHref);
+                updateEtlProgress(
+                    Math.round(((i + (j + 1) / articles.length) / selectedFeeds.length) * 100),
+                    `📰 ${feed.name}`,
+                    { linksLabel: `${i + 1} z ${selectedFeeds.length} — art. ${j + 1}/${articles.length}` }
+                );
 
-                    // Preferuj nagłówek wewnątrz linku; jeśli brak — pełny textContent
-                    const headingEl = a.querySelector('h1, h2, h3, h4, h5, h6, strong, [class*="title"], [class*="heading"]');
-                    const rawText = (headingEl?.textContent?.trim() || a.textContent?.trim() || '').replace(/\s+/g, ' ');
-
-                    // Wyciągnij datę z początku tekstu lub z elementu time/[class*=date] wewnątrz linku
-                    const timeEl = a.querySelector('time, [class*="date"], [class*="data"]');
-                    const dateText = timeEl?.getAttribute('datetime') || timeEl?.textContent?.trim() || '';
-                    const dateMatch = rawText.match(/(\d{2}\.\d{2}\.\d{4})/);
-                    const pubDate = dateText.match(/^\d{4}-\d{2}-\d{2}/)
-                        ? dateText.slice(0, 10)
-                        : dateMatch ? dateMatch[1].split('.').reverse().join('-') : '';
-                    const title = rawText.replace(/^\d{2}\.\d{2}\.\d{4}\s*[|\-–]?\s*/, '').trim();
-
-                    if (title.length < 10) continue;
-
-                    // Opis: <p> wewnątrz linku (karta artykułu) lub z kontenera rodzica
-                    let desc = '';
-                    const innerParas = [...a.querySelectorAll('p')].filter(p => p.textContent.trim().length > 15);
-                    if (innerParas.length > 0) {
-                        desc = innerParas.map(p => p.textContent.trim()).join(' ').slice(0, 500);
-                    } else {
-                        const container = a.closest('article, li, .article-item, .content-item, .entry, .news-item, .list-item') || a.parentElement?.parentElement || a.parentElement;
-                        if (container) {
-                            const paras = [...container.querySelectorAll('p')].filter(p => !p.closest('a') && p.textContent.trim().length > 15);
-                            if (paras.length > 0) {
-                                desc = paras.map(p => p.textContent.trim()).join(' ').slice(0, 500);
-                            } else {
-                                const clone = container.cloneNode(true);
-                                clone.querySelectorAll('a, button, time, [class*="date"], [class*="tag"], nav').forEach(el => el.remove());
-                                const t = clone.textContent?.trim().replace(/\s+/g, ' ') || '';
-                                if (t.length > 15 && t.length < 600) desc = t;
-                            }
-                        }
-                    }
-
-                    const result = insertNewsItem(feed.id, feed.name, feed.url, title, fullHref, desc, '', pubDate);
-                    if (result === 'inserted') totalInserted++;
-                    else if (result === 'skipped') totalSkipped++;
-                    htmlItems++;
+                // Pobierz pełną treść artykułu
+                let content = '';
+                if (art.link) {
+                    const artHtml = await fetchViaProxy(art.link);
+                    if (artHtml) content = extractFullContent(artHtml);
                 }
 
-                if (htmlItems > 0) {
-                    console.log(`[RSS] ✅ ${feed.name}: ${htmlItems} artykułów z HTML (${feed.url})`);
-                } else {
-                    console.warn(`[RSS] ❌ Brak artykułów w HTML: ${feed.name} (${feed.url}) — sprawdź selektor isArticle`);
+                const result = insertNewsItem(feed.id, feed.name, feed.url, art.title, art.link, art.description, content, art.pubDate);
+                if (result === 'inserted') totalInserted++;
+                else if (result === 'skipped') totalSkipped++;
+            }
+
+        } else {
+            // === RSS/Atom feed ===
+            const rawText = await fetchViaProxy(feed.url);
+            if (!rawText) {
+                console.warn(`[RSS] ❌ Brak odpowiedzi: ${feed.name} (${feed.url})`);
+                errors++;
+                continue;
+            }
+
+            if (rawText.includes('<rss') || rawText.includes('<feed') || rawText.includes('<item') || rawText.includes('<entry')) {
+                try {
+                    const doc = new DOMParser().parseFromString(rawText, 'text/xml');
+                    const items = [...doc.querySelectorAll('item'), ...doc.querySelectorAll('entry')];
+                    console.log(`[RSS] ${feed.name}: ${items.length} items (RSS/Atom)`);
+
+                    for (const item of items) {
+                        const title = item.querySelector('title')?.textContent?.trim() || '';
+                        const link = item.querySelector('link')?.textContent?.trim()
+                            || item.querySelector('link')?.getAttribute('href') || '';
+                        const description = item.querySelector('description')?.textContent?.trim()
+                            || item.querySelector('summary')?.textContent?.trim() || '';
+                        const contentEncoded = item.getElementsByTagNameNS('*', 'encoded')[0]?.textContent?.trim() || '';
+                        const contentTag = item.querySelector('content')?.textContent?.trim() || '';
+                        const content = contentEncoded || contentTag || '';
+                        const pubDate = item.querySelector('pubDate')?.textContent?.trim()
+                            || item.querySelector('published')?.textContent?.trim()
+                            || item.querySelector('updated')?.textContent?.trim() || '';
+
+                        const result = insertNewsItem(feed.id, feed.name, feed.url, title, link, description, content, pubDate);
+                        if (result === 'inserted') totalInserted++;
+                        else if (result === 'skipped') totalSkipped++;
+                    }
+                } catch (parseErr) {
+                    console.warn(`[RSS] ❌ XML parse error: ${feed.name}:`, parseErr.message);
                     errors++;
                 }
-            } catch (scrapeErr) {
-                console.warn(`[RSS] ❌ HTML scrape error: ${feed.name} (${feed.url}):`, scrapeErr.message);
+            } else {
+                console.warn(`[RSS] ❌ Odpowiedź nie jest RSS/Atom: ${feed.name} (${feed.url})`);
                 errors++;
             }
-            continue;
         }
-
-        // === No content retrieved ===
-        console.warn(`[RSS] ❌ Brak odpowiedzi: ${feed.name} (${feed.url}) — wszystkie proxy i warianty URL zawiodły`);
-        errors++;
     }
 
     // Save database
