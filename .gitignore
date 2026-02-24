@@ -31,6 +31,8 @@ desktop.ini
 
 # Node
 node_modules/
+package.json
+package-lock.json
 
 # Python
 __pycache__/
