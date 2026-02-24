@@ -2155,6 +2155,26 @@
                         rssPanel.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
                     });
                 }
+
+                // Dodaj linki do każdego źródła RSS
+                rssPanel.querySelectorAll('input[type="checkbox"][data-rss-url]').forEach(cb => {
+                    const feedUrl = cb.dataset.rssUrl;
+                    let siteUrl = feedUrl;
+                    // Dla URL-i będących stricte feedami (kończą się .xml/.rss lub /feed) — linkuj do originu
+                    if (/\.(xml|rss|atom)$|\/feed\/?$/.test(feedUrl)) {
+                        try { siteUrl = new URL(feedUrl).origin; } catch { /* zostaw feedUrl */ }
+                    }
+                    const a = document.createElement('a');
+                    a.href = siteUrl;
+                    a.target = '_blank';
+                    a.rel = 'noopener noreferrer';
+                    a.title = siteUrl;
+                    a.textContent = '🔗';
+                    a.style.cssText = 'margin-left:6px;font-size:0.85rem;text-decoration:none;opacity:0.7;flex-shrink:0;';
+                    a.addEventListener('mouseenter', () => a.style.opacity = '1');
+                    a.addEventListener('mouseleave', () => a.style.opacity = '0.7');
+                    cb.closest('.checkbox-item').appendChild(a);
+                });
             });
         </script>
 

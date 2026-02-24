@@ -1437,9 +1437,9 @@ async function fetchRssFeeds() {
     let errors = 0;
     // CORS proxy list — corsproxy.io is confirmed working, allorigins /get returns JSON wrapper
     const CORS_PROXIES = [
-        { fn: url => `https://corsproxy.io/?${encodeURIComponent(url)}`, json: false },
-        { fn: url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`, json: false },
-        { fn: url => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`, json: true },
+        { name: 'corsproxy.io',   fn: url => `https://corsproxy.io/?${encodeURIComponent(url)}`, json: false },
+        { name: 'codetabs.com',   fn: url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`, json: false },
+        { name: 'allorigins.win', fn: url => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`, json: true },
     ];
 
     // Helper: insert a news item into the database
@@ -1474,36 +1474,60 @@ async function fetchRssFeeds() {
 
         let xmlText = null;
         let htmlText = null; // fallback for sites without RSS (e.g. gov.pl)
-        for (const proxy of CORS_PROXIES) {
-            if (currentAbortController.signal.aborted) break;
-            try {
-                const proxyUrl = proxy.fn(feed.url);
-                const res = await fetch(proxyUrl, {
-                    signal: currentAbortController.signal,
-                    headers: { 'Accept': 'application/xml, text/xml, application/rss+xml, */*' }
-                });
-                if (res.ok) {
+
+        // Build list of URLs to try: original first, then common RSS variants for non-RSS URLs
+        const isLikelyRssUrl = /\.(rss|xml|atom)$|\/rss|\/feed/.test(feed.url);
+        const urlsToTry = [feed.url];
+        if (!isLikelyRssUrl) {
+            // Try appending .rss or /rss (gov.pl, some other portals support this)
+            urlsToTry.push(feed.url.replace(/\/$/, '') + '.rss');
+            urlsToTry.push(feed.url.replace(/\/aktualnosci.*$/, '/rss'));
+        }
+
+        outerProxy: for (const tryUrl of urlsToTry) {
+            if (xmlText) break;
+            for (const proxy of CORS_PROXIES) {
+                if (currentAbortController.signal.aborted) break outerProxy;
+                try {
+                    const proxyUrl = proxy.fn(tryUrl);
+                    const res = await fetch(proxyUrl, {
+                        signal: currentAbortController.signal,
+                        headers: { 'Accept': 'application/xml, text/xml, application/rss+xml, */*' }
+                    });
+                    if (!res.ok) {
+                        console.warn(`[RSS] ❌ HTTP ${res.status} via ${proxy.name} → ${tryUrl}`);
+                        continue;
+                    }
                     let text;
                     if (proxy.json) {
                         try {
                             const j = JSON.parse(await res.text());
                             text = j.contents || '';
-                        } catch { continue; }
+                        } catch (e) {
+                            console.warn(`[RSS] ❌ JSON parse error via ${proxy.name} → ${tryUrl}:`, e.message);
+                            continue;
+                        }
                     } else {
                         text = await res.text();
                     }
                     if (text && (text.includes('<rss') || text.includes('<feed') || text.includes('<item') || text.includes('<entry'))) {
+                        console.log(`[RSS] ✅ RSS/Atom via ${proxy.name} → ${tryUrl}`);
                         xmlText = text;
-                        break; // Valid RSS/Atom
+                        break outerProxy; // Valid RSS/Atom found
                     }
-                    // Store HTML for fallback parsing (gov.pl pages)
-                    if (!htmlText && text && text.length > 500 && (text.includes('<html') || text.includes('<!DOCTYPE') || text.includes('<!doctype'))) {
+                    // Store HTML for fallback parsing (gov.pl pages) — only from original URL
+                    if (tryUrl === feed.url && !htmlText && text && text.length > 500 && (text.includes('<html') || text.includes('<!DOCTYPE') || text.includes('<!doctype'))) {
+                        console.log(`[RSS] ℹ️ HTML page (no RSS) via ${proxy.name} → ${tryUrl}`);
                         htmlText = text;
+                    } else if (!text || text.length < 100) {
+                        console.warn(`[RSS] ⚠️ Empty/short response via ${proxy.name} → ${tryUrl} (${text?.length ?? 0} B)`);
+                    } else {
+                        console.warn(`[RSS] ⚠️ Not RSS/HTML via ${proxy.name} → ${tryUrl} (starts: ${text.slice(0, 80).replace(/\n/g, ' ')})`);
                     }
+                } catch (e) {
+                    if (e.name === 'AbortError') break outerProxy;
+                    console.warn(`[RSS] ❌ Fetch error via ${proxy.name} → ${tryUrl}: ${e.message}`);
                 }
-            } catch (e) {
-                if (e.name === 'AbortError') break;
-                // Try next proxy
             }
         }
 
@@ -1534,7 +1558,7 @@ async function fetchRssFeeds() {
                     else if (result === 'skipped') totalSkipped++;
                 }
             } catch (parseErr) {
-                console.warn(`[RSS] Parse error for ${feed.name}:`, parseErr);
+                console.warn(`[RSS] ❌ XML parse error for ${feed.name} (${feed.url}):`, parseErr.message);
                 errors++;
             }
             continue; // next feed
@@ -1578,27 +1602,45 @@ async function fetchRssFeeds() {
 
                     if (title.length < 10) continue;
 
-                    const result = insertNewsItem(feed.id, feed.name, feed.url, title, fullHref, '', '', pubDate);
+                    // Extract description from the surrounding container (p, .description, sibling text)
+                    let desc = '';
+                    const container = a.closest('article, li, .article-item, .content-item, .entry, .news-item, .list-item') || a.parentElement?.parentElement || a.parentElement;
+                    if (container) {
+                        // Prefer <p> tags not inside <a>
+                        const paras = [...container.querySelectorAll('p')].filter(p => !p.closest('a') && p.textContent.trim().length > 15);
+                        if (paras.length > 0) {
+                            desc = paras.map(p => p.textContent.trim()).join(' ').slice(0, 500);
+                        }
+                        if (!desc) {
+                            // Fallback: container text minus link text and date
+                            const clone = container.cloneNode(true);
+                            clone.querySelectorAll('a, button, time, [class*="date"], [class*="tag"], nav').forEach(el => el.remove());
+                            const t = clone.textContent?.trim().replace(/\s+/g, ' ') || '';
+                            if (t.length > 15 && t.length < 600) desc = t;
+                        }
+                    }
+
+                    const result = insertNewsItem(feed.id, feed.name, feed.url, title, fullHref, desc, '', pubDate);
                     if (result === 'inserted') totalInserted++;
                     else if (result === 'skipped') totalSkipped++;
                     htmlItems++;
                 }
 
                 if (htmlItems > 0) {
-                    console.log(`[RSS] ${feed.name}: ${htmlItems} items scraped from HTML`);
+                    console.log(`[RSS] ✅ ${feed.name}: ${htmlItems} artykułów z HTML (${feed.url})`);
                 } else {
-                    console.warn(`[RSS] ❌ No items found in HTML: ${feed.name}`);
+                    console.warn(`[RSS] ❌ Brak artykułów w HTML: ${feed.name} (${feed.url}) — sprawdź selektor isArticle`);
                     errors++;
                 }
             } catch (scrapeErr) {
-                console.warn(`[RSS] HTML scrape error for ${feed.name}:`, scrapeErr);
+                console.warn(`[RSS] ❌ HTML scrape error: ${feed.name} (${feed.url}):`, scrapeErr.message);
                 errors++;
             }
             continue;
         }
 
         // === No content retrieved ===
-        console.warn(`[RSS] ❌ Failed to fetch: ${feed.name} (no RSS and no HTML)`);
+        console.warn(`[RSS] ❌ Brak odpowiedzi: ${feed.name} (${feed.url}) — wszystkie proxy i warianty URL zawiodły`);
         errors++;
     }
 
