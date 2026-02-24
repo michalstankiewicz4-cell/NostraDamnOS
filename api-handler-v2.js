@@ -1531,7 +1531,44 @@ async function fetchRssFeeds() {
             }
         }
 
-        // === Strategy 1: Standard RSS/Atom XML parsing ===
+        // === Strategy 1b: RSS autodiscovery — szukamy <link rel="alternate" type="...rss..."> w HTML ===
+        if (!xmlText && htmlText) {
+            try {
+                const htmlDoc = new DOMParser().parseFromString(htmlText, 'text/html');
+                const rssLink = htmlDoc.querySelector(
+                    'link[rel="alternate"][type*="rss"], link[rel="alternate"][type*="atom"]'
+                );
+                if (rssLink) {
+                    let discoveredUrl = rssLink.getAttribute('href') || '';
+                    try { discoveredUrl = new URL(discoveredUrl, feed.url).href; } catch { /* zostaw */ }
+                    if (discoveredUrl) {
+                        console.log(`[RSS] 🔍 Autodiscovery: ${feed.name} → ${discoveredUrl}`);
+                        for (const proxy of CORS_PROXIES) {
+                            if (currentAbortController.signal.aborted) break;
+                            try {
+                                const res = await fetch(proxy.fn(discoveredUrl), {
+                                    signal: currentAbortController.signal,
+                                    headers: { 'Accept': 'application/xml, text/xml, application/rss+xml, */*' }
+                                });
+                                if (!res.ok) { console.warn(`[RSS] ❌ HTTP ${res.status} via ${proxy.name} → ${discoveredUrl}`); continue; }
+                                const text = await res.text();
+                                if (text && (text.includes('<rss') || text.includes('<feed') || text.includes('<item') || text.includes('<entry'))) {
+                                    console.log(`[RSS] ✅ Autodiscovery RSS via ${proxy.name} → ${discoveredUrl}`);
+                                    xmlText = text;
+                                    htmlText = null; // nie używaj HTML fallbacku
+                                    break;
+                                }
+                            } catch (e) {
+                                if (e.name === 'AbortError') break;
+                                console.warn(`[RSS] ❌ Autodiscovery fetch error via ${proxy.name}: ${e.message}`);
+                            }
+                        }
+                    }
+                }
+            } catch { /* ignoruj błędy parsowania */ }
+        }
+
+        // === Strategy 2: Standard RSS/Atom XML parsing ===
         if (xmlText) {
             try {
                 const parser = new DOMParser();
