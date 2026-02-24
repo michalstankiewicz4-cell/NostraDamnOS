@@ -1435,11 +1435,10 @@ async function fetchRssFeeds() {
     let totalInserted = 0;
     let totalSkipped = 0;
     let errors = 0;
-    // CORS proxy list — corsproxy.io is confirmed working, allorigins /get returns JSON wrapper
+    // CORS proxy list — allorigins.win usunięty: zwraca 500 dla gov.pl bez nagłówka CORS (spam w konsoli)
     const CORS_PROXIES = [
-        { name: 'corsproxy.io',   fn: url => `https://corsproxy.io/?${encodeURIComponent(url)}`, json: false },
-        { name: 'codetabs.com',   fn: url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`, json: false },
-        { name: 'allorigins.win', fn: url => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`, json: true },
+        { name: 'corsproxy.io',  fn: url => `https://corsproxy.io/?${encodeURIComponent(url)}`, json: false },
+        { name: 'codetabs.com',  fn: url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`, json: false },
     ];
 
     // Helper: insert a news item into the database
