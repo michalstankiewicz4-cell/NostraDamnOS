@@ -322,8 +322,27 @@ function updateStatusIndicators() {
     const statusDbState = document.getElementById('floatingStatusDbState');
     const statusRecords = document.getElementById('floatingStatusRecords');
     const statusValidity = document.getElementById('floatingStatusValidity');
-    
+    const rssDbLamp = document.getElementById('rssDbLamp');
+
     if (!statusDbState || !statusRecords || !statusValidity) return;
+
+    // Lampka RSS
+    if (rssDbLamp && db2.database) {
+        try {
+            const rssRes = db2.database.exec('SELECT COUNT(*) FROM rss_news');
+            const rssCount = rssRes[0]?.values[0][0] || 0;
+            if (rssCount > 0) {
+                rssDbLamp.className = 'floating-lamp floating-lamp-ok';
+                rssDbLamp.title = `Baza RSS: ${rssCount.toLocaleString('pl-PL')} artykułów`;
+            } else {
+                rssDbLamp.className = 'floating-lamp floating-lamp-error';
+                rssDbLamp.title = 'Baza RSS: brak danych';
+            }
+        } catch {
+            rssDbLamp.className = 'floating-lamp floating-lamp-error';
+            rssDbLamp.title = 'Baza RSS: brak danych';
+        }
+    }
 
     // Stan bazy: czerwony=pusty, zielony=ma dane
     if (dbEmpty) {
