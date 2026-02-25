@@ -69,9 +69,44 @@ function exportFilteredDb(tableList) {
     }
 }
 
+// === Import progress overlay ===
+
+function showImportOverlay(msg) {
+    let overlay = document.getElementById('importProgressOverlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'importProgressOverlay';
+        overlay.style.cssText = [
+            'position:fixed', 'inset:0', 'z-index:9999',
+            'background:rgba(0,0,0,0.65)',
+            'display:flex', 'flex-direction:column',
+            'align-items:center', 'justify-content:center',
+            'gap:18px', 'color:#fff', 'font-family:monospace'
+        ].join(';');
+        overlay.innerHTML = `
+            <div class="chart-spinner-ring" style="width:52px;height:52px;border-width:4px;"></div>
+            <div id="importProgressMsg" style="font-size:0.95rem;max-width:75%;text-align:center;line-height:1.5;"></div>
+        `;
+        document.body.appendChild(overlay);
+    }
+    const el = overlay.querySelector('#importProgressMsg');
+    if (el) el.textContent = msg;
+}
+
+function updateImportOverlay(msg) {
+    const el = document.getElementById('importProgressMsg');
+    if (el) el.textContent = msg;
+}
+
+function hideImportOverlay() {
+    document.getElementById('importProgressOverlay')?.remove();
+}
+
 export function initDbButtons() {
     console.log('[DB Buttons] Initializing import/export buttons...');
-    
+
+    let importInProgress = false;
+
     const importBtn = document.getElementById('importDbBtn');
     const exportBtn = document.getElementById('exportDbBtn');
     
@@ -231,6 +266,11 @@ export function initDbButtons() {
     
     // Import button
     importBtn.addEventListener('click', async () => {
+        // Blokada wielokrotnego klikania
+        if (importInProgress) {
+            ToastModule.info('Import już trwa, poczekaj…', { duration: 2000 });
+            return;
+        }
         // Sprawdź czy jakakolwiek operacja jest w toku
         if (window.isAnyOperationRunning && window.isAnyOperationRunning()) {
             ToastModule.info('Poczekaj na zakończenie operacji...', { duration: 2000 });
@@ -301,10 +341,10 @@ export function initDbButtons() {
     
     /**
      * Merge selected tables from an imported file into the current database.
-     * tablesToImport — list of table names to copy (SEJM_TABLES or RSS_TABLES).
-     * Existing rows in the target tables are replaced (INSERT OR REPLACE).
+     * Async: czyta wiersze przez stmt.step() (bez ładowania wszystkiego naraz),
+     * yields do event loop co 500 wierszy żeby przeglądarka nie zawieszała UI.
      */
-    function importTablesFromFile(srcDb, tablesToImport) {
+    async function importTablesFromFile(srcDb, tablesToImport, onProgress) {
         // Ensure the main database has the full schema
         if (!db2.database) {
             db2.database = new db2.sql.Database();
@@ -316,33 +356,42 @@ export function initDbButtons() {
         const srcTableNames = srcTablesRes.length ? srcTablesRes[0].values.map(v => v[0]) : [];
 
         const imported = {};
+        const CHUNK = 500; // wierszy między yield
 
         for (const table of tablesToImport) {
             if (!srcTableNames.includes(table)) continue;
+            if (onProgress) onProgress(table, 0);
 
             try {
-                // Clear existing data in this table
                 db2.database.run(`DELETE FROM "${table}"`);
 
-                // Copy rows from source
-                const rows = srcDb.exec(`SELECT * FROM "${table}"`);
-                if (!rows.length || !rows[0].values.length) {
-                    imported[table] = 0;
-                    continue;
-                }
-
-                const cols = rows[0].columns;
+                // Pobierz kolumny przez PRAGMA zamiast ładować cały zbiór
+                const colsRes = srcDb.exec(`PRAGMA table_info("${table}")`);
+                if (!colsRes.length) { imported[table] = 0; continue; }
+                const cols = colsRes[0].values.map(c => c[1]);
                 const placeholders = cols.map(() => '?').join(',');
-                db2.database.run('BEGIN');
-                const stmt = db2.database.prepare(
+
+                const srcStmt = srcDb.prepare(`SELECT * FROM "${table}"`);
+                const insStmt = db2.database.prepare(
                     `INSERT OR REPLACE INTO "${table}" (${cols.map(c => `"${c}"`).join(',')}) VALUES (${placeholders})`
                 );
-                for (const row of rows[0].values) {
-                    stmt.run(row);
+
+                let count = 0;
+                db2.database.run('BEGIN');
+                while (srcStmt.step()) {
+                    insStmt.run(srcStmt.get());
+                    count++;
+                    if (count % CHUNK === 0) {
+                        db2.database.run('COMMIT');
+                        await new Promise(r => setTimeout(r, 0)); // yield — przeglądarka oddycha
+                        db2.database.run('BEGIN');
+                        if (onProgress) onProgress(table, count);
+                    }
                 }
-                stmt.free();
                 db2.database.run('COMMIT');
-                imported[table] = rows[0].values.length;
+                srcStmt.free();
+                insStmt.free();
+                imported[table] = count;
             } catch (e) {
                 console.warn(`[Import] Table ${table}:`, e.message);
                 try { db2.database.run('ROLLBACK'); } catch { /* ignore */ }
@@ -356,24 +405,28 @@ export function initDbButtons() {
     // Helper function to load database from file
     async function loadDatabaseFromFile(file) {
         console.log('🚀 [Zadanie] Import bazy rozpoczęty');
+        importInProgress = true;
+        showImportOverlay('Wczytywanie pliku…');
 
         try {
             // Read file as ArrayBuffer
             const arrayBuffer = await file.arrayBuffer();
             const uint8Array = new Uint8Array(arrayBuffer);
-            
+
             // Initialize sql.js if needed
             if (!window.initSqlJs) {
                 throw new Error('sql.js not loaded');
             }
-            
+
+            updateImportOverlay('Inicjalizacja sql.js…');
             if (!db2.sql) {
                 db2.sql = await window.initSqlJs({
-                    locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/${file}`
+                    locateFile: f => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/${f}`
                 });
             }
 
             // Open imported file as a temporary (source) database
+            updateImportOverlay('Otwieranie pliku bazy…');
             const srcDb = new db2.sql.Database(uint8Array);
 
             try {
@@ -402,15 +455,18 @@ export function initDbButtons() {
                 const allImported = {};
 
                 if (hasSejm) {
-                    // Wyczyść historię fetcha — importowana baza sejmowa nie ma związku z poprzednim ETL
                     localStorage.removeItem('nostradamnos_lastFetchConfig');
                     localStorage.removeItem('nostradamnos_lastFetch');
-                    const sejmImported = importTablesFromFile(srcDb, SEJM_TABLES);
+                    const sejmImported = await importTablesFromFile(srcDb, SEJM_TABLES, (table, count) => {
+                        updateImportOverlay(`Sejm › ${table}${count ? `  (${count.toLocaleString('pl-PL')} wierszy…)` : ''}`);
+                    });
                     Object.assign(allImported, sejmImported);
                 }
 
                 if (hasRss) {
-                    const rssImported = importTablesFromFile(srcDb, RSS_TABLES);
+                    const rssImported = await importTablesFromFile(srcDb, RSS_TABLES, (table, count) => {
+                        updateImportOverlay(`RSS › ${table}${count ? `  (${count.toLocaleString('pl-PL')} wierszy…)` : ''}`);
+                    });
                     Object.assign(allImported, rssImported);
                 }
 
@@ -439,6 +495,7 @@ export function initDbButtons() {
             }
 
             // Persist to localStorage so it survives page refresh
+            updateImportOverlay('Zapisywanie do pamięci lokalnej…');
             db2.saveToLocalStorage();
 
             console.log('✅ [Zadanie] Import bazy zakończony');
@@ -447,12 +504,12 @@ export function initDbButtons() {
             if (typeof window.updateSummaryTab === 'function') {
                 window.updateSummaryTab();
             }
-            
+
             // Odśwież status lampek
             if (typeof window.updateStatusIndicators === 'function') {
                 window.updateStatusIndicators();
             }
-            
+
             // Ustaw przycisk ETL w tryb verify (baza ma już dane)
             if (typeof window.updateFetchButtonMode === 'function') {
                 window.updateFetchButtonMode();
@@ -460,15 +517,15 @@ export function initDbButtons() {
 
             // Odśwież cache bar
             if (window._updateCacheBar) window._updateCacheBar();
-            
+
             // Uruchom monitorowanie bazy
             if (typeof window.startDbMonitoring === 'function') {
                 window.startDbMonitoring();
             }
-            
+
             // Odśwież panel zarządzania wykresami (lampki statusu)
             refreshChartsManager();
-            
+
             // Odśwież predykcje
             try {
                 refreshPredictions();
@@ -481,6 +538,9 @@ export function initDbButtons() {
             ToastModule.error(
                 `Błąd podczas importu:\n\n${error.message}\n\nUpewnij się, że plik jest poprawną bazą SQLite.`
             );
+        } finally {
+            hideImportOverlay();
+            importInProgress = false;
         }
     }
     
