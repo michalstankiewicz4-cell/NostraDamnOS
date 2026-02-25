@@ -1028,25 +1028,6 @@ function updateFetchOverviewRss() {
             const table = document.createElement('table');
             table.className = 'fetch-overview-table';
             const tbody = document.createElement('tbody');
-            // Total
-            const totalRow = document.createElement('tr');
-            const tdTotalLabel = document.createElement('td');
-            tdTotalLabel.textContent = 'Łącznie artykułów';
-            const tdTotalVal = document.createElement('td');
-            const total = rssDbSources.reduce((sum, s) => sum + s.count, 0);
-            tdTotalVal.textContent = total.toLocaleString('pl-PL');
-            tdTotalVal.className = 'fov-value';
-            totalRow.appendChild(tdTotalLabel);
-            totalRow.appendChild(tdTotalVal);
-            tbody.appendChild(totalRow);
-            // Separator
-            const sep = document.createElement('tr');
-            sep.className = 'fetch-overview-separator';
-            const sepTd = document.createElement('td');
-            sepTd.colSpan = 2;
-            sepTd.textContent = 'Per źródło';
-            sep.appendChild(sepTd);
-            tbody.appendChild(sep);
             // Per source rows
             rssDbSources.forEach(src => {
                 const tr = document.createElement('tr');
@@ -1059,6 +1040,24 @@ function updateFetchOverviewRss() {
                 tr.appendChild(tdCount);
                 tbody.appendChild(tr);
             });
+            // Separator + Total (na dole)
+            const sep = document.createElement('tr');
+            sep.className = 'fetch-overview-separator';
+            const sepTd = document.createElement('td');
+            sepTd.colSpan = 2;
+            sepTd.textContent = 'Łącznie';
+            sep.appendChild(sepTd);
+            tbody.appendChild(sep);
+            const totalRow = document.createElement('tr');
+            const tdTotalLabel = document.createElement('td');
+            tdTotalLabel.textContent = 'Artykułów';
+            const tdTotalVal = document.createElement('td');
+            const total = rssDbSources.reduce((sum, s) => sum + s.count, 0);
+            tdTotalVal.textContent = total.toLocaleString('pl-PL');
+            tdTotalVal.className = 'fov-value';
+            totalRow.appendChild(tdTotalLabel);
+            totalRow.appendChild(tdTotalVal);
+            tbody.appendChild(totalRow);
             table.appendChild(tbody);
             gotEl.innerHTML = '';
             gotEl.appendChild(table);
