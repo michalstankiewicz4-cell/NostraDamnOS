@@ -2294,6 +2294,7 @@ document.getElementById('etlClearBtn')?.addEventListener('click', async () => {
                 localStorage.removeItem('nostradamnos_lastRssFetch');
 
                 // Refresh UI after clearing RSS
+                updateStatusIndicators();
                 updateSummaryTab();
                 if (window._updateCacheBar) window._updateCacheBar();
                 updateFetchButtonMode();
