@@ -117,25 +117,35 @@ export function initDbButtons() {
     
     // Buttons stay hidden - visibility controlled by uiVisibility settings
     
-    // Helper: save blob to file (File System Access API with fallback)
-    async function saveBlob(blob, filename, fileTypes) {
+    // Helper: save file — dialog otwierany NATYCHMIAST (user gesture świeże),
+    // ciężka praca (dataFn) uruchamiana dopiero po otwarciu uchwytu pliku.
+    // dataFn: () => Uint8Array  — generator danych wywoływany po dialogu
+    // Zwraca: { saved, desktop, cancelled, sizeKB }
+    async function saveBlob(filename, fileTypes, dataFn) {
         if (window.showSaveFilePicker) {
             try {
+                // ★ Dialog PIERWSZY — user gesture nie wygasło
                 const handle = await window.showSaveFilePicker({
                     suggestedName: filename,
                     startIn: 'desktop',
                     types: fileTypes
                 });
+                // Dopiero teraz ciężka praca (baza już otwarta, nie potrzeba gesture)
+                const data = dataFn();
+                const sizeKB = (data.byteLength / 1024).toFixed(2);
                 const writable = await handle.createWritable();
-                await writable.write(blob);
+                await writable.write(data);
                 await writable.close();
-                return { saved: true, desktop: true };
+                return { saved: true, desktop: true, sizeKB };
             } catch (err) {
                 if (err.name === 'AbortError') return { saved: false, cancelled: true };
                 console.warn('[Export] File System Access API failed, falling back:', err);
             }
         }
-        // Fallback: traditional download
+        // Fallback (Firefox / brak API): generuj dane i pobierz tradycyjnie
+        const data = dataFn();
+        const sizeKB = (data.byteLength / 1024).toFixed(2);
+        const blob = new Blob([data], { type: 'application/x-sqlite3' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -144,7 +154,7 @@ export function initDbButtons() {
         document.body.appendChild(a);
         a.click();
         setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
-        return { saved: true, desktop: false };
+        return { saved: true, desktop: false, sizeKB };
     }
 
     // Export: Sejm database (.db SQLite)
@@ -154,29 +164,26 @@ export function initDbButtons() {
             return;
         }
 
-        const data = exportFilteredDb(SEJM_TABLES);
-        const blob = new Blob([data], { type: 'application/x-sqlite3' });
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
         const filename = `nostradamnos-sejm-${timestamp}.db`;
 
-        const result = await saveBlob(blob, filename, [{
+        const result = await saveBlob(filename, [{
             description: 'SQLite Database',
             accept: { 'application/x-sqlite3': ['.db'] }
-        }]);
+        }], () => exportFilteredDb(SEJM_TABLES));
 
         if (result.cancelled) return;
 
-        const sizeKB = (blob.size / 1024).toFixed(2);
-        console.log(`[DB Export] ✅ Sejm database exported: ${filename} (${sizeKB} KB)`);
+        console.log(`[DB Export] ✅ Sejm database exported: ${filename} (${result.sizeKB} KB)`);
 
         if (result.desktop) {
             ToastModule.success(
-                `📁 ${filename}\n📊 Rozmiar: ${sizeKB} KB`,
+                `📁 ${filename}\n📊 Rozmiar: ${result.sizeKB} KB`,
                 { title: '🏛️ Baza Sejmu wyeksportowana na Pulpit', duration: 6000 }
             );
         } else {
             ToastModule.success(
-                `📁 ${filename}\n📊 Rozmiar: ${sizeKB} KB\n\n💡 Plik zapisany w domyślnym folderze pobierania`,
+                `📁 ${filename}\n📊 Rozmiar: ${result.sizeKB} KB\n\n💡 Plik zapisany w domyślnym folderze pobierania`,
                 { title: '🏛️ Baza Sejmu wyeksportowana', duration: 6000 }
             );
         }
@@ -203,29 +210,26 @@ export function initDbButtons() {
             return;
         }
 
-        const data = exportFilteredDb(RSS_TABLES);
-        const blob = new Blob([data], { type: 'application/x-sqlite3' });
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
         const filename = `nostradamnos-rss-${timestamp}.db`;
 
-        const result = await saveBlob(blob, filename, [{
+        const result = await saveBlob(filename, [{
             description: 'SQLite Database',
             accept: { 'application/x-sqlite3': ['.db'] }
-        }]);
+        }], () => exportFilteredDb(RSS_TABLES));
 
         if (result.cancelled) return;
 
-        const sizeKB = (blob.size / 1024).toFixed(2);
-        console.log(`[RSS Export] ✅ RSS database exported: ${filename} (${sizeKB} KB, ${count} articles)`);
+        console.log(`[RSS Export] ✅ RSS database exported: ${filename} (${result.sizeKB} KB, ${count} articles)`);
 
         if (result.desktop) {
             ToastModule.success(
-                `📁 ${filename}\n📰 Artykułów: ${count}\n📊 Rozmiar: ${sizeKB} KB`,
+                `📁 ${filename}\n📰 Artykułów: ${count}\n📊 Rozmiar: ${result.sizeKB} KB`,
                 { title: '📰 Baza RSS wyeksportowana na Pulpit', duration: 6000 }
             );
         } else {
             ToastModule.success(
-                `📁 ${filename}\n📰 Artykułów: ${count}\n📊 Rozmiar: ${sizeKB} KB\n\n💡 Plik zapisany w domyślnym folderze pobierania`,
+                `📁 ${filename}\n📰 Artykułów: ${count}\n📊 Rozmiar: ${result.sizeKB} KB\n\n💡 Plik zapisany w domyślnym folderze pobierania`,
                 { title: '📰 Baza RSS wyeksportowana', duration: 6000 }
             );
         }
