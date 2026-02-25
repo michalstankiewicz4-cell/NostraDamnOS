@@ -724,6 +724,7 @@ function updateSummaryTab() {
         }
         // Fetch Overview panel
         updateFetchOverview();
+        updateFetchOverviewRss();
 
     } catch (e) {
         console.error('[updateSummaryTab] Error:', e);
@@ -945,6 +946,126 @@ function updateFetchOverview() {
     setStat('fovGotDisclosures', 'oswiadczenia');
     setStat('fovGotCommittees', 'komisje');
     setStat('fovGotCommitteeSittings', 'komisje_posiedzenia');
+
+    panel.style.display = '';
+}
+
+// === RSS FETCH OVERVIEW ===
+
+function updateFetchOverviewRss() {
+    const panel = document.getElementById('fetchOverviewRss');
+    if (!panel) return;
+
+    // Query per-source article counts from DB
+    let rssDbSources = [];
+    try {
+        if (db2.database) {
+            const res = db2.database.exec('SELECT source, COUNT(*) FROM rss_news GROUP BY source ORDER BY source');
+            if (res.length && res[0].values) {
+                rssDbSources = res[0].values.map(row => ({ name: row[0], count: row[1] }));
+            }
+        }
+    } catch { /* db not ready */ }
+
+    const hasDbData = rssDbSources.length > 0;
+
+    // Load last RSS fetch config
+    let lastFetch = null;
+    try {
+        const raw = localStorage.getItem('nostradamnos_lastRssFetch');
+        if (raw) lastFetch = JSON.parse(raw);
+    } catch { /* parse error */ }
+
+    if (!hasDbData && !lastFetch) {
+        panel.style.display = 'none';
+        return;
+    }
+
+    // === Left column: Zlecone ===
+    const reqEl = document.getElementById('fovRssRequested');
+    if (reqEl) {
+        if (lastFetch?.selectedFeeds?.length) {
+            const table = document.createElement('table');
+            table.className = 'fetch-overview-table';
+            const tbody = document.createElement('tbody');
+            lastFetch.selectedFeeds.forEach(feed => {
+                const result = lastFetch.results?.find(r => r.name === feed.name);
+                const tr = document.createElement('tr');
+                const tdName = document.createElement('td');
+                tdName.textContent = feed.name;
+                const tdStatus = document.createElement('td');
+                if (result) {
+                    if (result.error) {
+                        tdStatus.textContent = '❌ błąd';
+                        tdStatus.className = 'fov-unchecked';
+                    } else if (result.inserted > 0) {
+                        tdStatus.textContent = `+${result.inserted}`;
+                        tdStatus.className = 'fov-value';
+                    } else {
+                        tdStatus.textContent = 'tak';
+                        tdStatus.className = 'fov-checked';
+                    }
+                } else {
+                    tdStatus.textContent = 'tak';
+                    tdStatus.className = 'fov-checked';
+                }
+                tr.appendChild(tdName);
+                tr.appendChild(tdStatus);
+                tbody.appendChild(tr);
+            });
+            table.appendChild(tbody);
+            reqEl.innerHTML = '';
+            reqEl.appendChild(table);
+        } else {
+            reqEl.innerHTML = '<em style="color:var(--text-muted,#888)">Brak danych</em>';
+        }
+    }
+
+    // === Right column: Pobrane / Importowane ===
+    const gotEl = document.getElementById('fovRssFetched');
+    if (gotEl) {
+        if (hasDbData) {
+            const table = document.createElement('table');
+            table.className = 'fetch-overview-table';
+            const tbody = document.createElement('tbody');
+            // Total
+            const totalRow = document.createElement('tr');
+            const tdTotalLabel = document.createElement('td');
+            tdTotalLabel.textContent = 'Łącznie artykułów';
+            const tdTotalVal = document.createElement('td');
+            const total = rssDbSources.reduce((sum, s) => sum + s.count, 0);
+            tdTotalVal.textContent = total.toLocaleString('pl-PL');
+            tdTotalVal.className = 'fov-value';
+            totalRow.appendChild(tdTotalLabel);
+            totalRow.appendChild(tdTotalVal);
+            tbody.appendChild(totalRow);
+            // Separator
+            const sep = document.createElement('tr');
+            sep.className = 'fetch-overview-separator';
+            const sepTd = document.createElement('td');
+            sepTd.colSpan = 2;
+            sepTd.textContent = 'Per źródło';
+            sep.appendChild(sepTd);
+            tbody.appendChild(sep);
+            // Per source rows
+            rssDbSources.forEach(src => {
+                const tr = document.createElement('tr');
+                const tdName = document.createElement('td');
+                tdName.textContent = src.name;
+                const tdCount = document.createElement('td');
+                tdCount.textContent = src.count.toLocaleString('pl-PL');
+                tdCount.className = 'fov-value';
+                tr.appendChild(tdName);
+                tr.appendChild(tdCount);
+                tbody.appendChild(tr);
+            });
+            table.appendChild(tbody);
+            gotEl.innerHTML = '';
+            gotEl.appendChild(table);
+        } else {
+            gotEl.innerHTML = '<em style="color:var(--text-muted,#888)">Brak danych w bazie</em>';
+        }
+    }
 
     panel.style.display = '';
 }
@@ -1435,6 +1556,7 @@ async function fetchRssFeeds() {
     let totalInserted = 0;
     let totalSkipped = 0;
     let errors = 0;
+    const feedResults = [];
     const CORS_PROXIES = [
         { name: 'allorigins.win', fn: url => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`, json: true },
         { name: 'corsproxy.io',   fn: url => `https://corsproxy.io/?${encodeURIComponent(url)}`, json: false },
@@ -1568,6 +1690,7 @@ async function fetchRssFeeds() {
         console.log(`[RSS] Fetching: ${feed.name} → ${feed.url}`);
 
         const isGovWeb = feed.url.includes('gov.pl/web/');
+        let feedInserted = 0, feedSkipped = 0, feedError = false;
 
         if (isGovWeb) {
             // === Gov.pl HTML scraping (SSR listing page) ===
@@ -1575,6 +1698,8 @@ async function fetchRssFeeds() {
             if (!htmlText) {
                 console.warn(`[RSS] ❌ Brak odpowiedzi: ${feed.name} (${feed.url})`);
                 errors++;
+                feedError = true;
+                feedResults.push({ name: feed.name, url: feed.url, inserted: 0, skipped: 0, error: true });
                 continue;
             }
 
@@ -1584,6 +1709,7 @@ async function fetchRssFeeds() {
             if (articles.length === 0) {
                 console.warn(`[RSS] ❌ Brak artykułów w HTML: ${feed.name} — sprawdź strukturę strony`);
                 errors++;
+                feedResults.push({ name: feed.name, url: feed.url, inserted: 0, skipped: 0, error: true });
                 continue;
             }
 
@@ -1605,9 +1731,10 @@ async function fetchRssFeeds() {
                 }
 
                 const result = insertNewsItem(feed.id, feed.name, feed.url, art.title, art.link, art.description, content, art.pubDate);
-                if (result === 'inserted') totalInserted++;
-                else if (result === 'skipped') totalSkipped++;
+                if (result === 'inserted') { totalInserted++; feedInserted++; }
+                else if (result === 'skipped') { totalSkipped++; feedSkipped++; }
             }
+            feedResults.push({ name: feed.name, url: feed.url, inserted: feedInserted, skipped: feedSkipped, error: false });
 
         } else {
             // === RSS/Atom feed ===
@@ -1615,6 +1742,7 @@ async function fetchRssFeeds() {
             if (!rawText) {
                 console.warn(`[RSS] ❌ Brak odpowiedzi: ${feed.name} (${feed.url})`);
                 errors++;
+                feedResults.push({ name: feed.name, url: feed.url, inserted: 0, skipped: 0, error: true });
                 continue;
             }
 
@@ -1638,22 +1766,34 @@ async function fetchRssFeeds() {
                             || item.querySelector('updated')?.textContent?.trim() || '';
 
                         const result = insertNewsItem(feed.id, feed.name, feed.url, title, link, description, content, pubDate);
-                        if (result === 'inserted') totalInserted++;
-                        else if (result === 'skipped') totalSkipped++;
+                        if (result === 'inserted') { totalInserted++; feedInserted++; }
+                        else if (result === 'skipped') { totalSkipped++; feedSkipped++; }
                     }
+                    feedResults.push({ name: feed.name, url: feed.url, inserted: feedInserted, skipped: feedSkipped, error: false });
                 } catch (parseErr) {
                     console.warn(`[RSS] ❌ XML parse error: ${feed.name}:`, parseErr.message);
                     errors++;
+                    feedResults.push({ name: feed.name, url: feed.url, inserted: 0, skipped: 0, error: true });
                 }
             } else {
                 console.warn(`[RSS] ❌ Odpowiedź nie jest RSS/Atom: ${feed.name} (${feed.url})`);
                 errors++;
+                feedResults.push({ name: feed.name, url: feed.url, inserted: 0, skipped: 0, error: true });
             }
         }
     }
 
     // Save database
     db2.saveToLocalStorage();
+
+    // Persist RSS fetch summary for the overview panel
+    try {
+        localStorage.setItem('nostradamnos_lastRssFetch', JSON.stringify({
+            timestamp: new Date().toISOString(),
+            selectedFeeds: selectedFeeds.map(f => ({ name: f.name, url: f.url })),
+            results: feedResults
+        }));
+    } catch { /* quota error — skip */ }
 
     // Restore UI
     isFetching = false;
@@ -1689,6 +1829,7 @@ async function fetchRssFeeds() {
 
     // Update status
     updateFetchButtonMode();
+    updateSummaryTab();
     if (typeof window._updateCacheBar === 'function') window._updateCacheBar();
 }
 
@@ -2102,6 +2243,7 @@ document.getElementById('etlClearBtn')?.addEventListener('click', async () => {
             if (isRss) {
                 db2.clearRss();
                 console.log('[API Handler] RSS database cleared');
+                localStorage.removeItem('nostradamnos_lastRssFetch');
 
                 // Refresh UI after clearing RSS
                 updateSummaryTab();
