@@ -227,7 +227,7 @@
                             <span id="etlInstitution">Sejm</span>
                         </div>
                         
-                        <div class="summary-item">
+                        <div class="summary-item" id="etlSummaryTerm">
                             <strong>Kadencja:</strong>
                             <span id="etlTerm">10</span>
                         </div>
@@ -2127,12 +2127,36 @@
                 const rssPanel = document.getElementById('rssPanel');
                 const internetBox = document.querySelector('.etl-internet-api-box');
 
+                function updateRssSummary() {
+                    const checked = Array.from(rssPanel.querySelectorAll('input[type="checkbox"]:not(:disabled):checked'));
+                    const rangeSpan = document.getElementById('etlRange');
+                    const dataDiv = document.getElementById('etlData');
+                    if (rangeSpan) {
+                        const n = checked.length;
+                        rangeSpan.textContent = n === 0 ? '—' : `${n} ${n === 1 ? 'źródło' : n < 5 ? 'źródła' : 'źródeł'}`;
+                    }
+                    if (dataDiv) {
+                        if (checked.length === 0) {
+                            dataDiv.textContent = '—';
+                        } else {
+                            dataDiv.textContent = checked.map(cb => {
+                                const lbl = rssPanel.querySelector(`label[for="${cb.id}"]`);
+                                return lbl ? lbl.textContent.trim() : cb.id;
+                            }).join(', ');
+                        }
+                    }
+                }
+
                 function toggleETLView(value) {
                     const isRss = (value === 'rss');
 
-                    // Hide/show Kadencja & Zakres posiedzeń
+                    // Hide/show Kadencja & Zakres posiedzeń (fieldsets w głównym panelu)
                     if (fieldTerm) fieldTerm.style.display = isRss ? 'none' : '';
                     if (fieldRange) fieldRange.style.display = isRss ? 'none' : '';
+
+                    // Hide/show Kadencja w sidebarze
+                    const summaryTerm = document.getElementById('etlSummaryTerm');
+                    if (summaryTerm) summaryTerm.style.display = isRss ? 'none' : '';
 
                     // Hide/show Sejm-specific fieldsets (Dane podstawowe, per posiedzenie, per kadencja, komisje)
                     sejmFieldsets.forEach(fs => fs.style.display = isRss ? 'none' : '');
@@ -2145,6 +2169,13 @@
                     if (instLabel) {
                         if (isRss) instLabel.textContent = 'RSS.gov';
                         else instLabel.textContent = value === 'senat' ? 'Senat' : 'Sejm';
+                    }
+
+                    // Update Zakres & Dane summary
+                    if (isRss) {
+                        updateRssSummary();
+                    } else if (typeof window._updateETLEstimate === 'function') {
+                        window._updateETLEstimate();
                     }
                 }
 
@@ -2161,13 +2192,20 @@
                 if (rssSelectAll) {
                     rssSelectAll.addEventListener('click', () => {
                         rssPanel.querySelectorAll('input[type="checkbox"]:not(:disabled)').forEach(cb => cb.checked = true);
+                        updateRssSummary();
                     });
                 }
                 if (rssDeselectAll) {
                     rssDeselectAll.addEventListener('click', () => {
                         rssPanel.querySelectorAll('input[type="checkbox"]:not(:disabled)').forEach(cb => cb.checked = false);
+                        updateRssSummary();
                     });
                 }
+
+                // Aktualizuj Zakres & Dane przy każdej zmianie checkboxa RSS
+                rssPanel.addEventListener('change', (e) => {
+                    if (e.target.type === 'checkbox') updateRssSummary();
+                });
 
                 // Dodaj linki do każdego źródła RSS
                 rssPanel.querySelectorAll('input[type="checkbox"][data-rss-url]').forEach(cb => {
