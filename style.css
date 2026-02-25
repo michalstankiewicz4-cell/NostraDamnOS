@@ -2984,6 +2984,39 @@ input:disabled {
     height: 400px !important;
 }
 
+/* === Spinner podczas ładowania wykresu === */
+.chart-spinner {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 10;
+    border-radius: 8px;
+    gap: 10px;
+}
+
+.chart-spinner-ring {
+    width: 38px;
+    height: 38px;
+    border: 3px solid rgba(255, 255, 255, 0.12);
+    border-top-color: #667eea;
+    border-radius: 50%;
+    animation: chart-spin 0.7s linear infinite;
+}
+
+@keyframes chart-spin {
+    to { transform: rotate(360deg); }
+}
+
+.chart-spinner-label {
+    color: #aaa;
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+}
+
 /* Controls row inside expanded chart */
 .chart-card-controls {
     display: flex;

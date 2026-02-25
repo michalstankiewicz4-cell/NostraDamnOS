@@ -19,16 +19,52 @@ const CHARTS_CONFIG = [
 const STORAGE_KEY = 'nostradamnos_charts_config';
 
 let chartsState = [];
+let dataAvailabilityCache = null;
+
+/**
+ * Jeden batched SQL zamiast 11 oddzielnych — wynik cache'owany do następnego refresh
+ */
+function warmDataAvailabilityCache() {
+    dataAvailabilityCache = null;
+    if (!db2.database) return;
+    try {
+        const res = db2.database.exec(`SELECT
+            (SELECT COUNT(*) FROM poslowie WHERE klub IS NOT NULL LIMIT 1) as has_klub,
+            (SELECT COUNT(*) FROM wypowiedzi LIMIT 1)                      as has_wyp,
+            (SELECT COUNT(*) FROM glosowania LIMIT 1)                      as has_glos,
+            (SELECT COUNT(*) FROM poslowie LIMIT 1)                        as has_posl,
+            (SELECT COUNT(*) FROM posiedzenia LIMIT 1)                     as has_posied`);
+        if (res.length && res[0].values.length) {
+            const [hasKlub, hasWyp, hasGlos, hasPosl, hasPosied] = res[0].values[0];
+            dataAvailabilityCache = {
+                chartKluby:               hasKlub  > 0,
+                chartTopPoslowie:         hasWyp   > 0,
+                chartGlosowania:          hasGlos  > 0,
+                chartCustom:              hasPosl  > 0,
+                chartNajmniejAktywni:     hasWyp   > 0,
+                chartNajmniejAktywneKluby: hasWyp  > 0,
+                chartHeatmap:             hasPosied > 0,
+                chartSentimentDist:       hasWyp   > 0,
+                chartSentimentTime:       hasWyp   > 0,
+                chartSentimentParty:      hasWyp   > 0,
+                chartTopSpeakers:         hasWyp   > 0
+            };
+        }
+    } catch { /* db nie gotowa */ }
+}
 
 /**
  * Inicjalizacja zarządzania wykresami
  */
 export function initChartsManager() {
     console.log('[Charts Manager] Initializing...');
-    
+
     // Załaduj zapisaną konfigurację lub użyj domyślnej
     loadChartsState();
-    
+
+    // Wczytaj dostępność danych jednym zapytaniem
+    warmDataAvailabilityCache();
+
     // Renderuj panel kontrolny
     renderControlPanel();
     
@@ -46,6 +82,8 @@ export function initChartsManager() {
  */
 export function refreshChartsManager() {
     console.log('[Charts Manager] Refreshing...');
+    dataAvailabilityCache = null; // inwaliduj cache — dane mogły się zmienić
+    warmDataAvailabilityCache();
     renderControlPanel();
 }
 
@@ -96,31 +134,12 @@ function saveChartsState() {
 }
 
 /**
- * Sprawdza czy dane dla wykresu są dostępne
+ * Sprawdza czy dane dla wykresu są dostępne — używa cache (1 SQL zamiast 11)
  */
 function checkDataAvailability(chartId) {
     if (!db2.database) return false;
-    
-    try {
-        const dataChecks = {
-            'chartKluby': () => db2.database.exec("SELECT COUNT(*) as cnt FROM poslowie WHERE klub IS NOT NULL")[0]?.values[0][0] > 0,
-            'chartTopPoslowie': () => db2.database.exec("SELECT COUNT(*) as cnt FROM wypowiedzi")[0]?.values[0][0] > 0,
-            'chartGlosowania': () => db2.database.exec("SELECT COUNT(*) as cnt FROM glosowania")[0]?.values[0][0] > 0,
-            'chartCustom': () => db2.database.exec("SELECT COUNT(*) as cnt FROM poslowie")[0]?.values[0][0] > 0,
-            'chartNajmniejAktywni': () => db2.database.exec("SELECT COUNT(*) as cnt FROM wypowiedzi")[0]?.values[0][0] > 0,
-            'chartNajmniejAktywneKluby': () => db2.database.exec("SELECT COUNT(*) as cnt FROM wypowiedzi")[0]?.values[0][0] > 0,
-            'chartHeatmap': () => db2.database.exec("SELECT COUNT(*) as cnt FROM posiedzenia")[0]?.values[0][0] > 0,
-            'chartSentimentDist': () => db2.database.exec("SELECT COUNT(*) as cnt FROM wypowiedzi")[0]?.values[0][0] > 0,
-            'chartSentimentTime': () => db2.database.exec("SELECT COUNT(*) as cnt FROM wypowiedzi")[0]?.values[0][0] > 0,
-            'chartSentimentParty': () => db2.database.exec("SELECT COUNT(*) as cnt FROM wypowiedzi")[0]?.values[0][0] > 0,
-            'chartTopSpeakers': () => db2.database.exec("SELECT COUNT(*) as cnt FROM wypowiedzi")[0]?.values[0][0] > 0
-        };
-        
-        const checkFn = dataChecks[chartId];
-        return checkFn ? checkFn() : false;
-    } catch (error) {
-        return false;
-    }
+    if (!dataAvailabilityCache) warmDataAvailabilityCache();
+    return dataAvailabilityCache?.[chartId] ?? false;
 }
 
 /**

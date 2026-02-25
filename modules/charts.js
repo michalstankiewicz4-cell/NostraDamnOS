@@ -536,6 +536,28 @@ export function initChartCards() {
     });
 }
 
+// === SPINNER HELPERS ===
+
+function showChartSpinner(card) {
+    const body = card.querySelector('.chart-card-body');
+    if (!body || body.querySelector('.chart-spinner')) return;
+    const spinner = document.createElement('div');
+    spinner.className = 'chart-spinner';
+    spinner.innerHTML = '<div class="chart-spinner-ring"></div><div class="chart-spinner-label">Ładowanie…</div>';
+    body.appendChild(spinner);
+}
+
+function hideChartSpinner(card) {
+    card.querySelector('.chart-spinner')?.remove();
+}
+
+// === DEBOUNCE ===
+
+function debounce(fn, ms) {
+    let timer;
+    return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), ms); };
+}
+
 /**
  * Rozwiń kartę wykresu — ukryj pozostałe, pokaż body, renderuj wykres lazy
  */
@@ -564,13 +586,19 @@ function expandChartCard(card) {
             const cardId = card.id;
             setCardState(cardId, false);
         } else {
+            // Pokaż spinner od razu, żeby user wiedział że coś się dzieje
+            showChartSpinner(card);
             // requestAnimationFrame — poczekaj aż DOM przelayoutuje elementy po display:none→block
             requestAnimationFrame(() => {
                 requestAnimationFrame(() => {
                     const fn = renderers[chartType];
                     if (fn) {
-                        fn();
-                        card.setAttribute('data-loaded', '1');
+                        Promise.resolve(fn()).finally(() => {
+                            hideChartSpinner(card);
+                            card.setAttribute('data-loaded', '1');
+                        });
+                    } else {
+                        hideChartSpinner(card);
                     }
                 });
             });
@@ -625,23 +653,31 @@ export function renderAllCharts() {
     if (grid) {
         grid.querySelectorAll('.chart-card[data-loaded]').forEach(c => c.removeAttribute('data-loaded'));
     }
-    // Jeśli jakaś karta jest rozwinięta — przerenderuj ją
+    // Jeśli jakaś karta jest rozwinięta — przerenderuj ją ze spinnerem
     const expanded = grid?.querySelector('.chart-card--expanded');
     if (expanded) {
         const chartType = expanded.dataset.chartType;
         const fn = renderers[chartType];
         if (fn) {
-            fn();
-            expanded.setAttribute('data-loaded', '1');
+            showChartSpinner(expanded);
+            Promise.resolve(fn()).finally(() => {
+                hideChartSpinner(expanded);
+                expanded.setAttribute('data-loaded', '1');
+            });
         }
     }
 }
 
-// Pojedynczy wykres (dla przycisku aktualizuj)
+// Pojedynczy wykres (dla przycisku aktualizuj) — ze spinnerem
 export function renderSingleChart(name) {
     if (!db2.database) return;
     const fn = renderers[name];
-    if (fn) fn();
+    if (!fn) return;
+    const card = document.querySelector(`.chart-card[data-chart-type="${name}"]`);
+    if (card) showChartSpinner(card);
+    Promise.resolve(fn()).finally(() => {
+        if (card) hideChartSpinner(card);
+    });
 }
 
 // Obsługa przycisków aktualizuj
@@ -657,11 +693,10 @@ document.getElementById('customChartSelect')?.addEventListener('change', () => {
     if (db2.database) renderCustomChart();
 });
 
-// Heatmap combobox handlers
+// Heatmap combobox handlers — debounce 300ms żeby nie strzelać przy każdej zmianie
+const renderHeatmapDebounced = debounce(() => { if (db2.database) renderHeatmap(); }, 300);
 ['heatmapXAxis', 'heatmapYAxis', 'heatmapColor'].forEach(id => {
-    document.getElementById(id)?.addEventListener('change', () => {
-        if (db2.database) renderHeatmap();
-    });
+    document.getElementById(id)?.addEventListener('change', renderHeatmapDebounced);
 });
 
 // === SENTIMENT ANALYSIS CHARTS ===
