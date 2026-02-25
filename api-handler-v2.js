@@ -2113,6 +2113,12 @@ document.getElementById('etlClearBtn')?.addEventListener('click', async () => {
                 db2.clearAll();
                 console.log('[API Handler] Sejm database cleared');
 
+                // Wyczyść cache localStorage powiązany z bazą sejmową
+                localStorage.removeItem('nostradamnos_lastFetchConfig');
+                localStorage.removeItem('nostradamnos_lastFetch');
+                localStorage.removeItem('nostradamnos_etlSettings');
+                console.log('[API Handler] Sejm localStorage cache cleared');
+
                 // Update status indicators + summary tab + cache bar after clearing
                 updateStatusIndicators();
                 setRecordsStatus(false);
@@ -2123,8 +2129,12 @@ document.getElementById('etlClearBtn')?.addEventListener('click', async () => {
                 // Reset fetch button to default state (empty database = fetch mode)
                 updateFetchButtonMode();
 
-                ToastModule.success('Baza Sejmu wyczyszczona');
+                ToastModule.success('Baza Sejmu wyczyszczona (+ cache)');
             }
+
+            // Wyczyść zserializowaną bazę z localStorage (dotyczy obu trybów)
+            localStorage.removeItem('nostradamnos_db');
+            console.log('[API Handler] nostradamnos_db removed from localStorage');
 
             console.log('✅ [Zadanie] Wyczyść bazę zakończony');
         } catch (error) {
