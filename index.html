@@ -291,20 +291,14 @@
                                 <label class="etl-radio-option">
                                     <input type="radio" name="etlInst" value="sejm" checked> Sejm <span id="etlTermCountSejm" class="term-count"></span>
                                 </label>
-                                <label class="etl-radio-option">
-                                    <input type="radio" name="etlInst" value="rss"> RSS.gov 📰
-                                </label>
                                 <label class="etl-radio-option" style="opacity: 0.5; cursor: not-allowed;">
                                     <input type="radio" name="etlInst" value="senat" disabled> Senat <span id="etlTermCountSenat" class="term-count"></span>
                                 </label>
-                                <label class="etl-radio-option" style="opacity: 0.5; cursor: not-allowed;">
-                                    <input type="radio" name="etlInst" value="minfin" disabled> Min. Fin. 💰
-                                </label>
-                                <label class="etl-radio-option" style="opacity: 0.5; cursor: not-allowed;">
-                                    <input type="radio" name="etlInst" value="internet" disabled> Internet API 🌐
+                                <label class="etl-radio-option">
+                                    <input type="radio" name="etlInst" value="rss"> RSS.gov 📰
                                 </label>
                             </div>
-                            <div class="etl-internet-api-box" style="margin-top: 8px; opacity: 0.45; pointer-events: none;">
+                            <div class="etl-internet-api-box" style="display: none;">
                                 <select class="form-control etl-select-margin" id="etlInternetSource" disabled>
                                     <option value="" disabled selected>— Wybierz źródło —</option>
                                     <optgroup label="📰 Gazety / Portale">
@@ -2142,9 +2136,6 @@
 
                     // Hide/show Sejm-specific fieldsets (Dane podstawowe, per posiedzenie, per kadencja, komisje)
                     sejmFieldsets.forEach(fs => fs.style.display = isRss ? 'none' : '');
-
-                    // Hide/show Internet API box
-                    if (internetBox) internetBox.style.display = isRss ? 'none' : '';
 
                     // Show/hide RSS panel
                     if (rssPanel) rssPanel.style.display = isRss ? '' : 'none';

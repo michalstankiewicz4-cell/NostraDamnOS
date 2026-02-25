@@ -977,7 +977,7 @@ function initETLPanel() {
 
         // Institution
         const inst = document.querySelector('input[name="etlInst"]:checked')?.value || 'sejm';
-        document.getElementById('etlInstitution').textContent = inst === 'sejm' ? 'Sejm' : 'Senat';
+        document.getElementById('etlInstitution').textContent = inst === 'rss' ? 'RSS.gov' : inst === 'senat' ? 'Senat' : 'Sejm';
 
         // Term
         const term = document.getElementById('etlTermSelect').value;
