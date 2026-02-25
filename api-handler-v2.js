@@ -416,7 +416,8 @@ const summaryLabels = {
     komisje_wypowiedzi:    { icon: '🗣️', label: 'Wypowiedzi komisji' },
     oswiadczenia_majatkowe:{ icon: '💰', label: 'Oświadczenia majątkowe' },
     ustawy:                { icon: '⚖️', label: 'Ustawy (akty prawne)' },
-    zapytania_odpowiedzi:  { icon: '💬', label: 'Odpowiedzi na zapytania' }
+    zapytania_odpowiedzi:  { icon: '💬', label: 'Odpowiedzi na zapytania' },
+    rss_news:              { icon: '📰', label: 'Artykuły RSS' }
 };
 
 // Kolumny do wyświetlenia per tabela (nie pokazujemy długich tekstów)
@@ -434,7 +435,8 @@ const tableColumns = {
     komisje_wypowiedzi:    ['id_posiedzenia_komisji', 'id_osoby', 'data', 'typ'],
     oswiadczenia_majatkowe:['id_oswiadczenia', 'id_osoby', 'rok', 'data_zlozenia'],
     ustawy:                ['id_ustawy', 'publisher', 'year', 'pos', 'title', 'type', 'status'],
-    zapytania_odpowiedzi:  ['zapytanie_term', 'zapytanie_num', 'key', 'from_author', 'receiptDate', 'onlyAttachment', 'prolongation']
+    zapytania_odpowiedzi:  ['zapytanie_term', 'zapytanie_num', 'key', 'from_author', 'receiptDate', 'onlyAttachment', 'prolongation'],
+    rss_news:              ['source', 'title', 'pub_date', 'link']
 };
 
 function showSummaryTable(tableName) {
@@ -631,6 +633,34 @@ function updateSummaryTab() {
                 }
             });
             container.appendChild(card);
+        }
+
+        // Karta RSS (tabela rss_news poza getStats)
+        if (db2.database) {
+            try {
+                const rssRes = db2.database.exec('SELECT COUNT(*) FROM rss_news');
+                const rssCount = rssRes[0]?.values[0][0] || 0;
+                if (rssCount > 0) {
+                    const card = document.createElement('div');
+                    card.className = 'summary-card';
+                    card.setAttribute('data-table', 'rss_news');
+                    card.innerHTML = `
+                        <div class="summary-icon">📰</div>
+                        <div class="summary-content">
+                            <div class="summary-label">Artykuły RSS</div>
+                            <div class="summary-value">
+                                <span class="summary-value-main">${rssCount.toLocaleString('pl-PL')}</span>
+                                <span class="summary-value-sql">${rssCount.toLocaleString('pl-PL')}</span>
+                            </div>
+                        </div>`;
+                    card.addEventListener('click', () => {
+                        const isActive = card.classList.contains('active');
+                        document.querySelectorAll('.summary-card.active').forEach(c => c.classList.remove('active'));
+                        if (isActive) { hideSummaryTable(); } else { card.classList.add('active'); showSummaryTable('rss_news'); }
+                    });
+                    container.appendChild(card);
+                }
+            } catch { /* rss_news nie istnieje */ }
         }
 
         // Info section
