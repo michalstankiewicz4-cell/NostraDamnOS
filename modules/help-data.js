@@ -69,15 +69,74 @@ export const EMOCLIPPY_TIPS = {
         name: 'Dane',
         icon: '📊',
         tips: [
-            'Hej! Jestem w sekcji DANE. Tu pobierasz dane parlamentarne z API Sejmu i zapisujesz je do lokalnej bazy.',
+            'Hej! Jestem w sekcji DANE. Tu pobierasz artykuły rządowe RSS i dane parlamentarne z API Sejmu i zapisujesz je do lokalnej bazy.',
             '📥 Kliknij "Pobierz/Zaktualizuj dane" aby rozpocząć pobieranie. Wybierz najpierw kadencję i zakres posiedzeń!',
             '⚡ Wybierz moduły danych: posłowie, posiedzenia, wypowiedzi, głosowania, interpelacje, komisje i więcej!',
-            '📦 Pasek cache (wersja beta) na górze pokazuje co jest już w bazie. Zielony = kompletne, żółty = częściowe.',
+            '📦 Wybierz RSS.GOV jeżeli chcesz utworzyć bazę danych newsów do analizy.',
             '🔒 Filtr RODO usuwa wrażliwe dane (email, PESEL) przed zapisem. Zalecamy pozostawić włączony.',
-            '⏱️ Głosowania i wypowiedzi pobierane są per posiedzenie — każde to ~100 zapytań do API Sejmu.',
+            '⏱️ Wszystkie dane pobrane przez formularz sejmowy lub artykuły RSS wędrują kontrolnie do kolejnej sekcji PODSUMOWANIE.',
         ]
-    }
-    // Pozostałe sekcje: Podsumowanie, AI Asystent, Wykresy, Ustawienia, Predykcja — dodamy potem
+    },
+    '2': {
+        name: 'Podsumowanie',
+        icon: '📊',
+        tips: [
+            'Hej! Jestem w sekcji PODSUMOWANIE. Tu widzisz co udało się pobrać i co jest aktualnie w bazie danych.',
+            '📋 Tabela "Zlecone vs Pobrane" porównuje ile danych zamówiłeś z ile faktycznie trafiło do bazy.',
+            '📥 Import bazy — wczytaj wcześniej zapisany plik SQLite i kontynuuj pracę bez ponownego pobierania.',
+            '📤 Export bazy — zapisz bieżącą bazę na dysk jako plik .sqlite. Dobra praktyka przed eksperymentami!',
+            '🔍 Kliknij na kafelek z nazwą tabeli, aby podejrzeć zawartość — rekordy wyświetlą się w tabeli poniżej.',
+            '💡 Jeśli brakuje danych — wróć do sekcji DANE i uzupełnij pobieranie o brakujące moduły.',
+        ]
+    },
+    '3': {
+        name: 'AI Asystent',
+        icon: '🤖',
+        tips: [
+            'Hej! Jestem w sekcji AI ASYSTENT. Tu rozmawiasz z AI o danych parlamentarnych i korzystasz z modułów AI.',
+            '🔑 Aby zacząć, wybierz model AI i podaj klucz API. Kliknij link "Wygeneruj klucz API" jeśli go nie masz.',
+            '💬 Pytaj AI o posłów, głosowania, statystyki, trendy — model ma dostęp do Twojej lokalnej bazy danych.',
+            '✨ Po prawej stronie znajdziesz moduły AI: podsumowania posiedzeń, klasyfikacja tematyczna, raporty i więcej.',
+            '🧠 WebLLM to model AI działający w przeglądarce — nie wymaga klucza API ani internetu, ale potrzebuje GPU.',
+            '⚠️ Sekcja jest w fazie rozwoju — niektóre funkcje mogą działać niestabilnie.',
+        ]
+    },
+    '4': {
+        name: 'Wykresy',
+        icon: '📈',
+        tips: [
+            'Hej! Jestem w sekcji WYKRESY. Tu wizualizujesz dane parlamentarne na wykresach i heatmapach.',
+            '📊 Panel zarządzania wykresami pozwala włączać/wyłączać i zmieniać kolejność wykresów przeciąganiem.',
+            '🏛️ Wykres klubów pokazuje rozkład posłów w parlamencie. Wymaga pobranych danych o posłach.',
+            '🗳️ Wykresy głosowań analizują jak głosują posłowie i kluby — za, przeciw, wstrzymali się.',
+            '🔥 Heatmapa frekwencji to macierz obecności — posłowie/kluby vs posiedzenia/głosowania.',
+            '🎭 Wykresy sentymentu pokazują emocjonalny ton wypowiedzi parlamentarnych w czasie i per klub.',
+        ]
+    },
+    '5': {
+        name: 'Ustawienia',
+        icon: '⚙️',
+        tips: [
+            'Hej! Jestem w sekcji USTAWIENIA. Tu konfigurujesz wygląd i zachowanie aplikacji.',
+            '🌐 Zmień język interfejsu na polski, angielski lub ukraiński.',
+            '🗑️ Reset pamięci przywraca domyślne pozycje przycisków i ustawienia UI.',
+            '👁️ Widoczność elementów — ukryj lub pokaż paski informacyjne, przyciski i inne elementy.',
+            '🔐 Bezpieczeństwo klucza API — wybierz jak przechowywać klucz: sesja, PIN+AES-256 lub tylko RAM.',
+            '📎 Możesz mnie wyłączyć w sekcji "Inne" — odznacz "Spinacz — wskazówki w trybie pomocy".',
+        ]
+    },
+    '6': {
+        name: 'Predykcja',
+        icon: '🔮',
+        tips: [
+            'Hej! Jestem w sekcji PREDYKCJA. Tu analizujesz wzorce i prognozujesz na podstawie danych historycznych.',
+            '🔥 Analiza agresji parlamentarnej — wykrywa kto prowokuje agresję i kto zwyczajowo prosi o spokój.',
+            '👤 Profile parlamentarzystów, klubów i komisji — szczegółowe statystyki wybranego obiektu.',
+            '🎯 Dyscyplina klubowa sprawdza czy posłowie głosują zgodnie z linią partyjną.',
+            '⚠️ Wykrywanie anomalii — znajduje posłów głosujących wbrew swojemu klubowi.',
+            '🤝 Macierz koalicyjna pokazuje podobieństwo głosowania między klubami parlamentarnymi.',
+        ]
+    },
 };
 
 export const HELP_DATA = {

@@ -357,12 +357,6 @@ export function initDbButtons() {
     async function loadDatabaseFromFile(file) {
         console.log('🚀 [Zadanie] Import bazy rozpoczęty');
 
-        // Determine mode from radio button
-        const selectedInst = document.querySelector('input[name="etlInst"]:checked')?.value || 'sejm';
-        const isRss = selectedInst === 'rss';
-        const tableList = isRss ? RSS_TABLES : SEJM_TABLES;
-        const modeLabel = isRss ? 'RSS' : 'Sejm';
-
         try {
             // Read file as ArrayBuffer
             const arrayBuffer = await file.arrayBuffer();
@@ -389,24 +383,52 @@ export function initDbButtons() {
                     await db2.createSchema();
                 }
 
-                if (!isRss) {
+                // Auto-detect which tables exist in the imported file
+                const srcTablesRes = srcDb.exec("SELECT name FROM sqlite_master WHERE type='table'");
+                const srcTableNames = srcTablesRes.length ? srcTablesRes[0].values.map(v => v[0]) : [];
+
+                const hasSejm = SEJM_TABLES.some(t => srcTableNames.includes(t));
+                const hasRss  = RSS_TABLES.some(t => srcTableNames.includes(t));
+
+                if (!hasSejm && !hasRss) {
+                    ToastModule.warning(
+                        `Plik "${file.name}" nie zawiera rozpoznanych tabel Sejmu ani RSS.\n\nUpewnij się, że importujesz plik wyeksportowany z NostraDamnOS.`,
+                        { title: '⚠️ Nieznany format bazy', duration: 8000 }
+                    );
+                    return;
+                }
+
+                // Import all recognized table groups found in the file
+                const allImported = {};
+
+                if (hasSejm) {
                     // Wyczyść historię fetcha — importowana baza sejmowa nie ma związku z poprzednim ETL
                     localStorage.removeItem('nostradamnos_lastFetchConfig');
                     localStorage.removeItem('nostradamnos_lastFetch');
+                    const sejmImported = importTablesFromFile(srcDb, SEJM_TABLES);
+                    Object.assign(allImported, sejmImported);
                 }
 
-                // Merge only relevant tables
-                const imported = importTablesFromFile(srcDb, tableList);
+                if (hasRss) {
+                    const rssImported = importTablesFromFile(srcDb, RSS_TABLES);
+                    Object.assign(allImported, rssImported);
+                }
+
+                // Determine label for toast
+                const modeLabel = (hasSejm && hasRss) ? 'Sejm + RSS'
+                                : hasSejm             ? 'Sejm'
+                                :                       'RSS';
+                const icon = (hasSejm && hasRss) ? '🏛️📰'
+                           : hasSejm             ? '🏛️'
+                           :                       '📰';
 
                 console.log(`[DB Import] ✅ ${modeLabel} tables imported successfully`);
-                console.log(`[DB Import] Tables:`, imported);
+                console.log(`[DB Import] Tables:`, allImported);
 
                 // Build summary
-                const summary = Object.entries(imported)
+                const summary = Object.entries(allImported)
                     .map(([table, count]) => `${table}: ${count}`)
                     .join('\n');
-
-                const icon = isRss ? '📰' : '🏛️';
 
                 ToastModule.success(
                     `📁 ${file.name}\n📊 Rozmiar: ${(file.size / 1024).toFixed(2)} KB\n\n📋 Zaimportowane tabele:\n${summary}`,
