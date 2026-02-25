@@ -1877,6 +1877,7 @@ async function fetchRssFeeds() {
 
     // Update status
     updateFetchButtonMode();
+    updateStatusIndicators();
     updateSummaryTab();
     if (typeof window._updateCacheBar === 'function') window._updateCacheBar();
 }
