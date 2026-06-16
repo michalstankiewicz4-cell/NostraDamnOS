@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Tablica Korkowa</title>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+<!-- ── TOOLBAR ── -->
+<div id="toolbar">
+  <div id="toolbar-title">📋 Tablica Korkowa</div>
+  <div class="tb-sep"></div>
+
+  <div id="view-btns">
+    <button class="view-btn active" data-view="basic"  onclick="App.switchView('basic')">Podstawowy</button>
+    <button class="view-btn"        data-view="party"  onclick="App.switchView('party')">Widok partii</button>
+    <button class="view-btn"        data-view="time"   onclick="App.switchView('time')">Widok czasu</button>
+    <button class="view-btn"        data-view="law"    onclick="App.switchView('law')">Widok ustaw</button>
+  </div>
+  <div class="tb-sep"></div>
+
+  <button class="tb-btn active-tool" data-tool="select"
+    onclick="App.setTool('select'); updateHint('select')"
+    title="Zaznaczanie i przeciąganie kart">
+    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M3 1l11 6-5 2-2 5z"/></svg>
+    Zaznacz
+  </button>
+  <button class="tb-btn" data-tool="pin"
+    onclick="App.setTool('pin'); updateHint('pin')"
+    title="Kliknij kartę aby wbić pinezkę">
+    <svg viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="5" r="4"/><rect x="7" y="9" width="2" height="7" rx="1"/></svg>
+    Pinezka
+  </button>
+  <button class="tb-btn" data-tool="thread"
+    onclick="App.setTool('thread'); updateHint('thread')"
+    title="Przeciągnij od pinezki do pinezki">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 14 Q7 1 14 8"/></svg>
+    Nitka
+  </button>
+  <button class="tb-btn" data-tool="delete"
+    onclick="App.setTool('delete'); updateHint('delete')"
+    title="Kliknij kartę lub pinezkę aby usunąć">
+    <svg viewBox="0 0 16 16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg>
+    Usuń
+  </button>
+
+  <div class="tb-sep"></div>
+  <button class="tb-btn" onclick="App.resetToSample()">↺ Reset</button>
+  <button class="tb-btn" onclick="App.clearBoard()">🗑 Wyczyść</button>
+
+  <div id="tb-spacer"></div>
+  <div id="tool-hint"></div>
+</div>
+
+<!-- ── BOARD ── -->
+<div id="board-wrap">
+  <svg id="thread-svg" xmlns="http://www.w3.org/2000/svg"><defs></defs></svg>
+  <div id="canvas"></div>
+</div>
+
+<!-- ── SIDE PANEL ── -->
+<div id="side-panel">
+  <div id="sp-header">Elementy do przypięcia</div>
+
+  <div class="sp-section">
+    <div class="sp-section-title">Dodaj kartę</div>
+    <button class="sp-btn" onclick="App.openAddModal('person')"><span class="sp-icon">👤</span> Osoba</button>
+    <button class="sp-btn" onclick="App.openAddModal('party')"><span class="sp-icon">🏛️</span> Partia</button>
+    <button class="sp-btn" onclick="App.openAddModal('law')"><span class="sp-icon">⚖️</span> Ustawa</button>
+    <button class="sp-btn" onclick="App.openAddModal('news')"><span class="sp-icon">📰</span> News</button>
+    <button class="sp-btn" onclick="App.openAddModal('note')"><span class="sp-icon">📝</span> Notatka</button>
+    <button class="sp-btn" onclick="App.openAddModal('date')"><span class="sp-icon">📅</span> Data</button>
+  </div>
+
+  <div class="sp-section">
+    <div class="sp-section-title">Kolor pinezki</div>
+    <div class="color-row" id="pin-colors"></div>
+  </div>
+
+  <div class="sp-section">
+    <div class="sp-section-title">Nitka – kolor główny</div>
+    <div class="color-row" id="thread-colors-1"></div>
+    <div class="sp-section-title" style="margin-top:8px">Nitka – kolor 2 (pasek)</div>
+    <div class="color-row" id="thread-colors-2"></div>
+    <label style="display:flex;align-items:center;gap:6px;margin-top:9px;font-size:.72rem;color:#b89050;cursor:pointer;">
+      <input type="checkbox" id="striped-check" onchange="App.setThreadStriped(this.checked)"/>
+      Nitka paskowana
+    </label>
+  </div>
+
+  <div class="sp-section">
+    <div class="sp-section-title">Kolor karteczki</div>
+    <div class="color-row" id="note-colors"></div>
+  </div>
+
+  <div class="sp-section" style="border-bottom:none">
+    <div class="sp-section-title">Jak używać</div>
+    <div style="font-size:.65rem;color:#6a5030;line-height:1.7;padding:1px 0">
+      🖱 <b style="color:#9a7840">Zaznacz</b> – przeciągaj karty<br>
+      📌 <b style="color:#9a7840">Pinezka</b> – kliknij kartę<br>
+      🧵 <b style="color:#9a7840">Nitka</b> – przeciągnij pin→pin<br>
+      🗑 <b style="color:#9a7840">Usuń</b> – kliknij kartę / pin<br>
+      🖱 Prawy klik – menu kontekstowe<br>
+      ⌨ Delete – usuń zaznaczoną kartę
+    </div>
+  </div>
+</div>
+
+<!-- Toggle panel -->
+<div id="toggle-panel"><span>›</span></div>
+
+<!-- Context menu -->
+<div id="ctx-menu"></div>
+
+<!-- Modal -->
+<div id="modal-overlay"><div id="modal"></div></div>
+
+<script type="module">
+import * as AppModule from './app.js';
+import { PIN_COLORS, NOTE_COLORS } from './cards.js';
+
+// Expose to global for onclick handlers
+window.App = AppModule;
+
+// Hint texts
+const HINTS = {
+  select: 'Przeciągaj karty myszką',
+  pin:    'Kliknij kartę aby wbić pinezkę wybranym kolorem',
+  thread: 'Przeciągnij od pinezki do pinezki aby połączyć nitką',
+  delete: 'Kliknij kartę lub pinezkę aby usunąć',
+};
+window.updateHint = (tool) => {
+  document.getElementById('tool-hint').textContent = HINTS[tool] || '';
+};
+
+// ── Pin colours ──────────────────────────────────────────
+const PIN_ROW = document.getElementById('pin-colors');
+Object.entries(PIN_COLORS).forEach(([key, val]) => {
+  const sw = document.createElement('div');
+  sw.className = 'color-swatch' + (key === 'red' ? ' active' : '');
+  sw.style.background = val.head;
+  sw.title = key;
+  sw.onclick = () => {
+    document.querySelectorAll('#pin-colors .color-swatch').forEach(s => s.classList.remove('active'));
+    sw.classList.add('active');
+    AppModule.setPinColor(key);
+  };
+  PIN_ROW.appendChild(sw);
+});
+
+// ── Thread colours ───────────────────────────────────────
+const THREAD_HEX = {
+  r:'#e63946', g:'#2e7d32', b:'#1565c0',
+  y:'#f9c811', m:'#c2185b', c:'#0097a7',
+  w:'#e0e0e0', k:'#222222',
+  or:'#f4511e', pu:'#6a1b9a', go:'#c8971c',
+};
+[1,2].forEach(idx => {
+  const row = document.getElementById(`thread-colors-${idx}`);
+  const defaultKey = idx === 1 ? 'r' : 'w';
+  Object.entries(THREAD_HEX).forEach(([key, hex]) => {
+    const sw = document.createElement('div');
+    sw.className = 'color-swatch' + (key === defaultKey ? ' active' : '');
+    sw.style.background = hex;
+    sw.style.border = hex === '#e0e0e0' ? '2px solid #bbb' : '2px solid transparent';
+    sw.title = key;
+    sw.onclick = () => {
+      row.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+      sw.classList.add('active');
+      AppModule.setThreadColor(key, idx);
+    };
+    row.appendChild(sw);
+  });
+});
+
+// ── Note colours ─────────────────────────────────────────
+const NOTE_ROW = document.getElementById('note-colors');
+Object.entries(NOTE_COLORS).forEach(([key, val]) => {
+  const sw = document.createElement('div');
+  sw.className = 'color-swatch' + (key === 'y' ? ' active' : '');
+  sw.style.background = val.bg;
+  sw.style.border = '2px solid rgba(0,0,0,.15)';
+  sw.title = val.label;
+  sw.onclick = () => {
+    document.querySelectorAll('#note-colors .color-swatch').forEach(s => s.classList.remove('active'));
+    sw.classList.add('active');
+    AppModule.setNoteColor(key);
+  };
+  NOTE_ROW.appendChild(sw);
+});
+
+// ── Boot ─────────────────────────────────────────────────
+AppModule.init();
+updateHint('select');
+</script>
+</body>
+</html>
