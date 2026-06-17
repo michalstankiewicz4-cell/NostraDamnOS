@@ -436,3 +436,198 @@ html, body { height: 100%; overflow: hidden; background: #1a0e04; }
 #side-panel::-webkit-scrollbar-thumb { background: #3a2810; border-radius: 2px; }
 #modal::-webkit-scrollbar { width: 4px; }
 #modal::-webkit-scrollbar-thumb { background: #3a2810; border-radius: 2px; }
+
+/* ── LISTEWKI DREWNIANE ── */
+#board-wrap::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 200;
+  box-shadow:
+    /* Górna listewka */
+    inset 0 18px 0 0 #6B3F1A,
+    inset 0 20px 0 0 #7D4E22,
+    inset 0 22px 0 0 #4a2a0e,
+    /* Dolna listewka */
+    inset 0 -18px 0 0 #6B3F1A,
+    inset 0 -20px 0 0 #7D4E22,
+    inset 0 -22px 0 0 #4a2a0e,
+    /* Lewa listewka */
+    inset 18px 0 0 0 #6B3F1A,
+    inset 20px 0 0 0 #7D4E22,
+    inset 22px 0 0 0 #4a2a0e,
+    /* Prawa listewka */
+    inset -18px 0 0 0 #6B3F1A,
+    inset -20px 0 0 0 #7D4E22,
+    inset -22px 0 0 0 #4a2a0e;
+}
+
+/* Śrubki w rogach */
+.frame-screw {
+  position: absolute;
+  z-index: 210;
+  width: 14px;
+  height: 14px;
+  pointer-events: none;
+}
+.frame-screw svg { width: 14px; height: 14px; }
+
+.screw-tl { top: 4px;  left: 4px; }
+.screw-tr { top: 4px;  right: 4px; }
+.screw-bl { bottom: 4px; left: 4px; }
+.screw-br { bottom: 4px; right: 4px; }
+
+/* Ramka zewnętrzna wokół tablicy */
+#board-frame {
+  position: fixed;
+  inset: 52px 200px 0 0;
+  pointer-events: none;
+  z-index: 210;
+  transition: right .25s;
+}
+#board-frame.panel-hidden { right: 0; }
+
+/* Drewniana ramka - linie słojów */
+#board-frame::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 22px solid transparent;
+  background:
+    /* Górna belka */
+    linear-gradient(180deg,
+      #8B5225 0px, #A0632E 2px, #7D4E22 4px, #C4884A 6px,
+      #9B6030 8px, #B87840 10px, #7D4E22 12px, #8B5225 14px,
+      #6B3F1A 16px, #5a3214 18px, transparent 22px
+    ) top / 100% 22px no-repeat,
+    /* Dolna belka */
+    linear-gradient(0deg,
+      #8B5225 0px, #A0632E 2px, #7D4E22 4px, #C4884A 6px,
+      #9B6030 8px, #B87840 10px, #7D4E22 12px, #8B5225 14px,
+      #6B3F1A 16px, #5a3214 18px, transparent 22px
+    ) bottom / 100% 22px no-repeat,
+    /* Lewa belka */
+    linear-gradient(90deg,
+      #8B5225 0px, #A0632E 2px, #7D4E22 4px, #C4884A 6px,
+      #9B6030 8px, #B87840 10px, #7D4E22 12px, #8B5225 14px,
+      #6B3F1A 16px, #5a3214 18px, transparent 22px
+    ) left / 22px 100% no-repeat,
+    /* Prawa belka */
+    linear-gradient(270deg,
+      #8B5225 0px, #A0632E 2px, #7D4E22 4px, #C4884A 6px,
+      #9B6030 8px, #B87840 10px, #7D4E22 12px, #8B5225 14px,
+      #6B3F1A 16px, #5a3214 18px, transparent 22px
+    ) right / 22px 100% no-repeat;
+  border-radius: 2px;
+}
+
+/* ── NOWE STYLE (v2) ── */
+
+/* Widok Sieć */
+.view-btn[data-view="force"] { color: #a0b8d0; }
+
+/* Grupowanie – zaznaczenie */
+.card.group-selecting {
+  outline: 3px dashed #ffa040 !important;
+  outline-offset: 3px;
+  animation: group-pulse .8s ease-in-out infinite alternate;
+}
+@keyframes group-pulse {
+  from { outline-color: #ffa040; }
+  to   { outline-color: #ff6010; }
+}
+
+/* Grubość nitki – przyciski w panelu */
+.width-btn {
+  flex: 1;
+  padding: 4px 2px;
+  border-radius: 5px;
+  border: 1px solid rgba(255,255,255,.08);
+  background: rgba(255,255,255,.04);
+  color: #9a7850;
+  font-family: var(--font-ui);
+  font-size: .6rem;
+  cursor: pointer;
+  text-align: center;
+  transition: all .15s;
+  white-space: nowrap;
+}
+.width-btn:hover { background: rgba(255,255,255,.1); color: #ddd; }
+.width-btn.active-width { background: #4a2e10; color: #ffa040; border-color: rgba(255,160,60,.3); }
+
+/* Filtrowanie – przyciemnienie niezwiązanych kart */
+.card.filter-dim { opacity: 0.2; pointer-events: none; }
+
+/* Karta nieznana osoby */
+.card-unknown .cp-photo { filter: grayscale(1); }
+
+/* View transition */
+.card.view-transition {
+  transition: left .5s cubic-bezier(.4,0,.2,1), top .5s cubic-bezier(.4,0,.2,1) !important;
+}
+
+/* ── MINIMAP ── */
+#minimap-wrap {
+  position: fixed;
+  bottom: 16px;
+  left: 16px;
+  z-index: 1400;
+  background: rgba(18,10,3,.88);
+  border: 1px solid rgba(180,130,60,.3);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0,0,0,.5);
+}
+#minimap-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px;
+  font-family: var(--font-ui);
+  font-size: .62rem;
+  color: #8a7050;
+  border-bottom: 1px solid rgba(180,130,60,.2);
+}
+#minimap-header button {
+  background: none;
+  border: none;
+  color: #6a5030;
+  cursor: pointer;
+  font-size: .6rem;
+  font-family: inherit;
+  padding: 0 2px;
+}
+#minimap-header button:hover { color: #c8a870; }
+#minimap-container { padding: 4px; }
+#minimap-container canvas { border-radius: 3px; display: block; }
+
+/* ── TOAST ── */
+.app-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(10px);
+  background: rgba(22,14,6,.96);
+  border: 1px solid rgba(180,130,60,.4);
+  border-radius: 10px;
+  padding: 10px 22px;
+  font-family: var(--font-ui);
+  font-size: .82rem;
+  color: #f0e0b8;
+  box-shadow: 0 6px 24px rgba(0,0,0,.6);
+  z-index: 5000;
+  opacity: 0;
+  transition: opacity .25s, transform .25s;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.app-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Kliknięcie w nitkę – hover hint */
+.thread-group:hover path:not([stroke="transparent"]) {
+  filter: brightness(1.3);
+}

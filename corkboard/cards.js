@@ -32,6 +32,7 @@ export const THREAD_COLORS = {
   white: '#e0e0e0', black: '#222222',
   orange: '#f4511e', purple: '#6a1b9a', gold: '#c8971c',
   darkred: '#7b1fa2',
+  or: '#f4511e', pu: '#6a1b9a', go: '#c8971c',
 };
 
 export function renderPinSvg(color) {
@@ -47,21 +48,24 @@ export function renderPinSvg(color) {
 export function createCardElement(card) {
   const el = document.createElement('div');
   el.className = 'card';
-  el.dataset.id = card.id;
+  el.dataset.id   = card.id;
   el.dataset.type = card.type;
 
-  const angle = card.angle ?? (Math.random() * 10 - 5);
-  card.angle = angle;
-
-  // Skos + subtelne odchylenie 3D przez skew
-  const skewX = angle * 0.1;
-  el.style.transform = `rotate(${angle}deg) skewX(${skewX}deg)`;
-  el.style.left = card.x + 'px';
-  el.style.top = card.y + 'px';
-
-  // Cień sugerujący odchylenie od tablicy
+  const angle  = card.angle ?? (Math.random() * 10 - 5);
+  card.angle   = angle;
+  const skewX  = angle * 0.1;
   const shadowDir = angle > 0 ? 1 : -1;
-  el.style.boxShadow = `${shadowDir * 3}px 6px 18px rgba(0,0,0,0.38), ${shadowDir}px 2px 6px rgba(0,0,0,0.2)`;
+
+  el.style.transform  = `rotate(${angle}deg) skewX(${skewX}deg)`;
+  el.style.left       = card.x + 'px';
+  el.style.top        = card.y + 'px';
+  el.style.boxShadow  = `${shadowDir * 3}px 6px 18px rgba(0,0,0,0.38), ${shadowDir}px 2px 6px rgba(0,0,0,0.2)`;
+
+  // Grupowanie – obramowanie
+  if (card.groupColor) {
+    el.style.outline = `3px solid ${card.groupColor}`;
+    el.style.outlineOffset = '3px';
+  }
 
   el.innerHTML = buildCardHTML(card);
   return el;
@@ -70,13 +74,14 @@ export function createCardElement(card) {
 function buildCardHTML(card) {
   const d = card.data;
   switch (card.type) {
-    case 'person': return buildPerson(d);
-    case 'party':  return buildParty(d);
-    case 'law':    return buildLaw(d);
-    case 'news':   return buildNews(d);
-    case 'note':   return buildNote(d);
-    case 'date':   return buildDate(d);
-    default: return '<div style="padding:10px;color:#333">?</div>';
+    case 'person':  return buildPerson(d);
+    case 'unknown': return buildUnknown(d);
+    case 'party':   return buildParty(d);
+    case 'law':     return buildLaw(d);
+    case 'news':    return buildNews(d);
+    case 'note':    return buildNote(d);
+    case 'date':    return buildDate(d);
+    default:        return '<div style="padding:10px;color:#333">?</div>';
   }
 }
 
@@ -91,6 +96,17 @@ function buildPerson(d) {
         <div class="cp-name">${d.name}</div>
         <div class="cp-role">${d.role || ''}</div>
         ${d.party ? `<div class="cp-party" style="background:${d.partyColor||'#666'};color:#fff">${d.party}</div>` : ''}
+      </div>
+    </div>`;
+}
+
+function buildUnknown(d) {
+  return `
+    <div class="card-person card-unknown">
+      <div class="cp-photo" style="background:linear-gradient(135deg,#ccc,#999);font-size:3rem;color:#555">?</div>
+      <div class="cp-body">
+        <div class="cp-name" style="color:#888;font-style:italic">${d.name || 'Nieznana osoba'}</div>
+        <div class="cp-role">${d.role || ''}</div>
       </div>
     </div>`;
 }
@@ -144,5 +160,11 @@ export function updateCardElement(el, card) {
   const skewX = angle * 0.1;
   el.style.transform = `rotate(${angle}deg) skewX(${skewX}deg)`;
   el.style.left = card.x + 'px';
-  el.style.top = card.y + 'px';
+  el.style.top  = card.y + 'px';
+  if (card.groupColor) {
+    el.style.outline = `3px solid ${card.groupColor}`;
+    el.style.outlineOffset = '3px';
+  } else {
+    el.style.outline = '';
+  }
 }
