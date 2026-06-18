@@ -72,7 +72,9 @@ export function saveToHash(state) {
       p: state.pins.map(p => ({ i:p.id, x:Math.round(p.x), y:Math.round(p.y), c:p.color, ci:p.cardId })),
       th: state.threads.map(t => ({ i:t.id, f:t.fromPin, t2:t.toPin, c:t.color, s:t.striped, c2:t.stripeColor2, l:t.label, w:t.width })),
     };
-    const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(compact))));
+    const json = JSON.stringify(compact);
+    const bytes = new TextEncoder().encode(json);
+    const encoded = btoa(String.fromCharCode(...bytes));
     history.replaceState(null, '', '#' + encoded);
   } catch {
     // Zbyt duże – ignoruj
@@ -83,7 +85,9 @@ export function loadFromHash() {
   try {
     const hash = window.location.hash.slice(1);
     if (!hash) return null;
-    const raw = JSON.parse(decodeURIComponent(escape(atob(hash))));
+    const bytes = atob(hash);
+    const arr = new Uint8Array([...bytes].map(c => c.charCodeAt(0)));
+    const raw = JSON.parse(new TextDecoder().decode(arr));
     return {
       cards:   raw.c.map(c => ({ id:c.i, type:c.t, x:c.x, y:c.y, angle:parseFloat(c.a||0), data:c.d })),
       pins:    raw.p.map(p => ({ id:p.i, x:p.x, y:p.y, color:p.c, cardId:p.ci })),

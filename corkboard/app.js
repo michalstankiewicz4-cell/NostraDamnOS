@@ -207,8 +207,8 @@ function onMouseDown(e) {
     const cardRect   = card.getBoundingClientRect();
     dragging = {
       cardId:  card.dataset.id,
-      offsetX: e.clientX - cardRect.left,
-      offsetY: e.clientY - cardRect.top,
+      offsetX: (e.clientX - cardRect.left) / zoom,
+      offsetY: (e.clientY - cardRect.top)  / zoom,
     };
     card.classList.add('dragging');
     selectCard(card.dataset.id);
@@ -232,9 +232,9 @@ function onMouseMove(e) {
     return;
   }
   if (dragging) {
-    const canvasRect = canvas.getBoundingClientRect();
-    const x = e.clientX - canvasRect.left - dragging.offsetX;
-    const y = e.clientY - canvasRect.top  - dragging.offsetY;
+    const boardRect = boardWrap.getBoundingClientRect();
+    const x = (e.clientX - boardRect.left - pan.x) / zoom - dragging.offsetX;
+    const y = (e.clientY - boardRect.top  - pan.y) / zoom - dragging.offsetY;
     const card = state.cards.find(c => c.id === dragging.cardId);
     if (!card) return;
     card.x = x; card.y = y;
@@ -273,9 +273,9 @@ function onDblClick(e) {
   // Podwójny klik na tablicy (nie na karcie) = szybka notatka
   const card = e.target.closest('.card');
   if (card) return;
-  const canvasRect = canvas.getBoundingClientRect();
-  const x = e.clientX - canvasRect.left;
-  const y = e.clientY - canvasRect.top;
+  const boardRect = boardWrap.getBoundingClientRect();
+  const x = (e.clientX - boardRect.left - pan.x) / zoom;
+  const y = (e.clientY - boardRect.top  - pan.y) / zoom;
   const id = addCard('note', { text: '', color: state.selectedNoteColor }, x, y);
   // Otwórz od razu edytor
   setTimeout(() => openEditModal(id), 80);
@@ -334,18 +334,21 @@ export function resetView() {
 
 // ── Helpers ──────────────────────────────────────────────
 function pinCanvasPos(pinEl) {
-  const cr = canvas.getBoundingClientRect();
+  const boardRect = boardWrap.getBoundingClientRect();
   const pr = pinEl.getBoundingClientRect();
-  return { x: pr.left + pr.width/2 - cr.left, y: pr.top + pr.height/2 - cr.top };
+  return {
+    x: (pr.left + pr.width/2  - boardRect.left - pan.x) / zoom,
+    y: (pr.top  + pr.height/2 - boardRect.top  - pan.y) / zoom,
+  };
 }
 
 function syncPinsOfCard(cardId) {
   const el = canvas.querySelector(`.card[data-id="${cardId}"]`);
   if (!el) return;
-  const cr   = canvas.getBoundingClientRect();
-  const rect = el.getBoundingClientRect();
-  const cx   = rect.left + rect.width / 2 - cr.left;
-  const cy   = rect.top  - cr.top + 4;
+  const boardRect = boardWrap.getBoundingClientRect();
+  const rect      = el.getBoundingClientRect();
+  const cx = (rect.left + rect.width / 2 - boardRect.left - pan.x) / zoom;
+  const cy = (rect.top  - boardRect.top  - pan.y) / zoom + 4;
   state.pins.filter(p => p.cardId === cardId).forEach(pin => {
     pin.x = cx; pin.y = cy;
     const pel = canvas.querySelector(`.pin[data-id="${pin.id}"]`);
@@ -397,8 +400,7 @@ function selectCard(id) {
 // ── Filtrowanie powiązań ─────────────────────────────────
 export function filterByCard(cardId) {
   state.filterCardId = state.filterCardId === cardId ? null : cardId;
-  const btn = document.getElementById('filter-btn');
-  if (btn) btn.classList.toggle('active-tool', !!state.filterCardId);
+
   renderAll();
 }
 
@@ -474,12 +476,12 @@ window.hideModalUI = hideModal;
 function addPinToCard(cardId) {
   const el = canvas.querySelector(`.card[data-id="${cardId}"]`);
   if (!el) return;
-  const cr   = canvas.getBoundingClientRect();
-  const rect = el.getBoundingClientRect();
+  const boardRect = boardWrap.getBoundingClientRect();
+  const rect      = el.getBoundingClientRect();
   const pin = {
     id: 'pin-' + (state.nextId++), cardId,
-    x: rect.left + rect.width / 2 - cr.left,
-    y: rect.top - cr.top + 4,
+    x: (rect.left + rect.width / 2 - boardRect.left - pan.x) / zoom,
+    y: (rect.top  - boardRect.top  - pan.y) / zoom + 4,
     color: state.selectedPinColor,
   };
   state.pins.push(pin);
@@ -579,7 +581,7 @@ function updateViewBtns() {
 export function setTool(tool) {
   state.tool = tool;
   if (tool !== 'group') clearSelection();
-  canvas.style.cursor = { select:'default', pin:'cell', thread:'crosshair', delete:'not-allowed', group:'copy', filter:'zoom-in' }[tool] || 'default';
+  canvas.style.cursor = { select:'default', pin:'cell', thread:'crosshair', delete:'not-allowed', group:'copy' }[tool] || 'default';
   updateToolBtns();
   const hints = {
     select:  'Przeciągaj karty myszką',
@@ -619,7 +621,6 @@ export function togglePanel() {
 function showCtxMenu(x, y) {
   ctxMenu.innerHTML = '';
   if (contextTarget.type === 'card') {
-    const card = state.cards.find(c => c.id === contextTarget.id);
     addCtxItem('✏️', 'Edytuj kartę',         () => openEditModal(contextTarget.id));
     addCtxItem('📌', 'Wbij pinezkę',          () => addPinToCard(contextTarget.id));
     addCtxItem('🔍', 'Filtruj powiązania',    () => { filterByCard(contextTarget.id); setTool('select'); });
@@ -763,7 +764,8 @@ export function doExportJSON() { exportJSON(state); }
 export function doImportJSON() {
   importJSON(data => {
     state.cards=data.cards; state.pins=data.pins; state.threads=data.threads;
-    state.nextId = Math.max(300, ...data.cards.map(c=>parseInt(c.id.split('-')[1]||0)+1));
+    const numIds = data.cards.map(c => { const n = parseInt((c.id.match(/\d+$/) || [0])[0]); return isNaN(n) ? 0 : n; });
+    state.nextId = Math.max(300, ...numIds) + 1;
     renderAll(); save(); scheduleMinimap();
   });
 }

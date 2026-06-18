@@ -12,13 +12,6 @@ export class Minimap {
     this.visible = true;
   }
 
-  // Przelicz pozycję karty na minimap
-  _toMini(x, y, boardW, boardH) {
-    return {
-      mx: 4 + (x / boardW) * (this.canvas.width - 8),
-      my: 4 + (y / boardH) * (this.canvas.height - 8),
-    };
-  }
 
   update(cards, pins, threads, pan, zoom, boardW, boardH, viewW, viewH) {
     if (!this.visible) return;

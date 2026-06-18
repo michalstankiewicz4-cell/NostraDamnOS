@@ -108,12 +108,6 @@ function resolveColor(c) {
   return THREAD_COLORS[c] || c || '#cc3333';
 }
 
-function ensureDefs(svg) {
-  if (!svg.querySelector('defs')) {
-    const defs = document.createElementNS('http://www.w3.org/2000/svg','defs');
-    svg.prepend(defs);
-  }
-}
 
 export function drawTempThread(svg, x1, y1, x2, y2, color) {
   let temp = svg.querySelector('#temp-thread');
