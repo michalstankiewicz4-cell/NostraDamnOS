@@ -74,7 +74,12 @@ export function saveToHash(state) {
     };
     const json = JSON.stringify(compact);
     const bytes = new TextEncoder().encode(json);
-    const encoded = btoa(String.fromCharCode(...bytes));
+    // Chunk aby uniknąć RangeError przy spread >65536 elementów
+    let binary = '';
+    for (let i = 0; i < bytes.length; i += 8192) {
+      binary += String.fromCharCode(...bytes.subarray(i, i + 8192));
+    }
+    const encoded = btoa(binary);
     history.replaceState(null, '', '#' + encoded);
   } catch {
     // Zbyt duże – ignoruj

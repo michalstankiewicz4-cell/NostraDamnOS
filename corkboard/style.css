@@ -66,6 +66,7 @@ html, body { height: 100%; overflow: hidden; background: #1a0e04; }
   width: 100%;
   height: 100%;
   z-index: 6;
+  overflow: visible;
 }
 
 /* ── TOOLBAR ── */
@@ -484,7 +485,7 @@ html, body { height: 100%; overflow: hidden; background: #1a0e04; }
   inset: 52px 200px 0 0;
   pointer-events: none;
   z-index: 210;
-  transition: right .25s;
+  transition: right .25s, inset .25s;
 }
 #board-frame.panel-hidden { right: 0; }
 
@@ -631,3 +632,29 @@ html, body { height: 100%; overflow: hidden; background: #1a0e04; }
 .thread-group:hover path:not([stroke="transparent"]) {
   filter: brightness(1.3);
 }
+
+/* ── PRZYCISK "WRÓĆ DO KART" ── */
+#back-to-cards {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 3000;
+  display: none;
+  padding: 14px 28px;
+  background: rgba(18,10,3,.96);
+  border: 2px solid #c8971c;
+  border-radius: 12px;
+  color: #ffd878;
+  font-family: var(--font-ui);
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 8px 32px rgba(0,0,0,.7);
+  animation: pulse-btn .8s ease-in-out infinite alternate;
+}
+@keyframes pulse-btn {
+  from { box-shadow: 0 8px 32px rgba(0,0,0,.7); }
+  to   { box-shadow: 0 8px 32px rgba(200,151,28,.4), 0 0 20px rgba(200,151,28,.2); }
+}
+#back-to-cards:hover { background: #3a2a10; }

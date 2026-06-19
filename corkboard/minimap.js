@@ -46,8 +46,7 @@ export class Minimap {
 
     // Nitki
     ctx.globalAlpha = 0.55;
-    const pinMap = {};
-    pins.forEach(p => { pinMap[p.id] = p; });
+    const pinMap = Object.fromEntries(pins.map(p => [p.id, p]));
     threads.forEach(t => {
       const from = pinMap[t.fromPin];
       const to   = pinMap[t.toPin];

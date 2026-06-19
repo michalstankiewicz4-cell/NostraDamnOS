@@ -1,7 +1,7 @@
 // app.js – główna logika aplikacji
 
-import { createCardElement, updateCardElement, renderPinSvg, PIN_COLORS, NOTE_COLORS } from './cards.js';
-import { renderAllThreads, drawTempThread, removeTempThread } from './threads.js';
+import { createCardElement, updateCardElement, renderPinSvg, PIN_COLORS, NOTE_COLORS, esc } from './cards.js';
+import { renderAllThreads, drawTempThread, removeTempThread, buildPinMap } from './threads.js';
 import { computeViewPositions } from './views.js';
 import { saveState, loadState } from './storage.js';
 import { SAMPLE_DATA } from './data-sample.js';
@@ -46,6 +46,15 @@ let panning = null;
 // Minimap
 let minimap = null;
 
+// DRY: konwersja współrzędnych ekran → przestrzeń canvas
+function toCanvas(clientX, clientY) {
+  const r = boardWrap.getBoundingClientRect();
+  return {
+    x: (clientX - r.left  - pan.x) / zoom,
+    y: (clientY - r.top   - pan.y) / zoom,
+  };
+}
+
 // ── Init ────────────────────────────────────────────────
 export function init() {
   // Próba wczytania: hash → localStorage → przykładowe dane
@@ -56,6 +65,7 @@ export function init() {
     state.nextId = 300;
   } else if (saved && saved.cards && saved.cards.length) {
     state = { ...state, ...saved };
+    if (!state.groups) state.groups = [];
   } else {
     state.cards   = SAMPLE_DATA.cards.map(c => ({...c, data:{...c.data}}));
     state.pins    = SAMPLE_DATA.pins.map(p => ({...p}));
@@ -79,13 +89,21 @@ function renderAll() {
   canvas.querySelectorAll('.card, .pin').forEach(el => el.remove());
   [...threadSvg.querySelectorAll('.thread-group')].forEach(el => el.remove());
 
-  const visible = getVisibleCards();
+  // Cache connectedSet raz – używane przez getVisibleCards i getVisibleThreads
+  const connectedSet = state.filterCardId ? getConnectedCards(state.filterCardId) : null;
+  if (connectedSet && state.filterCardId) connectedSet.add(state.filterCardId);
+  const visible = connectedSet
+    ? state.cards.filter(c => connectedSet.has(c.id))
+    : state.cards;
   visible.forEach(card => canvas.appendChild(createCardElement(card)));
   state.pins.forEach(pin => {
     const card = state.cards.find(c => c.id === pin.cardId);
     if (!card || visible.includes(card)) canvas.appendChild(makePinEl(pin));
   });
-  renderAllThreads(threadSvg, getVisibleThreads(), state.pins, onThreadClick);
+  // Nitki z pre-built pinMap
+  const pinMap = buildPinMap(state.pins);
+  const visThreads = getVisibleThreadsWithMap(connectedSet, pinMap);
+  renderAllThreads(threadSvg, visThreads, state.pins, onThreadClick);
 }
 
 function makePinEl(pin) {
@@ -105,17 +123,20 @@ function getVisibleCards() {
   connected.add(state.filterCardId);
   return state.cards.filter(c => connected.has(c.id));
 }
+// (używana poza renderAll – getVisibleThreads też ma swoją ścieżkę)
 
 function getVisibleThreads() {
-  if (!state.filterCardId) return state.threads;
-  const connected = getConnectedCards(state.filterCardId);
-  connected.add(state.filterCardId);
-  const pinMap = {};
-  state.pins.forEach(p => { pinMap[p.id] = p; });
+  const connected = state.filterCardId ? getConnectedCards(state.filterCardId) : null;
+  if (connected && state.filterCardId) connected.add(state.filterCardId);
+  return getVisibleThreadsWithMap(connected, buildPinMap(state.pins));
+}
+
+function getVisibleThreadsWithMap(connectedSet, pinMap) {
+  if (!connectedSet) return state.threads;
   return state.threads.filter(t => {
     const a = pinMap[t.fromPin]?.cardId;
     const b = pinMap[t.toPin]?.cardId;
-    return connected.has(a) || connected.has(b);
+    return connectedSet.has(a) || connectedSet.has(b);
   });
 }
 
@@ -232,22 +253,20 @@ function onMouseMove(e) {
     return;
   }
   if (dragging) {
-    const boardRect = boardWrap.getBoundingClientRect();
-    const x = (e.clientX - boardRect.left - pan.x) / zoom - dragging.offsetX;
-    const y = (e.clientY - boardRect.top  - pan.y) / zoom - dragging.offsetY;
+    const { x: cx, y: cy } = toCanvas(e.clientX, e.clientY);
+    const x = cx - dragging.offsetX;
+    const y = cy - dragging.offsetY;
     const card = state.cards.find(c => c.id === dragging.cardId);
     if (!card) return;
     card.x = x; card.y = y;
     const el = canvas.querySelector(`.card[data-id="${card.id}"]`);
     if (el) { el.style.left = x + 'px'; el.style.top = y + 'px'; }
     syncPinsOfCard(card.id);
-    renderAllThreads(threadSvg, getVisibleThreads(), state.pins, onThreadClick);
+    scheduleThreadRender();
     return;
   }
   if (threadStart) {
-    const canvasRect = canvas.getBoundingClientRect();
-    const x = e.clientX - canvasRect.left;
-    const y = e.clientY - canvasRect.top;
+    const { x, y } = toCanvas(e.clientX, e.clientY);
     drawTempThread(threadSvg, threadStart.x, threadStart.y, x, y, state.selectedThreadColor);
   }
 }
@@ -273,9 +292,7 @@ function onDblClick(e) {
   // Podwójny klik na tablicy (nie na karcie) = szybka notatka
   const card = e.target.closest('.card');
   if (card) return;
-  const boardRect = boardWrap.getBoundingClientRect();
-  const x = (e.clientX - boardRect.left - pan.x) / zoom;
-  const y = (e.clientY - boardRect.top  - pan.y) / zoom;
+  const { x, y } = toCanvas(e.clientX, e.clientY);
   const id = addCard('note', { text: '', color: state.selectedNoteColor }, x, y);
   // Otwórz od razu edytor
   setTimeout(() => openEditModal(id), 80);
@@ -323,6 +340,60 @@ function applyTransform() {
   canvas.style.transformOrigin   = '0 0';
   threadSvg.style.transform      = t;
   threadSvg.style.transformOrigin= '0 0';
+  checkCardsVisible();
+}
+
+// PERF: RAF throttle dla rerenderowania nitek podczas drag
+let rafThreadId = null;
+function scheduleThreadRender() {
+  if (rafThreadId) return;
+  rafThreadId = requestAnimationFrame(() => {
+    rafThreadId = null;
+    renderAllThreads(threadSvg, getVisibleThreads(), state.pins, onThreadClick);
+  });
+}
+
+function checkCardsVisible() {
+  if (!state.cards.length) return;
+  const bw = boardWrap.clientWidth, bh = boardWrap.clientHeight;
+  // Sprawdź czy choć jedna karta jest w viewport
+  const anyVisible = state.cards.some(c => {
+    const sx = c.x * zoom + pan.x;
+    const sy = c.y * zoom + pan.y;
+    return sx > -200 && sx < bw + 200 && sy > -200 && sy < bh + 200;
+  });
+  let btn = document.getElementById('back-to-cards');
+  if (!anyVisible) {
+    if (!btn) {
+      btn = document.createElement('button');
+      btn.id = 'back-to-cards';
+      btn.textContent = '🎯 Wróć do kart';
+      btn.onclick = fitToCards;
+      document.body.appendChild(btn);
+    }
+    btn.style.display = 'block';
+  } else if (btn) {
+    btn.style.display = 'none';
+  }
+}
+
+function fitToCards() {
+  if (!state.cards.length) { resetView(); return; }
+  const bw = boardWrap.clientWidth, bh = boardWrap.clientHeight;
+  const xs = state.cards.map(c => c.x);
+  const ys = state.cards.map(c => c.y);
+  const minX = Math.min(...xs), maxX = Math.max(...xs) + 200;
+  const minY = Math.min(...ys), maxY = Math.max(...ys) + 200;
+  const scaleX = bw / (maxX - minX);
+  const scaleY = bh / (maxY - minY);
+  zoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, Math.min(scaleX, scaleY) * 0.85));
+  pan.x = (bw - (maxX - minX) * zoom) / 2 - minX * zoom;
+  pan.y = (bh - (maxY - minY) * zoom) / 2 - minY * zoom;
+  applyTransform();
+  document.getElementById('zoom-label').textContent = Math.round(zoom * 100) + '%';
+  scheduleMinimap();
+  const btn = document.getElementById('back-to-cards');
+  if (btn) btn.style.display = 'none';
 }
 
 export function resetView() {
@@ -334,21 +405,17 @@ export function resetView() {
 
 // ── Helpers ──────────────────────────────────────────────
 function pinCanvasPos(pinEl) {
-  const boardRect = boardWrap.getBoundingClientRect();
   const pr = pinEl.getBoundingClientRect();
-  return {
-    x: (pr.left + pr.width/2  - boardRect.left - pan.x) / zoom,
-    y: (pr.top  + pr.height/2 - boardRect.top  - pan.y) / zoom,
-  };
+  return toCanvas(pr.left + pr.width / 2, pr.top + pr.height / 2);
 }
 
 function syncPinsOfCard(cardId) {
   const el = canvas.querySelector(`.card[data-id="${cardId}"]`);
   if (!el) return;
-  const boardRect = boardWrap.getBoundingClientRect();
-  const rect      = el.getBoundingClientRect();
-  const cx = (rect.left + rect.width / 2 - boardRect.left - pan.x) / zoom;
-  const cy = (rect.top  - boardRect.top  - pan.y) / zoom + 4;
+  const rect   = el.getBoundingClientRect();
+  const center = toCanvas(rect.left + rect.width / 2, rect.top);
+  const cx = center.x;
+  const cy = center.y + 4;
   state.pins.filter(p => p.cardId === cardId).forEach(pin => {
     pin.x = cx; pin.y = cy;
     const pel = canvas.querySelector(`.pin[data-id="${pin.id}"]`);
@@ -362,7 +429,12 @@ function scheduleMinimap() {
   minimapTimer = setTimeout(() => {
     if (!minimap) return;
     const bw = boardWrap.clientWidth, bh = boardWrap.clientHeight;
-    minimap.update(state.cards, state.pins, state.threads, pan, zoom, 1800, 900, bw, bh);
+    // Dynamiczny bounding box – uwzględnia karty daleko poza centrum
+    const xs = state.cards.map(c => c.x).concat([0, bw]);
+    const ys = state.cards.map(c => c.y).concat([0, bh]);
+    const boardW = Math.max(1800, Math.max(...xs) + 300);
+    const boardH = Math.max(900,  Math.max(...ys) + 200);
+    minimap.update(state.cards, state.pins, state.threads, pan, zoom, boardW, boardH, bw, bh);
   }, 80);
 }
 
@@ -460,9 +532,11 @@ function openGroupModal(cardIds) {
     // Ustaw groupColor na kartach
     cardIds.forEach(cid => {
       const card = state.cards.find(c => c.id === cid);
-      if (card) card.groupColor = color;
-      const el = canvas.querySelector(`.card[data-id="${cid}"]`);
-      if (el) updateCardElement(el, card);
+      if (card) {
+        card.groupColor = color;
+        const el = canvas.querySelector(`.card[data-id="${cid}"]`);
+        if (el) updateCardElement(el, card);
+      }
     });
     clearSelection();
     hideModal();
@@ -476,12 +550,12 @@ window.hideModalUI = hideModal;
 function addPinToCard(cardId) {
   const el = canvas.querySelector(`.card[data-id="${cardId}"]`);
   if (!el) return;
-  const boardRect = boardWrap.getBoundingClientRect();
-  const rect      = el.getBoundingClientRect();
+  const rect = el.getBoundingClientRect();
+  const pinPos = toCanvas(rect.left + rect.width / 2, rect.top);
   const pin = {
     id: 'pin-' + (state.nextId++), cardId,
-    x: (rect.left + rect.width / 2 - boardRect.left - pan.x) / zoom,
-    y: (rect.top  - boardRect.top  - pan.y) / zoom + 4,
+    x: pinPos.x,
+    y: pinPos.y + 4,
     color: state.selectedPinColor,
   };
   state.pins.push(pin);
@@ -536,12 +610,15 @@ function openThreadEditModal(threadId) {
         <option value="5" ${t.width==5?'selected':''}>Bardzo gruba</option>
       </select></div>
     <div class="modal-btns">
-      <button class="modal-btn cancel" style="background:rgba(230,57,70,.15);color:#e63946;border-color:rgba(230,57,70,.3)"
-        onclick="deleteThreadUI('${threadId}')">🗑 Usuń nitkę</button>
+      <button class="modal-btn cancel" id="tf-delete" data-tid="${threadId}"
+        style="background:rgba(230,57,70,.15);color:#e63946;border-color:rgba(230,57,70,.3)">🗑 Usuń nitkę</button>
       <button class="modal-btn cancel" onclick="hideModalUI()">Anuluj</button>
       <button class="modal-btn primary" id="tf-ok">Zapisz</button>
     </div>`;
   modalOverlay.classList.add('visible');
+  modal.querySelector('#tf-delete').onclick = e => {
+    deleteThread(e.currentTarget.dataset.tid); hideModal();
+  };
   modal.querySelector('#tf-ok').onclick = () => {
     t.label = modal.querySelector('#tf-label').value.trim();
     t.width = parseFloat(modal.querySelector('#tf-width').value);
@@ -565,7 +642,18 @@ export function switchView(view) {
     if (el) { el.style.left = pos.x + 'px'; el.style.top = pos.y + 'px'; }
   });
   setTimeout(() => {
-    state.cards.forEach(c => syncPinsOfCard(c.id));
+    // Aktualizuj pozycje pinów bezpośrednio z positions (bez getBCR – animacja mogła się skończyć)
+    state.cards.forEach(card => {
+      const pos = positions[card.id];
+      if (!pos) return;
+      const pinCx = pos.x + 75; // środek typowej karty (szer ~130-190px / 2)
+      const pinCy = pos.y + 4;
+      state.pins.filter(p => p.cardId === card.id).forEach(pin => {
+        pin.x = pinCx; pin.y = pinCy;
+        const pel = canvas.querySelector(`.pin[data-id="${pin.id}"]`);
+        if (pel) { pel.style.left = pin.x + 'px'; pel.style.top = pin.y + 'px'; }
+      });
+    });
     renderAllThreads(threadSvg, getVisibleThreads(), state.pins, onThreadClick);
     canvas.querySelectorAll('.card').forEach(el => el.classList.remove('view-transition'));
     scheduleMinimap();
@@ -752,11 +840,6 @@ function readModalForm(type) {
     return { label:v('mf-label')||'Data', date, color:sel('mf-color') };
   }
   return null;
-}
-
-function esc(s,fb='') {
-  if(s==null) return fb;
-  return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
 // ── Eksport / Import ──────────────────────────────────────
